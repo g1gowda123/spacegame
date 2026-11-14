@@ -406,6 +406,13 @@ func _show_mission_review() -> void:
 	t1.position = Vector2(56, 88)
 	t1.size = Vector2(206, 12)
 	traj.add_child(t1)
+	var transit := UIKit.label("IN TRANSIT  0%", 5, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_RIGHT)
+	transit.position = Vector2(160, 96)
+	transit.size = Vector2(102, 10)
+	traj.add_child(transit)
+	flyer.progress_changed.connect(func(u: float):
+		transit.text = "ORBIT INSERTION" if u >= 1.0 else "IN TRANSIT  %d%%" % int(u * 100.0)
+	)
 
 	var timeline := UIKit.label(
 		"CONOPS  LAUNCH > CRUISE > ORBIT INSERTION > SURFACE > DOWNLINK > END

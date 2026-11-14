@@ -8,6 +8,8 @@ extends Control
 ## short hold. Everything is drawn in the panel's 270x112 local space, so it
 ## scales with the review panel and needs no textures.
 
+signal progress_changed(u: float)
+
 var points: PackedVector2Array = PackedVector2Array()
 var accent := Color("#ffc45c")
 var ship_texture: Texture2D
@@ -18,6 +20,7 @@ var _curve: Curve2D
 var _length := 0.0
 var _time := 0.0
 var _trail_dots: Array[Vector3] = []
+var _last_pct := -1
 
 
 func _ready() -> void:
@@ -37,7 +40,7 @@ func _build() -> void:
 	_trail_dots.clear()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4217
-	for i in range(14):
+	for i in range(10):
 		_trail_dots.append(Vector3(rng.randf_range(0.10, 0.26), rng.randf_range(-4.0, 4.0), rng.randf()))
 
 
@@ -60,6 +63,10 @@ func _process(delta: float) -> void:
 	elif t > travel_seconds + hold_seconds * 0.72:
 		fade = clampf(1.0 - (t - travel_seconds - hold_seconds * 0.72) / (hold_seconds * 0.28), 0.0, 1.0)
 	modulate.a = fade
+	var pct := 100 if raw >= 1.0 else int(raw * 100.0)
+	if pct != _last_pct:
+		_last_pct = pct
+		progress_changed.emit(1.0 if pct >= 100 else raw)
 	queue_redraw()
 
 
@@ -89,7 +96,7 @@ func _draw() -> void:
 		if i == 0:
 			draw_line(_at(u0), _at(u1), Color(accent.r, accent.g, accent.b, 0.0), 1.0, true)
 			continue
-		draw_line(_at(u0), _at(u1), Color(accent.r, accent.g, accent.b, 0.60 * k), 1.2, true)
+		draw_line(_at(u0), _at(u1), Color(accent.r, accent.g, accent.b, 0.48 * k), 1.0, true)
 
 	# Space dust around the trail.
 	var tangent := (_at(minf(u + 0.02, 1.0)) - _at(maxf(u - 0.02, 0.0))).normalized()
@@ -99,7 +106,7 @@ func _draw() -> void:
 			continue
 		var uu := u - float(d.x)
 		var p := _at(uu) + normal * float(d.y) + tangent * (float(d.z) - 0.5) * 4.0
-		var a := 0.18 + 0.30 * float(d.z)
+		var a := 0.12 + 0.22 * float(d.z)
 		draw_rect(Rect2(p, Vector2(1, 1)), Color(0.75, 0.92, 1.0, a), true)
 
 	# Ship: the authored hull silhouette when available, otherwise a delta.
@@ -107,7 +114,7 @@ func _draw() -> void:
 	var s := 3.9
 	var engine := p - tangent * s * 1.9
 	if ship_texture != null:
-		var target_w := 25.0
+		var target_w := 32.0
 		var k := target_w / maxf(float(ship_texture.get_width()), 1.0)
 		var th := float(ship_texture.get_height()) * k
 		draw_set_transform(p, tangent.angle(), Vector2(k, k))

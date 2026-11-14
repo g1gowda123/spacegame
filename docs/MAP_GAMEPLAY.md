@@ -125,3 +125,35 @@ only after M1 is stable.
 - **b:** W2 macro composition and ring placement guarantees.
 - **VEGA only:** decals, 4×4 cryo/arid/barren landmarks, any new animation art.
 - **ORION:** gate decision; no export without a named capture.
+
+## Difficulty curve (NOVA, 19:35)
+
+Boss asked for a gentle quadratic ramp across rounds. Research summary:
+
+- **Balatro:** blind targets are a hand-authored, steepening table (300 → 800 →
+  2,000 → 5,000 → 11,000 → 20,000 → 35,000 → 50,000), with Small/Big/Boss at
+  1×/1.5×/2×; the steepest jump is Ante 4→5. Higher stakes *swap the table*
+  and add discrete rules, not a smooth multiplier.
+- **Soul Knight (Matrix):** Pressure +1 per floor; enemies gain +15% base HP
+  per Pressure and +1 damage every 3 Pressure. It is linear/cumulative per
+  floor, with loops, not n².
+- **Slay the Spire:** three acts with authored enemy tables, plus 20 Ascension
+  modifiers that remove forgiveness one named rule at a time.
+- **FTL:** enemy systems/hull scale per sector, and some enemy types are gated
+  until later sectors.
+
+A literal n² over three rounds (1 / 4 / 9) would erase the refit power curve.
+The shipped curve is normalised to the campaign:
+
+`threat = 1.0 + 0.18 × (sector − 1)²`
+
+| Sector | Threat | Effect |
+|---|---|---|
+| 1 | 1.00× | Shakedown: +2 hull, +4 sols, +1 range, hazards capped at 2, max 1 hull damage per hit |
+| 2 | 1.18× | Heat gain ×1.18; normal hazard ramp |
+| 3 | 1.72× | Heat gain ×1.72; **+1 hazard front** (quadratic tier bonus) |
+
+This is a **stat ramp plus one discrete rule** at sector 3, matching how the
+reference games keep escalation legible. Player power still comes from
+refits/buffs; the curve asks the build to keep up rather than invalidating it.
+HUD shows `THREAT 1.2x` / `1.7x` in the bottom route line.

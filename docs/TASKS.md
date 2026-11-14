@@ -472,3 +472,7 @@ only. Nothing here was runtime- or visually verified.
 | Quarantine human outpost modules (`habitat_dome`, `solar_farm`, `comms_dish`) from normal exoplanet generation | **DONE 19:30** | NOVA | `feature_toggles["outposts"] = false` in `scripts/map_generator.gd`; F5 remains dev-only preview |
 | Re-author or replace the outpost set as alien/precursor ruins, if outposts return | **REQUESTED** | VEGA | No solar panels, habitat domes, airlocks, or Earth-industrial forms; 128/192 px, palette-locked; ComfyUI allowed; fixed brief + creative freedom |
 | Lore/copy check for “abandoned survey architecture” mentions | **REQUESTED** | e | Surface should read as uncolonised survey target; only human objects are lander, flag, deployable relay |
+
+| Difficulty curve: normalized quadratic across sectors (1.00 / 1.18 / 1.72), heat scale + sector-3 extra front | **DONE 19:35** | NOVA | `scripts/game_state.gd` `threat`, `scripts/sector.gd` `_hazard_budget`; evidence `--screen=flowtest` 4945/A |
+
+| Precursor ruins: rare alien landmark (1/sector max), flat/ground variant preferred, no industrial forms | **APPROVED 19:40** | ATLAS wire / VEGA art | VEGA assets `structures/precursor_*` + manifest ready; do not spawn as outposts |
