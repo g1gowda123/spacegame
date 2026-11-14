@@ -1,0 +1,17 @@
+{
+  "pair": "frozen_lake_water_deep",
+  "a": "assets/tilesets/cryo/frozen_lake.png",
+  "b": "assets/tilesets/ocean/water_deep.png",
+  "a_side": "west",
+  "tiles": {
+    "west": "assets/tilesets/transitions/frozen_lake_water_deep/frozen_lake_west.png",
+    "east": "assets/tilesets/transitions/frozen_lake_water_deep/frozen_lake_east.png",
+    "north": "assets/tilesets/transitions/frozen_lake_water_deep/frozen_lake_north.png",
+    "south": "assets/tilesets/transitions/frozen_lake_water_deep/frozen_lake_south.png"
+  },
+  "preview": "assets/tilesets/transitions/frozen_lake_water_deep/frozen_lake_water_deep_preview.png",
+  "seed": 8423,
+  "band": 5,
+  "scatter": 10,
+  "wave": 12.0
+}

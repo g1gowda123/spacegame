@@ -1,0 +1,17 @@
+{
+  "pair": "regolith_water_deep",
+  "a": "assets/tilesets/barren/regolith.png",
+  "b": "assets/tilesets/ocean/water_deep.png",
+  "a_side": "west",
+  "tiles": {
+    "west": "assets/tilesets/transitions/regolith_water_deep/regolith_west.png",
+    "east": "assets/tilesets/transitions/regolith_water_deep/regolith_east.png",
+    "north": "assets/tilesets/transitions/regolith_water_deep/regolith_north.png",
+    "south": "assets/tilesets/transitions/regolith_water_deep/regolith_south.png"
+  },
+  "preview": "assets/tilesets/transitions/regolith_water_deep/regolith_water_deep_preview.png",
+  "seed": 99782,
+  "band": 5,
+  "scatter": 10,
+  "wave": 12.0
+}

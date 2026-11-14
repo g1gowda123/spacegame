@@ -1,0 +1,259 @@
+{
+  "pairs": [
+    {
+      "pair": "lava_ash",
+      "a": "assets/tilesets/volcanic/lava.png",
+      "b": "assets/tilesets/volcanic/ash.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/lava_ash/lava_west.png",
+        "east": "assets/tilesets/transitions/lava_ash/lava_east.png",
+        "north": "assets/tilesets/transitions/lava_ash/lava_north.png",
+        "south": "assets/tilesets/transitions/lava_ash/lava_south.png"
+      },
+      "preview": "assets/tilesets/transitions/lava_ash/lava_ash_preview.png",
+      "seed": 1,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "lava_basalt",
+      "a": "assets/tilesets/volcanic/lava.png",
+      "b": "assets/tilesets/volcanic/basalt.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/lava_basalt/lava_west.png",
+        "east": "assets/tilesets/transitions/lava_basalt/lava_east.png",
+        "north": "assets/tilesets/transitions/lava_basalt/lava_north.png",
+        "south": "assets/tilesets/transitions/lava_basalt/lava_south.png"
+      },
+      "preview": "assets/tilesets/transitions/lava_basalt/lava_basalt_preview.png",
+      "seed": 2,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "basalt_ash",
+      "a": "assets/tilesets/volcanic/basalt.png",
+      "b": "assets/tilesets/volcanic/ash.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/basalt_ash/basalt_west.png",
+        "east": "assets/tilesets/transitions/basalt_ash/basalt_east.png",
+        "north": "assets/tilesets/transitions/basalt_ash/basalt_north.png",
+        "south": "assets/tilesets/transitions/basalt_ash/basalt_south.png"
+      },
+      "preview": "assets/tilesets/transitions/basalt_ash/basalt_ash_preview.png",
+      "seed": 3,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "grass_dirt",
+      "a": "assets/tilesets/temperate/grass.png",
+      "b": "assets/tilesets/temperate/dirt.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/grass_dirt/grass_west.png",
+        "east": "assets/tilesets/transitions/grass_dirt/grass_east.png",
+        "north": "assets/tilesets/transitions/grass_dirt/grass_north.png",
+        "south": "assets/tilesets/transitions/grass_dirt/grass_south.png"
+      },
+      "preview": "assets/tilesets/transitions/grass_dirt/grass_dirt_preview.png",
+      "seed": 4,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "grass_rock",
+      "a": "assets/tilesets/temperate/grass.png",
+      "b": "assets/tilesets/temperate/rock.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/grass_rock/grass_west.png",
+        "east": "assets/tilesets/transitions/grass_rock/grass_east.png",
+        "north": "assets/tilesets/transitions/grass_rock/grass_north.png",
+        "south": "assets/tilesets/transitions/grass_rock/grass_south.png"
+      },
+      "preview": "assets/tilesets/transitions/grass_rock/grass_rock_preview.png",
+      "seed": 5,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "grass_beach",
+      "a": "assets/tilesets/temperate/grass.png",
+      "b": "assets/tilesets/temperate/beach.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/grass_beach/grass_west.png",
+        "east": "assets/tilesets/transitions/grass_beach/grass_east.png",
+        "north": "assets/tilesets/transitions/grass_beach/grass_north.png",
+        "south": "assets/tilesets/transitions/grass_beach/grass_south.png"
+      },
+      "preview": "assets/tilesets/transitions/grass_beach/grass_beach_preview.png",
+      "seed": 6,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "beach_water_lake",
+      "a": "assets/tilesets/temperate/beach.png",
+      "b": "assets/tilesets/temperate/water_lake.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/beach_water_lake/beach_west.png",
+        "east": "assets/tilesets/transitions/beach_water_lake/beach_east.png",
+        "north": "assets/tilesets/transitions/beach_water_lake/beach_north.png",
+        "south": "assets/tilesets/transitions/beach_water_lake/beach_south.png"
+      },
+      "preview": "assets/tilesets/transitions/beach_water_lake/beach_water_lake_preview.png",
+      "seed": 7,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "sand_cracked_earth",
+      "a": "assets/tilesets/arid/sand.png",
+      "b": "assets/tilesets/arid/cracked_earth.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/sand_cracked_earth/sand_west.png",
+        "east": "assets/tilesets/transitions/sand_cracked_earth/sand_east.png",
+        "north": "assets/tilesets/transitions/sand_cracked_earth/sand_north.png",
+        "south": "assets/tilesets/transitions/sand_cracked_earth/sand_south.png"
+      },
+      "preview": "assets/tilesets/transitions/sand_cracked_earth/sand_cracked_earth_preview.png",
+      "seed": 8,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "sand_rock",
+      "a": "assets/tilesets/arid/sand.png",
+      "b": "assets/tilesets/arid/rock.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/sand_rock/sand_west.png",
+        "east": "assets/tilesets/transitions/sand_rock/sand_east.png",
+        "north": "assets/tilesets/transitions/sand_rock/sand_north.png",
+        "south": "assets/tilesets/transitions/sand_rock/sand_south.png"
+      },
+      "preview": "assets/tilesets/transitions/sand_rock/sand_rock_preview.png",
+      "seed": 9,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "cracked_earth_rock",
+      "a": "assets/tilesets/arid/cracked_earth.png",
+      "b": "assets/tilesets/arid/rock.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/cracked_earth_rock/cracked_earth_west.png",
+        "east": "assets/tilesets/transitions/cracked_earth_rock/cracked_earth_east.png",
+        "north": "assets/tilesets/transitions/cracked_earth_rock/cracked_earth_north.png",
+        "south": "assets/tilesets/transitions/cracked_earth_rock/cracked_earth_south.png"
+      },
+      "preview": "assets/tilesets/transitions/cracked_earth_rock/cracked_earth_rock_preview.png",
+      "seed": 10,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "snow_ice",
+      "a": "assets/tilesets/cryo/snow.png",
+      "b": "assets/tilesets/cryo/ice.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/snow_ice/snow_west.png",
+        "east": "assets/tilesets/transitions/snow_ice/snow_east.png",
+        "north": "assets/tilesets/transitions/snow_ice/snow_north.png",
+        "south": "assets/tilesets/transitions/snow_ice/snow_south.png"
+      },
+      "preview": "assets/tilesets/transitions/snow_ice/snow_ice_preview.png",
+      "seed": 11,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "snow_rock",
+      "a": "assets/tilesets/cryo/snow.png",
+      "b": "assets/tilesets/cryo/rock.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/snow_rock/snow_west.png",
+        "east": "assets/tilesets/transitions/snow_rock/snow_east.png",
+        "north": "assets/tilesets/transitions/snow_rock/snow_north.png",
+        "south": "assets/tilesets/transitions/snow_rock/snow_south.png"
+      },
+      "preview": "assets/tilesets/transitions/snow_rock/snow_rock_preview.png",
+      "seed": 12,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "water_shallow_water_deep",
+      "a": "assets/tilesets/ocean/water_shallow.png",
+      "b": "assets/tilesets/ocean/water_deep.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/water_shallow_water_deep/water_shallow_west.png",
+        "east": "assets/tilesets/transitions/water_shallow_water_deep/water_shallow_east.png",
+        "north": "assets/tilesets/transitions/water_shallow_water_deep/water_shallow_north.png",
+        "south": "assets/tilesets/transitions/water_shallow_water_deep/water_shallow_south.png"
+      },
+      "preview": "assets/tilesets/transitions/water_shallow_water_deep/water_shallow_water_deep_preview.png",
+      "seed": 13,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "water_shallow_reef",
+      "a": "assets/tilesets/ocean/water_shallow.png",
+      "b": "assets/tilesets/ocean/reef.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/water_shallow_reef/water_shallow_west.png",
+        "east": "assets/tilesets/transitions/water_shallow_reef/water_shallow_east.png",
+        "north": "assets/tilesets/transitions/water_shallow_reef/water_shallow_north.png",
+        "south": "assets/tilesets/transitions/water_shallow_reef/water_shallow_south.png"
+      },
+      "preview": "assets/tilesets/transitions/water_shallow_reef/water_shallow_reef_preview.png",
+      "seed": 14,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    },
+    {
+      "pair": "reef_beach",
+      "a": "assets/tilesets/ocean/reef.png",
+      "b": "assets/tilesets/ocean/beach.png",
+      "a_side": "west",
+      "tiles": {
+        "west": "assets/tilesets/transitions/reef_beach/reef_west.png",
+        "east": "assets/tilesets/transitions/reef_beach/reef_east.png",
+        "north": "assets/tilesets/transitions/reef_beach/reef_north.png",
+        "south": "assets/tilesets/transitions/reef_beach/reef_south.png"
+      },
+      "preview": "assets/tilesets/transitions/reef_beach/reef_beach_preview.png",
+      "seed": 15,
+      "band": 3,
+      "scatter": 8,
+      "wave": 9.0
+    }
+  ]
+}
