@@ -344,7 +344,7 @@ var ui_rng := RandomNumberGenerator.new()
 @export var circle_view: bool = true
 @export_range(0.4, 1.6, 0.01) var zoom: float = 0.88
 @export_range(0.4, 1.0, 0.01) var tilt: float = 0.75
-@export_range(0.5, 1.4, 0.01) var map_scale: float = 0.92
+var map_scale: float = 0.92
 @export_range(0.20, 0.55, 0.01) var circle_radius: float = 0.40
 @export_range(0.05, 0.15, 0.005) var circle_soft: float = 0.045
 @export_range(0.45, 0.75, 0.01) var circle_outer: float = 0.56
@@ -469,8 +469,10 @@ func _ready() -> void:
 	if cli_seed >= 0:
 		seed_value = cli_seed
 		_generate()
-	else:
+	elif randomize_seed:
 		_new_seed()
+	else:
+		_generate()
 
 
 func _parse_cli() -> void:
@@ -2393,6 +2395,7 @@ func _reveal_around(cell: Vector2i, radius: int) -> void:
 func _draw_fog() -> void:
 	if fog_layer == null:
 		return
+	print("FOGDEBUG enabled=", fog_enabled, " revealed=", revealed.size(), " view=", VIEW_W, "x", VIEW_H, " origin=", view_origin, " children=", fog_layer.get_child_count())
 	for child in fog_layer.get_children():
 		child.free()
 	if not fog_enabled:
@@ -2431,7 +2434,7 @@ func _draw_fog() -> void:
 
 func _render_window() -> void:
 	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
-	_reveal_around(player_cell, 2 if fog_enabled else 0)
+	_reveal_around(player_cell, fog_reveal_radius if fog_enabled else 0)
 	if debug_layer != null and not debug_transitions:
 		for child in debug_layer.get_children():
 			child.free()
@@ -3634,6 +3637,15 @@ func _apply_biome_tint() -> void:
 	shader_mat.set_shader_parameter("biome_tint", c)
 	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
 	shader_mat.set_shader_parameter("exposure", float(b.get("exposure", 1.0)))
+	# Gamma lift for the boards whose source tiles are genuinely dark (ash,
+	# basalt, obsidian). It opens the shadows without flattening the highlight.
+	var lift := 1.0
+	match str(b.get("id", "")):
+		"volcanic", "sulfur", "obsidian":
+			lift = 0.72
+		"barren", "iron", "carbon":
+			lift = 0.88
+	shader_mat.set_shader_parameter("lift", lift)
 	shader_mat.set_shader_parameter("edge_mode", edge_mode)
 	shader_mat.set_shader_parameter("relief", relief_enabled)
 
@@ -3672,8 +3684,9 @@ func _update_view() -> void:
 	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
 	shader_mat.set_shader_parameter("camera_offset", Vector2.ZERO)
 	shader_mat.set_shader_parameter("circle_view", 1 if circle_view else 0)
-	shader_mat.set_shader_parameter("circle_radius", 0.40)
-	shader_mat.set_shader_parameter("circle_outer", 0.56)
+	shader_mat.set_shader_parameter("circle_radius", circle_radius)
+	shader_mat.set_shader_parameter("circle_outer", circle_outer)
+	shader_mat.set_shader_parameter("circle_soft", circle_soft)
 	shader_mat.set_shader_parameter("show_grid", 1 if show_grid else 0)
 	_rebuild_structure_sprites()
 	_rebuild_actors()

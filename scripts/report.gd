@@ -40,7 +40,6 @@ func _build() -> void:
 		], 7, UIKit.DIM)
 	sub.position = Vector2(10, 22)
 	add_child(sub)
-	UIKit.hairline(self, 10, 34, 620)
 
 	_build_grade()
 	_build_ledger()
@@ -215,7 +214,7 @@ func _build_ledger() -> void:
 		]
 	var notes := UIKit.label(
 		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nANALOG  %s\nTEQ drives thermal load · gravity drives delta-v." % [orbit_line, GameState.objective_analog().to_upper()],
-		6, UIKit.DIM, false)
+		7, UIKit.DIM)
 	notes.position = Vector2(12, 212)
 	notes.size = Vector2(320, 44)
 	notes.vertical_alignment = VERTICAL_ALIGNMENT_TOP

@@ -16,6 +16,7 @@ uniform vec3 tint = vec3(0.97, 1.0, 0.99);
 uniform vec4 biome_tint : source_color = vec4(1.0);
 uniform float biome_tint_strength = 0.0;
 uniform float exposure = 1.0;
+uniform float lift = 1.0;
 uniform vec2 camera_offset = vec2(0.0);
 uniform int circle_view = 1;
 uniform float circle_radius = 0.40;
@@ -133,6 +134,9 @@ void fragment() {
         // one atlas and one grade chain, so each board is normalised to the
         // same readable mid-tone instead of inheriting its tile brightness.
         COLOR.rgb *= exposure;
+        // `lift` is a gamma, not another multiply: it opens the dark ash of a
+        // volcanic board without pushing already-bright lava to white.
+        COLOR.rgb = pow(max(COLOR.rgb, vec3(0.0)), vec3(lift));
 
         // Directional key light from the upper-left. A flat board reads as a
         // tile editor; a single strong light direction makes the terrain feel
