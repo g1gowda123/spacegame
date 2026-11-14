@@ -165,7 +165,7 @@ func _build() -> void:
 	id_role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(id_role)
 
-	var id_clear := UIKit.label("CLEARANCE // A-2  ·  MISSION CONTROL", 4, Color("#6b5f4c"), true)
+	var id_clear := UIKit.label("CLEARANCE  A-2  ·  MISSION CONTROL", 4, Color("#6b5f4c"), true)
 	id_clear.position = Vector2(12, 202)
 	id_clear.size = Vector2(146, 8)
 	id_clear.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -415,11 +415,18 @@ func _set_portrait(expr: String) -> void:
 		if not ResourceLoader.exists(path):
 			path = SHIP_DIR + "director_neutral.png"
 		if ResourceLoader.exists(path):
+			var tex := load(path) as Texture2D
 			var atlas := AtlasTexture.new()
-			atlas.atlas = load(path)
-			# The delivered bust occupies the top 134x134 of the 160x240 canvas;
-			# crop to that visible square so it reads as an ID photo, not a cutout.
-			atlas.region = Rect2(21, 0, 134, 134)
+			atlas.atlas = tex
+			# The delivered seed-4101 bust occupies a 134x134 square inside the
+			# 160x240 canvas; crop to the visible alpha box so it reads as an ID
+			# photo. If VEGA lands a full-height bust, keep the whole frame.
+			var img := tex.get_image()
+			if img != null:
+				var used := img.get_used_rect()
+				if used.size.x > 0 and used.size.y > 0 \
+						and used.size.x <= 180 and used.size.y <= 180:
+					atlas.region = used
 			_textures[expr] = atlas
 		else:
 			_textures[expr] = null
