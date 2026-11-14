@@ -250,3 +250,5 @@ VEGA must deliver:
 Then ATLAS runs:
 `godot --headless --path . -s tools/water_probe.gd -- --seeds=26758 --biome=temperate --diagcheck`
 and posts `diag_missing_by_key = {}` in BOARD/WORKLOG. Keep the existing `temperate_grass_*` sets for inland lakes.
+
+**Status 15:15:** pass 1 (ash recolour + 16 talus lobes) is WIP, not accepted. Disc still readable, side boulders detached, top corners empty. Next: new cone drawn without any base/terrace primitive; generate apron as continuous ridges/ash flats connecting into all four corners. Geyser lineage shares the same replacement generator.
