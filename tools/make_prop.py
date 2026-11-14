@@ -141,7 +141,7 @@ def outline_rgba(rgba: np.ndarray, colour: tuple[int, int, int]) -> np.ndarray:
 def build(input_path: Path, out_path: Path, size: int, fill: float,
           biome: str | None, palette_spec: str | None, outline: str,
           shadow: float, seed_darken: int = 0, height: int | None = None,
-          tolerance: float = 42.0) -> None:
+          tolerance: float = 42.0, key_interior: bool = False) -> None:
     out_h = height if height else size
     src = Image.open(input_path).convert("RGB")
     rgb = np.asarray(src, dtype=np.int32)
@@ -150,6 +150,8 @@ def build(input_path: Path, out_path: Path, size: int, fill: float,
     mask = dist > tolerance
     mask = key_backdrop_and_shadow(mask, rgb, bg)
     keep = largest_component(mask)
+    if key_interior:
+        keep = keep & (dist > tolerance * 0.8)
 
     # Composite the isolated object on transparency at source resolution.
     rgba = np.dstack([np.asarray(src, dtype=np.uint8), (keep * 255).astype(np.uint8)])
@@ -213,6 +215,8 @@ def main() -> None:
     p.add_argument("--biome", default=None, help="palette name from tools/palettes.json")
     p.add_argument("--palette", default=None, help="comma-separated hex colours")
     p.add_argument("--outline", default="16,20,14", help="r,g,b outline colour")
+    p.add_argument("--key-interior", action="store_true",
+                   help="also punch through background-coloured holes (arch openings)")
     p.add_argument("--tolerance", type=float, default=42.0,
                    help="background colour distance that counts as 'not object'")
     p.add_argument("--shadow", type=float, default=0.0,
@@ -222,7 +226,7 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     build(args.input, args.out, args.size, args.fill, args.biome,
           args.palette, args.outline, args.shadow, height=args.height,
-          tolerance=args.tolerance)
+          tolerance=args.tolerance, key_interior=args.key_interior)
 
 
 if __name__ == "__main__":

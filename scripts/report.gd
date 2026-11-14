@@ -173,23 +173,28 @@ func _build_ledger() -> void:
 			int(GameState.run.get("approval", 0)),
 			int(cm["level"]), str(cm["label"]),
 		], 7, UIKit.MUTED, false)
-	stats.position = Vector2(12, 130)
-	stats.size = Vector2(300, 64)
-	stats.add_theme_constant_override("line_spacing", 2)
+	stats.position = Vector2(12, 142)
+	stats.size = Vector2(300, 54)
+	stats.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	stats.add_theme_constant_override("line_spacing", 0)
 	c.add_child(stats)
 
 	var last_planet: Dictionary = {}
 	if not GameState.history.is_empty():
 		last_planet = GameState.history[GameState.history.size() - 1].get("planet", {})
-	var orbit_line := "ORBIT PROFILE  ·  LOW"
+	var orbit_line := "ORBIT  LOW · 400 KM · 109 MIN · 34% ECLIPSE"
 	if not last_planet.is_empty():
-		orbit_line = GameState.orbit_summary(last_planet)
+		var st := GameState.orbit_stats(last_planet)
+		orbit_line = "ORBIT  %s · %d KM · %d MIN · %d%% ECLIPSE" % [
+			str(st["label"]), int(st["alt_km"]), int(st["period_min"]), int(st["eclipse"])
+		]
 	var notes := UIKit.label(
 		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nANALOG  %s\nTEQ drives thermal load · gravity drives delta-v." % [orbit_line, GameState.objective_analog().to_upper()],
 		6, UIKit.DIM, false)
-	notes.position = Vector2(12, 198)
-	notes.size = Vector2(320, 44)
-	notes.add_theme_constant_override("line_spacing", 1)
+	notes.position = Vector2(12, 200)
+	notes.size = Vector2(320, 46)
+	notes.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	notes.add_theme_constant_override("line_spacing", 0)
 	c.add_child(notes)
 
 
