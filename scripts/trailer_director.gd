@@ -221,20 +221,24 @@ func _shot_launch() -> void:
 
 func _shot_sector(biome: String) -> void:
 	_prepared_run(biome)
+	# A trailer sector is a highlight reel, not a rules demo: raise the quota
+	# so the run does not self-extract after three moves, and keep the planet
+	# name honest on the HUD.
+	GameState.current_sector["quota"] = 6
 	get_tree().change_scene_to_file("res://scenes/sector.tscn")
 	await _scene_ready()
-	await _wait(1.6)
+	await _wait(2.2)
 	_mark("sector.settled")
 	var taken := 0
-	for i in range(18):
+	for i in range(14):
 		if not _sector_alive():
 			break
-		_sector_preview_move(i == 3)
+		_sector_preview_move(i == 2)
 		_mark("move_%d.preview" % (i + 1))
-		await _wait(1.15)
+		await _wait(1.3)
 		_sector_commit()
 		_mark("move_%d.commit" % (i + 1))
-		await _wait(1.25)
+		await _wait(1.45)
 		taken += 1
 		var sec: Dictionary = get_tree().current_scene.get("sec")
 		if int(sec.get("data", 0)) >= int(sec.get("quota", 3)):

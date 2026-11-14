@@ -26,6 +26,7 @@ var _sig := ""
 var _first := true
 var _arsenal: Control
 var _arsenal_layer: CanvasLayer
+var _more: Button
 var arsenal_open := false
 
 
@@ -33,6 +34,29 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	size = Vector2(COL * 3.0, STEP * MAX_ROWS)
 	GameState.changed.connect(_on_state_changed)
+
+	# A single porthole at the foot of the rack opens the full sheet. Icons
+	# alone do not advertise that a readable list exists.
+	_more = Button.new()
+	_more.text = "\u2261"
+	_more.focus_mode = Control.FOCUS_NONE
+	_more.position = Vector2(0, STEP * MAX_ROWS + 2.0)
+	_more.size = Vector2(CHIP, 15)
+	_more.add_theme_font_override("font", UIKit.body_font)
+	_more.add_theme_font_size_override("font_size", 10)
+	_more.add_theme_color_override("font_color", UIKit.MUTED_C)
+	_more.add_theme_color_override("font_hover_color", UIKit.CREAM)
+	_more.add_theme_stylebox_override("normal", _chip_style(UIKit.STEEL, false))
+	_more.add_theme_stylebox_override("hover", _chip_style(UIKit.CYAN, true))
+	_more.add_theme_stylebox_override("pressed", _chip_style(UIKit.CYAN, true))
+	_more.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	_more.mouse_filter = Control.MOUSE_FILTER_STOP
+	_more.pressed.connect(toggle_arsenal)
+	_more.visible = false
+	add_child(_more)
+	UIKit.hover_info(_more, "ARSENAL",
+		"Open the full installed-systems sheet.\nEvery refit and field commission is listed with its exact effect.\n\nTAB or click any chip also opens this.",
+		UIKit.CYAN)
 
 
 func _on_state_changed() -> void:
@@ -63,6 +87,11 @@ func refresh() -> void:
 			c.queue_free()
 	_chips.clear()
 	_entries = _collect()
+	if "--rack-dump" in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		var dump: Array[String] = []
+		for e in _entries:
+			dump.append("%s x%d" % [str(e["id"]), int(e["count"])])
+		print("RACK ", " | ".join(dump))
 	var counts: Dictionary = {}
 	for i in range(_entries.size()):
 		var e: Dictionary = _entries[i]
@@ -83,6 +112,8 @@ func refresh() -> void:
 			_flash(chip, e["accent"])
 	_known = counts
 	_first = false
+	if _more != null:
+		_more.visible = not _entries.is_empty()
 	if arsenal_open:
 		_rebuild_arsenal()
 

@@ -83,6 +83,7 @@ var _major_hazard_seen := false
 var message_color := Color("#54e6d1")
 var toast_label: Label
 var _toast_tween: Tween
+var _sector_hint := ""
 var fx_layer: Node2D
 var vfx_layer: Node2D
 var pad_beacon: Node2D
@@ -337,6 +338,13 @@ func _start_sector() -> void:
 	_reveal_around(player_cell, 5)
 	_spawn_hazard()
 	_choose_extract_cell()
+	# Set the first-turn hint before the first HUD refresh so it lands in the
+	# bottom line instead of as a board-overlay toast.
+	_sector_hint = ""
+	if bool(sec.get("shakedown", false)):
+		_sector_hint = "SHAKEDOWN // +2 HULL · CYAN PAD = EXIT"
+	elif extract_cell != start_cell:
+		_sector_hint = "CYAN PAD = EXIT"
 	_update_chunks()
 	_render_window()
 	_refresh_all()
@@ -344,10 +352,6 @@ func _start_sector() -> void:
 	_spawn_pad_beacon()
 	_play_landing()
 	_show_rig_feedback()
-	if bool(sec.get("shakedown", false)):
-		_show_toast("SHAKEDOWN // +2 HULL · RANGE %d · CYAN PAD = EXTRACT" % move_range, UIKit.CYAN)
-	elif extract_cell != start_cell:
-		_show_toast("EXTRACTION PAD MARKED · CYAN", UIKit.CYAN)
 
 
 func _show_rig_feedback() -> void:
@@ -900,6 +904,8 @@ func _refresh_status() -> void:
 		return
 	var quota := int(sec["quota"])
 	var base := "TURN %d · RANGE %d" % [turn, _current_range()]
+	if _sector_hint != "" and turn == 1 and not moved:
+		base = "%s · %s" % [base, _sector_hint]
 	var threat := float(sec.get("threat", 1.0))
 	if threat > 1.01:
 		base += " · THREAT %.1fx" % threat

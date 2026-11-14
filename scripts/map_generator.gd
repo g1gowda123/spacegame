@@ -133,7 +133,7 @@ var BIOMES: Array = [
 	# later without changing the generator.
 	{
 		"id": "methane", "name": "Methane Lakes", "profile": "temperate", "generator": "continents",
-		"life": "lifeless", "shore_ring": true,
+		"life": "lifeless", "shore_ring": true, "water_level": 0.06,
 		"tint": "#63d6c4", "tint_strength": 0.10, "exposure": 1.0,
 		"base": "methane/flat",
 		"base_variants": ["methane/flat", "methane/frost_crust", "methane/mud", "methane/seep"],
@@ -182,7 +182,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ammonia", "name": "Ammonia Ice", "profile": "cryo", "generator": "fractured",
-		"life": "lifeless", "shore_ring": true,
+		"life": "lifeless", "shore_ring": true, "water_level": 0.02,
 		"tint": "#72c8e8", "tint_strength": 0.10, "exposure": 1.10,
 		"base": "ammonia/slush",
 		"base_variants": ["ammonia/slush", "ammonia/frost", "ammonia/vapor_crust", "ammonia/white_crust"],
@@ -1987,7 +1987,7 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 		"temperate":
 			# Keep the rare biosphere mostly walkable: lakes are punctuation,
 			# not the dominant surface.
-			if water != "" and wet < -0.30:
+			if water != "" and wet < float(b.get("water_level", -0.30)):
 				return water
 			if elev > 0.50 and rock != "":
 				return _rock_choice(b, det)
@@ -2001,7 +2001,7 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 				return _rock_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"cryo":
-			if water != "" and wet < -0.34:
+			if water != "" and wet < float(b.get("water_level", -0.34)):
 				return water
 			# Cracks are the low shelves. Keep the plateau on the smooth ice
 			# base: cryo/rock is a high-frequency speckle tile and turns the

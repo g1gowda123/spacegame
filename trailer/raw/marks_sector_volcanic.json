@@ -1,0 +1,48 @@
+{
+  "fps": 30,
+  "marks": [
+    {
+      "id": "sector.settled",
+      "t": 1.758
+    },
+    {
+      "id": "move_1.preview",
+      "t": 1.758
+    },
+    {
+      "id": "move_1.commit",
+      "t": 2.925
+    },
+    {
+      "id": "move_2.preview",
+      "t": 4.192
+    },
+    {
+      "id": "move_2.commit",
+      "t": 5.358
+    },
+    {
+      "id": "move_3.preview",
+      "t": 6.625
+    },
+    {
+      "id": "move_3.commit",
+      "t": 7.792
+    },
+    {
+      "id": "extract.press",
+      "t": 9.058
+    },
+    {
+      "id": "sector.end",
+      "t": 12.292
+    },
+    {
+      "id": "end",
+      "t": 12.925
+    }
+  ],
+  "seconds": 12.925,
+  "seed": 20261115,
+  "shot": "sector_volcanic"
+}
