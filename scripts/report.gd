@@ -26,7 +26,7 @@ func _build() -> void:
 	})
 	bg.modulate.a = 0.20
 
-	var title := UIKit.head("FINAL MISSION REPORT", 12, UIKit.TEXT)
+	var title := UIKit.head("FINAL MISSION REPORT", 12, UIKit.NIGHT_TEXT)
 	title.position = Vector2(10, 6)
 	title.size = Vector2(300, 18)
 	add_child(title)
@@ -38,7 +38,7 @@ func _build() -> void:
 		"ORBIT + OUTPLAY  ·  NASA SPACE APPS 2026  ·  %s  ·  %s  ·  %d PLAYER%s" % [
 			mode_label, diff_name, int(GameState.run.get("players", 1)),
 			"" if int(GameState.run.get("players", 1)) == 1 else "S",
-		], 7, UIKit.DIM)
+		], 7, UIKit.NIGHT_MUTED)
 	sub.position = Vector2(10, 22)
 	add_child(sub)
 	sub.size = Vector2(600, 16)
@@ -53,29 +53,25 @@ func _build_grade() -> void:
 	var c := UIKit.fill(p)
 
 	var g := str(score.get("grade", "C"))
-	var gc := UIKit.CYAN
-	if g == "S":
-		gc = UIKit.CYAN
-	elif g == "A":
-		gc = UIKit.GREEN
-	elif g == "B":
-		gc = UIKit.AMBER
-	else:
-		gc = UIKit.RED
+	var gc := UIKit.ORANGE_DARK
+	if g == "B":
+		gc = UIKit.TEAL
+	elif g != "S" and g != "A":
+		gc = UIKit.SIGNAL
 	var grade := UIKit.label(g, 58, gc, true, HORIZONTAL_ALIGNMENT_CENTER)
 	grade.position = Vector2(0, 0)
 	grade.size = Vector2(266, 70)
 	c.add_child(grade)
-	var gl := UIKit.label("AGENCY GRADE", 7, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var gl := UIKit.label("AGENCY GRADE", 7, UIKit.INK_SOFT, true, HORIZONTAL_ALIGNMENT_CENTER)
 	gl.position = Vector2(0, 66)
 	gl.size = Vector2(266, 12)
 	c.add_child(gl)
 
-	var total := UIKit.label("%d" % int(score.get("total", 0)), 26, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var total := UIKit.label("%d" % int(score.get("total", 0)), 26, UIKit.INK, true, HORIZONTAL_ALIGNMENT_CENTER)
 	total.position = Vector2(0, 84)
 	total.size = Vector2(266, 32)
 	c.add_child(total)
-	var tl := UIKit.label("TOTAL SCORE", 7, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var tl := UIKit.label("TOTAL SCORE", 7, UIKit.INK_SOFT, true, HORIZONTAL_ALIGNMENT_CENTER)
 	tl.position = Vector2(0, 114)
 	tl.size = Vector2(266, 12)
 	c.add_child(tl)
@@ -89,7 +85,7 @@ func _build_grade() -> void:
 		["COMPLETION/SWEEP", "+%d" % (int(score.get("completion", 0)) + (400 if int(score.get("successes", 0)) >= GameState.SECTORS_PER_RUN else 0)), UIKit.TEXT],
 	]
 	if int(score.get("risk", 0)) > 0:
-		rows.append(["RISK BONUS", "+%d" % int(score.get("risk", 0)), UIKit.AMBER])
+		rows.append(["RISK BONUS", "+%d" % int(score.get("risk", 0)), UIKit.ORANGE_DARK])
 	if int(score.get("crew_bonus", 0)) > 0 or int(GameState.run.get("players", 1)) > 1:
 		rows.append([
 			"CREW GOALS %d/%d" % [CrewDirector.achieved_goals(), CrewDirector.total_goals()],
@@ -99,7 +95,7 @@ func _build_grade() -> void:
 		"%+d" % int(score.get("difficulty_delta", 0)), UIKit.MUTED])
 	var y := 132.0
 	for row in rows:
-		var l := UIKit.label(str(row[0]), 7, UIKit.MUTED, true)
+		var l := UIKit.label(str(row[0]), 7, UIKit.INK_SOFT, true)
 		l.position = Vector2(14, y)
 		l.size = Vector2(130, 12)
 		c.add_child(l)
@@ -124,11 +120,11 @@ func _build_ledger() -> void:
 	var p := UIKit.sheet(self, 286, 42, 344, 249)
 	var c := UIKit.fill(p)
 
-	var h := UIKit.head("SECTOR LEDGER", 9, UIKit.AMBER)
+	var h := UIKit.head("SECTOR LEDGER", 9, UIKit.ORANGE_DARK)
 	h.position = Vector2(12, 7)
 	h.size = Vector2(220, 12)
 	c.add_child(h)
-	var best := UIKit.mono("BEST %d" % int(GameState.best_score), 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	var best := UIKit.mono("BEST %d" % int(GameState.best_score), 7, UIKit.INK_SOFT, HORIZONTAL_ALIGNMENT_RIGHT)
 	best.position = Vector2(196, 8)
 	best.size = Vector2(122, 12)
 	c.add_child(best)
@@ -139,12 +135,12 @@ func _build_ledger() -> void:
 			var hrow: Dictionary = GameState.history[i]
 			var ok := bool(hrow.get("success", false))
 			var planet: Dictionary = hrow.get("planet", {})
-			var num := UIKit.label("%02d" % (i + 1), 8, UIKit.DIM, true)
+			var num := UIKit.label("%02d" % (i + 1), 8, UIKit.INK_FAINT, true)
 			num.position = Vector2(12, y + 1)
 			num.size = Vector2(22, 12)
 			c.add_child(num)
 			var nm := UIKit.label(str(planet.get("name", "—")), 8,
-				UIKit.TEXT if ok else UIKit.RED, false)
+				UIKit.INK if ok else UIKit.SIGNAL, false)
 			nm.position = Vector2(36, y + 1)
 			nm.size = Vector2(150, 12)
 			c.add_child(nm)
@@ -153,7 +149,7 @@ func _build_ledger() -> void:
 			dat.position = Vector2(190, y + 1)
 			dat.size = Vector2(46, 12)
 			c.add_child(dat)
-			var gr := UIKit.label("+$%dM" % int(hrow.get("grant", 0)), 8, UIKit.AMBER, true,
+			var gr := UIKit.label("+$%dM" % int(hrow.get("grant", 0)), 8, UIKit.ORANGE_DARK, true,
 				HORIZONTAL_ALIGNMENT_RIGHT)
 			gr.position = Vector2(240, y + 1)
 			gr.size = Vector2(92, 12)
@@ -176,7 +172,7 @@ func _build_ledger() -> void:
 		story = "No data recovered. The review board\nis drafting a shutdown memo."
 	if int(GameState.run.get("approval", 0)) <= 0:
 		story = "Approval collapsed. The agency has\nbeen defunded."
-	var narrative := UIKit.mono(story, 8, UIKit.TEXT)
+	var narrative := UIKit.mono(story, 8, UIKit.INK)
 	narrative.position = Vector2(12, 98)
 	narrative.size = Vector2(320, 30)
 	narrative.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -197,7 +193,7 @@ func _build_ledger() -> void:
 			int(GameState.run.get("budget", 0)),
 			int(GameState.run.get("approval", 0)),
 			int(cm["level"]), str(cm["label"]), risk_note,
-		], 7, UIKit.MUTED, false)
+		], 7, UIKit.INK_SOFT, false)
 	stats.position = Vector2(12, 146)
 	stats.size = Vector2(300, 64)
 	stats.vertical_alignment = VERTICAL_ALIGNMENT_TOP
@@ -234,21 +230,18 @@ func _hr(x: float, y: float, w: float) -> HSeparator:
 
 
 func _build_footer() -> void:
-	var p := UIKit.panel(Color("#0b1522"), UIKit.SHEET_LINE)
-	p.position = Vector2(10, 299)
-	p.size = Vector2(620, 52)
-	add_child(p)
+	var p := UIKit.sheet(self, 10, 299, 620, 52)
 	var c := UIKit.fill(p)
 
 	var l := UIKit.head(
 		"THE CAMPAIGN IS OVER  ·  YOUR AGENCY'S RECORD IS FILED",
-		8, UIKit.CYAN)
+		8, UIKit.SIGNAL)
 	l.position = Vector2(12, 8)
 	l.size = Vector2(360, 12)
 	c.add_child(l)
 	var s := UIKit.mono(
 		"CAMPAIGN CODE  %s  ·  SAME WORLDS + STACK  ·  PRESS C TO COPY" % share_code,
-		7, UIKit.MUTED)
+		7, UIKit.INK_SOFT)
 	s.position = Vector2(12, 23)
 	s.size = Vector2(420, 14)
 	s.name = "ShareLine"

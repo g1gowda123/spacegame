@@ -19,8 +19,17 @@ func _ready() -> void:
 	_build()
 	_select_first()
 	_refresh()
+	if "--capture" in OS.get_cmdline_args() or "--capture" in OS.get_cmdline_user_args():
+		# Capture starts with the pointer at screen centre, which can sit on a
+		# planet card. Dismiss the dossier so the evidence frame shows the board.
+		call_deferred("_hide_tips_for_capture")
 	if "--review" in OS.get_cmdline_args() or "--review" in OS.get_cmdline_user_args():
 		_show_mission_review()
+
+
+func _hide_tips_for_capture() -> void:
+	Input.warp_mouse(Vector2(2, 2))
+	UITip.hide_tip()
 
 
 func _build() -> void:
@@ -84,7 +93,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var name := UIKit.label(str(p["name"]), 9, UIKit.INK, true, HORIZONTAL_ALIGNMENT_CENTER)
 	name.position = Vector2(4, 72)
-	name.size = Vector2(188, 13)
+	name.size = Vector2(180, 13)
 	c.add_child(name)
 
 	var star_type := str(p.get("star_type", "")).strip_edges()
@@ -97,7 +106,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		8, UIKit.INK_SOFT, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	type_line.position = Vector2(4, 92)
-	type_line.size = Vector2(188, 11)
+	type_line.size = Vector2(180, 11)
 	c.add_child(type_line)
 
 
@@ -117,7 +126,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var risk := UIKit.label("%s  ·  THREAT %d" % [tag, int(round(threat))], 6, tag_color, true,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	risk.position = Vector2(4, 110)
-	risk.size = Vector2(188, 12)
+	risk.size = Vector2(180, 12)
 	c.add_child(risk)
 
 	_stat(c, 124, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
@@ -133,7 +142,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var mark := UIKit.mono("SELECT", 7, UIKit.INK_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	mark.position = Vector2(10, 212)
-	mark.size = Vector2(176, 12)
+	mark.size = Vector2(172, 12)
 	c.add_child(mark)
 
 	var overlay := Button.new()
@@ -185,14 +194,14 @@ func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
 func _stat(c: Control, y: float, name: String, value: String, frac: float, color: Color) -> void:
 	var l := UIKit.mono(name, 7, UIKit.INK_SOFT)
 	l.position = Vector2(10, y)
-	l.size = Vector2(80, 11)
+	l.size = Vector2(74, 11)
 	c.add_child(l)
 	var bar := UIKit.bar(46, 4, UIKit.TEAL)
-	bar.position = Vector2(92, y + 3)
+	bar.position = Vector2(88, y + 3)
 	c.add_child(bar)
 	UIKit.set_bar(bar, clampf(frac, 0.0, 1.0) * 100.0, 100.0)
 	var v := UIKit.mono(value, 8, color, HORIZONTAL_ALIGNMENT_RIGHT)
-	v.position = Vector2(142, y)
+	v.position = Vector2(136, y)
 	v.size = Vector2(44, 11)
 	c.add_child(v)
 
@@ -212,7 +221,7 @@ func _build_footer() -> void:
 	c.add_child(detail_label)
 
 	confirm_btn = UIKit.button("SET COURSE >", Vector2(130, 22), true)
-	confirm_btn.position = Vector2(482, 6)
+	confirm_btn.position = Vector2(470, 6)
 	confirm_btn.disabled = true
 	confirm_btn.pressed.connect(_confirm)
 	c.add_child(confirm_btn)

@@ -58,6 +58,11 @@ static func _close(host: Control) -> void:
 	_inst.visible = false
 
 
+static func hide_tip() -> void:
+	if _inst != null and is_instance_valid(_inst):
+		_inst.visible = false
+
+
 func _init() -> void:
 	layer = 60
 	_panel = PanelContainer.new()

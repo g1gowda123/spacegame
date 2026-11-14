@@ -64,15 +64,15 @@ func _build() -> void:
 
 	budget_label = UIKit.head("BUDGET $500M", 10, UIKit.AMBER,
 		HORIZONTAL_ALIGNMENT_RIGHT)
-	budget_label.position = Vector2(490, 5)
-	budget_label.size = Vector2(140, 15)
+	budget_label.position = Vector2(470, 5)
+	budget_label.size = Vector2(160, 15)
 	add_child(budget_label)
 	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.NIGHT_MUTED,
 		HORIZONTAL_ALIGNMENT_RIGHT)
-	appr.position = Vector2(490, 20)
-	appr.size = Vector2(140, 12)
+	appr.position = Vector2(470, 20)
+	appr.size = Vector2(160, 12)
 	add_child(appr)
-	UIKit.hairline(self, 10, 36, 620, UIKit.NIGHT_LINE)
+	UIKit.hairline(self, 10, 36, 610, UIKit.NIGHT_LINE)
 
 	_build_left()
 	_build_center()
