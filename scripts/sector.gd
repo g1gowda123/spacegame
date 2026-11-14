@@ -776,6 +776,11 @@ func _advance_hazards() -> void:
 					VFX.dust(vfx_layer, _cell_center(old_origin),
 						Color(col.r, col.g, col.b, 0.45), 5, 16.0)
 		h["age"] = age + 1
+		if age == 0 and vfx_layer != null and not h["cells"].is_empty():
+			# FORMING -> ARMED: a single ring at the front's centre is the cue
+			# that the telegraph is now live.
+			var arm_col: Color = h["info"]["color"]
+			VFX.ring(vfx_layer, _cell_center(h["origin"]), arm_col, 24.0, 0.4, 1.8)
 		if int(h["life"]) > 0 and not h["cells"].is_empty():
 			var visible := false
 			for c in h["cells"]:
