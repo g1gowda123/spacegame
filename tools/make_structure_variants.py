@@ -21,8 +21,8 @@ from make_structure_pieces import spec  # noqa: E402
 S = ROOT / "assets" / "tilesets" / "structures"
 OUT = S / "variants"
 KEYS = {
-    "crystal_outcrop": "crystal",
-    "coral_spire": "ocean",
+    "crystal_outcrop": "obsidian",
+    "coral_spire": "ocean_coral",
     "iceberg": "cryo",
     "mesa": "arid",
     "mountain_range": "temperate",

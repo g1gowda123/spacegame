@@ -1,0 +1,137 @@
+{
+  "purpose": "silhouette variants so structures do not repeat",
+  "keys": {
+    "crystal_outcrop": [
+      {
+        "file": "res://assets/tilesets/structures/crystal_outcrop.png",
+        "role": "base"
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/crystal_outcrop_v2.png",
+        "role": "v2",
+        "size": [
+          131,
+          131
+        ]
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/crystal_outcrop_v3.png",
+        "role": "v3",
+        "size": [
+          123,
+          123
+        ]
+      }
+    ],
+    "coral_spire": [
+      {
+        "file": "res://assets/tilesets/structures/coral_spire.png",
+        "role": "base"
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/coral_spire_v2.png",
+        "role": "v2",
+        "size": [
+          124,
+          124
+        ]
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/coral_spire_v3.png",
+        "role": "v3",
+        "size": [
+          132,
+          132
+        ]
+      }
+    ],
+    "iceberg": [
+      {
+        "file": "res://assets/tilesets/structures/iceberg.png",
+        "role": "base"
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/iceberg_v2.png",
+        "role": "v2",
+        "size": [
+          128,
+          128
+        ]
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/iceberg_v3.png",
+        "role": "v3",
+        "size": [
+          127,
+          127
+        ]
+      }
+    ],
+    "mesa": [
+      {
+        "file": "res://assets/tilesets/structures/mesa.png",
+        "role": "base"
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/mesa_v2.png",
+        "role": "v2",
+        "size": [
+          121,
+          121
+        ]
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/mesa_v3.png",
+        "role": "v3",
+        "size": [
+          121,
+          121
+        ]
+      }
+    ],
+    "mountain_range": [
+      {
+        "file": "res://assets/tilesets/structures/mountain_range.png",
+        "role": "base"
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/mountain_range_v2.png",
+        "role": "v2",
+        "size": [
+          121,
+          121
+        ]
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/mountain_range_v3.png",
+        "role": "v3",
+        "size": [
+          133,
+          133
+        ]
+      }
+    ],
+    "geyser": [
+      {
+        "file": "res://assets/tilesets/structures/geyser.png",
+        "role": "base"
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/geyser_v2.png",
+        "role": "v2",
+        "size": [
+          133,
+          133
+        ]
+      },
+      {
+        "file": "res://assets/tilesets/structures/variants/geyser_v3.png",
+        "role": "v3",
+        "size": [
+          123,
+          123
+        ]
+      }
+    ]
+  }
+}
