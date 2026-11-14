@@ -215,3 +215,29 @@ Boss: the ship should update automatically from the upgrades received after a pl
 | Final report prints completed build and tier | **DONE 15:03** | NOVA | `report.gd` SHIP row |
 | Full-flow proof: 3 sectors, buy, next planet, stats + report | **DONE 15:03** | NOVA | `--screen=flowtest`: range 3→4, total 4963, grade A, 3 successes |
 | Deep Data Buffer actually applies its comms promise | **DONE 15:04** | NOVA | `comms_bonus: 4` + `ship()` buffer branch; previously only a design-screen stat |
+
+## VEGA — grounded structure pass (ATLAS request, 15:12)
+
+**Problem (from user, m07249/m07307/m07316):** large structures read as sprites pasted on the ground. The worst offenders are the volcano's brown circular plinth and the cyan geyser/methane vents, which sit on perfect round discs. The 4×4 footprint also leaves grassy empty corners because the art only fills a circle.
+
+**Direction:** real terrain never has a perfect circular platform. Replace every built-in plinth with an asymmetric, partially buried apron that spills into the footprint corners. The volcano should be designed as a **square 4×4 tile composition**, not a round icon on a square tile.
+
+### 1. Volcano 4×4 — priority
+- Output: `assets/tilesets/structures/assembled_volcano_4x4.png` and `assets/tilesets/structures/pieces/volcano_r*c*.png`.
+- Keep the existing 4×4 / 16-piece / 64 px contract (`assets/tilesets/structures/pieces/manifest.json`), so `map_generator._add_piece_sprites()` needs no change.
+- Remove the brown circular disc completely. Build the base from 4–8 irregular cooled-basalt lobes, ash/talus fans, and one or two lava channels that reach toward the tile edges. The contact line must be broken and asymmetric, with rubble partially covering it.
+- Use the empty 4×4 corners: low caldera rim, ash drifts, broken crust, or lava seams. Do not leave transparent/grassy holes inside the footprint, and do not add a hard square border either.
+- Keep the vent/summit off-center; visible crater; no text/UI; nearest-filter pixel art; derive colors from `volcanic/ash_rim`, `volcanic/basalt_shelf`, `volcanic/lava_core`, `volcanic/lava_glow`.
+- No baked ground shadow (the renderer owns the contact ellipse), but bake a little ambient occlusion where the rock meets the soil.
+
+### 2. Rounded-base audit — same pass
+Rebuild the base silhouette, not just the shadow, for:
+- `geyser.png`, `geyser_field.png`, `methane_vent.png` — remove the brown/stone circular pad under the cyan cone; replace with a fractured sinter terrace / mineral crust that merges into the ground.
+- `basalt_columns.png`, `mesa.png`, `mesa_b.png`, `iceberg.png`, `islet.png`, `coral_spire.png`, `crystal_outcrop.png`, `impact_crater.png`, `mountain_range.png` — check for disc plinths and replace with talus, eroded feet, or broken shelves. `impact_crater` should read as a depression, not a platform.
+- Small props keep their contact ellipse; do not add flat oval pedestals.
+
+### 3. Acceptance
+- 3×3 contact sheet on volcanic, temperate and cryo ground at native map scale; no visible circle, no floating edge, no hard square frame.
+- `assembled_volcano_4x4.png` is 256×256 (or the existing piece grid), pieces align at 64 px, and the bottom-row z-order is unchanged.
+- Save previews/evidence under `/tmp/opencode/vega_grounded_*`; update the manifest only if the footprint changes.
+- Do not re-export or touch `map_generator.gd`; ATLAS will wire/test after d's 14:58 gate QA.

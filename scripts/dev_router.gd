@@ -54,6 +54,11 @@ func _run_flowtest() -> void:
 			GameState.begin_sector(GameState.draft[0])
 	var score := GameState.calculate_score()
 	print("SHIPFLOW report total=", score["total"], " grade=", score["grade"], " successes=", score["successes"])
+	GameState.owned = []
+	var before := GameState.ship()
+	GameState.owned = ["rtg", "armor", "radiator", "wheel", "buffer"]
+	var after := GameState.ship()
+	print("SHIPFLOW stats power_regen=", int(before["power_regen"]), "->", int(after["power_regen"]), " integrity=", int(before["integrity"]), "->", int(after["integrity"]), " thermal=", int(before["thermal_res"]), "->", int(after["thermal_res"]), " dv=", int(before["delta_v"]), "->", int(after["delta_v"]), " comms=", int(before["comms_bonus"]), "->", int(after["comms_bonus"]))
 	get_tree().quit()
 
 
