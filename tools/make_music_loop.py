@@ -413,6 +413,41 @@ def run(args: argparse.Namespace) -> int:
     return 0
 
 
+def check(args: argparse.Namespace) -> int:
+    """Measure an existing loop: no trim, no encode, no writes."""
+    path = Path(args.check_path)
+    y = decode(path)
+    seconds = len(y) / SR
+    _loop_len, bar_seconds, loop_seconds = loop_layout(args.bpm, args.bars, args.beats)
+    loud = measure(y)
+    seam = seam_report(y, 0)
+    problems, warnings = gate(seam)
+    bars_actual = seconds / bar_seconds
+    if abs(bars_actual - args.bars) > 0.02:
+        problems.append(
+            f"{bars_actual:.2f} bars at {args.bpm:g} bpm, expected {args.bars} "
+            f"({seconds:.3f} s vs {loop_seconds:.3f} s)")
+    if loud["true_peak"] > TARGET_TP:
+        problems.append(
+            f"true peak {loud['true_peak']:.2f} dBTP exceeds the {TARGET_TP:.1f} "
+            f"ceiling by {loud['true_peak'] - TARGET_TP:.2f} dB")
+    if abs(loud["lufs"] - TARGET_LUFS) > 0.5:
+        warnings.append(
+            f"{loud['lufs']:.2f} LUFS against a {TARGET_LUFS:.0f} target "
+            f"({loud['lufs'] - TARGET_LUFS:+.2f} dB) - cue changes will step in level")
+    print(f"{display_path(path)}: {seconds:.3f} s ({bars_actual:.2f} bars at "
+          f"{args.bpm:g} bpm), {loud['lufs']:.2f} LUFS, {loud['true_peak']:.2f} dBTP, "
+          f"{path.stat().st_size / 1024:.0f} KiB")
+    print(f"  seam  wrap {seam['wrap_delta_dbfs']:.1f} dBFS vs baseline "
+          f"{seam['baseline_dbfs']:.1f} ({seam['wrap_vs_baseline_db']:+.1f} dB), "
+          f"rms step {seam['rms_step_db']:.2f} dB, mono {seam['mono_delta_db']:+.2f} dB")
+    for w in warnings:
+        print(f"  WARN {w}")
+    for p in problems:
+        print(f"  FAIL {p}", file=sys.stderr)
+    return 1 if problems else 0
+
+
 # ---------------------------------------------------------------------------
 # self-test: no ComfyUI, no GPU, no generated audio needed
 # ---------------------------------------------------------------------------
@@ -534,12 +569,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--prompt", default="", help="generation prompt, for the sidecar")
     ap.add_argument("--force", action="store_true",
                     help="replace an existing/accepted cue")
+    ap.add_argument("--check", dest="check_path", metavar="FILE",
+                    help="measure an existing loop instead of writing one")
     ap.add_argument("--selftest", action="store_true",
                     help="run the synthetic end-to-end check and exit")
     args = ap.parse_args(argv)
 
     if args.selftest:
         return selftest()
+    if args.check_path:
+        return check(args)
     if not args.input:
         ap.error("--in is required (or --selftest)")
     if not args.cue and not args.out:

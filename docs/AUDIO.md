@@ -82,6 +82,13 @@ Sound direction ("Cold Signal"): agency-electronica, not space-opera. Analog
 pads, FM bells, sub pulse, brushed noise, sonar pings, telemetry blips. Quiet
 enough that the UI clicks and the hazard thud sit on top of it.
 
+**What actually shipped is 84 BPM / 24 bars**, not the 100 BPM / 32 bars above:
+the three beds in `assets/music/` are 68.571 s each (24.00 bars at 84 BPM), and
+`scripts/music_director.gd` documents the 2 s crossfade as "lands within a bar at
+84 BPM". The tempo change is fine — it is the shipped, working choice — but the
+numbers in this section are the original spec, not the delivery. Measurements of
+the delivery are in §5.1.
+
 ---
 
 ## 4. Prompt recipes (copy-paste)
@@ -181,6 +188,39 @@ Two decisions worth keeping:
 `ffmpeg` 8.x/9.x is already on the box; the tool is build-time only, so it adds
 no runtime dependency. Everything is stdlib + numpy — no `soundfile`, no
 `pydub`, no ffmpeg-python.
+
+### 5.1 The shipped beds, measured (18:55)
+
+`f` landed three loops in `7f7cbc8` (`assets/music/title.ogg`, `sector.ogg`,
+`debrief.ogg` + `scripts/music_director.gd`). They were not mastered with this
+tool, so here is the independent measurement — `python tools/make_music_loop.py
+--check <file> --bpm 84 --bars 24`, which reads the shipped OGG and writes
+nothing:
+
+| bed | length | bars @84 | LUFS | true peak | seam wrap vs baseline | mono | size |
+|---|---|---|---|---|---|---|---|
+| `title` | 68.571 s | 24.00 | −15.74 | −3.71 dBTP | −15.7 dB | +0.09 dB | 208 KiB |
+| `sector` | 68.571 s | 24.00 | −16.90 | **−0.60 dBTP** | −18.3 dB | +0.02 dB | 349 KiB |
+| `debrief` | 68.571 s | 24.00 | −16.91 | −3.34 dBTP | −14.4 dB | +0.04 dB | 231 KiB |
+
+- **Seams are clean.** In all three, wrapping the file is 14–18 dB *smaller* than
+  the largest adjacent-sample step already inside it — the loop point cannot
+  click, which is what ORION asked to be shown numerically rather than by ear.
+- **`sector` breaks the true-peak ceiling: −0.60 dBTP against −1.5.** It will clip
+  on a playback chain that adds any gain, and the peak is 0.9 dB over. Fix is
+  −0.9 dB on that one file (a re-encode; the audio owner's call, not mine).
+- **The cues are not level-matched:** −15.74 vs −16.90 vs −16.91 LUFS, a 1.16 dB
+  spread, so title→sector steps down audibly. −1.2 dB on `title` would match all
+  three at ≈ −16.9.
+- The large "rms step" figures (7.8 / 32.6 / 14.1 dB) are the *downbeat landing on
+  the loop point*, which is musical for a beat-driven bed, not a click — that is
+  exactly why the tool treats RMS step as advisory and the wrap comparison as the
+  gate.
+- Total music weight is **788 KiB**: inside the ≤3 MB budget and the ≤1 MB-per-bed
+  constraint.
+
+Nothing above is fixed by me: the beds are the audio owner's files, and a
+re-encode is a content change. The numbers are here so the decision is theirs.
 
 ---
 

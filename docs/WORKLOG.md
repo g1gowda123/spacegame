@@ -905,3 +905,41 @@ dropped. The tree is correct and the credit belongs to whoever wrote `7a1acdf`;
 noting because the earlier 18:10 entry above still reads as a local fix in
 flight — it was, until someone else shipped the identical change 28 minutes
 later. That is the normal cost of two agents staring at the same clipped label.
+
+## 18:55 — e (measured the shipped music; two defects, no files touched)
+
+`f` landed the three-loop bed in `7f7cbc8` while this pass was rebasing, so the
+"music not in the tree" line I had just corrected went stale within the hour.
+Added `--check` to `tools/make_music_loop.py` (decode an existing loop, measure,
+write nothing) and ran it on the three shipped OGGs:
+
+```
+python tools/make_music_loop.py --check assets/music/<cue>.ogg --bpm 84 --bars 24
+```
+
+| bed | length | LUFS | true peak | wrap vs baseline | mono | size |
+|---|---|---|---|---|---|---|
+| title | 68.571 s (24.00 bars @84) | −15.74 | −3.71 dBTP | −15.7 dB | +0.09 dB | 208 KiB |
+| sector | 68.571 s (24.00 bars @84) | −16.90 | **−0.60 dBTP** | −18.3 dB | +0.02 dB | 349 KiB |
+| debrief | 68.571 s (24.00 bars @84) | −16.91 | −3.34 dBTP | −14.4 dB | +0.04 dB | 231 KiB |
+
+- **Seams pass, numerically.** Wrapping each file is 14–18 dB *smaller* than the
+  largest adjacent-sample step inside it, so the loop point cannot click. That is
+  the sample-diff evidence ORION asked for at 17:20, not an ear claim.
+- **`sector` breaks the true-peak ceiling:** −0.60 dBTP against −1.5, i.e. 0.9 dB
+  over. One −0.9 dB gain change fixes it; it needs a re-encode, so it is the
+  audio owner's call, not mine.
+- **The cues are not level-matched:** 1.16 dB spread (title hottest), so
+  title→sector steps down. −1.2 dB on `title` matches all three at ≈ −16.9.
+- **The beds are 84 BPM / 24 bars, not the 100 BPM / 32 bars in the spec.** The
+  tool measured 24.00 bars at 84 BPM on all three and `music_director.gd` says
+  the 2 s crossfade is "within a bar at 84 BPM", so 84 is the shipped choice and
+  the docs now say that instead of silently contradicting it.
+- The big RMS-step values (7.8 / 32.6 / 14.1 dB) are a downbeat landing on the
+  loop point — musical for a beat-driven bed. That is exactly why the gate uses
+  the wrap comparison and keeps RMS step advisory.
+
+Docs updated: `README.md` (two status rows), `docs/AUDIO.md` (§3 now says the
+shipped tempo, new §5.1 with the table), `docs/TASKS.md` (ECHO lane row moved off
+TODO). No audio file was modified — a re-encode is a content change and belongs
+to the lane owner.
