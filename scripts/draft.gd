@@ -483,32 +483,10 @@ func _commit_route() -> void:
 		return
 	_committing = true
 	var planet := selected_planet
-	var sector_path := "res://scenes/sector.tscn"
 	GameState.begin_sector(planet)
 	GameState.sfx("confirm")
-	# The transit IS the loading screen. Start the scene load in parallel, let
-	# the ship reach the target, then cut the moment both are ready. The old
-	# fixed 1.85 s hold left a blank beat after the ship had already arrived.
-	ResourceLoader.load_threaded_request(sector_path)
-	_play_commit_transit(planet)
-	await get_tree().create_timer(1.42).timeout
-	while ResourceLoader.load_threaded_get_status(sector_path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		await get_tree().process_frame
-	var packed := ResourceLoader.load_threaded_get(sector_path) as PackedScene
-	if packed != null:
-		# Build the sector while the transit card still covers the screen. The
-		# map generation is synchronous, so this is the real loading work; doing
-		# it here means the cut lands on a finished board instead of a blank beat.
-		var next := packed.instantiate()
-		next.process_mode = Node.PROCESS_MODE_DISABLED
-		get_tree().root.add_child(next)
-		var old := get_tree().current_scene
-		get_tree().current_scene = next
-		if old != null:
-			old.queue_free()
-		next.process_mode = Node.PROCESS_MODE_INHERIT
-	else:
-		get_tree().change_scene_to_file(sector_path)
+	# Seamless cinematic launch sequence between mission architecture review and sector.
+	get_tree().change_scene_to_file("res://scenes/launch.tscn")
 
 
 func _play_commit_transit(p: Dictionary) -> void:

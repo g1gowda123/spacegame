@@ -1,0 +1,252 @@
+extends SceneTree
+## Automated test suite for the Cinematic Spacecraft Launch Sequence.
+
+var _game_state: Node
+
+func _initialize() -> void:
+	print("==================================================================")
+	print("STARTING TEST SUITE: CINEMATIC SPACECRAFT LAUNCH SEQUENCE")
+	print("==================================================================")
+
+	_game_state = root.get_node_or_null("GameState")
+	if _game_state == null:
+		var gs_class = load("res://scripts/game_state.gd")
+		_game_state = gs_class.new()
+		_game_state.name = "GameState"
+		root.add_child(_game_state)
+		_game_state.call("_load_planets")
+	
+	_reset_state()
+
+	var failures: int = 0
+	
+	# Test 1: Test all spacecraft hull variations
+	var hulls := ["pathfinder", "cryo", "relay", "hopper"]
+	for h_id in hulls:
+		var ok := _test_hull_variation(h_id)
+		if not ok:
+			failures += 1
+			print("[-] FAIL: Hull variation: ", h_id)
+		else:
+			print("[+] PASS: Spacecraft hull variation: ", h_id)
+
+	# Test 2: Test all launch vehicle variations
+	var vehicles := ["vector_l", "vector_m", "vector_h"]
+	for v_id in vehicles:
+		var ok := _test_vehicle_variation(v_id)
+		if not ok:
+			failures += 1
+			print("[-] FAIL: Vehicle variation: ", v_id)
+		else:
+			print("[+] PASS: Launch vehicle variation: ", v_id)
+
+	# Test 3: Test subsequent planetary mission transition
+	var sub_ok := _test_subsequent_transition()
+	if not sub_ok:
+		failures += 1
+		print("[-] FAIL: Subsequent mission transition")
+	else:
+		print("[+] PASS: Subsequent mission transition (sector > 1)")
+
+	# Test 4: Test skip launch functionality
+	var skip_ok := _test_skip_launch()
+	if not skip_ok:
+		failures += 1
+		print("[-] FAIL: Skip launch functionality")
+	else:
+		print("[+] PASS: Skip launch functionality")
+
+	# Test 5: Test reduced-effects mode
+	var red_ok := _test_reduced_effects()
+	if not red_ok:
+		failures += 1
+		print("[-] FAIL: Reduced-effects mode")
+	else:
+		print("[+] PASS: Reduced-effects mode")
+
+	# Test 6: Verify GameState preservation
+	var state_ok := _test_gamestate_preservation()
+	if not state_ok:
+		failures += 1
+		print("[-] FAIL: GameState preservation")
+	else:
+		print("[+] PASS: GameState preservation across launch")
+
+	print("==================================================================")
+	if failures == 0:
+		print("ALL LAUNCH CINEMATIC TESTS PASSED SUCCESSFULLY!")
+	else:
+		print("TEST SUITE FINISHED WITH %d FAILURES." % failures)
+	print("==================================================================")
+
+	quit(failures)
+
+
+
+func _clean_up(node: Node) -> void:
+	if node != null:
+		if node.get_parent() != null:
+			node.get_parent().remove_child(node)
+		node.queue_free()
+
+func _reset_state() -> void:
+	_game_state.new_run()
+	_game_state.quick_loadout()
+	_game_state.commit_design()
+	if _game_state.draft.is_empty():
+		_game_state.roll_draft()
+	if not _game_state.draft.is_empty():
+		_game_state.begin_sector(_game_state.draft[0])
+
+
+func _test_hull_variation(h_id: String) -> bool:
+	_reset_state()
+	_game_state.run["hull"] = h_id
+	_game_state.run["vehicle"] = "vector_m"
+	_game_state.run["sector"] = 1
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	if launch_scene == null:
+		return false
+	var instance = launch_scene.instantiate()
+	if instance == null:
+		return false
+	root.add_child(instance)
+	instance._ready()
+	
+	# Verify selected hull was assigned and loaded
+	var ship_sprite: Sprite2D = instance._ship_sprite
+	var loaded_hull_id: String = instance._hull_id
+	if loaded_hull_id != h_id or ship_sprite == null or ship_sprite.texture == null:
+		_clean_up(instance)
+		return false
+
+	# Advance frames & draw
+	instance._process(0.1)
+	_clean_up(instance)
+	return true
+
+
+func _test_vehicle_variation(v_id: String) -> bool:
+	_reset_state()
+	_game_state.run["hull"] = "pathfinder"
+	_game_state.run["vehicle"] = v_id
+	_game_state.run["sector"] = 1
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	var instance = launch_scene.instantiate()
+	root.add_child(instance)
+	instance._ready()
+
+	var loaded_veh_id: String = instance._veh_id
+	if loaded_veh_id != v_id:
+		_clean_up(instance)
+		return false
+	_clean_up(instance)
+	return true
+
+
+func _test_subsequent_transition() -> bool:
+	_reset_state()
+	_game_state.run["sector"] = 2
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	var instance = launch_scene.instantiate()
+	root.add_child(instance)
+	instance._ready()
+
+	var is_sub: bool = instance._is_subsequent
+	if not is_sub:
+		_clean_up(instance)
+		return false
+
+	# In subsequent sector, ground pad should be hidden and orbital flight active
+	var ground: Control = instance._ground_root
+	if ground != null and ground.visible:
+		_clean_up(instance)
+		return false
+
+	_clean_up(instance)
+	return true
+
+
+func _test_skip_launch() -> bool:
+	_reset_state()
+	_game_state.run["sector"] = 1
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	var instance = launch_scene.instantiate()
+	root.add_child(instance)
+	instance._ready()
+
+	# Trigger skip
+	instance.call("_skip_launch")
+	var is_skipping: bool = instance._skipping
+	var is_trans: bool = instance._transitioned
+	if not is_skipping or not is_trans:
+		_clean_up(instance)
+		return false
+
+	_clean_up(instance)
+	return true
+
+
+func _test_reduced_effects() -> bool:
+	_reset_state()
+	_game_state.run["sector"] = 1
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	var instance = launch_scene.instantiate()
+	instance.set("_reduced_fx", true)
+	root.add_child(instance)
+	instance._ready()
+
+	var red: bool = instance._reduced_fx
+	if not red:
+		_clean_up(instance)
+		return false
+
+	instance._update_ignition_phase()
+	var shake: float = instance._shake_amount
+	if shake > 1.0:
+		_clean_up(instance)
+		return false
+
+	_clean_up(instance)
+	return true
+
+
+func _test_gamestate_preservation() -> bool:
+	_reset_state()
+	_game_state.run["sector"] = 1
+	_game_state.run["hull"] = "hopper"
+	_game_state.run["vehicle"] = "vector_h"
+	_game_state.run["objective"] = "geology"
+	_game_state.run["budget"] = 420.0
+	_game_state.run["approval"] = 92
+	var prev_sector: Dictionary = _game_state.current_sector.duplicate(true)
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	var instance = launch_scene.instantiate()
+	root.add_child(instance)
+	instance._ready()
+
+	# Simulate frames across phases
+	instance._enter_ignition_phase()
+	instance._enter_liftoff_phase()
+	instance._enter_ascent_phase()
+	instance._enter_space_phase()
+
+	# Verify GameState data was NOT corrupted or reset
+	if _game_state.run["hull"] != "hopper" or _game_state.run["vehicle"] != "vector_h":
+		_clean_up(instance)
+		return false
+	if _game_state.run["budget"] != 420.0 or _game_state.run["approval"] != 92:
+		_clean_up(instance)
+		return false
+	if _game_state.current_sector.get("id") != prev_sector.get("id"):
+		_clean_up(instance)
+		return false
+
+	_clean_up(instance)
+	return true

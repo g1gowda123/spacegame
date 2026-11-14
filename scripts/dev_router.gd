@@ -89,6 +89,8 @@ func _route() -> void:
 	var forced_biome := ""
 	var owned_csv := ""
 	var buffs_csv := ""
+	var forced_hull := ""
+	var forced_vehicle := ""
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 		var arg := str(raw)
 		if arg.begins_with("--crew="):
@@ -103,6 +105,10 @@ func _route() -> void:
 			owned_csv = arg.substr(8)
 		elif arg.begins_with("--buffs="):
 			buffs_csv = arg.substr(8)
+		elif arg.begins_with("--hull="):
+			forced_hull = arg.substr(7)
+		elif arg.begins_with("--vehicle="):
+			forced_vehicle = arg.substr(10)
 	if _screen == "crew":
 		get_tree().change_scene_to_file("res://scenes/crew.tscn")
 		return
@@ -125,6 +131,10 @@ func _route() -> void:
 		GameState.new_run()
 	_apply_owned(owned_csv)
 	_apply_buffs(buffs_csv)
+	if forced_hull != "":
+		GameState.run["hull"] = forced_hull
+	if forced_vehicle != "":
+		GameState.run["vehicle"] = forced_vehicle
 	match _screen:
 		"design":
 			if "--loadout" in OS.get_cmdline_user_args() or "--loadout" in OS.get_cmdline_args():
@@ -138,6 +148,10 @@ func _route() -> void:
 		return
 	GameState.quick_loadout()
 	GameState.commit_design()
+	if forced_hull != "":
+		GameState.run["hull"] = forced_hull
+	if forced_vehicle != "":
+		GameState.run["vehicle"] = forced_vehicle
 	if GameState.draft.is_empty():
 		GameState.roll_draft()
 	var planet: Dictionary = GameState.draft[0]
@@ -146,6 +160,10 @@ func _route() -> void:
 			if str(fp.get("biome", "")) == forced_biome:
 				planet = fp
 				break
+	if _screen == "launch":
+		GameState.begin_sector(planet)
+		get_tree().change_scene_to_file("res://scenes/launch.tscn")
+		return
 	if _screen == "sector":
 		GameState.begin_sector(planet)
 		get_tree().change_scene_to_file("res://scenes/sector.tscn")
