@@ -92,6 +92,7 @@ static func hairline(parent: Control, x: float, y: float, w: float,
 	line.color = color
 	line.position = Vector2(x, y)
 	line.size = Vector2(w, 1)
+	line.custom_minimum_size = Vector2(w, 1)
 	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(line)
 	return line
@@ -337,28 +338,29 @@ static func option_card(
 	root.custom_minimum_size = rect.size
 	parent.add_child(root)
 
-	var p := PanelContainer.new()
+	var p := Panel.new()
 	p.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_theme_stylebox_override("panel", row_style(false, false, accent))
 	root.add_child(p)
+	root.clip_contents = true
 
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 0)
-	v.alignment = BoxContainer.ALIGNMENT_CENTER
-	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(v)
-
+	# Absolute children, not a VBox: rows must keep the exact height the screen
+	# asked for or a long perk wraps and the column overflows its sheet.
 	var t := label(title, maxi(8, title_size), TEXT, true)
+	t.position = Vector2(8, 2 if subtitle != "" else maxf(2.0, (rect.size.y - 12.0) * 0.5))
+	t.size = Vector2(rect.size.x - 14.0, 12)
 	t.clip_text = true
-	v.add_child(t)
+	p.add_child(t)
 	var s: Label = null
 	if subtitle != "":
 		s = label(subtitle, sub_size, MUTED, false)
+		s.position = Vector2(8, 14)
+		s.size = Vector2(rect.size.x - 14.0, maxf(2.0, rect.size.y - 16.0))
 		s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		s.custom_minimum_size = Vector2(max(10.0, rect.size.x - 20.0), 0)
 		s.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-		s.clip_text = rect.size.y < 34.0
-		v.add_child(s)
+		s.clip_text = true
+		p.add_child(s)
 
 	var btn := Button.new()
 	btn.flat = true
@@ -391,7 +393,7 @@ static func select_card(card: Dictionary, on: bool) -> void:
 		return
 	card["selected"] = on
 	var accent: Color = card["accent"]
-	var p: PanelContainer = card["panel"]
+	var p: Control = card["panel"]
 	var title: Label = card["title"]
 	if on:
 		p.add_theme_stylebox_override("panel", row_style(true, false, accent))

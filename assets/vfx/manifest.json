@@ -1,0 +1,92 @@
+{
+  "generator": "tools/make_vfx_art.py",
+  "note": "Animation art only. Static tiles/sprites are VEGA's lane.",
+  "particles": {
+    "particle_dot": {
+      "size": [
+        8,
+        8
+      ]
+    },
+    "particle_spark": {
+      "size": [
+        12,
+        12
+      ]
+    },
+    "particle_smoke": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "particle_ember": {
+      "size": [
+        6,
+        6
+      ]
+    },
+    "particle_snow": {
+      "size": [
+        6,
+        6
+      ]
+    },
+    "particle_spore": {
+      "size": [
+        6,
+        6
+      ]
+    }
+  },
+  "sheets": {
+    "ring": {
+      "frames": 8,
+      "frame_ms": 42,
+      "size": [
+        48,
+        48
+      ]
+    },
+    "shield": {
+      "frames": 8,
+      "frame_ms": 42,
+      "size": [
+        48,
+        48
+      ]
+    },
+    "flare": {
+      "frames": 8,
+      "frame_ms": 42,
+      "size": [
+        64,
+        64
+      ]
+    },
+    "smoke_puff": {
+      "frames": 8,
+      "frame_ms": 42,
+      "size": [
+        40,
+        40
+      ]
+    },
+    "splash": {
+      "frames": 6,
+      "frame_ms": 42,
+      "size": [
+        32,
+        32
+      ]
+    },
+    "debris": {
+      "frames": 6,
+      "frame_ms": 42,
+      "size": [
+        16,
+        16
+      ]
+    }
+  }
+}

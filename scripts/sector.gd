@@ -70,6 +70,7 @@ var message_color := Color("#54e6d1")
 var toast_label: Label
 var _toast_tween: Tween
 var fx_layer: Node2D
+var vfx_layer: Node2D
 var fx_root: Control
 var _impact_flash: ColorRect
 
@@ -133,6 +134,10 @@ func _ready() -> void:
 	fx_layer = Node2D.new()
 	fx_layer.z_index = 21
 	add_child(fx_layer)
+	# Impact/pickup effects sit above actors (25) but below the HUD canvas (26+).
+	vfx_layer = Node2D.new()
+	vfx_layer.z_index = 27
+	add_child(vfx_layer)
 	var fx_canvas := CanvasLayer.new()
 	fx_canvas.layer = 26
 	add_child(fx_canvas)
