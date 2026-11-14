@@ -109,18 +109,19 @@ The challenge's resource tab is not decoration: each resource maps to a visible 
 
 ## Demo video — 30-second shot list
 
-Record at 1280×720 from the Web build. Keep it under 30.0 seconds; hard-cut, no long fades.
+Recorded at 1280×720 as one continuous, deterministic run — not stitched stills. Keep it under 30.0 seconds; hard-cut, no long fades.
 
 | Time | Shot | On-screen text |
 |---|---|---|
-| 0.0–3.0 | Title: **ORBIT & OUTPLAY**, ringed planet, BEGIN MISSION | "Every target is a real exoplanet." |
-| 3.0–8.0 | Mission Design: hover PATHFINDER and VECTOR M, toggle instruments; bars move | "Design under budget and mass." |
-| 8.0–13.0 | Target Draft: three planets; select a hot one; detail line highlights Teq → heat, gravity → Δv | "NASA data becomes the hazard." |
-| 13.0–22.0 | Surface: move the cursor to preview a path, commit, show the end-of-turn hazard telegraph, HOLD vent, extract | "One move per turn. Path, cost, hazard." |
-| 22.0–26.0 | Debrief: MISSION SUCCESS, grant, approval, buy a radiator | "Earn grants. Refit. Stack synergies." |
-| 26.0–30.0 | Final Report: grade and ledger | "Three sectors. One agency. Can you keep the lights on?" |
+| 0.0–3.1 | Title: **ORBIT & OUTPLAY**, ringed planet, BEGIN MISSION | "Every target is a real exoplanet." |
+| 3.1–9.4 | Mission Design: hull and launch vehicle picked, instrument pair toggled; mass/power/Δv bars move | "Design under budget and mass." |
+| 9.4–15.9 | Target Draft: three planets; a hot one selected; detail line ties Teq → heat, gravity → Δv | "NASA data becomes the hazard." |
+| 15.9–27.3 | Surface: cursor previews a path, MOVE commits, hazard telegraph fires, nodes collected, EXTRACT | "One move per turn. Path, cost, hazard." |
+| 27.3–29.4 | Sector result: all quota met, integrity and grants | "Extract with the data." |
+| 29.4–33.6 → cut to 4.0 s | Debrief: MISSION SUCCESS, grant, approval, shop offers | "Earn grants. Refit. Stack synergies." |
+| → 4.2 s | Final Report: grade A, 4953, three-sector ledger | "Three sectors. One agency. Can you keep the lights on?" |
 
-Voice-over optional; burn in English subtitles if used. The video must be **≤30 seconds**; if the platform rejects the length, submit the 7-slide deck instead.
+The shipped cut is **28.47 s** (854 frames at 30 fps). Re-record with `python tools/record_demo.py --godot <godot 4.7.2>`; it captures with Movie Maker (`--fixed-fps 30 --write-movie`), burns the caption bar from `demo/capture/markers.json`, and deletes the intermediate AVI. Voice-over optional; burn in English subtitles if used. If the platform rejects the length, submit the 7-slide deck instead.
 
 ## 7-slide deck — outline
 
@@ -136,13 +137,14 @@ Do not exceed seven slides.
 
 ## Links to fill on submission day
 
-- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF.
-- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder.
+- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 28.47 s, 2.31 MB.
+- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 21,718,056 B (`index.pck` 13,892,076 B, `index.wasm` 39,514,754 B).
 - **Local run:** `cd build/web && python3 -m http.server 8060`, then open `http://localhost:8060`.
+- **Build state:** both artifacts above are a *checkpoint* of `6155f36` + c's capture tools. They must be rebuilt once ATLAS's consolidated generator wiring and the water-coalescing fix land — `godot --headless --export-release "Web" build/web/index.html`, then `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`.
 
 ## Final submission checklist
 
-- [ ] Demo is ≤30.0 s (current: **29.6 s**) or deck is ≤7 slides (current: **7**).
+- [ ] Demo is ≤30.0 s (current: **28.47 s**, 854 frames) or deck is ≤7 slides (current: **7**).
 - [ ] Project page has name, summary, demo link, final project link, detailed description, NASA data, SI use, references.
 - [ ] NASA data is named explicitly: Exoplanet Archive **PSCompPars** (`pscomppars`), with the Chen & Kipping (2017) mass–radius reference.
 - [ ] Build loads from a plain static host over HTTP(S); no server code, no install, no account.

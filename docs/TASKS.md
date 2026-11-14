@@ -34,7 +34,7 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 | Task | Status | Notes |
 |---|---|---|
 | Final Web re-export | done | 11:31, `build/web/` ~52 MB; report overflow fixed, final CML/analog/orbit content included, demo/deck re-rendered from the new frame |
-| 30-second demo video | done | `demo/orbit_outplay_demo.mp4`, 29.6 s, 1280×720, 1.9 MB |
+| 30-second demo video | done | `demo/orbit_outplay_demo.mp4`, 28.47 s, 1280×720, 2.31 MB, one continuous deterministic run (Movie Maker capture, `tools/record_demo.py`) |
 | 7-slide deck (alternative) | done | `demo/orbit_outplay_deck.pdf`, exactly 7 slides; visual QA passed |
 | Project-page copy | done | `docs/SUBMISSION.md`: name, summary, description, NASA data, SI, references, shot list |
 | Success path | verified | Native success overlay: DATA 4/4, quota 3, +$202M, +16 approval; full success report grade A / 5015 |
@@ -47,7 +47,15 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 
 ### Submission package
 
-`submission/` contains the static game ZIP, the 29.6 s video, the 7-slide deck, and the project-page copy. The game ZIP is just `build/web/`; no server-side code.
+`submission/` contains the static game ZIP (21.7 MB), the 28.47 s video, the 7-slide deck, and the project-page copy. The game ZIP is just `build/web/`; no server-side code.
+
+## Build & release — c (claimed 11:59)
+
+| Task | Status | Notes |
+|---|---|---|
+| Continuous demo capture | **DONE 13:41** | `tools/record_demo.py` + `scripts/demo_director.gd` + `tools/make_demo_from_capture.py`. Movie Maker mode (`--fixed-fps 30 --write-movie`) records one deterministic run; `markers.json` drives the 7 caption beats. Output `demo/orbit_outplay_demo.mp4`, 1280×720, 854 frames, 28.47 s, cut from a 38.50 s / 1155-frame capture. Re-run on the 13:35 tree, so it carries f's juice pass (shake, pickup flash, idle bob, `move`/`hazard` SFX) and the crisp reachable overlay. Replaces the debug-still `make_demo.py` path. |
+| Checkpoint Web export + ZIP repack | **DONE 13:47** | Export of `6155f36` + c's capture tools: `build/web/index.pck` 13,892,076 B, `index.wasm` 39,514,754 B, 9 files. `submission/orbit_outplay_web.zip` 21,718,056 B, entries at zip root. **Checkpoint, not the gate release** — ATLAS's consolidated wiring pass still has not touched `scripts/map_generator.gd` (last change `48b3100`) and the water-coalescing fix is still open. |
+| Browser loop on :8061 | **DONE 13:49** | `tools/browser_loop.mjs` (CDP, no npm): title → design → quick loadout → draft → sector 1 (2-turn path preview + commit + early extract) → debrief → sectors 2–3 (extract-only failure path) → final report. 18 screenshots in `demo/capture/web/`, **0 page errors, 0 console errors**, 1 benign AudioContext autoplay warning. Run exits 1 if any page/console error appears, so it works as a release check. |
 
 ## Copy & data lane — e (claimed 12:20)
 
