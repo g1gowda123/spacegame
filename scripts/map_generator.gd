@@ -400,7 +400,7 @@ var objectives: Array[Vector2i] = []
 var collected: Array[bool] = []
 var objective_tiers: Array[int] = []
 var objective_values: Array[int] = []
-var fog_enabled := false
+var fog_enabled := true
 var revealed: Dictionary = {}
 var fog_layer: Node2D
 var objective_mode := "survey"
@@ -2909,9 +2909,9 @@ func _rebuild_decals() -> void:
 					var h := _decal_hash(wx, wy, 6103)
 					# ~11% candidate rate, then a low-frequency cluster gate:
 					# effective coverage is roughly 6-7% of base cells.
-					if float(h % 10000) / 10000.0 > 0.11:
+					if float(h % 10000) / 10000.0 > 0.15:
 						continue
-					if decal_noise.get_noise_2d(float(wx), float(wy)) < -0.15:
+					if decal_noise.get_noise_2d(float(wx), float(wy)) < -0.20:
 						continue
 					var tex: Texture2D = textures[h % textures.size()]
 					var sprite := Sprite2D.new()
@@ -2924,7 +2924,7 @@ func _rebuild_decals() -> void:
 						float((h / 7) % 21) - 10.0,
 						float((h / 147) % 21) - 10.0
 					)
-					var s := 0.68 + float((h / 11) % 9) / 50.0
+					var s := 0.48 + float((h / 11) % 9) / 50.0
 					sprite.scale = Vector2(s, s)
 					var shape := str(DECAL_SHAPES[(h / 13) % DECAL_SHAPES.size()])
 					if shape == "crack" or shape == "shards":

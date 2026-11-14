@@ -22,7 +22,7 @@ const BEATS := [
 	},
 	{
 		"card": "SURFACE", "expr": "stern",
-		"text": "On the surface, data is funding. Move carefully, watch heat and power, and extract before the window closes. HOLD is not cowardice; it is thermal management.",
+		"text": "On the surface, data is funding. Your radar only paints a short radius, so move to reveal the board; signals outside it are dark. Watch heat and power, and extract before the window closes. HOLD is not cowardice; it is thermal management.",
 	},
 	{
 		"card": "REFIT", "expr": "smile",

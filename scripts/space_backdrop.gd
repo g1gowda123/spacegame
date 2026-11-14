@@ -14,7 +14,9 @@ var _planet_size := 0.62
 var _planet_on := true
 var _planet_asset := ""
 var _stars_on := true
+var _bg_on := true
 var _dim := 0.35
+var _bg_rect: ColorRect
 var _shade: ColorRect
 
 
@@ -26,10 +28,11 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var base := ColorRect.new()
-	base.color = Color("#070a11")
-	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(base)
+	_bg_rect = ColorRect.new()
+	_bg_rect.color = Color("#070a11")
+	_bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bg_rect.visible = _bg_on
+	add_child(_bg_rect)
 
 	star_rect = TextureRect.new()
 	star_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -52,6 +55,7 @@ func _build() -> void:
 	_shade = ColorRect.new()
 	_shade.color = Color(0.03, 0.05, 0.08, _dim)
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shade.visible = _bg_on
 	add_child(_shade)
 	_layout()
 
@@ -67,6 +71,12 @@ func configure(opts: Dictionary) -> void:
 		_stars_on = bool(opts["stars_on"])
 		if star_rect != null:
 			star_rect.visible = _stars_on
+	if opts.has("bg_on"):
+		_bg_on = bool(opts["bg_on"])
+		if _bg_rect != null:
+			_bg_rect.visible = _bg_on
+		if _shade != null:
+			_shade.visible = _bg_on
 	if opts.has("planet_asset"):
 		_planet_asset = str(opts["planet_asset"])
 		_load_planet(_planet_asset)

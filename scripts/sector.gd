@@ -116,6 +116,8 @@ func _ready() -> void:
 		debug_transitions = true
 	if "--fog" in args:
 		fog_enabled = true
+	if "--no-fog" in args:
+		fog_enabled = false
 	var force_relay := "--relay" in args
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.

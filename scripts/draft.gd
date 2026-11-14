@@ -68,16 +68,17 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	# Planet portrait.
 	var holder := Control.new()
-	holder.position = Vector2(52, 2)
-	holder.size = Vector2(92, 72)
+	holder.position = Vector2(52, 4)
+	holder.size = Vector2(92, 66)
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(holder)
 	var portrait := SpaceBackdrop.new()
 	holder.add_child(portrait)
 	portrait.configure({
 		"stars_on": false,
+		"bg_on": false,
 		"planet_center": Vector2(0.5, 0.5),
-		"planet_size": 0.94,
+		"planet_size": 0.98,
 		"planet_asset": SpaceBackdrop.asset_for_planet(p),
 	})
 
@@ -90,7 +91,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	if star_type == "" or star_type == "—":
 		star_type = "UNKNOWN TYPE"
 	var meta := UIKit.mono(
-		"%s  ·  %.1f ly  ·  %.2fg" % [star_type, float(p["distance_ly"]), float(p["gravity_g"])],
+		"%s  ·  %.1f ly" % [star_type, float(p["distance_ly"])],
 		7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	meta.position = Vector2(4, 87)
@@ -98,19 +99,16 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	c.add_child(meta)
 
 	var type_line := UIKit.mono(
-		"%s   ·   %d K" % [
-			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"])
+		"%s   ·   %d K   ·   %.2fg" % [
+			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"]),
+			float(p["gravity_g"])
 		],
-		8, GameState.biome_color(str(p["biome"])), HORIZONTAL_ALIGNMENT_CENTER
+		8, GameState.biome_color(str(p["biome"])).lightened(0.22), HORIZONTAL_ALIGNMENT_CENTER
 	)
 	type_line.position = Vector2(4, 100)
 	type_line.size = Vector2(188, 11)
 	c.add_child(type_line)
-	if bool(p.get("mass_est", false)):
-		var est := UIKit.mono("MASS ESTIMATE", 6, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
-		est.position = Vector2(4, 110)
-		est.size = Vector2(188, 8)
-		c.add_child(est)
+
 
 	var g: Dictionary = p["game"]
 	# One-second read for the first real decision: how hostile is this world
@@ -142,11 +140,10 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	_stat(c, 190, "SCIENCE", "%d" % int(g["science"]), float(g["science"]) / 120.0,
 		UIKit.CYAN)
 
-	var pick := UIKit.button("MARK TARGET", Vector2(176, 18), false)
-	pick.position = Vector2(10, 210)
-	pick.add_theme_font_size_override("font_size", 9)
-	pick.pressed.connect(_select.bind(str(p["id"])))
-	c.add_child(pick)
+	var mark := UIKit.mono("SELECT", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	mark.position = Vector2(10, 216)
+	mark.size = Vector2(176, 10)
+	c.add_child(mark)
 
 	var overlay := Button.new()
 	overlay.flat = true
@@ -165,7 +162,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var card := {
 		"id": str(p["id"]), "planet": p, "root": root, "panel": panel,
-		"title": name, "pick": pick, "accent": GameState.biome_color(str(p["biome"])),
+		"title": name, "mark": mark, "accent": GameState.biome_color(str(p["biome"])),
 		"selected": false,
 	}
 	cards.append(card)
@@ -251,20 +248,22 @@ func _select(id: String, play_sound: bool = true) -> void:
 		c["selected"] = on
 		var panel: PanelContainer = c["panel"]
 		var title: Label = c["title"]
-		var pick: Button = c["pick"]
+		var mark: Label = c["mark"]
 		if on:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 				UIKit.ROW_SELECTED, UIKit.CYAN, 3, 2
 			))
 			title.add_theme_color_override("font_color", UIKit.CYAN)
-			pick.text = "TARGET MARKED"
+			mark.text = "●  TARGET MARKED"
+			mark.add_theme_color_override("font_color", UIKit.CYAN)
 			selected_planet = c["planet"]
 		else:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 				Color("#0d1624"), UIKit.LINE, 3
 			))
 			title.add_theme_color_override("font_color", UIKit.TEXT)
-			pick.text = "MARK TARGET"
+			mark.text = "SELECT"
+			mark.add_theme_color_override("font_color", UIKit.DIM)
 	if play_sound:
 		GameState.sfx("click")
 	_refresh()
