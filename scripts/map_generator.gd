@@ -1116,6 +1116,13 @@ func _place_start_landmark() -> void:
 
 
 func _place_objectives() -> void:
+	# Only place markers inside the region the lander can actually walk to.
+	# Water, lava and multi-tile structures can isolate pockets near the start;
+	# the old test accepted any walkable cell, so a marker could spawn behind a
+	# lava field and make the sector unwinnable. One bounded flood fill is cheap
+	# next to the 1200 placement attempts and makes connectivity structural
+	# instead of something the player has to discover.
+	var reach := _reachable_world_cells()
 	for i in range(OBJECTIVE_COUNT):
 		var placed := false
 		for attempt in range(1200):
@@ -1125,7 +1132,7 @@ func _place_objectives() -> void:
 				int(round(player_cell.x + cos(ang) * dist)),
 				int(round(player_cell.y + sin(ang) * dist))
 			)
-			if not _is_walkable_world(c) or c == player_cell or objectives.has(c):
+			if not reach.has(c) or not _is_walkable_world(c) or c == player_cell or objectives.has(c):
 				continue
 			var ok := true
 			for o in objectives:
@@ -1143,8 +1150,19 @@ func _place_objectives() -> void:
 					player_cell.x + rng.randi_range(-14, 14),
 					player_cell.y + rng.randi_range(-14, 14)
 				)
-				if _is_walkable_world(c) and c != player_cell and not objectives.has(c):
+				if reach.has(c) and _is_walkable_world(c) and c != player_cell and not objectives.has(c):
 					objectives.append(c)
+					collected.append(false)
+					placed = true
+					break
+		if not placed:
+			# Deterministic last resort: nearest reachable cell that is not the
+			# lander and not already used. Guarantees the node count holds even
+			# on a start box that is almost entirely blocked.
+			for c in reach.keys():
+				var cell: Vector2i = c
+				if cell != player_cell and not objectives.has(cell):
+					objectives.append(cell)
 					collected.append(false)
 					break
 
@@ -1878,6 +1896,30 @@ func _is_walkable_world(cell: Vector2i) -> bool:
 		if cell.x >= gx and cell.x < gx + w and cell.y >= gy and cell.y < gy + h:
 			return false
 	return true
+
+
+func _reachable_world_cells(radius: int = 28) -> Dictionary:
+	# Bounded flood fill from the lander over the same walkability test the
+	# pathfinder uses. `radius` is a box half-width in cells, not a path length:
+	# objectives spawn within 14 cells, so 28 leaves room for detours around a
+	# lake or lava field without walking the infinite world.
+	var seen := {player_cell: true}
+	var q: Array[Vector2i] = [player_cell]
+	var head := 0
+	while head < q.size():
+		var cur: Vector2i = q[head]
+		head += 1
+		for d in DIRS:
+			var n: Vector2i = cur + d
+			if seen.has(n):
+				continue
+			if absi(n.x - player_cell.x) > radius or absi(n.y - player_cell.y) > radius:
+				continue
+			if not _is_walkable_world(n):
+				continue
+			seen[n] = true
+			q.append(n)
+	return seen
 
 
 func _world_to_chunk(cell: Vector2i) -> Vector2i:

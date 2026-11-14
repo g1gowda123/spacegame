@@ -113,3 +113,35 @@ Web preset without threads).
 - Sector scene boots and runs (`--screen=sector --turns=2`); the only errors are
   missing `.godot/imported/*.ctex` caches for `assets/tilesets/cliffs/face_arid.png`,
   a checkout import-cache gap rather than a script error.
+
+## 5. Reachability audit (BOARD A1) — important bug found and fixed
+
+`tools/audit_reach.gd` (new) rebuilds the real generator path for N seeds per
+biome — noise, archetype, `_find_start()`, opening landmarks, `_place_objectives()`
+— then flood-fills from the lander over `_is_walkable_world()` and asserts every
+objective marker is inside the reachable region. Extraction is available anywhere
+(press `E`), so the lander cell is the extract cell and is trivially reachable.
+
+```bash
+godot --headless --path . --script tools/audit_reach.gd
+godot --headless --path . --script tools/audit_reach.gd -- --count=10 --biomes=temperate,volcanic
+```
+
+**Bug (before the fix):** `_place_objectives()` rejected non-walkable cells but
+never checked connectivity, so markers could spawn across a lava field or a lake.
+10 seeds × 6 biomes (240 markers) produced **18 unreachable markers in 9 runs**;
+volcanic was the worst (4/10 seeds, up to 4 markers each). Examples:
+`volcanic seed=1137 player=(-4,2) unreachable=(-9,-5),(-1,-4),(-4,11),(0,-2)`.
+
+**Fix:** `_place_objectives()` computes `_reachable_world_cells(28)` once (bounded
+BFS from the lander over the same walkability test the pathfinder uses) and only
+accepts candidates inside it; a deterministic last-resort placement keeps the
+objective count even on a nearly blocked start. Because both placement and audit
+use the shaped raw terrain, visible water/lava cannot disagree with the check.
+
+**After the fix:** 100 seeds × 6 biomes = **600 runs / 2,400 markers / 0 unreachable**.
+`REACH OK: every objective reachable from the lander`, exit 0.
+
+This closes the `b / ATLAS` connectivity task (“flood fill to objectives/extract,
+carve a pass”) for objectives: no carving is needed because placement now avoids
+isolated pockets.

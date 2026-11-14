@@ -329,3 +329,11 @@ Boss approved the story frame. Full beat sheet, layout and acceptance: `docs/BRI
 | Placeholder portrait set (neutral/smile/stern) for layout QA | **DONE 15:48** | NOVA | Replaced by VEGA; same paths |
 | Character sprite sheet (160×240 ×3 + 64×64 icon + manifest) | **ASSIGNED — VEGA** | VEGA | Creative latitude in face/uniform/pose; new ComfyUI workflows allowed; regenerate all expressions together |
 | QA: first boot → briefing → design; skip; replay; 640×360; Web | **PENDING** | NOVA / d | `qa_briefing*.png`; browser pass after re-export |
+## b — A1 reachability audit + connectivity (claimed 10:20, done 10:24)
+
+| Task | State | Notes |
+|---|---|---|
+| `tools/audit_reach.gd` (N seeds × 6 biomes, bounded flood fill, table, exit code) | **DONE** | `godot --headless --path . --script tools/audit_reach.gd` |
+| Connectivity guarantee after structure placement | **DONE** | `_place_objectives()` accepts only cells in `_reachable_world_cells(28)`; deterministic fallback keeps the node count |
+| Bug evidence | **DONE** | Before: 18 unreachable / 240 markers (9 runs, volcanic worst). After: 0 / 2,400 markers |
+| Full target run (100 seeds per biome) | **DONE** | `REACH OK` exit 0; see `docs/AUDIT_FIXES.md` §5 |
