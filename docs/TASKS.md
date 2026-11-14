@@ -201,3 +201,17 @@ Boss: "big mountains are almost the same size as the craft… make the world fee
 | Connectivity guarantee after structure placement (flood fill to objectives/extract, carve a pass) | **REQUESTED** | b / ATLAS | Must hold over 100 seeds per biome |
 | Optional parallax ridge silhouettes behind the diamond | **REQUESTED** | VEGA | 640×120 transparent, dark, low contrast |
 | Acceptance review: lander ≤1 tile, mountain ≥4× craft, no walkable cell under a solid peak | **PENDING** | NOVA | Full frames per biome + headless smoke |
+
+## Dynamic ship build (NOVA, 15:03)
+
+Boss: the ship should update automatically from the upgrades received after a planet.
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| `ShipBuild` slot model from instruments + `GameState.owned` | **DONE 15:02** | NOVA | `scripts/ship_build.gd`; payload/refit slots, tiers, short names |
+| Live `ShipDiagram` module drawing + buy flash | **DONE 15:03** | NOVA | `scripts/ship_diagram.gd`; integer-aligned pixel blocks, per-hull accent, clipped to the portrait |
+| Design-screen portrait reflects payload changes | **DONE 15:03** | NOVA | `design.gd` passes the selected instruments; build line under portrait |
+| Debrief portrait + label updates immediately after INSTALL | **DONE 15:03** | NOVA | `debrief.gd` `_refresh_ship`/`flash_build`; hardware two-line legend |
+| Final report prints completed build and tier | **DONE 15:03** | NOVA | `report.gd` SHIP row |
+| Full-flow proof: 3 sectors, buy, next planet, stats + report | **DONE 15:03** | NOVA | `--screen=flowtest`: range 3→4, total 4963, grade A, 3 successes |
+| Deep Data Buffer actually applies its comms promise | **DONE 15:04** | NOVA | `comms_bonus: 4` + `ship()` buffer branch; previously only a design-screen stat |
