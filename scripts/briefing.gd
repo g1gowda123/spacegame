@@ -66,6 +66,12 @@ func _ready() -> void:
 		if arg.begins_with("--briefing-beat="):
 			beat = clampi(int(arg.substr(16)), 0, BEATS.size() - 1)
 	_show_beat(true)
+	for raw in cli:
+		var arg := str(raw)
+		if arg == "--briefing-finish":
+			call_deferred("_finish")
+		elif arg == "--briefing-skip":
+			call_deferred("_skip")
 
 
 func _build() -> void:
@@ -78,6 +84,16 @@ func _build() -> void:
 		"dim": 0.68,
 	})
 	bg.modulate.a = 0.52
+
+	var station := TextureRect.new()
+	station.texture = load("res://assets/backgrounds/briefing_station.png")
+	station.position = Vector2.ZERO
+	station.size = Vector2(640, 360)
+	station.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	station.stretch_mode = TextureRect.STRETCH_SCALE
+	station.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	station.modulate.a = 0.8
+	add_child(station)
 
 	var left_shade := ColorRect.new()
 	left_shade.color = Color(0.02, 0.04, 0.07, 0.42)
@@ -136,6 +152,7 @@ func _build() -> void:
 	tab.size = Vector2(88, 18)
 	tab.add_theme_stylebox_override("panel", _paper_style(ORANGE, INK, 1))
 	tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tab.z_index = 5
 	add_child(tab)
 	card_label = UIKit.label("01  INDUCTION", 6, PAPER, true, HORIZONTAL_ALIGNMENT_CENTER)
 	card_label.position = Vector2(3, 3)
