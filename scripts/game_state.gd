@@ -311,7 +311,7 @@ func _ready() -> void:
 	_load_best()
 	UIKit.pixel_font = pixel_font
 	UIKit.body_font = body_font
-	audio_muted = OS.has_feature("editor")
+	audio_muted = false
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 		match str(raw):
 			"--mute":
