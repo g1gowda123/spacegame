@@ -91,7 +91,7 @@ func _column(x: float, w: float, title: String) -> VBoxContainer:
 
 
 func _subhead(v: VBoxContainer, text: String) -> void:
-	v.add_child(UIKit.vspace(2))
+	v.add_child(UIKit.vspace(0))
 	v.add_child(UIKit.mono(text, 7, UIKit.DIM))
 
 
@@ -99,25 +99,24 @@ func _build_left() -> void:
 	var v := _column(10, 198, "HULL BUS")
 	for h in GameState.HULLS:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 184, 34), str(h["name"]),
-			"%s  ·  %dkg  ·  $%dM\n%s" % [
-				str(h["class"]), int(h["mass"]), int(h["cost"]), str(h["perk"])
-			],
-			UIKit.CYAN, 8, 7
+			v, Rect2(0, 0, 184, 38), str(h["name"]),
+			"%s · %s" % [str(h["class"]), str(h["perk"])],
+			UIKit.CYAN, 8, 7,
+			"%dKG · $%dM" % [int(h["mass"]), int(h["cost"])]
 		)
 		card["button"].pressed.connect(_pick_hull.bind(str(h["id"])))
 		hull_cards[str(h["id"])] = card
+		if "--uidbg" in OS.get_cmdline_user_args():
+			print("UIDBG hull ", card["root"].size, " title ", card["title"].size, " min ", card["title"].get_minimum_size(), " fh ", card["title"].get_theme_font("font").get_height(8), " sub ", card["sub"].size if card["sub"] != null else "none")
 
 	_subhead(v, "LAUNCH VEHICLE")
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)
 	v.add_child(vehicle_requirement)
 	for veh in GameState.VEHICLES:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 184, 24), str(veh["name"]),
-			"%.0fkg cap  ·  $%.0fM" % [
-				float(veh["capacity"]), float(veh["cost"])
-			],
-			UIKit.CYAN, 8, 7
+			v, Rect2(0, 0, 184, 22), str(veh["name"]), "",
+			UIKit.CYAN, 8, 7,
+			"%.0fKG CAP" % float(veh["capacity"])
 		)
 		card["button"].pressed.connect(_pick_vehicle.bind(str(veh["id"])))
 		vehicle_cards[str(veh["id"])] = card
@@ -225,12 +224,11 @@ func _build_right() -> void:
 		"magnetometer": "MAGNETOMETER", "drill": "SUBSURFACE",
 	}
 	for inst in GameState.INSTRUMENTS:
-		var title := "%s · %.0fkg $%.0fM" % [
-			short_names.get(str(inst["id"]), str(inst["name"])),
-			float(inst["mass"]), float(inst["cost"])
-		]
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 188, 17), title, "", UIKit.CYAN, 8, 7
+			v, Rect2(0, 0, 188, 17),
+			str(short_names.get(str(inst["id"]), str(inst["name"]))), "",
+			UIKit.CYAN, 8, 7,
+			"%.0fKG" % float(inst["mass"])
 		)
 		card["button"].pressed.connect(_toggle_instrument.bind(str(inst["id"])))
 		card["button"].tooltip_text = str(inst["perk"])

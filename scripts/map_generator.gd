@@ -517,26 +517,93 @@ func _dot_texture() -> Texture2D:
 	return ambient_texture
 
 
+func _ambient_texture(name: String) -> Texture2D:
+	var path := "res://assets/vfx/%s.png" % name
+	if ResourceLoader.exists(path):
+		return load(path) as Texture2D
+	return _dot_texture()
+
+
+func _ambient_profile() -> Dictionary:
+	# One atmospheric signature per biome. These are deliberately cheap
+	# (CPUParticles2D, < 45 particles) because the map is the frame budget.
+	var id := str(BIOMES[biome_index].get("id", "temperate"))
+	match id:
+		"cryo", "ammonia":
+			return {
+				"tex": "particle_snow", "amount": 38, "life": 9.0,
+				"dir": Vector2(0.15, 1.0), "spread": 28.0,
+				"vel": Vector2(5.0, 15.0), "gravity": Vector2(6.0, 18.0),
+				"scale": Vector2(0.35, 0.9), "color": Color(0.86, 0.96, 1.0, 0.55),
+			}
+		"volcanic", "sulfur", "obsidian":
+			return {
+				"tex": "particle_ember", "amount": 30, "life": 6.0,
+				"dir": Vector2(0.12, -1.0), "spread": 26.0,
+				"vel": Vector2(8.0, 26.0), "gravity": Vector2(0.0, -10.0),
+				"scale": Vector2(0.55, 1.35), "color": Color(1.0, 0.64, 0.28, 0.75),
+			}
+		"ocean", "methane":
+			return {
+				"tex": "particle_dot", "amount": 18, "life": 13.0,
+				"dir": Vector2(1.0, 0.05), "spread": 10.0,
+				"vel": Vector2(4.0, 11.0), "gravity": Vector2.ZERO,
+				"scale": Vector2(0.6, 1.8), "color": Color(0.55, 0.92, 0.92, 0.22),
+			}
+		"crystal":
+			return {
+				"tex": "particle_spark", "amount": 16, "life": 3.2,
+				"dir": Vector2(0.0, -1.0), "spread": 180.0,
+				"vel": Vector2(1.5, 6.0), "gravity": Vector2.ZERO,
+				"scale": Vector2(0.18, 0.55), "color": Color(0.85, 0.72, 1.0, 0.7),
+			}
+		"arid", "iron", "barren", "carbon":
+			return {
+				"tex": "particle_dot", "amount": 30, "life": 12.0,
+				"dir": Vector2(1.0, 0.12), "spread": 14.0,
+				"vel": Vector2(7.0, 19.0), "gravity": Vector2.ZERO,
+				"scale": Vector2(0.35, 0.95), "color": Color(0.86, 0.76, 0.58, 0.26),
+			}
+		_:
+			return {
+				"tex": "particle_spore", "amount": 24, "life": 13.0,
+				"dir": Vector2(0.25, -0.7), "spread": 58.0,
+				"vel": Vector2(2.5, 8.0), "gravity": Vector2(0.0, -2.0),
+				"scale": Vector2(0.35, 1.0), "color": Color(0.72, 0.96, 0.78, 0.42),
+			}
+
+
 func _build_ambient() -> void:
 	if ambient_layer == null:
 		return
+	for child in ambient_layer.get_children():
+		child.free()
+	var prof := _ambient_profile()
 	var dust := CPUParticles2D.new()
-	dust.amount = 34
-	dust.lifetime = 12.0
-	dust.preprocess = 10.0
+	dust.amount = int(prof["amount"])
+	dust.lifetime = float(prof["life"])
+	dust.preprocess = minf(float(prof["life"]) * 0.8, 8.0)
 	dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	dust.emission_rect_extents = Vector2(340, 200)
 	dust.position = Vector2(320, 180)
-	dust.direction = Vector2(0.35, -1.0)
-	dust.spread = 38.0
-	dust.gravity = Vector2.ZERO
-	dust.initial_velocity_min = 3.0
-	dust.initial_velocity_max = 10.0
-	dust.scale_amount_min = 0.35
-	dust.scale_amount_max = 1.1
-	dust.color = Color(0.68, 0.92, 0.86, 0.22)
-	dust.texture = _dot_texture()
+	dust.direction = prof["dir"]
+	dust.spread = float(prof["spread"])
+	dust.gravity = prof["gravity"]
+	dust.initial_velocity_min = float(prof["vel"].x)
+	dust.initial_velocity_max = float(prof["vel"].y)
+	dust.scale_amount_min = float(prof["scale"].x)
+	dust.scale_amount_max = float(prof["scale"].y)
+	dust.color = prof["color"]
+	dust.texture = _ambient_texture(str(prof["tex"]))
 	dust.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# Fade each mote in and out so the field has no popping edge.
+	var ramp := Gradient.new()
+	var c: Color = prof["color"]
+	ramp.set_color(0, Color(c.r, c.g, c.b, 0.0))
+	ramp.set_color(1, Color(c.r, c.g, c.b, 0.0))
+	ramp.add_point(0.18, Color(c.r, c.g, c.b, c.a))
+	ramp.add_point(0.72, Color(c.r, c.g, c.b, c.a))
+	dust.color_ramp = ramp
 	ambient_layer.add_child(dust)
 
 
@@ -1015,6 +1082,7 @@ func _generate() -> void:
 	_update_chunks()
 	_render_window()
 	_apply_biome_tint()
+	_build_ambient()
 	_refresh_status()
 
 

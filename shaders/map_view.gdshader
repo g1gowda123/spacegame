@@ -139,6 +139,26 @@ void fragment() {
         float water_mask = smoothstep(0.16, 0.52, COLOR.b - max(COLOR.r, COLOR.g));
         float ripple = sin(uv.x * map_size.x * 0.55 + TIME * 1.7 + sin(uv.y * map_size.y * 0.31)) * 0.5 + 0.5;
         COLOR.rgb += vec3(0.02, 0.10, 0.13) * water_mask * (0.35 + 0.65 * ripple);
+        // Second, slower swell so water reads as a body with depth instead of
+        // a texture that is merely brighter than the ground.
+        float swell = sin(uv.y * map_size.y * 0.10 - TIME * 0.75 + uv.x * map_size.x * 0.045) * 0.5 + 0.5;
+        float caustic = pow(0.5 + 0.5 * sin(
+            uv.x * map_size.x * 0.85 + TIME * 1.15
+            + sin(uv.y * map_size.y * 0.55 - TIME * 0.6) * 2.2
+        ), 5.0);
+        COLOR.rgb += vec3(0.015, 0.085, 0.105) * water_mask * (swell * 0.45 + caustic * 0.55);
+
+        // Lava / hot mineral seams: a slow breathing emissive on warm pixels.
+        // This is what makes a volcanic board read as hot rather than painted.
+        float warm_mask = smoothstep(0.10, 0.42, COLOR.r - max(COLOR.g, COLOR.b));
+        float lava_pulse = 0.55 + 0.45 * sin(TIME * 1.9 + uv.x * map_size.x * 0.06 + sin(uv.y * map_size.y * 0.04) * 1.7);
+        COLOR.rgb += vec3(0.50, 0.16, 0.02) * warm_mask * lava_pulse * 0.42;
+
+        // Ice / crystal: sparse pixel twinkles on bright cool ground.
+        float ice_mask = smoothstep(0.08, 0.40, COLOR.b - COLOR.r) * smoothstep(0.42, 0.80, luma);
+        vec2 twinkle_cell = floor(uv * map_size / 3.0) + vec2(floor(TIME * 1.4), floor(TIME * 0.9));
+        float twinkle = step(0.9965, fract(sin(dot(twinkle_cell, vec2(12.9898, 78.233))) * 43758.5453));
+        COLOR.rgb += vec3(0.55, 0.78, 0.95) * ice_mask * twinkle * 0.55;
 
         // Low-frequency world-space variation breaks the visible 64px tile
         // repeat without touching the tile art. Keep it subtle: ±5% luma.

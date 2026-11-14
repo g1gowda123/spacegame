@@ -350,9 +350,15 @@ static func option_card(
 	# asked for or a long perk wraps and the column overflows its sheet.
 	var t := label(title, maxi(8, title_size), TEXT, true)
 	t.position = Vector2(8, 2 if subtitle != "" else maxf(2.0, (rect.size.y - 12.0) * 0.5))
-	t.size = Vector2(rect.size.x - 14.0, 12)
+	t.size = Vector2(rect.size.x - (78.0 if meta != "" else 14.0), 12)
 	t.clip_text = true
 	p.add_child(t)
+	if meta != "":
+		var m := label(meta, 7, DIM, false, HORIZONTAL_ALIGNMENT_RIGHT)
+		m.position = Vector2(rect.size.x - 70.0, 3)
+		m.size = Vector2(62, 10)
+		m.clip_text = true
+		p.add_child(m)
 	var s: Label = null
 	if subtitle != "":
 		s = label(subtitle, sub_size, MUTED, false)

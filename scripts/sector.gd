@@ -874,7 +874,7 @@ func _collect_node_at(cell: Vector2i) -> void:
 			message_text = ("RELAY BEACON PLANTED  +%d" if _is_relay() else "DATA NODE SECURED  +%d") % credited
 			message_color = UIKit.AMBER if _is_relay() else UIKit.CYAN
 			_show_toast(message_text, message_color)
-			_pickup_flash()
+			_pickup_flash(cell, message_color)
 			return
 
 
@@ -886,6 +886,12 @@ func _check_overheat() -> void:
 		message_text = "THERMAL OVERLOAD  -1 INTEGRITY"
 		message_color = UIKit.RED
 		_show_toast(message_text, message_color)
+		if vfx_layer != null:
+			var at := _cell_center(player_cell)
+			VFX.embers(vfx_layer, at, Color(1.0, 0.55, 0.22, 0.9), 10)
+			VFX.shockwave(vfx_layer, at, UIKit.RED, 26.0)
+			VFX.dust(vfx_layer, at, Color(0.75, 0.45, 0.30, 0.5), 6, 18.0)
+		_impact(player_cell, UIKit.RED, 1, 0)
 
 
 func _execute_path() -> void:
@@ -1097,7 +1103,9 @@ func _draw_move_preview() -> void:
 
 func _process(delta: float) -> void:
 	if fx_layer != null and not done:
-		fx_layer.modulate.a = 0.88 + 0.12 * sin(Time.get_ticks_msec() * 0.006)
+		# The hazard shader owns the pulse now; keep only a faint breath here so
+		# the footprint never doubles up two conflicting rhythms.
+		fx_layer.modulate.a = 0.96 + 0.04 * sin(Time.get_ticks_msec() * 0.004)
 	# Idle hover: a sub-pixel bob sells the lander as floating without touching
 	# the shadow. Sprite2D.offset is independent of the move tween on position.
 	if player_sprite != null:
@@ -1316,6 +1324,17 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 		text += ("  " if text != "" else "") + "+%d HEAT" % dmg_t
 	if text != "":
 		_float_text(text, cell, color)
+	var at := _cell_center(cell)
+	if vfx_layer != null:
+		if dmg_i > 0 or dmg_t > 0:
+			VFX.flare_burst(vfx_layer, at, color, 0.9)
+			VFX.shockwave(vfx_layer, at, color, 34.0)
+			VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 1.0), 12, 70.0, 110.0)
+			VFX.dust(vfx_layer, at, Color(0.55, 0.50, 0.44, 0.55), 7, 26.0)
+			VFX.scorch(vfx_layer, at, color)
+		else:
+			VFX.shield(vfx_layer, at, color)
+			VFX.ring(vfx_layer, at, Color(color.r, color.g, color.b, 0.9), 30.0, 0.34, 2.0)
 	if _impact_flash != null:
 		_impact_flash.color = Color(color.r, color.g, color.b, 0.0)
 		var flash := create_tween()
@@ -1328,7 +1347,9 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 	shake.tween_property(self, "position", base, 0.06)
 
 
-func _pickup_flash() -> void:
+func _pickup_flash(cell := Vector2i.ZERO, color := Color(1, 1, 1)) -> void:
+	if vfx_layer != null:
+		VFX.pickup(vfx_layer, _cell_center(cell), color)
 	if _impact_flash == null:
 		return
 	_impact_flash.color = Color(1, 1, 1, 0)
@@ -1378,6 +1399,15 @@ func _extract() -> void:
 		_show_toast(message_text, message_color)
 		return
 	sec["risk_bonus"] = _risk_bonus_nearby()
+	GameState.sfx("confirm")
+	if vfx_layer != null:
+		var at := _cell_center(start_cell)
+		VFX.beam(vfx_layer, at, Color(0.55, 1.0, 0.92, 0.9), 62.0, 0.85, 9)
+		VFX.ring(vfx_layer, at, Color(0.55, 1.0, 0.92, 0.95), 40.0, 0.55, 2.4, 8)
+		VFX.sparks(vfx_layer, at, UIKit.CYAN, 14, 55.0, -40.0, 10)
+		await get_tree().create_timer(0.45).timeout
+		if done:
+			return
 	_end(true, "EXTRACTION")
 
 
