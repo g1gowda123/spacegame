@@ -469,11 +469,15 @@ func _show_mission_review() -> void:
 
 
 func _commit_route() -> void:
+	print("DBG commit enter %s" % str(selected_planet.get("name", "<empty>")))
 	if selected_planet.is_empty():
+		print("DBG commit empty planet")
 		return
 	GameState.begin_sector(selected_planet)
+	print("DBG began sector %s" % str(GameState.current_sector != null))
 	GameState.sfx("confirm")
-	get_tree().change_scene_to_file("res://scenes/sector.tscn")
+	var err := get_tree().change_scene_to_file("res://scenes/sector.tscn")
+	print("DBG change err=%d" % err)
 
 
 func _unhandled_input(event: InputEvent) -> void:
