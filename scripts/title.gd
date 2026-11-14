@@ -37,11 +37,11 @@ func _build_ui() -> void:
 	margin_rule.size = Vector2(1, 322)
 	add_child(margin_rule)
 	var plot := ORBIT_PLOT.new()
-	plot.position = Vector2(300, 78)
+	plot.position = Vector2(300, 68)
 	plot.size = Vector2(150, 78)
 	add_child(plot)
 	var plot_label := UIKit.mono("TRANSFER PLOT  //  18.6 LY", 6, UIKit.INK_SOFT)
-	plot_label.position = Vector2(300, 156)
+	plot_label.position = Vector2(300, 150)
 	add_child(plot_label)
 
 	var stamp := TextureRect.new()
