@@ -378,6 +378,8 @@ var cli_biome: int = -1
 var cli_view: int = -1
 var cli_hide_ui: bool = false
 var debug_visible: bool = false
+var debug_transitions: bool = false
+var debug_layer: Node2D
 var debug_elapsed: float = 0.0
 var nav_label: Label
 var debug_label: Label
@@ -463,6 +465,8 @@ func _parse_cli() -> void:
 			debug_visible = true
 		elif arg == "--no-ui":
 			cli_hide_ui = true
+		elif arg == "--debug-transitions":
+			debug_transitions = true
 		elif arg == "--legacy-water":
 			# Agent b: leaves the 1-cell halo and the old 3x3-only smoothing,
 			# i.e. the pre-coalescing shoreline, for side-by-side evidence.
@@ -752,6 +756,10 @@ func _build_view() -> void:
 	overlay_layer = Node2D.new()
 	overlay_layer.z_index = 22
 	add_child(overlay_layer)
+
+	debug_layer = Node2D.new()
+	debug_layer.z_index = 30
+	add_child(debug_layer)
 
 	structure_layer = Node2D.new()
 	structure_layer.z_index = 20
@@ -2534,6 +2542,60 @@ func _in_view(gx: int, gy: int, w: int = 1, h: int = 1) -> bool:
 	)
 
 
+	if debug_transitions:
+		_draw_transition_debug()
+
+
+func _transition_kind(key: String, base_key: String) -> String:
+	if key == base_key:
+		return "base"
+	if key.contains("diag|"):
+		return "diag"
+	if key.contains("stripe_"):
+		return "stripe"
+	if key.contains("|outer_"):
+		return "outer"
+	if key.contains("|inner_"):
+		return "inner"
+	if key.ends_with("north") or key.ends_with("east") or key.ends_with("south") or key.ends_with("west"):
+		return "straight"
+	return "other"
+
+
+func _draw_transition_debug() -> void:
+	if debug_layer == null:
+		return
+	for child in debug_layer.get_children():
+		child.free()
+	var b: Dictionary = BIOMES[biome_index]
+	var base_key := str(b["base"])
+	var colors := {
+		"straight": Color(0.35, 0.62, 1.0, 0.34),
+		"outer": Color(1.0, 0.28, 0.24, 0.40),
+		"inner": Color(0.35, 1.0, 0.48, 0.38),
+		"stripe": Color(1.0, 0.86, 0.25, 0.36),
+		"diag": Color(1.0, 0.32, 0.92, 0.40),
+		"other": Color(1.0, 1.0, 1.0, 0.30),
+	}
+	for ly in VIEW_H:
+		for lx in VIEW_W:
+			var wx := view_origin.x + lx
+			var wy := view_origin.y + ly
+			var t := _render_terrain_world(wx, wy)
+			var prio := _priority_map(b)
+			var key := _transition_choice(t, wx, wy, prio)
+			var kind := _transition_kind(key, t)
+			if kind == "base":
+				continue
+			var q := _cell_quad(wx, wy)
+			if q.size() != 4:
+				continue
+			var poly := Polygon2D.new()
+			poly.polygon = q
+			poly.color = colors.get(kind, colors["other"])
+			debug_layer.add_child(poly)
+
+
 func _rebuild_structure_sprites() -> void:
 	if structure_layer == null or chunks.is_empty():
 		return
@@ -3426,6 +3488,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_F7:
 			feature_toggles["props"] = not bool(feature_toggles["props"])
 			_refresh_world()
+		KEY_F9:
+			debug_transitions = not debug_transitions
+			_render_window()
 		KEY_F10:
 			_save_capture(CAPTURE_PATH)
 		KEY_F11:
