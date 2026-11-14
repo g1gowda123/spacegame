@@ -380,8 +380,8 @@ var cli_view: int = -1
 var cli_hide_ui: bool = false
 var debug_visible: bool = false
 var debug_transitions: bool = false
-var soft_edges_enabled: bool = true
-var relief_enabled: bool = true
+var edge_mode: int = 1
+var relief_enabled: bool = false
 var debug_layer: Node2D
 var terrain_mask_tex: ImageTexture
 var terrain_mask_img: Image
@@ -490,6 +490,8 @@ func _parse_cli() -> void:
 			debug_transitions = true
 		elif arg == "--no-soft-edges":
 			soft_edges_enabled = false
+		elif arg == "--rect" or arg == "--no-circle":
+			circle_view = false
 		elif arg == "--no-relief":
 			relief_enabled = false
 		elif arg == "--legacy-water":

@@ -15,7 +15,8 @@ Claims are on `docs/BOARD.md`; this file is the technical contract.
 |---|---|---|
 | `shaders/map_view.gdshader` | sector + map sandbox | Grade (W5 luminance floor), hue-only biome tint, per-biome exposure, water swell + caustics, lava emissive, ice twinkle, cloud drift, macro variation, grain. |
 | `shaders/hazard_field.gdshader` | `sector.gd::_draw_hazards()` | Animated hazard footprint: armed pulse + diagonal warning tape + per-kind signature, dashed forming state, burn/ember scar state. |
-| `shaders/star_drift.gdshader` | `space_backdrop.gd` (title, design, draft, debrief, report, crew, buff) | Slow plate drift, star twinkle, 1 px sparkles, faint nebula hue breath. |
+| `shaders/star_drift.gdshader` | `space_backdrop.gd` (title, design, draft, debrief, report, crew, buff) + sector backdrop | Slow plate drift, star twinkle, 1 px sparkles, faint nebula hue breath. |
+| `shaders/planet_view.gdshader` | planet portrait in `space_backdrop.gd` | Slow terminator, limb/atmosphere glow, specular; the static disc stays the art. |
 | `shaders/space_backdrop.gdshader` | procedural deep-space plate (legacy / experiments) | Pure-procedural stars + nebula + small worlds; kept for reference. |
 
 ### Animation systems
@@ -34,6 +35,8 @@ Claims are on `docs/BOARD.md`; this file is the technical contract.
 | Biome ambience | `map_generator.gd::_build_ambient` | Per-biome CPUParticles2D: snow (cryo/ammonia), embers (volcanic/sulfur/obsidian), mist (ocean/methane), sparkles (crystal), dust (arid/iron/barren/carbon), spores (temperate). Rebuilt per board. |
 | Lander | `map_generator.gd::_process` | Idle hover bob + breathing contact shadow. |
 | Sector planet | `sector.gd::_process` | Slow vertical drift on the backdrop planet. |
+| Screen arrival | `scripts/scene_fx.gd` (autoload `SceneFX`) | Watches `tree.current_scene` and fades every new screen in from black (0.24 s). No call-site changes; works for title/design/draft/sector/debrief/report/briefing/crew/buff. |
+| Ship portrait | `scripts/ship_diagram.gd` | Engine glow flicker + red/green nav strobe on every hull, plus the existing live-module flicker/blink. The portrait redraws every frame. |
 
 All effects are `CPUParticles2D` / `_draw()`-based. No new nodes in `.tscn`
 files, no export dependency, GL Compatibility safe.
@@ -103,11 +106,14 @@ generation never breaks the game.
 
 ## Known gaps / next
 
-- Screen-to-screen transition (paper slide / fade) is not wired; every screen
-  still hard-cuts through `get_tree().change_scene_to_file`.
+- Scene **fade-out** on the way out is still a hard cut: `SceneFX` only owns the
+  arrival fade. A true cross-fade needs a `SceneFX.go(path)` wrapper at the ~30
+  `change_scene_to_file()` call sites (coordinate with the UI owner).
 - Sector HUD gauges (heat bar, power pips) are still instant; the UI identity
   pass owns the widget refactor, so animation of those waits for U2/U4.
 - No heat-haze refraction on volcanic boards yet (would need a screen-copy or a
   second texture; cost/benefit not justified at 640×360).
 - `space_backdrop.gdshader` (procedural) is unused by screens; kept as the
   reference implementation for the raster plate's animated successor.
+- Ship portrait: module blocks could stagger in on install (one block per 40 ms)
+  instead of the single flash; needs `ShipBuild` slot ordering.

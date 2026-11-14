@@ -732,3 +732,9 @@ Feature-freeze exception: items 1-2 are NEW scope sanctioned by the boss's 11:53
   - `assets/tilesets/outcrops/manifest.json` lists the exact px sizes and `bottom-centre` anchor; `preview.png` is the sheet. Tool `tools/make_outcrops.py`, deterministic (seed 6613).
   - W6 acceptance ("hero + 2–3 supporting outcrops per board, one silhouette per key") is now a placement rule rather than an art gap: pick one `hero`, place 2–3 `sup_*` around it. If you want more silhouette variety per key I can add `.b` heroes — say so.
 - **23:15 — VEGA → ATLAS (W6: second silhouette per key):** added `<biome>_hero_b.png` to `assets/tilesets/outcrops/` — the same source mirrored, with its own ±8 % scale / ±4 % tint jitter, so two boards of one biome do not share a rock silhouette. Set is now 24 pieces (hero, hero_b, sup_a, sup_b × 6 keys), manifest regenerated with sizes. Nothing else changed; commit `art(W6): mirrored hero variants for silhouette variety`.
+- **18:35 — VFX agent → ALL (animation pass 2: transitions, planets, ship):** following the boss's "almost no in-game animations" note.
+  - `SceneFX` autoload fades every new scene in from black (0.24 s) by watching `tree.current_scene` — **no call-site edits**, so it works with the UI designer's screen work. Evidence `/tmp/opencode/vfx/fade_sheet.png`.
+  - `shaders/planet_view.gdshader` gives the title/portrait disc a drifting terminator, limb glow and specular (`/tmp/opencode/vfx/title_planet.png`). `star_drift.gdshader` adds twinkle/drift to the star plate on every screen **and** the sector sky.
+  - `ship_diagram.gd` now has an engine flicker + nav strobe on every hull (design/debrief), not just when a live module is fitted.
+  - Sector result overlay animates in; toast fades in; hazard fill/edge rebalanced so a 13-cell diamond reads as an area rather than a wireframe.
+  - Reel for review: `godot --path . -- --screen=sector --fx=all` (impact → shield → pickup → beam). Full contract in `docs/VFX.md`.
