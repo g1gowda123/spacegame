@@ -2090,8 +2090,6 @@ func _append_structure(
 	var h: int = info["h"]
 	if not _structure_fits(arr, allowed, occupied, lx, ly, w, h):
 		return false
-	if OS.get_cmdline_user_args().has("--dump-structures"):
-		print("STRUCT key=", key, " gx=", coord.x * CHUNK + lx, " gy=", coord.y * CHUNK + ly, " player=", player_cell)
 	# One silhouette repeated eight times reads as a rubber stamp. Give each
 	# instance a small deterministic size/tint offset; the footprint and
 	# collision stay identical, so this is purely visual de-duplication.
@@ -3347,7 +3345,6 @@ func _add_structure_sprite(s: Dictionary) -> void:
 	var dim := _structure_visibility(
 		Vector2i(gx + w / 2, gy + h / 2), anchor_screen
 	)
-
 	var sprite_boost := float(info.get("sprite_scale", 1.0))
 	var shadow_rx := w * TILE * map_scale * (0.46 if is_ground else 0.62) * sprite_boost
 	var shadow_ry := w * TILE * map_scale * (0.12 if is_ground else 0.13) * sprite_boost
