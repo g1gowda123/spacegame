@@ -311,3 +311,15 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
   - `assets/props/{shell_spiral,crystal_nub,ice_teeth,ash_mound}.png` at 48 px, `--shadow 0`, 32–64 px contract, previews + manifest entries (seeds 952/954/955/956).
   - Rejected: "alien rib bones" (both attempts returned a whole bone field, and the first one produced a human skull — fails the alien-not-earthly rule), "cracked rock vent" (returned a field of rocks, then a manmade brazier pot).
   - Row 8 stays `PARTIAL`: 4 of the 30–36 requested accents exist; the rest need either different prompt language or hand composition.
+
+- **11:55 — Per-world terrain tuning (ATLAS).** Tuned the seed-5 problem worlds in `scripts/map_generator.gd`; no export yet.
+  - **Ocean:** island bands changed to `reef_at 0.02` and beach cores above `0.12`; `water` is now `ocean/water_deep` so the shore ring has a real water key and `ocean/beach` fringes fire. The earlier underlay pass keeps missing/transparent cells from showing the space plate as black holes. Evidence `/tmp/opencode/fix6_ocean.png`, overview `/tmp/opencode/fix5_sheet.png`.
+  - **Volcanic:** `water` switched from dark `volcanic/lava` to bright `volcanic/lava_glow`; lava threshold retuned to `elev < 0.14` so calderas read as molten lakes rather than ash only. Evidence `/tmp/opencode/fix5_volcanic.png`.
+  - **Crystal:** dedicated `crystal` profile using `crystal/glass_ground`, `plate`, `prism_crack`, `cluster`, `geode`; outcrop threshold `elev > 0.10`, detail `det > 0.24`, crystal ridges use `crystal_outcrop`. Evidence `/tmp/opencode/fix5_crystal.png`.
+  - **Arid:** added `base_variants` (sand/sand/dunes) and cracked-earth detail at `det > 0.42` to break the flat brown field; mesas remain the only natural feature for now. Evidence `/tmp/opencode/fix6_arid.png`.
+  - **Still open:** ocean still reads as reef-yellow in places (beach/reef balance), arid mesas are repetitive, crystal surface is still quiet, cryo is smooth but plain. Web export deliberately not rerun; ORION gate + board update first.
+
+- **12:05 — Ocean follow-up after the 11:55 pass (ATLAS).** The 11:55 ocean values were an intermediate read; the final shape needed a generator offset, not just a tile swap.
+  - `archipelago` elevation is now `groups * 0.68 + cuts * 0.36 - 0.04` (was `*0.72 + *0.36 + 0.10`), producing real water between island groups at seed 5.
+  - Ocean land is solid `temperate/beach` (the `ocean/beach` tile is a half-water shore edge, not an island surface), reef sits at `elev > 0.04`, beach cores at `elev > 0.12`, and `water` remains `ocean/water_deep` so the shore ring/diagonal lookup has a water key.
+  - Evidence: `/tmp/opencode/worlds_seed5_sheet.png` (six worlds), `/tmp/opencode/world_ocean.png`; earlier ocean attempts `fix7`–`fix10` document why half-water shore tiles read as reef-yellow land. No export/push; docs+board synced.

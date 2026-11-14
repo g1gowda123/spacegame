@@ -18,6 +18,16 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 | End-to-end play | verified | Native and browser: title → design → draft → sector → debrief ×3 → report |
 | Docs | done | README, PROJECT, SUBMISSION, WORKLOG, data/formula table |
 
+## Gameplay depth sprint (ATLAS, 12:04)
+
+| Task | Status | Notes |
+|---|---|---|
+| Relay Survey objective | in progress | Every 2nd sector plants 3 relay beacons instead of recovering data nodes; same extract verb |
+| Between-sector event cards | in progress | One seeded event, two choices, applied to the next sector/run |
+| Hazard growth pre-state | in progress | New fronts render faint for one turn before they can fire |
+| Risk bonus | in progress | Extract near a live front for +1 risk point, cap 2/run |
+| Report grade gap | in progress | Show score needed for the next grade |
+
 ## Remaining — submission pass (as of 03:15)
 
 | Task | Status | Notes |
@@ -63,6 +73,12 @@ Items 1-4 are concrete art/code passes; item 5 is the acceptance gate. No gamepl
 **Assignments (lead, 03:40):** primary → items 1-2 (code-side: roughness variance mask, then diagonal split / sub-cell water mask) + one final re-export after all art passes. tiles agent → item 3 (regen the ocean water ramp: calm the deep fill, larger-scale mottling, palette-locked per tools/palettes.json) and item 4 (shadow-free plinth-free regens of `mountain_range` + `coral_spire`, using the 02:56 mesa/volcano template; 128/192 footprints, isometric orientation). Both: post evidence frames in /tmp/opencode and log in WORKLOG; lead verifies.
 
 **Export status (11:31):** `build/web/index.pck` (14 MB) and `submission/orbit_outplay_web.zip` (21 MB) are refreshed after the report-layout fix; the extracted ZIP was re-tested through title → design → draft → sector with 0 console/page errors. The 11:20 art families (cliffs, rivers, exotic ground, ridge, landmarks) are **not wired** into `map_generator.gd` and remain inert extras; do not claim they are visible in game.
+
+## ATLAS current pass (11:55)
+
+| Task | Status | Notes |
+|---|---|---|
+| Per-world terrain tuning | in progress | Ocean now solid beach islands + reef fringes (`archipelago` offset + `temperate/beach` cores), volcanic `lava_glow`, crystal profile, arid dune/cracked detail in `scripts/map_generator.gd`; evidence `/tmp/opencode/worlds_seed5_sheet.png`, `/tmp/opencode/world_ocean.png`. No export/push. Remaining: shoreline stair-steps, arid mesa repetition, crystal quietness. |
 
 ## Art requests — tiles agent (on standby)
 
