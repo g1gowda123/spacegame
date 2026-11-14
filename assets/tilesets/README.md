@@ -148,6 +148,45 @@ tile into blue-gray cracked stone.
 | geyser | 128 (2x2) | 692 | hardware | alien geothermal vent, rebuilt 2026-11-14 |
 | coral_spire | 128 (2x2) | 805 | ocean_coral | vertical coral spire, shadow-free, no plinth; not yet used by any biome mapping |
 | crystal_outcrop | 128 (2x2) | 671 | hardware | rebuilt 2026-11-14 (was a full-frame texture) |
+| ridge_wide | 192x128 (2x2) | — | temperate | three overlapping, jittered `mountain_range` peaks composed into one continuous ridge; shadow-free (2026-11-14) |
+| crystal_spire | 128 (2x2) | 905 | crystal ramp | violet faceted spire, shadow-free (2026-11-14) |
+| sandstone_arch | 192 (3x3) | 911 | arid | natural arch, interior punched with `make_prop.py --key-interior` (2026-11-14) |
+| glacier_wall | 128 (2x2) | 913 | cryo | short blue ice wall block (2026-11-14) |
+| canyon_bridge | 192 (3x3) | 906 | arid | rust-red natural rock bridge (2026-11-14) |
+
+## Edge and feature tiles
+
+- **Cliffs** — `assets/tilesets/<biome>/cliffs/cliff_<low|mid|high>_<n|e|s|w>.png`,
+  60 tiles for temperate / arid / cryo / volcanic / barren. Built by
+  `tools/make_cliff.py` from the biome's **ground** tile (plateau) plus its
+  **rock** tile (wall, darkened with a vertical falloff, striated, lit rim on
+  the cliff-top edge, dark 1 px foot line). Regenerate with
+  `make_cliff.py --rock <rock.png> --ground <ground.png> --biome <b> --outdir assets/tilesets/<b>/cliffs`.
+- **Rivers** — `assets/tilesets/<biome>/rivers/` (temperate, arid, volcanic),
+  16 pieces each: `straight_ns|ew`, `bend_ne|es|sw|wn`, `tee_nes|esw|swn|wne`,
+  `cross`, `source`, `mouth`, `shallow_ns|ew`, `ford`. `tools/make_river.py`
+  builds them from a distance-field channel mask; the composite is not
+  re-locked, because locking to the ground palette flattens the water.
+- **Algorithm ground / exotic identities** — 60 derived tiles via
+  `tools/make_variants.py` (`--list` for the recipe keys, `--only`, `--all`):
+  `arid/{dunes_ripple,dune_crest,sand_plateau}`, `volcanic/{lava_core,ash_rim,basalt_shelf}`,
+  `cryo/{ice_plate,crack}`, `barren/{crater_rim,ejecta}`, `ocean/{reef_chain,sand_cay}`,
+  plus six each for methane, iron, crystal, ammonia, obsidian, carbon, sulfur.
+  Derived tiles are transformations of the biome's own base tile, never a tint
+  of another biome.
+
+## Planets and the space plate
+
+- `assets/sprites/planets/<biome>.png` (256) and
+  `assets/sprites/planets/sector/<biome>.png` (512) are **procedural**, not
+  diffusion: `tools/make_planet.py --biome <b> --size 256|512`. The tool builds
+  a seamless surface from an explicit ramp (`RAMPS`), projects it on a sphere
+  with one light, adds limb darkening and a thin lit atmosphere, and
+  palette-locks. Continents/sea ratio is per biome (`SEA_FRAC`); barren/carbon/
+  obsidian get crater bowls, cryo/temperate/ammonia get polar caps, methane is
+  a banded gas giant.
+- `assets/backgrounds/space.png` (640x360) is `tools/make_space.py`: navy
+  gradient, one faint nebula wash, ~210 stars, no planet.
 
 ## Props
 

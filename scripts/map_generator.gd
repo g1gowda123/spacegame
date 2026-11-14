@@ -56,6 +56,7 @@ var BIOMES: Array = [
 		"id": "arid", "name": "Arid", "profile": "arid", "life": "lifeless", "generator": "dunes",
 		"tint": "#ffffff", "tint_strength": 0.0,
 		"base": "arid/sand", "base_alt": "arid/dunes",
+		"base_variants": ["arid/sand", "arid/sand", "arid/dunes"],
 		"detail": "arid/cracked_earth", "detail_alt": "arid/salt_flat",
 		"detail_alt2": "arid/dry_river",
 		"rock": "arid/rock", "shore": "", "water": "",
@@ -63,10 +64,10 @@ var BIOMES: Array = [
 	{
 		"id": "cryo", "name": "Cryo", "profile": "cryo", "life": "lifeless", "generator": "fractured",
 		"tint": "#ffffff", "tint_strength": 0.0,
-		"base": "cryo/lake_32s", "detail": "cryo/lake_32s",
+		"base": "cryo/glacier", "detail": "cryo/ice",
 		"detail_alt": "cryo/glacier", "detail_alt2": "cryo/ice",
 		"detail_alt3": "cryo/glacier",
-		"rock": "cryo/glacier", "shore": "", "water": "",
+		"rock": "cryo/glacier", "rock_alt": "cryo/ice", "shore": "", "water": "",
 	},
 	{
 		"id": "volcanic", "name": "Volcanic", "profile": "volcanic", "generator": "caldera",
@@ -78,9 +79,10 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ocean", "name": "Ocean", "profile": "ocean", "life": "lifeless", "generator": "archipelago",
-		"tint": "#ffffff", "tint_strength": 0.0,
+		"tint": "#ffffff", "tint_strength": 0.0, "shore_ring": true,
 		"base": "ocean/water_shallow", "detail": "ocean/water_deep",
-		"rock": "ocean/reef", "shore": "ocean/beach", "water": "",
+		"rock": "ocean/beach", "rock_alt": "ocean/beach",
+		"shore": "ocean/beach", "water": "",
 	},
 	{
 		"id": "barren", "name": "Barren", "profile": "barren", "life": "lifeless", "generator": "cratered",
@@ -116,11 +118,13 @@ var BIOMES: Array = [
 		"shore": "", "water": "volcanic/lava",
 	},
 	{
-		"id": "crystal", "name": "Crystal Field", "profile": "barren", "generator": "faceted",
+		"id": "crystal", "name": "Crystal Field", "profile": "crystal", "generator": "faceted",
 		"life": "lifeless", "tint": "#b08cff", "tint_strength": 0.28,
-		"base": "cryo/ice", "detail": "cryo/glacier",
-		"detail_alt": "barren/regolith",
-		"rock": "barren/rock", "shore": "", "water": "",
+		"base": "crystal/glass_ground",
+		"base_variants": ["crystal/glass_ground", "crystal/plate", "crystal/prism_plate"],
+		"detail": "crystal/plate",
+		"detail_alt": "crystal/prism_crack", "detail_alt2": "crystal/plate",
+		"rock": "crystal/cluster", "rock_alt": "crystal/geode", "shore": "", "water": "",
 	},
 	{
 		"id": "obsidian", "name": "Obsidian Glass", "profile": "volcanic", "generator": "fractured",
@@ -303,6 +307,7 @@ var view_origin := Vector2i.ZERO
 
 var sub_viewport: SubViewport
 var tilemap: TileMapLayer
+var underlay: TileMapLayer
 var rockmap: TileMapLayer
 var cliff_layer: Node2D
 var overlay_layer: Node2D
@@ -555,6 +560,14 @@ func _build_view() -> void:
 	sub_viewport.disable_3d = true
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(sub_viewport)
+
+	# Every cell gets a plain base tile first. Transition art is allowed to
+	# have transparent edges; without this underlay any missing/transparent
+	# cell shows the black space plate through the SubViewport.
+	underlay = TileMapLayer.new()
+	underlay.tile_set = tile_set
+	underlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sub_viewport.add_child(underlay)
 
 	tilemap = TileMapLayer.new()
 	tilemap.tile_set = tile_set
@@ -1415,7 +1428,7 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 				return _detail_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"volcanic":
-			if water != "" and elev < -0.32:
+			if water != "" and elev < 0.25:
 				return water
 			if elev > 0.55 and rock != "":
 				return _rock_choice(b, det)
@@ -1426,8 +1439,16 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 			if wet < -0.24:
 				return _detail_choice(b, det)
 			var reef_at := 0.20 if str(b.get("generator", "")) == "archipelago" else 0.52
-			if elev > reef_at and rock != "":
+			if elev > 0.30 and rock != "":
 				return _rock_choice(b, det)
+			if elev > reef_at:
+				return "ocean/reef"
+			return _base_choice(b, det, wx, wy)
+		"crystal":
+			if elev > 0.18 and rock != "":
+				return _rock_choice(b, det)
+			if elev < -0.35 or det > 0.30:
+				return _detail_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"barren":
 			if elev > 0.48 and rock != "":
@@ -1545,6 +1566,8 @@ func _ridge_key(biome_id: String) -> String:
 			return "impact_crater"
 		"temperate", "carbon":
 			return "mountain_massif"
+		"crystal":
+			return "crystal_outcrop"
 	return "mountain_range"
 
 
@@ -1553,7 +1576,7 @@ func _feature_key(biome_id: String, roll: float) -> String:
 		"volcanic":
 			return "volcano" if roll < 0.40 else "geyser"
 		"arid":
-			return "mesa" if roll < 0.52 else "impact_crater"
+			return "mesa"
 		"cryo":
 			return "iceberg" if roll < 0.50 else "crystal_outcrop"
 		"ocean":
@@ -1791,15 +1814,22 @@ func _flip_alt(key: String, wx: int, wy: int) -> int:
 func _render_window() -> void:
 	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
 	tilemap.clear()
+	underlay.clear()
 	rockmap.clear()
 	var b: Dictionary = BIOMES[biome_index]
 	var rock := str(b.get("rock", ""))
+	var base_key := str(b["base"])
 	var prio := _priority_map(b)
 
 	for ly in VIEW_H:
 		for lx in VIEW_W:
 			var wx := view_origin.x + lx
 			var wy := view_origin.y + ly
+			if source_ids.has(base_key):
+				underlay.set_cell(
+					Vector2i(lx, ly), source_ids[base_key], Vector2i.ZERO,
+					_flip_alt(base_key, wx, wy)
+				)
 			var t := _render_terrain_world(wx, wy)
 			var best_key := _transition_choice(t, wx, wy, prio)
 			if source_ids.has(best_key):
