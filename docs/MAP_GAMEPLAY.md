@@ -42,8 +42,9 @@ This document is the **gameplay** work order. The rendering/composition half is
    complication.
 4. **Weather the front.** Hazards are telegraphed, then move/expand. Shelter is
    a real choice (hold behind a ridge vs. dash for the last node).
-5. **Return.** Quota aboard is not extraction. The lander has to reach the
-   landing zone, with samples reducing range or increasing heat.
+5. **Return.** Quota aboard is not extraction. A cyan extraction pad is chosen
+   once, 2–6 tiles from the landing zone; the lander has to reach that pad, with
+   samples reducing range or increasing heat.
 6. **Extract and refit.** The run's route becomes the story in the debrief.
 
 ## Map grammar

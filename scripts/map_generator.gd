@@ -193,6 +193,12 @@ var STRUCTURES: Dictionary = {
 		"path": "res://assets/tilesets/structures/mountain_range.png",
 		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.75,
 	},
+	# Native 3×2 ridge strip: three adjacent copies form a continuous 9×2
+	# mountain wall instead of a row of separate 2×2 hill stamps.
+	"ridge_wide": {
+		"path": "res://assets/tilesets/structures/ridge_wide.png",
+		"w": 3, "h": 2, "occludes": true, "sprite_scale": 1.0,
+	},
 	"mountain_massif": {
 		"path": "res://assets/tilesets/structures/mountain_massif.png",
 		"w": 4, "h": 4, "occludes": true, "sprite_scale": 1.0,
@@ -2080,9 +2086,9 @@ func _ridge_key(biome_id: String) -> String:
 		"cryo", "methane", "ammonia":
 			return "iceberg"
 		"barren":
-			return "mountain_range"
+			return "ridge_wide"
 		"temperate", "carbon":
-			return "mountain_range"
+			return "ridge_wide"
 		"crystal":
 			return "crystal_outcrop"
 	return "mountain_range"
@@ -2147,6 +2153,8 @@ func _place_ridge(
 	]
 	var dir: Vector2i = dirs[rng.randi_range(0, dirs.size() - 1)]
 	var count := rng.randi_range(4, 7) if key == "mountain_range" else rng.randi_range(3, 6)
+	if key == "ridge_wide":
+		count = rng.randi_range(2, 4)
 	if key == "mountain_massif":
 		count = rng.randi_range(1, 2)
 

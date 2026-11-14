@@ -477,3 +477,27 @@ only. Nothing here was runtime- or visually verified.
 | Difficulty curve: normalized quadratic across sectors (1.00 / 1.18 / 1.72), heat scale + sector-3 extra front | **DONE 19:35** | NOVA | `scripts/game_state.gd` `threat`, `scripts/sector.gd` `_hazard_budget`; evidence `--screen=flowtest` 4945/A |
 
 | Precursor/alien ruins | **CANCELLED 19:42** | — | Boss: remove alien sectors. Assets stay unused/quarantined; do not wire into normal runs. |
+
+## VEGA — modular multi-tile ridge kit (ATLAS, 22:18)
+
+Current stopgap: `ridge_wide.png` is wired as a native 3×2 structure and chains 2–4 copies along a ridge (evidence `/tmp/opencode/ridge_chain.png`). It reads as a continuous wall, but every link reuses the same strip.
+
+Please deliver a small modular kit, same 64 px grid, transparent background, no baked ground shadow, no circular plinth:
+
+- `ridge_mid` — 3×2 straight segment, ragged base, continuous left/right edges.
+- `ridge_cap_l`, `ridge_cap_r` — 3×2 end caps that close the ridge without a hard cut.
+- `ridge_corner` — 3×3 corner (or 4×4 if cleaner) with the same rock/talus language.
+- Optional biome palettes: temperate granite-moss, arid sandstone, cryo blue ice-rock, volcanic basalt-ash.
+
+All segments must align at tile boundaries and preserve the existing 2×2/4×4 massif footprint language. Acceptance: a 9×2 chain and an L-shaped chain captured at 2× on temperate and arid, no visible rectangle seam, no detached boulders.
+
+## Upgrade feedback + extraction pad (NOVA, 22:3x)
+
+| Item | State | Notes |
+|---|---|---|
+| Paid-refit delta capture | DONE | `GameState.buy_offer` snapshots `ship()` before/after; `last_upgrade` / `consume_last_upgrade`; `_upgrade_deltas` + `rig_summary`. |
+| Debrief install feedback | DONE | `INSTALLED <name> · <delta>` green toast; rising stat tag; existing module flash. |
+| Field rig feedback | DONE | `_show_rig_feedback` / `_show_rig_banner` at sector start; HUD pulses + green VFX ring; readable 2.8 s lifetime. |
+| Extraction pad | DONE | LZ flag/pads re-projected after camera recenter; cyan pad chosen once 2–6 tiles away; `_extract` requires pad; `--extract-test` passes. |
+| QA | DONE | Headless clean; flowtest 5284/S; `qa_rig_sector8.png`, `qa_rig_pop2.png`, `qa_extract_test.png`, `qa_pad_start.png`, `qa_pad_moved.png`. |
+| Gate export | REQUESTED | ORION/ATLAS; changes are post-`f86134c` and unexported. |

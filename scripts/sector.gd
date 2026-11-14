@@ -315,7 +315,9 @@ func _show_rig_feedback() -> void:
 	var lines: Array = rig["lines"]
 	if lines.is_empty():
 		return
-	_float_text("RIG ONLINE  " + " · ".join(lines), player_cell, UIKit.GREEN)
+	_show_rig_banner("RIG ONLINE  " + " · ".join(lines))
+	if vfx_layer != null:
+		VFX.ring(vfx_layer, _cell_center(player_cell), UIKit.GREEN, 46.0, 0.55, 2.0)
 	if "--debug-rig" in OS.get_cmdline_user_args():
 		print("RIGFEED ", " · ".join(lines))
 	var keys: Array = rig["keys"]
@@ -325,6 +327,27 @@ func _show_rig_feedback() -> void:
 		_pulse(int_label, UIKit.GREEN)
 	if keys.has("thermal_res"):
 		_pulse(heat_val, UIKit.GREEN)
+
+
+func _show_rig_banner(text: String) -> void:
+	## A readable confirmation that the paid refit is actually in the field.
+	## The floating tag alone is easy to miss against bright terrain.
+	if fx_root == null:
+		return
+	var box := UIKit.panel(Color(0.035, 0.065, 0.045, 0.94), UIKit.GREEN, 2)
+	box.position = Vector2(188, 42)
+	box.size = Vector2(264, 24)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := UIKit.label(text, 9, UIKit.GREEN, true, HORIZONTAL_ALIGNMENT_CENTER)
+	l.custom_minimum_size = Vector2(252, 20)
+	box.add_child(l)
+	fx_root.add_child(box)
+	box.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(box, "modulate:a", 1.0, 0.16)
+	tw.tween_interval(2.1)
+	tw.tween_property(box, "modulate:a", 0.0, 0.45)
+	tw.tween_callback(box.queue_free)
 
 
 func _play_landing() -> void:
@@ -1231,6 +1254,9 @@ func _run_fx_demo(kind: String) -> void:
 			}
 			hazards.append(m)
 			_resolve_hazard()
+		"meteor":
+			VFX.meteor_streak(vfx_layer, _cell_center(player_cell + Vector2i(3, 2)),
+				Color(1.0, 0.74, 0.42))
 		"world":
 			_world_event()
 			_meteor_event()
@@ -1558,7 +1584,7 @@ func _process(delta: float) -> void:
 			_shooting_star()
 		_meteor_timer -= delta
 		if _meteor_timer <= 0.0:
-			_meteor_timer = rng.randf_range(9.0, 16.0)
+			_meteor_timer = rng.randf_range(7.0, 12.0)
 			_meteor_event()
 
 
@@ -1573,7 +1599,6 @@ func _visible_structures() -> Array[Dictionary]:
 
 
 func _world_event() -> void:
-	print("WORLD_EVENT ", vfx_layer, " ", done)
 	if vfx_layer == null or done:
 		return
 	# Prefer an authored structure with a readable signature (erupting volcano,
@@ -1584,7 +1609,6 @@ func _world_event() -> void:
 	for s in _visible_structures():
 		if str(s["key"]) in special:
 			pool.append(s)
-	print("POOL ", pool.size())
 	if not pool.is_empty() and rng.randf() < 0.72:
 		var s: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
 		var c := Vector2i(
@@ -1615,7 +1639,6 @@ func _world_event() -> void:
 		return
 	var at := _cell_center(cell)
 	var terrain := _render_terrain_world(cell.x, cell.y)
-	print("CELL ", cell, " at ", at, " terrain ", terrain)
 	if "lava" in terrain:
 		VFX.embers(vfx_layer, at, Color(1.0, 0.55, 0.20, 0.85), 4)
 	elif "water" in terrain:
@@ -1639,7 +1662,6 @@ func _world_event() -> void:
 
 
 func _meteor_event() -> void:
-	print("METEOR_EVENT")
 	if vfx_layer == null or done:
 		return
 	var cell := Vector2i(
@@ -1668,8 +1690,13 @@ func _shooting_star() -> void:
 	var length := rng.randf_range(12.0, 24.0)
 	var line := Line2D.new()
 	line.points = PackedVector2Array([Vector2.ZERO, -dir * length])
-	line.width = 1.0
-	line.default_color = Color(0.85, 0.95, 1.0, 0.0)
+	line.width = 1.2
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1.0, 1.0, 1.0, 0.95))
+	grad.set_color(1, Color(0.55, 0.75, 1.0, 0.0))
+	line.gradient = grad
+	line.default_color = Color(0.85, 0.95, 1.0, 0.95)
+	line.modulate.a = 0.0
 	line.position = start
 	line.z_index = 44
 	fx_root.add_child(line)
@@ -2187,18 +2214,21 @@ func _pickup_flash(cell := Vector2i.ZERO, color := Color(1, 1, 1)) -> void:
 	flash.tween_property(_impact_flash, "color:a", 0.0, 0.12)
 
 
-func _float_text(text: String, cell: Vector2i, color: Color) -> void:
+func _float_text(text: String, cell: Vector2i, color: Color, lifetime := 0.7) -> void:
 	if fx_root == null:
 		return
 	var l := UIKit.label(text, 9, color, true, HORIZONTAL_ALIGNMENT_CENTER)
 	l.size = Vector2(180, 16)
 	l.position = _cell_center(cell) - Vector2(90, 12)
+	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_outline_color", Color(0.02, 0.025, 0.02, 0.92))
 	fx_root.add_child(l)
-	var tw := create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(l, "position:y", l.position.y - 22, 0.7)
-	tw.tween_property(l, "modulate:a", 0.0, 0.7)
-	tw.chain().tween_callback(l.queue_free)
+	var rise := create_tween()
+	rise.tween_property(l, "position:y", l.position.y - 22, 0.7)
+	var fade := create_tween()
+	fade.tween_interval(maxf(0.0, lifetime - 0.7))
+	fade.tween_property(l, "modulate:a", 0.0, 0.7)
+	fade.tween_callback(l.queue_free)
 
 
 func _risk_bonus_nearby() -> int:
