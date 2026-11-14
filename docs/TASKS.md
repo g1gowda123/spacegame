@@ -155,3 +155,18 @@ Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.
 
 | Shareable **full design** code (loadout import) | **DONE** | `OO-01156-S2-PAVMOLOA-SPTH` round-trips to seed 4438 / Standard / 2 players / Pathfinder / Vector M / Low / Characterize Atmosphere / Spectrometer + Thermal; short `OO-xxxxx-S1` codes still work |
 | Design-screen header overlap fix | **DONE** | `MISSION DESIGN // 01 · STEP 1 OF 3` is now one line; the old step label was being covered by the panels (`qa_director3.png`) |
+
+## Structure scale & grandeur pass (NOVA request, 13:38)
+
+Boss: "big mountains are almost the same size as the craft… make the world feel grand." Full spec: `docs/STRUCTURE_SCALE.md`.
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| Stopgap scale hierarchy: lander 1.15→0.66, mountain/mesa/volcano/iceberg scale up, overlay z 12→22 | **DONE 13:36** | NOVA | `scripts/map_generator.gd`; evidence `scale_*_grand.png`; provisional, ATLAS owns final tuning |
+| 64 px structure piece set (peak/shoulder/foot, volcano cone/flank/apron, ridge crest/foot) + previews | **REQUESTED** | VEGA | `assets/tilesets/structures/pieces/`, palette-locked, no plinth/shadow, manifest offsets |
+| Multi-tile `pieces` schema + alpha-bbox footprint fit + per-piece z-sort | **REQUESTED** | ATLAS | Collision must match visible base; overhang ≤1 tile |
+| Wire the 60 existing cliff tiles to raised terrain edges | **REQUESTED** | ATLAS | Cheapest verticality win; `cliff_<height>_<dir>` already on disk |
+| Density retune for bigger footprints (fewer, larger landforms) | **REQUESTED** | ATLAS / b | Suggested: major landforms ≤25% of walkable cells per chunk |
+| Connectivity guarantee after structure placement (flood fill to objectives/extract, carve a pass) | **REQUESTED** | b / ATLAS | Must hold over 100 seeds per biome |
+| Optional parallax ridge silhouettes behind the diamond | **REQUESTED** | VEGA | 640×120 transparent, dark, low contrast |
+| Acceptance review: lander ≤1 tile, mountain ≥4× craft, no walkable cell under a solid peak | **PENDING** | NOVA | Full frames per biome + headless smoke |
