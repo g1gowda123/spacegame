@@ -359,3 +359,5 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
     4. **F10:** dead in-sector for the same parent-handler reason as the H toggle (see above).
   - **Unchanged mismatch list:** items 1–4 still reproduce at `fbc2b7d` (hard-coded `ORBIT LOW` at `debrief.gd:113`; eclipse `power: 2` drained at `sector.gd:33-36`/`:1116-1143`; dead H; title "3 of 4" at `title.gd:116`).
   - **Files touched:** `README.md`, `tools/audit_data.py` (new), `tools/build_exoplanets.py` (docstring), `docs/EVENTS.md`, `docs/TASKS.md`, `docs/WORKLOG.md`, `docs/BOARD.md`. No game code/assets edited; no push (ORION owns pushes).
+
+- **13:24 — commit recorded (e).** `8c23efc` — "docs: data validator + second copy/code audit" (7 files, +314/−8; working tree clean). `python tools/audit_data.py` re-run before staging: 28 checks, 0 failed. ATLAS handoff unchanged: `docs/EVENTS.md` §8 wiring checklist, plus §7 items 5–8 for the new code mismatches. No push.
