@@ -77,24 +77,24 @@ void fragment() {
 			float ang = atan(d.y, d.x);
 			float rad = length(d);
 			float spokes = pow(0.5 + 0.5 * sin(ang * 9.0 + t * 1.7 + phase), 6.0);
-			inner += spokes * 0.30 * (1.0 - rad);
+			inner += spokes * 0.36 * (1.0 - rad);
 			inner += smoothstep(0.30, 0.0, rad) * 0.25;
 		} else if (kind == 2) {
 			// Thermal surge: rising convection bands.
 			float band = 0.5 + 0.5 * sin(f.y * 12.0 - t * 5.0 + sin(f.x * 4.0) * 1.3);
-			inner += band * 0.16;
+			inner += band * 0.26;
 		} else if (kind == 3) {
 			// Dust storm: drifting grit, no clean edge.
 			float grit = hash21(floor(uv * 7.0) + floor(t * 3.0));
-			inner += step(0.72, grit) * 0.18;
+			inner += step(0.72, grit) * 0.24;
 		} else if (kind == 4) {
 			// Seismic shock: concentric ground rings.
 			float ring = 0.5 + 0.5 * sin(length(f - 0.5) * 26.0 - t * 7.0 + phase);
-			inner += pow(ring, 8.0) * 0.24;
+			inner += pow(ring, 8.0) * 0.30;
 		} else if (kind == 5) {
 			// Radiation belt: stippled ion grid.
 			float stipple = step(0.68, fract(sin(dot(floor(uv * 6.0), vec2(12.9, 78.2))) * 43758.5));
-			inner += stipple * 0.16;
+			inner += stipple * 0.22;
 			inner += 0.05 * (0.5 + 0.5 * sin(t * 2.0 + phase));
 		} else if (kind == 6) {
 			// Eclipse: a cold darkening with a thin rim.
@@ -104,16 +104,16 @@ void fragment() {
 		} else if (kind == 7) {
 			// Cryo quake: faceted ice fractures.
 			float facet = abs(fract(f.x * 3.0 + f.y * 2.0) - 0.5);
-			inner += (1.0 - smoothstep(0.0, 0.06, facet)) * 0.10;
+			inner += (1.0 - smoothstep(0.0, 0.06, facet)) * 0.16;
 			inner += 0.06 * (0.5 + 0.5 * sin(t * 1.4 + phase));
 		} else if (kind == 8) {
 			// Solar wind: horizontal streaks running downwind.
 			float streak = 0.5 + 0.5 * sin(f.x * 16.0 - t * 6.0 + f.y * 3.0);
-			inner += pow(streak, 6.0) * 0.18;
+			inner += pow(streak, 6.0) * 0.24;
 		} else if (kind == 9) {
 			// Meteor shower: falling diagonals.
 			float fall = fract((uv.x + uv.y * 1.6) * 1.8 + t * 0.9);
-			inner += (1.0 - smoothstep(0.0, 0.12, fall)) * 0.16;
+			inner += (1.0 - smoothstep(0.0, 0.12, fall)) * 0.22;
 		}
 
 		// Diagonal warning tape, very low alpha under the signature so the

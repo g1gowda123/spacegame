@@ -953,3 +953,9 @@ to the lane owner.
 - **`scripts/sector.gd`:** HUD rebuilt as a single 620×40 row with 1 px separators — name/biome, integrity, delta-v, sols, data, thermal gauge, power pips. Removed the duplicate `QUOTA` readout. Bottom status is 414 px, action buttons are 112 px at `x=436` with 8 px Silkscreen key hints (no D-pad overlap at `x=554`). Also updated the four `VIEW_W/H/PX` references to the concurrent `view_w`/`view_h`/`_view_px()` refactor so sector parses again.
 - **Verification:** headless `--quit-after 8` 0 script/parse errors; `--screen=flowtest` `total=5211 grade=S`; sector `--moves=DDH` updates the HUD (turn 2, dv 27, sols 28); all screens captured and downscaled to 640×360 for legibility. `tools/qa/native_screens.py` flags 6 screens only for the existing `title.ogg` Ogg-playback “resources still in use” leak at exit, not script errors; sector/relay pass.
 - **Evidence:** `/tmp/opencode/fin_*.png`, `/tmp/opencode/fin2_*`, `/tmp/opencode/fin3_review.png`. No export/push was made; the gate artifact is untouched.
+
+## 19:05 — VFX lane: hazard signature contrast + evidence sheet
+- Raised the per-kind armed signatures in `shaders/hazard_field.gdshader` (thermal bands 0.16→0.26, flare spokes →0.36, dust grit →0.24, seismic rings →0.30, radiation stipple →0.22, cryo facets →0.16, wind streaks →0.24, meteor fall →0.22) so a front reads as its hazard type at map scale instead of a flat tinted patch. Forming stays deliberately faint.
+- Softer impact flash: peak 0.20/0.22 s → 0.14/0.20 s; pickup 0.10. The full-screen wash was defeating the sprite effects in movie captures.
+- `screenshots/vfx_effects.png`: 8-frame evidence strip (impact, flare, shockwave, sparks/debris, shield, hex shield, pickup, extract beam) from a 30 fps `--fx=all` capture on a temperate board.
+- Playback notes for review: `--fx=all` (reel), `--hurt` (front hit), `--collect` (pickup), `--result=success|fail` (review panel).
