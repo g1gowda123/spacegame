@@ -152,8 +152,8 @@ func _build_ledger() -> void:
 			num.position = Vector2(12, y + 1)
 			num.size = Vector2(22, 12)
 			c.add_child(num)
-			var nm := UIKit.label(str(planet.get("name", "—")).to_upper(), 8,
-				UIKit.TEXT if ok else UIKit.RED, true)
+			var nm := UIKit.label(str(planet.get("name", "—")), 8,
+				UIKit.TEXT if ok else UIKit.RED, false)
 			nm.position = Vector2(36, y + 1)
 			nm.size = Vector2(150, 12)
 			c.add_child(nm)

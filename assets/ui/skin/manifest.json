@@ -1,0 +1,88 @@
+{
+  "theme": "flight-binder-1975",
+  "palette": {
+    "paper": "#e8dfc8",
+    "ink": "#1b1a17",
+    "night": "#101826",
+    "orange": "#e4572e",
+    "red": "#b8332f",
+    "teal": "#5f8f8a",
+    "live_cyan": "#54e6d1",
+    "amber": "#ffc45c"
+  },
+  "fonts": {
+    "stamp": "res://assets/ui/Silkscreen-Bold.ttf",
+    "body": "res://assets/ui/IBMPlexMono-Regular.ttf"
+  },
+  "nine_slices": {
+    "folder_panel": {
+      "size": [
+        50,
+        50
+      ],
+      "slice": 12,
+      "shadow": 2
+    },
+    "folder_tab": {
+      "size": [
+        66,
+        22
+      ],
+      "slice": 6
+    },
+    "card": {
+      "size": [
+        34,
+        34
+      ],
+      "slice": 8,
+      "shadow": 2
+    },
+    "tab_idle": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 2
+    },
+    "tab_hover": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 2
+    },
+    "tab_active": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 2
+    },
+    "tab_pressed": {
+      "size": [
+        44,
+        18
+      ],
+      "slice": 5,
+      "shadow": 0
+    }
+  },
+  "tiles": [
+    "tape_hazard",
+    "tape_masking",
+    "paper_texture"
+  ],
+  "stamps": [
+    "stamp_approved",
+    "stamp_flagged",
+    "stamp_survey_complete",
+    "stamp_grade_a",
+    "stamp_grade_b",
+    "stamp_grade_c"
+  ],
+  "notes": "Hard 2 px ink offset shadows; pressed buttons drop the shadow and shift down 1 px in code."
+}

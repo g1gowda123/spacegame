@@ -48,6 +48,26 @@ def load(name: str) -> Image.Image:
     return Image.open(ROOT / "assets" / "tilesets" / "structures" / name).convert("RGBA")
 
 
+def contact_fringe(img: Image.Image, rows: int = 3, factor: float = 0.76) -> Image.Image:
+    """Darken the bottom few opaque pixels of each column.
+
+    Ground contact for a structure is a value break, not a shadow: a 2-3 px
+    darker rocky edge under the mass reads as planted instead of pasted.
+    """
+    a = np.asarray(img).astype(np.float32)
+    h, w = a.shape[:2]
+    for x in range(w):
+        col = np.nonzero(a[:, x, 3] > 40)[0]
+        if col.size == 0:
+            continue
+        for k in range(rows):
+            y = col[-1] - k
+            if y < 0:
+                break
+            a[y, x, :3] *= factor
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+
+
 def assemble_massif() -> Image.Image:
     """Six jittered copies of the mountain sprite into a 256x256 massif.
 
@@ -83,33 +103,26 @@ def assemble_massif() -> Image.Image:
     ImageDraw.Draw(base).ellipse([18, 206, 238, 254], fill=(10, 14, 12, 60))
     base = base.filter(ImageFilter.GaussianBlur(4.0))
     base.alpha_composite(canvas)
-    return apply_palette(base, spec("temperate"))
+    return contact_fringe(apply_palette(base, spec("temperate")))
 
 
 def assemble_volcano() -> Image.Image:
-    """Volcano cone centred on a 256 canvas with lava apron and rubble flanks."""
+    """Volcano cone on a 256 canvas: no painted terrace, scree only.
+
+    The source sprite is itself disc-free (tools/make_cone.py), so the ground
+    contact is the rock's own ragged foot plus a little talus.
+    """
     cone = load("volcano.png")
-    apron = Image.open(ROOT / "assets" / "tilesets" / "volcanic" / "lava_glow.png").convert("RGBA")
     canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    cone = cone.resize((226, 226), Image.Resampling.LANCZOS)
+    canvas.alpha_composite(cone, (15, 22))
 
-    # lava apron: a squashed ring of molten tile under the cone
-    ring = apron.resize((150, 70), Image.Resampling.BILINEAR).filter(ImageFilter.GaussianBlur(1.0))
-    mask = Image.new("L", (150, 70), 0)
-    from PIL import ImageDraw
-    ImageDraw.Draw(mask).ellipse([4, 6, 146, 64], fill=170)
-    canvas.paste(ring, (53, 186), mask)
-
-    cone = cone.resize((150, 150), Image.Resampling.LANCZOS)
-    canvas.alpha_composite(cone, (53, 60))
-
-    # rubble flanks
-    rubble = load("barren_rock.png") if (ROOT / "assets" / "tilesets" / "structures" / "barren_rock.png").exists() else None
-    for dx, sc, br in [(10, 0.62, 0.92), (176, 0.58, 0.96), (36, 0.40, 0.86), (196, 0.38, 0.9)]:
+    for dx, sc, br in [(6, 0.42, 0.92), (190, 0.40, 0.96)]:
         src = load("mesa.png")
         im = src.resize((int(128 * sc), int(128 * sc)), Image.Resampling.LANCZOS)
         im = ImageEnhance.Brightness(im).enhance(br)
-        canvas.alpha_composite(im, (dx, 252 - im.size[1]))
-    return apply_palette(canvas, spec("volcanic"))
+        canvas.alpha_composite(im, (dx, 254 - im.size[1]))
+    return contact_fringe(apply_palette(canvas, spec("volcanic")))
 
 
 def slice_set(canvas: Image.Image, prefix: str) -> list[dict]:

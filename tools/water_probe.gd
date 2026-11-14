@@ -158,6 +158,11 @@ func _water_keys_for(b: Dictionary) -> Dictionary:
 	elif str(b.get("profile", "")) == "ocean":
 		keys[str(b.get("base", ""))] = true
 		keys[str(b.get("detail", ""))] = true
+	# Depth banding replaces a water cell with shallow/shelf/deep variants at
+	# render time. Count every band as water here, otherwise deep cells are
+	# misread as land and pollute the diagonal-coverage numbers.
+	for band in gen.WATER_BANDS.get(str(b.get("id", "")), []):
+		keys[str(band)] = true
 	return keys
 
 
