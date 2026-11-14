@@ -138,9 +138,9 @@ Do not exceed seven slides.
 ## Links to fill on submission day
 
 - **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 28.47 s, 2.13 MB.
-- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 22,028,752 B (`index.pck` 14,266,340 B, `index.wasm` 39,514,754 B).
+- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 22,434,185 B (`index.pck` 14,834,324 B, `index.wasm` 39,514,754 B).
 - **Local run:** `cd build/web && python3 -m http.server 8060`, then open `http://localhost:8060`.
-- **Build state (gate build):** both artifacts come from `6516a23` + c's tools. Rebuild with one command — `python tools/release.py` (import → export → zip → sha256 → HTTP smoke → `build/RELEASE.txt`) — then verify the flow with `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`. A fresh clone with new art **must** run the import pass (`godot --headless --path . --import`, or just let `release.py` do it) or the sector tileset ships with missing textures.
+- **Build state:** the Web build is from `88a7d77` (post-gate art + audit pass), rebuilt 16:19. Rebuild with one command — `tools/release.sh` on the Linux release box or `python tools/release.py` on Windows, both do import → export → zip → sha256 → HTTP smoke → `build/RELEASE.txt` — then verify the flow with `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`. A fresh clone with new art **must** run the import pass (`godot --headless --path . --import`, or just let either release script do it) or the sector tileset ships with missing textures. The demo video is one build behind: it was captured on `6516a23`, so re-record before shipping if the art in the video matters.
 - **Hosting note:** the ZIP is 22.0 MB. GitHub Pages and itch.io are fine; a host with a 20 MB upload cap needs the 14.3 MB PCK trimmed first.
 
 ## Final submission checklist

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # One-command Web release for Orbit & Outplay.
 #
-#   tools/release.sh                 # export -> package -> hash -> smoke serve -> build/RELEASE.txt
+#   tools/release.sh                 # import -> export -> package -> hash -> smoke serve -> build/RELEASE.txt
 #   tools/release.sh --skip-export   # re-package the existing build/web (no Godot needed)
 #   tools/release.sh --no-serve      # skip the HTTP smoke test
 #   tools/release.sh --strict        # fail if submission/ assets are older than the PCK
+#
+# This is the canonical release entry point on the Linux release box.
+# tools/release.py is the Windows twin and runs the same steps in the same
+# order, so either one produces the same nine files, the same ZIP layout and
+# the same RELEASE.txt fields.
 #
 # Design rule (C2 on docs/BOARD.md): a release must never depend on anyone's
 # memory. Every step is deterministic, every artifact is hashed and stamped in
@@ -33,7 +38,7 @@ DO_SMOKE=1
 STRICT=0
 
 usage() {
-  sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   cat <<'EOF'
 
 Environment:
@@ -108,9 +113,29 @@ say "stamp       $STAMP"
 say "zip         $ZIP_PATH (cleared)"
 say "stamp file  $RELEASE_TXT (cleared)"
 
+# Godot only imports art when an editor pass touches it. A fresh clone (or any
+# tree where art arrived from someone else's machine) has the PNGs but no
+# .godot/imported cache, and the export then ships a PCK with no textures: the
+# sector tileset dies at runtime on
+#   Failed loading resource: res://.godot/imported/ice_flat_a.png-*.ctex
+# so import before every export. build/.gdignore keeps Godot from scanning the
+# exports and re-importing them as project art.
+mkdir -p build
+[[ -f build/.gdignore ]] || : > build/.gdignore
+
 if (( DO_EXPORT )); then
+  step "import"
+  IMPORT_LOG="$LOG_DIR/import-$STAMP_FILE.log"
+  set +e
+  "$GODOT" --headless --path . --import >"$IMPORT_LOG" 2>&1
+  IMPORT_RC=$?
+  set -e
+  say "import exit $IMPORT_RC (log: $IMPORT_LOG)"
+  (( IMPORT_RC == 0 )) || die "import failed with exit $IMPORT_RC" 2
+
   step "export ($PRESET)"
   rm -rf "$BUILD_DIR"
+  mkdir -p "$BUILD_DIR"   # Godot 4.7 does not create the target folder itself
   EXPORT_LOG="$LOG_DIR/export-$STAMP_FILE.log"
   set +e
   "$GODOT" --headless --export-release "$PRESET" "$BUILD_DIR/index.html" 2>&1 | tee "$EXPORT_LOG"
@@ -118,6 +143,9 @@ if (( DO_EXPORT )); then
   set -e
   say "export exit $EXPORT_RC (log: $EXPORT_LOG)"
   (( EXPORT_RC == 0 )) || die "export failed with exit $EXPORT_RC" 2
+  # Godot can still drop import sidecars next to the exported PNGs; they must
+  # never reach the ZIP.
+  find "$BUILD_DIR" -maxdepth 1 -name '*.import' -delete 2>/dev/null || true
 else
   step "export skipped (--skip-export)"
 fi
@@ -157,7 +185,7 @@ import os, sys, zipfile
 src, out = sys.argv[1], sys.argv[2]
 files = []
 for name in sorted(os.listdir(src)):
-    if name.startswith('.'):
+    if name.startswith('.') or name.endswith('.import'):
         continue
     path = os.path.join(src, name)
     if not os.path.isfile(path):

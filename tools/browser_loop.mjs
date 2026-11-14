@@ -230,6 +230,9 @@ async function beat(name, wait = 2200) {
 
 // --- Screen coordinates (logical 640x360) -------------------------------
 const HIT = {
+  briefingSkip: [576, 42],  // briefing.gd SKIP [ESC] (530,32) 92x20; title.gd
+                            // routes to the induction on first run, and every
+                            // fresh browser profile is a first run
   begin: [124, 243],        // title.gd BEGIN MISSION (44,228) 160x30
   quick: [153, 338],        // design.gd QUICK LOADOUT (90,326) 126x24
   confirmDesign: [514, 338],// design.gd CONFIRM & DRAFT ... (398,326) 232x24
@@ -244,6 +247,14 @@ const HIT = {
   nextSector: [422, 327],
   eventChoice0: [471, 156], // debrief.gd event modal option 0 CHOOSE (96,44 + 14,80 + 318,20)
 };
+
+// First run boots into the Chief Engineer induction (title.gd defers to
+// briefing.tscn when GameState.briefing_seen is false, and a fresh Chrome
+// profile always is). SKIP lands on the title screen; the loop then plays the
+// normal campaign instead of clicking through seven dialogue beats.
+await screenshot("00_briefing.png");
+await clickLogical(...HIT.briefingSkip);
+await sleep(1600);
 
 // Title screen.
 await beat("01_title.png", 1200);
