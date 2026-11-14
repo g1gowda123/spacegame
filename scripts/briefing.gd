@@ -136,15 +136,40 @@ func _build() -> void:
 	card_code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(card_code)
 
+	var photo_back := Panel.new()
+	photo_back.position = Vector2(10, 20)
+	photo_back.size = Vector2(152, 152)
+	photo_back.add_theme_stylebox_override("panel", _paper_style(Color("#d8c9ab"), Color("#1b1a17"), 1))
+	photo_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(photo_back)
+
 	portrait = TextureRect.new()
-	portrait.position = Vector2(8, 18)
-	portrait.size = Vector2(160, 240)
+	portrait.position = Vector2(13, 23)
+	portrait.size = Vector2(146, 146)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	portrait.modulate = Color(1.06, 1.04, 1.0)
 	add_child(portrait)
+
+	var id_name := UIKit.label("DR. IMANI VALE", 6, Color("#1b1a17"), true)
+	id_name.position = Vector2(12, 180)
+	id_name.size = Vector2(146, 9)
+	id_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(id_name)
+
+	var id_role := UIKit.label("EXECUTIVE SECRETARY", 5, Color("#4a4438"), true)
+	id_role.position = Vector2(12, 191)
+	id_role.size = Vector2(146, 8)
+	id_role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(id_role)
+
+	var id_clear := UIKit.label("CLEARANCE // A-2  ·  MISSION CONTROL", 4, Color("#6b5f4c"), true)
+	id_clear.position = Vector2(12, 202)
+	id_clear.size = Vector2(146, 8)
+	id_clear.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(id_clear)
 
 	var photo_tape := TextureRect.new()
 	photo_tape.texture = load("res://assets/ui/skin/tape_masking.png")
@@ -389,7 +414,15 @@ func _set_portrait(expr: String) -> void:
 		var path := SHIP_DIR + "director_%s.png" % expr
 		if not ResourceLoader.exists(path):
 			path = SHIP_DIR + "director_neutral.png"
-		_textures[expr] = load(path) if ResourceLoader.exists(path) else null
+		if ResourceLoader.exists(path):
+			var atlas := AtlasTexture.new()
+			atlas.atlas = load(path)
+			# The delivered bust occupies the top 134x134 of the 160x240 canvas;
+			# crop to that visible square so it reads as an ID photo, not a cutout.
+			atlas.region = Rect2(21, 0, 134, 134)
+			_textures[expr] = atlas
+		else:
+			_textures[expr] = null
 	portrait.texture = _textures[expr]
 
 

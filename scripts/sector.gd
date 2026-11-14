@@ -1515,3 +1515,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			show_grid = not show_grid
 			_update_view()
 			_select_cell(cursor_cell)
+		KEY_F9:
+			debug_transitions = not debug_transitions
+			_render_window()
