@@ -271,7 +271,9 @@ func _refresh_ship() -> void:
 		GameState.owned
 	)
 	var tier: Dictionary = ship_diagram.tier()
-	build_label.text = "%s  ·  %d MODULES" % [str(tier["name"]), ship_diagram.module_count()]
+	build_label.text = "%s  ·  %d MOD  ·  %d BUFF" % [
+		str(tier["name"]), ship_diagram.module_count(), GameState.run.get("buffs", []).size()
+	]
 	build_label.add_theme_color_override("font_color", tier["color"])
 	build_line.text = ship_diagram.module_line()
 	build_line.add_theme_color_override("font_color", tier["color"])
@@ -288,20 +290,31 @@ func _build_footer() -> void:
 	p.add_child(c)
 
 	var final := int(r.get("sector", 1)) >= GameState.SECTORS_PER_RUN or bool(r.get("run_over", false))
-	footer_title = UIKit.label(
-		"FINAL REPORT READY" if final else "NEXT: EXOPLANET TARGET DRAFT", 10,
+	var event_pending := not bool(GameState.run.get("event_resolved", true)) \
+			and not ((GameState.run.get("event_card", {}) as Dictionary).is_empty())
+	var buff_pending := GameState.has_pending_buff()
+	var next_title := "FINAL REPORT READY" if final else "NEXT: EXOPLANET TARGET DRAFT"
+	var next_sub := "Agency ledger and final grade." if final else "Three new targets. Choose where the grants go."
+	var next_button := "FILE FINAL REPORT >" if final else "SELECT NEXT TARGET >"
+	if not final and event_pending:
+		next_title = "NEXT: MISSION EVENT"
+		next_sub = "An agency incident needs a call before the next target."
+		next_button = "HANDLE EVENT >"
+	elif not final and buff_pending:
+		next_title = "NEXT: FIELD COMMISSION"
+		next_sub = "Choose one free upgrade before the next target."
+		next_button = "CLAIM COMMISSION >"
+	footer_title = UIKit.label(next_title, 10,
 		UIKit.CYAN if final else UIKit.AMBER, true)
 	footer_title.position = Vector2(12, 6)
 	footer_title.size = Vector2(340, 14)
 	c.add_child(footer_title)
-	footer_sub = UIKit.label(
-		"Agency ledger and final grade." if final else "Three new targets. Choose where the grants go.",
-		7, UIKit.MUTED, false)
+	footer_sub = UIKit.label(next_sub, 7, UIKit.MUTED, false)
 	footer_sub.position = Vector2(12, 22)
 	footer_sub.size = Vector2(360, 14)
 	c.add_child(footer_sub)
 
-	next_btn = UIKit.button("FILE FINAL REPORT >" if final else "SELECT NEXT TARGET >", Vector2(206, 28), true)
+	next_btn = UIKit.button(next_button, Vector2(206, 28), true)
 	next_btn.position = Vector2(398, 9)
 	next_btn.pressed.connect(_on_next.bind(final))
 	c.add_child(next_btn)
@@ -329,6 +342,9 @@ func _on_next(final: bool) -> void:
 func _advance_next() -> void:
 	if int(GameState.run.get("approval", 0)) <= 0:
 		get_tree().change_scene_to_file("res://scenes/report.tscn")
+		return
+	if GameState.has_pending_buff():
+		get_tree().change_scene_to_file("res://scenes/buff.tscn")
 		return
 	GameState.roll_draft()
 	get_tree().change_scene_to_file("res://scenes/draft.tscn")

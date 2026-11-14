@@ -37,7 +37,11 @@ func _run_flowtest() -> void:
 	GameState.begin_sector(GameState.draft[0])
 	var base_range := int(GameState.current_sector.get("move_range", 0))
 	var base_dv := int(GameState.current_sector.get("delta_v", 0))
+	var base_integrity := int(GameState.current_sector.get("integrity", 0))
 	GameState.finish_sector(true, 3, GameState.current_sector)
+	var buff_pending := GameState.has_pending_buff()
+	GameState.run["buff_choices"] = ["harden", "reactor", "ranger"]
+	var buff_ok := GameState.choose_buff(0)
 	GameState.make_shop()
 	GameState.shop_offers = [GameState.UPGRADES[10]]  # ION THRUSTER
 	var bought := GameState.buy_offer(0)
@@ -45,7 +49,8 @@ func _run_flowtest() -> void:
 	GameState.begin_sector(GameState.draft[0])
 	var upgraded_range := int(GameState.current_sector.get("move_range", 0))
 	var upgraded_dv := int(GameState.current_sector.get("delta_v", 0))
-	print("SHIPFLOW launched=", launched, " bought=", bought, " range=", base_range, "->", upgraded_range, " dv=", base_dv, "->", upgraded_dv)
+	print("SHIPFLOW launched=", launched, " buff_pending=", buff_pending, " buff_ok=", buff_ok, " buffs=", GameState.run.get("buffs", []), " integrity=", base_integrity, "->", int(GameState.current_sector.get("integrity", 0)))
+	print("SHIPFLOW bought=", bought, " range=", base_range, "->", upgraded_range, " dv=", base_dv, "->", upgraded_dv)
 	print("SHIPFLOW owned=", GameState.owned, " modules=", SHIP_BUILD.modules(GameState.run.get("instruments", []), GameState.owned).size(), " tier=", SHIP_BUILD.tier(SHIP_BUILD.refit_count(GameState.owned))["name"])
 	for i in range(2):
 		GameState.finish_sector(true, 3, GameState.current_sector)
@@ -62,6 +67,19 @@ func _run_flowtest() -> void:
 	get_tree().quit()
 
 
+func _apply_buffs(csv: String) -> void:
+	if csv.strip_edges() == "":
+		return
+	var current: Array = GameState.run.get("buffs", [])
+	for raw_id in csv.split(","):
+		var id := raw_id.strip_edges()
+		for b in GameState.BUFFS:
+			if str(b["id"]) == id and not (id in current):
+				current.append(id)
+				break
+	GameState.run["buffs"] = current
+
+
 func _route() -> void:
 	# Optional crew-mode shortcuts for screenshots and smoke tests:
 	#   --crew=3 --difficulty=director
@@ -70,6 +88,7 @@ func _route() -> void:
 	var daily := false
 	var forced_biome := ""
 	var owned_csv := ""
+	var buffs_csv := ""
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 		var arg := str(raw)
 		if arg.begins_with("--crew="):
@@ -82,11 +101,18 @@ func _route() -> void:
 			forced_biome = arg.substr(8)
 		elif arg.begins_with("--owned="):
 			owned_csv = arg.substr(8)
+		elif arg.begins_with("--buffs="):
+			buffs_csv = arg.substr(8)
 	if _screen == "crew":
 		get_tree().change_scene_to_file("res://scenes/crew.tscn")
 		return
 	if _screen == "flowtest":
 		_run_flowtest()
+		return
+	if _screen == "buff":
+		GameState.run["sector"] = 2
+		GameState.roll_buff_choices()
+		get_tree().change_scene_to_file("res://scenes/buff.tscn")
 		return
 	if daily:
 		CrewDirector.begin_run("daily", 1, "standard")
@@ -95,6 +121,7 @@ func _route() -> void:
 	else:
 		GameState.new_run()
 	_apply_owned(owned_csv)
+	_apply_buffs(buffs_csv)
 	match _screen:
 		"design":
 			if "--loadout" in OS.get_cmdline_user_args() or "--loadout" in OS.get_cmdline_args():

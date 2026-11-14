@@ -154,6 +154,75 @@ const UPGRADES := [
 	 "desc": "+1 tile movement range each turn.", "move_range": 1},
 ]
 
+
+# Free, permanent field commissions chosen between planets. Unlike the paid
+# refit shop these never touch the grant balance; they are the Soul Knight
+# style "pick one of three" progression beat.
+const BUFFS := [
+	{
+		"id": "reactor", "name": "REACTOR OVERDRIVE", "rarity": "rare", "weight": 2,
+		"icon": "reactor", "power_regen": 1,
+		"desc": "Reactor output +1 power every turn.",
+	},
+	{
+		"id": "harden", "name": "HARDENED BUS", "rarity": "common", "weight": 3,
+		"icon": "harden", "integrity": 2,
+		"desc": "+2 maximum hull integrity.",
+	},
+	{
+		"id": "aerogel", "name": "AEROGEL SKIN", "rarity": "common", "weight": 3,
+		"icon": "aerogel", "thermal_res": 3,
+		"desc": "Heat gain -3 on every move.",
+	},
+	{
+		"id": "sling", "name": "GRAVITY SLING", "rarity": "rare", "weight": 2,
+		"icon": "sling", "dv": 4,
+		"desc": "+4 delta-v at the start of every sector.",
+	},
+	{
+		"id": "deepnet", "name": "DEEP-SPACE NET", "rarity": "rare", "weight": 2,
+		"icon": "deepnet", "comms_bonus": 8,
+		"desc": "Comms loss -8% on every downlink.",
+	},
+	{
+		"id": "science", "name": "TARGETED SCIENCE", "rarity": "rare", "weight": 2,
+		"icon": "science", "science": 0.12,
+		"desc": "+12% science from every delivered node.",
+	},
+	{
+		"id": "favor", "name": "AGENCY FAVOR", "rarity": "common", "weight": 3,
+		"icon": "favor", "grant": 0.15,
+		"desc": "+15% grant from every sector.",
+	},
+	{
+		"id": "ranger", "name": "RANGER PACK", "rarity": "rare", "weight": 2,
+		"icon": "ranger", "move_range": 1,
+		"desc": "+1 tile movement range.",
+	},
+	{
+		"id": "shield", "name": "REDUNDANT SYSTEMS", "rarity": "epic", "weight": 1,
+		"icon": "shield", "shield_cost": 0,
+		"desc": "Hazard shielding costs 0 power.",
+	},
+	{
+		"id": "cache", "name": "DATA CACHE", "rarity": "common", "weight": 3,
+		"icon": "cache", "start_data": 1,
+		"desc": "Start every sector with +1 data.",
+	},
+	{
+		"id": "legacy", "name": "MISSION LEGACY", "rarity": "epic", "weight": 1,
+		"icon": "legacy", "score": 300,
+		"desc": "+300 points in the final report.",
+	},
+	{
+		"id": "repair", "name": "EMERGENCY REPAIR", "rarity": "common", "weight": 3,
+		"icon": "repair", "sector_integrity": 1,
+		"desc": "+1 hull integrity at every sector start.",
+	},
+]
+
+const BUFF_MILESTONES := [1, 2]
+
 const BIOME_INFO := {
 	"temperate": {"name": "Temperate", "color": "#7fe08a"},
 	"arid": {"name": "Arid", "color": "#ffb06a"},
@@ -328,6 +397,9 @@ func new_run() -> void:
 		"next_data": 0,
 		"bonus_science": 0,
 		"risk_points": 0,
+		"buffs": [],
+		"pending_buff": false,
+		"buff_choices": [],
 		# Mission-control meta (set by CrewDirector.begin_run).
 		"mode": "campaign",
 		"players": 1,
@@ -647,6 +719,17 @@ func ship() -> Dictionary:
 			"salvage":
 				grant_mult += float(up.get("grant", 0.0))
 
+	# Free field commissions are applied after paid refits.
+	power_regen += _buff_int("power_regen")
+	dv += _buff_int("dv")
+	integrity += _buff_int("integrity")
+	thermal_res += _buff_int("thermal_res")
+	comms += _buff_int("comms_bonus")
+	science += _buff_float("science")
+	grant_mult += float(_buff_float("grant"))
+	data_cap += _buff_int("data_cap")
+	if _buff_has("shield"):
+		shield_cost = 0
 	if v.is_empty():
 		warnings.append("Choose a launch vehicle.")
 	elif mass > float(v["capacity"]):
@@ -675,6 +758,7 @@ func ship() -> Dictionary:
 		"science_mult": science, "grant_mult": grant_mult,
 		"comms_bonus": comms, "heat_mult": heat_mult,
 		"power_regen_bonus": power_regen_bonus, "shield_cost": shield_cost,
+		"move_range": int(h["move_range"]) + _upgrade_int("move_range") + _buff_int("move_range"),
 		"bonus_data": bonus_data, "power_regen": power_regen,
 		"orbit": str(orb.get("id", "low")),
 		"science_fit": science_fit(),
@@ -850,7 +934,7 @@ func begin_sector(planet: Dictionary) -> void:
 	var dv := int(round(base_dv * (float(s["delta_v"]) / 30.0))) + int(run.get("next_dv", 0)) + int(run.get("crew_dv", 0))
 	var sols := int(planet["game"]["sols"]) - (int(run.get("sector", 1)) - 1) * 2
 	sols = max(18, sols + int(run.get("next_sol", 0)))
-	var integrity := maxi(1, int(s["integrity"]) + int(run.get("next_integrity", 0)) + int(run.get("crew_integrity", 0)))
+	var integrity := maxi(1, int(s["integrity"]) + int(run.get("next_integrity", 0)) + int(run.get("crew_integrity", 0)) + _buff_int("sector_integrity"))
 
 	var heat_mult := float(s["heat_mult"])
 	if str(hull().get("id", "")) == "cryo":
@@ -887,14 +971,14 @@ func begin_sector(planet: Dictionary) -> void:
 		"power": power_max,
 		"power_max": power_max,
 		"power_regen": int(s["power_regen"]),
-		"move_range": int(hull().get("move_range", 3)) + _upgrade_int("move_range"),
+		"move_range": int(s.get("move_range", hull().get("move_range", 3))),
 		"shield_cost": int(s["shield_cost"]),
 		"vent_power_extra": _upgrade_int("vent_power"),
 		"comms_loss": comms_loss,
 		"science_mult": float(s["science_mult"]) * float(run.get("crew_science_mult", 1.0)),
 		"grant_mult": float(s["grant_mult"]),
 		"bonus_data": int(s["bonus_data"]) + int(run.get("next_data", 0)),
-		"data": 0,
+		"data": _buff_int("start_data"),
 		"thermal_res": int(s["thermal_res"]),
 		"hazard_mod": int(run.get("hazard_mod", 0)),
 		"status": "active",
@@ -927,6 +1011,98 @@ func _upgrade_by_id(id: String) -> Dictionary:
 		if str(up["id"]) == id:
 			return up
 	return {}
+
+
+func _buff_by_id(id: String) -> Dictionary:
+	for b in BUFFS:
+		if str(b["id"]) == id:
+			return b
+	return {}
+
+
+func _buff_has(id: String) -> bool:
+	return id in run.get("buffs", [])
+
+
+func _buff_int(field: String) -> int:
+	var total := 0
+	for id in run.get("buffs", []):
+		var b := _buff_by_id(str(id))
+		if b.has(field):
+			total += int(b[field])
+	return total
+
+
+func _buff_float(field: String) -> float:
+	var total := 0.0
+	for id in run.get("buffs", []):
+		var b := _buff_by_id(str(id))
+		if b.has(field):
+			total += float(b[field])
+	return total
+
+
+func has_pending_buff() -> bool:
+	return bool(run.get("pending_buff", false)) and not (run.get("buff_choices", []) as Array).is_empty()
+
+
+func pending_buff_cards() -> Array:
+	var out: Array = []
+	for id in run.get("buff_choices", []):
+		var b := _buff_by_id(str(id))
+		if not b.is_empty():
+			out.append(b)
+	return out
+
+
+func buff_milestone_number() -> int:
+	var finished := int(run.get("sector", 1)) - 1
+	var idx := BUFF_MILESTONES.find(finished)
+	return idx + 1 if idx >= 0 else 0
+
+
+func roll_buff_choices() -> void:
+	if BUFFS.is_empty():
+		return
+	var pool: Array = []
+	for b in BUFFS:
+		if not _buff_has(str(b["id"])):
+			pool.append(b)
+	var drng := RandomNumberGenerator.new()
+	drng.seed = int(run.get("seed", 1)) + int(run.get("sector", 1)) * 7919 + run.get("buffs", []).size() * 104729
+	var picked: Array = []
+	while picked.size() < 3 and not pool.is_empty():
+		var total := 0
+		for b in pool:
+			total += int(b.get("weight", 1))
+		var roll := drng.randi_range(1, total)
+		var acc := 0
+		for i in range(pool.size()):
+			acc += int(pool[i].get("weight", 1))
+			if roll <= acc:
+				picked.append(str(pool[i]["id"]))
+				pool.remove_at(i)
+				break
+	run["buff_choices"] = picked
+	run["pending_buff"] = true
+	changed.emit()
+
+
+func choose_buff(index: int) -> bool:
+	var choices: Array = run.get("buff_choices", [])
+	if index < 0 or index >= choices.size():
+		return false
+	var id := str(choices[index])
+	if _buff_has(id):
+		return false
+	var owned_buffs: Array = run.get("buffs", [])
+	owned_buffs.append(id)
+	run["buffs"] = owned_buffs
+	run["pending_buff"] = false
+	run["buff_choices"] = []
+	sfx("confirm")
+	changed.emit()
+	return true
 
 
 func owned_modules() -> Array:
@@ -1000,13 +1176,21 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	}
 	last_result = result
 	history.append(result)
-	run["sector"] = int(run["sector"]) + 1
+	var finished_sector := int(sec["sector"])
+	run["sector"] = finished_sector + 1
 	last_result["run_over"] = int(run["approval"]) <= 0
 	if int(run["sector"]) <= SECTORS_PER_RUN and int(run["approval"]) > 0:
 		roll_event()
+		if finished_sector in BUFF_MILESTONES:
+			roll_buff_choices()
+		else:
+			run["pending_buff"] = false
+			run["buff_choices"] = []
 	else:
 		run["event_card"] = {}
 		run["event_resolved"] = true
+		run["pending_buff"] = false
+		run["buff_choices"] = []
 	sfx("confirm" if success else "alarm")
 	changed.emit()
 
@@ -1059,7 +1243,10 @@ func calculate_score() -> Dictionary:
 	var completion := float(successes) * 220.0
 	var risk := float(run.get("risk_points", 0)) * 120.0
 	var bonus_science := float(run.get("bonus_science", 0))
-	var subtotal := int(round(science + efficiency + approval_score + budget_score + completion + risk + bonus_science))
+	var buff_score := 0
+	for id in run.get("buffs", []):
+		buff_score += int(_buff_by_id(str(id)).get("score", 0))
+	var subtotal := int(round(science + efficiency + approval_score + budget_score + completion + risk + bonus_science)) + buff_score
 	if successes == SECTORS_PER_RUN:
 		subtotal += 400
 	# Difficulty scales the engineering result; crew goals are added after so
@@ -1094,6 +1281,8 @@ func calculate_score() -> Dictionary:
 		"completion": int(round(completion)),
 		"risk": int(round(risk)),
 		"risk_points": int(run.get("risk_points", 0)),
+		"buff_score": buff_score,
+		"buffs": run.get("buffs", []).duplicate(),
 		"successes": successes,
 		"delivered": delivered,
 		"grade": grade,

@@ -197,8 +197,10 @@ func _build_ledger() -> void:
 		risk_note = " · RISK %d" % int(score.get("risk_points", 0))
 	var tier := SHIP_BUILD.tier(SHIP_BUILD.refit_count(GameState.owned))
 	var stats := UIKit.label(
-		"SHIP  %s · %s · %d MODULES\nTARGETS FLOWN  %d / %d\nDATA DELIVERED  %d NODES\nGRANTS REMAINING  $%dM\nAPPROVAL  %d / 100\nCONCEPT  CML %d · %s%s" % [
-			str(GameState.hull().get("name", "—")).to_upper(), str(tier["name"]), SHIP_BUILD.refit_count(GameState.owned) + int(GameState.run.get("instruments", []).size()),
+		"SHIP  %s · %s · %d MOD · %d COMM\nTARGETS FLOWN  %d / %d\nDATA DELIVERED  %d NODES\nGRANTS REMAINING  $%dM\nAPPROVAL  %d / 100\nCONCEPT  CML %d · %s%s" % [
+			str(GameState.hull().get("name", "—")).to_upper(), str(tier["name"]),
+			SHIP_BUILD.refit_count(GameState.owned) + int(GameState.run.get("instruments", []).size()),
+			GameState.run.get("buffs", []).size(),
 			GameState.history.size(), GameState.SECTORS_PER_RUN,
 			int(score.get("delivered", 0)),
 			int(GameState.run.get("budget", 0)),

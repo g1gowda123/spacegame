@@ -23,7 +23,7 @@ Every destination is a real planet. Every hazard is generated from its measured 
 | **Pick a real world.** Three archive planets, each with measured properties and five derived mission bars. | **Fly the surface.** One move per turn, telegraphed hazards, and a limited hull. |
 | <img src="screenshots/crew.png" width="480" alt="Mission Control crew manifest"> | <img src="screenshots/debrief.png" width="480" alt="Debrief and refit"> |
 | **Build the crew.** 1–4 players, four roles whose personal goals conflict, three difficulty tiers, and a shared campaign code. | **Spend the grant.** Repair, refit, and buy rule-bending firmware between sectors. |
-| <img src="screenshots/report.png" width="480" alt="Final report"> | |
+| <img src="screenshots/report.png" width="480" alt="Final report"> | <img src="screenshots/buff.png" width="480" alt="Field commission cards"> |
 | **File the report.** Grade, score breakdown, role-goal result, and the story of what the agency found. | |
 
 Each run is three planets. At every stop you draft one of three real archive worlds, pick a route across its surface, and decide when to spend fuel, hold position, or extract before the next hazard lands. Between planets you spend the grant on repairs, instruments, and firmware that bend the rules.
@@ -270,6 +270,10 @@ After every sector you get a result screen and a **three-offer refit shop**. Mod
 | **Ion Thruster** | $60M | Module | +1 tile movement range per turn |
 
 Grants are `(55 + 28 × delivered data) × grant multiplier`, with a bonus for a full four-node sweep and a further 1.25× for geology objectives on rocky worlds.
+
+### Field commissions
+
+After planets 1 and 2, a **free** milestone draft appears before the next target: three commission cards, one pick, no grant spent. It is deliberately separate from the paid refit shop — the shop is procurement, the commission is the agency's reward. Twelve cards cover power, hull, heat, delta-v, comms, science, grants, range, hazard shielding, data, score and sector repairs. The card screen is `scenes/buff.tscn`; it is the first screen in the new UI identity pass (`docs/UI_REDESIGN.md`).
 
 ---
 

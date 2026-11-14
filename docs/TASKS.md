@@ -280,3 +280,29 @@ Then ATLAS runs:
 and posts `diag_missing_by_key = {}` in BOARD/WORKLOG. Keep the existing `temperate_grass_*` sets for inland lakes.
 
 **Status 15:15:** pass 1 (ash recolour + 16 talus lobes) is WIP, not accepted. Disc still readable, side boulders detached, top corners empty. Next: new cone drawn without any base/terrace primitive; generate apron as continuous ridges/ash flats connecting into all four corners. Geyser lineage shares the same replacement generator.
+
+## UI identity pass — OPEN (NOVA brief, 15:31)
+
+Boss: the UI "looks too generic and vibecoded." Brief: `docs/UI_REDESIGN.md`. **No owner is preassigned; claim in BOARD.** VEGA is invited for the skin/button generation; code integration is open to any agent or friend.
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| U1 — `assets/ui/skin/` 9-slice folder/card/tab/button kit, stamps, tape, punch, ruler/barcode, paper texture | **REQUESTED — VEGA invited** | open | Procedural Pillow pixel geometry for crisp 9-slices, not diffusion; manifest + contact sheet |
+| U2 — `UIKit` tokens/helpers (`folder_panel`, `card`, `stamp_button`, `ruler_gauge`, `stamp`) | **OPEN** | self-assign | `scripts/ui_kit.gd` single owner; keep old helpers as aliases during migration |
+| U3 — Screen integration: title, design, draft, debrief, report, crew, buff | **OPEN** | self-assign | One pass per screen; preserve layout, rules and keyboard paths |
+| U4 — Sector HUD pass (corner console, segmented heat/power, warning tape, physical D-pad) | **OPEN** | self-assign | Map stays the hero; coordinate with U2 owner |
+| U5 — Copy/voice pass (mission-control voice, consistent labels) | **OPEN** | self-assign | No generic OK/CANCEL; keep short at 640×360 |
+| U6 — QA: before/after at 640×360 + 1280×720, headless clean, Web 0 console/page errors | **OPEN** | self-assign | Evidence paths; do not re-export the gate until accepted |
+
+## Milestone field commissions (NOVA, 15:26)
+
+Boss: a Soul Knight-style free upgrade draft, separate from the shop, after fixed rounds.
+
+| Task | Status | Notes |
+|---|---|---|
+| 12 `BUFFS` + `BUFF_MILESTONES [1,2]` in `game_state.gd` | **DONE 15:24** | Free, permanent; effects applied in `ship()`/`begin_sector`; score buffs in `calculate_score` |
+| `scripts/buff.gd` + `scenes/buff.tscn` three-card draft | **DONE 15:26** | Card art, rarity, hover/keyboard 1/2/3, `--buff-pick=` QA hook |
+| 12 pixel icons + generator `tools/make_buff_icons.py` | **DONE 15:19** | 48px, nearest 2×; preview `/tmp/opencode/buff_icons.png` |
+| Trigger after planet 1 and 2; `debrief` routes event → commission → draft | **DONE 15:26** | `pending_buff`/`buff_choices`; footer shows NEXT: FIELD COMMISSION |
+| Flow proof: buff pending, pick harden, integrity 4→6, report still scores | **DONE 15:29** | `--screen=flowtest` → `buff_pending=true buff_ok=true buffs=["harden"] integrity=4->6` |
+| Screen evidence | **PENDING** | `qa_buff.png`/`qa_buff2.png`; add to README gallery; UI skin pass will restyle it |
