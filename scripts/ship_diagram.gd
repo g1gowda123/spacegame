@@ -82,8 +82,9 @@ func _process(delta: float) -> void:
 	_time += delta
 	if _flash > 0.0:
 		_flash = maxf(0.0, _flash - delta * 1.8)
-	if _has_live:
-		queue_redraw()
+	# The portrait is always alive: nav strobe + engine glow run even on a
+	# STOCK hull, not only once a live module is fitted.
+	queue_redraw()
 
 
 func _load_texture() -> void:
@@ -110,9 +111,29 @@ func _draw() -> void:
 	var s := Vector2(size.x / ts.x, size.y / ts.y)
 	draw_set_transform(Vector2.ZERO, 0.0, s)
 	draw_texture(_tex, Vector2.ZERO)
+	_draw_live_lights()
 	for m in _modules:
 		_draw_module(m, _slot_rect(str(m["slot"]), ts))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_live_lights() -> void:
+	# Engine exhaust: a warm/cool glow behind the bbox that flickers at two
+	# frequencies so it never reads as a sine wave.
+	var cy := _bbox.position.y + _bbox.size.y * 0.5
+	var flick := 0.55 + 0.30 * sin(_time * 7.3) + 0.15 * sin(_time * 23.0)
+	var ec := Color(accent.r, accent.g, accent.b, 0.16 + 0.20 * flick)
+	var rear := Vector2(_bbox.position.x - 2.0, cy + 1.0)
+	draw_circle(rear, 3.4 + flick * 1.8, ec)
+	draw_circle(rear, 1.3, Color(1.0, 1.0, 1.0, 0.20 + 0.30 * flick))
+	# Navigation strobe: two short red/green blinks per 1.6 s cycle. This is the
+	# cheapest way to make a static portrait read as a live vehicle.
+	var phase := fmod(_time, 1.6)
+	if phase < 0.10 or (phase > 0.22 and phase < 0.32):
+		draw_circle(Vector2(bbox_end_x() - 2.0, _bbox.position.y + 4.0), 1.4,
+			Color(1.0, 0.34, 0.28, 0.95))
+		draw_circle(Vector2(_bbox.position.x + 2.0, _bbox.position.y + 3.0), 1.1,
+			Color(0.42, 1.0, 0.68, 0.90))
 
 
 func _slot_rect(slot: String, ts: Vector2) -> Rect2:

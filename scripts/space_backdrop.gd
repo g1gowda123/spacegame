@@ -10,6 +10,7 @@ const FALLBACK_PLANET := "res://assets/sprites/planets/rocky.png"
 var star_rect: TextureRect
 var planet_rect: TextureRect
 var _star_mat: ShaderMaterial
+var _planet_mat: ShaderMaterial
 var _planet_center := Vector2(0.82, 0.34)
 var _planet_size := 0.62
 var _planet_on := true
@@ -57,6 +58,11 @@ func _build() -> void:
 	planet_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	planet_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	planet_rect.visible = _planet_on
+	var pshader := load("res://shaders/planet_view.gdshader") as Shader
+	if pshader != null:
+		_planet_mat = ShaderMaterial.new()
+		_planet_mat.shader = pshader
+		planet_rect.material = _planet_mat
 	add_child(planet_rect)
 
 	_shade = ColorRect.new()
@@ -106,6 +112,9 @@ func _load_planet(asset: String) -> void:
 		path = FALLBACK_PLANET
 	if ResourceLoader.exists(path):
 		planet_rect.texture = load(path) as Texture2D
+		if _planet_mat != null and planet_rect.texture != null:
+			_planet_mat.set_shader_parameter("planet_res",
+				Vector2(planet_rect.texture.get_width(), planet_rect.texture.get_height()))
 
 
 func set_planet_colors(_a: Color, _b: Color, _c: Color) -> void:

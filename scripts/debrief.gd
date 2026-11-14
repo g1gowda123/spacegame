@@ -83,29 +83,30 @@ func _build() -> void:
 	})
 	bg.modulate.a = 0.22
 
-	var title := UIKit.label("SECTOR DEBRIEF  //  %02d" % int(r.get("sector", 1)), 14, UIKit.CYAN, true)
-	title.position = Vector2(10, 8)
-	title.size = Vector2(340, 18)
+	var title := UIKit.head("SECTOR DEBRIEF", 12, UIKit.TEXT)
+	title.position = Vector2(10, 6)
+	title.size = Vector2(340, 16)
 	add_child(title)
-	var sub := UIKit.label(
+	var sub := UIKit.mono(
 		"%s  ·  %s  ·  SURFACE OPERATIONS REPORT" % [
 			str(planet.get("name", "—")).to_upper(),
 			GameState.biome_name(str(planet.get("biome", "barren"))).to_upper()
-		], 7, UIKit.MUTED, true)
-	sub.position = Vector2(10, 26)
-	sub.size = Vector2(430, 12)
+		], 7, UIKit.DIM)
+	sub.position = Vector2(10, 22)
+	sub.size = Vector2(430, 10)
 	add_child(sub)
 
-	funds_label = UIKit.label("FUNDS $0M", 9, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	funds_label.position = Vector2(470, 8)
-	funds_label.size = Vector2(160, 12)
+	funds_label = UIKit.head("FUNDS $0M", 10, UIKit.AMBER, HORIZONTAL_ALIGNMENT_RIGHT)
+	funds_label.position = Vector2(480, 5)
+	funds_label.size = Vector2(140, 12)
 	add_child(funds_label)
 	var approval_now := int(GameState.run.get("approval", 0))
 	var appr_color := UIKit.RED if approval_now <= 20 else (UIKit.AMBER if approval_now <= 40 else UIKit.MUTED)
-	var appr := UIKit.label("APPROVAL %d" % approval_now, 7, appr_color, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	appr.position = Vector2(470, 22)
-	appr.size = Vector2(160, 12)
+	var appr := UIKit.mono("APPROVAL %d" % approval_now, 7, appr_color, HORIZONTAL_ALIGNMENT_RIGHT)
+	appr.position = Vector2(480, 20)
+	appr.size = Vector2(140, 10)
 	add_child(appr)
+	UIKit.hairline(self, 10, 33, 620)
 
 	_build_summary()
 	_build_shop()
@@ -113,87 +114,79 @@ func _build() -> void:
 
 
 func _build_summary() -> void:
-	var p := UIKit.panel(Color(0.04, 0.07, 0.11, 0.94), Color("#2b4058"))
-	p.position = Vector2(10, 42)
-	p.size = Vector2(306, 252)
-	add_child(p)
-	var c := Control.new()
-	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(c)
-
+	var p := UIKit.sheet(self, 10, 39, 306, 256)
+	var c := UIKit.fill(p)
 	var success := bool(r.get("success", false))
 	var relay := str(r.get("mode", "survey")) == "relay"
-	var stamp := UIKit.label("MISSION SUCCESS" if success else "MISSION FAILED", 16,
-		UIKit.CYAN if success else UIKit.RED, true)
-	stamp.position = Vector2(10, 8)
-	stamp.size = Vector2(286, 22)
+	var stamp := UIKit.head("MISSION SUCCESS" if success else "MISSION FAILED", 15,
+		UIKit.CYAN if success else UIKit.RED)
+	stamp.position = Vector2(12, 9)
+	stamp.size = Vector2(280, 20)
 	c.add_child(stamp)
-	var reason := UIKit.label(
+	var reason := UIKit.mono(
 		("RELAY CHAIN ONLINE" if relay else "ALL QUOTAS MET") if success else "AGENCY REVIEW FLAGGED", 7,
-		UIKit.GREEN if success else UIKit.RED, true)
-	reason.position = Vector2(10, 30)
-	reason.size = Vector2(286, 12)
+		UIKit.GREEN if success else UIKit.RED)
+	reason.position = Vector2(12, 30)
+	reason.size = Vector2(280, 10)
 	c.add_child(reason)
+	UIKit.hairline(c, 12, 44, 282, UIKit.LINE)
 
 	var rows := [
 		["BEACONS PLACED" if relay else "DATA DELIVERED", "%d / %d %s" % [
 			int(r.get("delivered", 0)), int(r.get("quota", 3)), "RELAYS" if relay else "NODES"
 		], UIKit.AMBER if relay else UIKit.GREEN],
-		["SCIENCE VALUE", "+%d PTS" % int(r.get("science", 0)), UIKit.PURPLE],
+		["SCIENCE VALUE", "+%d PTS" % int(r.get("science", 0)), UIKit.CYAN],
 		["GRANT AWARDED", "+$%dM" % int(r.get("grant", 0)), UIKit.AMBER],
 		["APPROVAL CHANGE", "%+d" % int(r.get("approval_delta", 0)), UIKit.GREEN if success else UIKit.RED],
 		["HULL INTEGRITY", "%d / %d" % [int(r.get("integrity_left", 0)), int(GameState.ship().get("integrity", 4))], UIKit.TEXT],
-		["DELTA-V LEFT", "%d" % int(r.get("delta_v_left", 0)), UIKit.CYAN],
-		["COMMS LOSS", "-%d%% DATA" % int(r.get("comms_loss", 0)), UIKit.MUTED],
+		["DELTA-V LEFT", "%d" % int(r.get("delta_v_left", 0)), UIKit.TEXT],
+		["COMMS LOSS", "-%d%%" % int(r.get("comms_loss", 0)), UIKit.MUTED],
 	]
-	var y := 46.0
+	var y := 52.0
 	for row in rows:
-		c.add_child(_row(10, y, row[0], row[1], row[2]))
+		c.add_child(_row(12, y, row[0], row[1], row[2]))
 		y += 14.0
 
-	c.add_child(_hr(10, 140, 286))
-	var build_head := UIKit.label("SHIP BUILD  //  LIVE REFIT", 6, UIKit.CYAN, true)
-	build_head.position = Vector2(10, 142)
+	UIKit.hairline(c, 12, 154, 282, UIKit.LINE)
+	var build_head := UIKit.mono("SHIP BUILD  //  LIVE REFIT", 7, UIKit.MUTED)
+	build_head.position = Vector2(12, 158)
 	build_head.size = Vector2(286, 10)
 	c.add_child(build_head)
-	build_label = UIKit.label("", 6, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	build_label.position = Vector2(140, 142)
-	build_label.size = Vector2(156, 10)
+	build_label = UIKit.mono("", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	build_label.position = Vector2(150, 158)
+	build_label.size = Vector2(144, 10)
 	c.add_child(build_label)
 	ship_diagram = ShipDiagram.new()
-	ship_diagram.position = Vector2(58, 152)
-	ship_diagram.size = Vector2(190, 70)
+	ship_diagram.position = Vector2(58, 170)
+	ship_diagram.size = Vector2(190, 62)
 	c.add_child(ship_diagram)
-	build_line = UIKit.label("", 6, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
+	build_line = UIKit.mono("", 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	build_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	build_line.position = Vector2(10, 223)
-	build_line.size = Vector2(286, 18)
+	build_line.position = Vector2(12, 226)
+	build_line.size = Vector2(282, 18)
 	c.add_child(build_line)
 	_refresh_ship()
 
 
 func _build_shop() -> void:
-	var p := UIKit.panel(Color(0.04, 0.07, 0.11, 0.94), Color("#2b4058"))
-	p.position = Vector2(326, 42)
-	p.size = Vector2(304, 252)
-	add_child(p)
-	var c := Control.new()
-	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(c)
-	var head := UIKit.label("FIELD REFIT  //  AGENCY STORE", 9, UIKit.AMBER, true)
-	head.position = Vector2(10, 7)
-	head.size = Vector2(220, 12)
+	var p := UIKit.sheet(self, 326, 39, 304, 256)
+	var c := UIKit.fill(p)
+	var head := UIKit.head("FIELD REFIT", 9, UIKit.TEXT)
+	head.position = Vector2(12, 9)
+	head.size = Vector2(160, 12)
 	c.add_child(head)
-	owned_label = UIKit.label("", 6, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	owned_label.position = Vector2(150, 8)
-	owned_label.size = Vector2(134, 10)
+	var store := UIKit.mono("AGENCY STORE", 7, UIKit.DIM)
+	store.position = Vector2(108, 10)
+	c.add_child(store)
+	owned_label = UIKit.mono("", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	owned_label.position = Vector2(196, 10)
+	owned_label.size = Vector2(94, 10)
 	c.add_child(owned_label)
+	UIKit.hairline(c, 12, 24, 280, UIKit.LINE)
 
 	shop_root = Control.new()
-	shop_root.position = Vector2(8, 24)
-	shop_root.size = Vector2(288, 220)
+	shop_root.position = Vector2(10, 30)
+	shop_root.size = Vector2(284, 216)
 	shop_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(shop_root)
 	_refresh_shop()
@@ -215,7 +208,7 @@ func _refresh_shop() -> void:
 		return
 	for i in range(GameState.shop_offers.size()):
 		var up: Dictionary = GameState.shop_offers[i]
-		shop_root.add_child(_offer_card(up, i, i * 72.0))
+		shop_root.add_child(_offer_card(up, i, i * 68.0))
 
 
 func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
@@ -223,7 +216,7 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var afford := float(GameState.run.get("budget", 0)) >= cost
 	var card := Control.new()
 	card.position = Vector2(0, y)
-	card.size = Vector2(288, 68)
+	card.size = Vector2(284, 64)
 	var bg := UIKit.panel(Color("#0c1726"), Color("#263d55"))
 	bg.position = Vector2.ZERO
 	bg.size = card.size
@@ -253,13 +246,13 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 
 	var nm := UIKit.label(str(up["name"]), 8, UIKit.TEXT, true)
 	nm.position = Vector2(56, 5)
-	nm.size = Vector2(154, 11)
+	nm.size = Vector2(138, 11)
 	card.add_child(nm)
 	var kind_text := "HARDWARE" if str(up["kind"]) == "MODULE" else "SOFTWARE"
-	var kind := UIKit.label(kind_text, 5, UIKit.CYAN, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	kind.position = Vector2(212, 6)
-	kind.size = Vector2(68, 9)
+	var kind := UIKit.mono(kind_text, 6, UIKit.CYAN, HORIZONTAL_ALIGNMENT_RIGHT)
 	card.add_child(kind)
+	kind.position = Vector2(196, 7)
+	kind.size = Vector2(78, 9)
 	var desc := UIKit.label(str(up.get("plain", up["desc"])), 6, UIKit.MUTED, false)
 	desc.position = Vector2(56, 18)
 	card.add_child(desc)
@@ -310,7 +303,7 @@ func _refresh_ship() -> void:
 
 
 func _build_footer() -> void:
-	var p := UIKit.panel(Color(0.04, 0.07, 0.11, 0.94), Color("#2b4058"))
+	var p := UIKit.panel(Color("#0b1522"), UIKit.SHEET_LINE)
 	p.position = Vector2(10, 304)
 	p.size = Vector2(620, 46)
 	add_child(p)
@@ -334,12 +327,12 @@ func _build_footer() -> void:
 		next_title = "NEXT: FIELD COMMISSION"
 		next_sub = "Choose one free upgrade before the next target."
 		next_button = "CLAIM COMMISSION >"
-	footer_title = UIKit.label(next_title, 10,
-		UIKit.CYAN if final else UIKit.AMBER, true)
+	footer_title = UIKit.head(next_title, 10,
+		UIKit.CYAN if final else UIKit.AMBER)
 	footer_title.position = Vector2(12, 6)
 	footer_title.size = Vector2(340, 14)
 	c.add_child(footer_title)
-	footer_sub = UIKit.label(next_sub, 7, UIKit.MUTED, false)
+	footer_sub = UIKit.mono(next_sub, 7, UIKit.MUTED)
 	footer_sub.position = Vector2(12, 22)
 	footer_sub.size = Vector2(360, 14)
 	c.add_child(footer_sub)
@@ -349,7 +342,7 @@ func _build_footer() -> void:
 	next_btn.pressed.connect(_on_next.bind(final))
 	c.add_child(next_btn)
 
-	toast = UIKit.label("", 8, UIKit.GREEN, true, HORIZONTAL_ALIGNMENT_CENTER)
+	toast = UIKit.mono("", 8, UIKit.GREEN, HORIZONTAL_ALIGNMENT_CENTER)
 	toast.position = Vector2(326, 294)
 	toast.size = Vector2(304, 12)
 	toast.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))

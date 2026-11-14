@@ -723,3 +723,7 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
 - **Animation art.** `tools/make_vfx_art.py` writes 52 palette-simple PNGs to `assets/vfx/` (particles + ring/shield/flare/smoke/splash/debris sheets + preview). `tools/gen_vfx_sheet.py` + `tools/comfy_workflows/vfx_{flare,smoke,ember}.json` are the diffusion path: one high-detail element on black → keyed → 64/40/12 px → 8 deterministic motion frames. VFX prefers authored sheets and falls back to procedural art.
 - Evidence: `/tmp/opencode/vfx/fx2_strip.png` (impact/shield/pickup/beam frames), `/tmp/opencode/vfx/*_frames.png`, `/tmp/opencode/vfx/title_star.png`, `/tmp/opencode/vfx/side_temperate.png` etc. Docs: `docs/VFX.md`.
 - Open: scene transitions, HUD gauge animation (UI lane), volcanic heat haze.
+
+- **18:22 — W1 soft-edge A/B flag.** Added `soft_edges` shader uniform and `--no-soft-edges`; 2× A/B `soft_edges_ab.png`; no geometry change (W2 still required); no export.
+
+- **18:28 — W6 in-map capture.** Temperate massif + volcanic volcano field captured at map scale (`soft_on.png`, `volc_final.png`); plinth gone, but volcano towers still leave visible 4×4 corners; flagged to ORION/VEGA; no export.
