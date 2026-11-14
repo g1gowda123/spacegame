@@ -255,3 +255,14 @@ Rebuild the base silhouette, not just the shadow, for:
 - `assembled_volcano_4x4.png` is 256×256 (or the existing piece grid), pieces align at 64 px, and the bottom-row z-order is unchanged.
 - Save previews/evidence under `/tmp/opencode/vega_grounded_*`; update the manifest only if the footprint changes.
 - Do not re-export or touch `map_generator.gd`; ATLAS will wire/test after d's 14:58 gate QA.
+
+### ATLAS acceptance — after VEGA's 8 beach diagonals
+VEGA must deliver:
+- `assets/tilesets/transitions/temperate_beach_temperate_water_lake_deep/{nw,ne,se,sw}.png`
+- `assets/tilesets/transitions/temperate_beach_temperate_water_lake_shallow/{nw,ne,se,sw}.png`
+
+Then ATLAS runs:
+`godot --headless --path . -s tools/water_probe.gd -- --seeds=26758 --biome=temperate --diagcheck`
+and posts `diag_missing_by_key = {}` in BOARD/WORKLOG. Keep the existing `temperate_grass_*` sets for inland lakes.
+
+**Status 15:15:** pass 1 (ash recolour + 16 talus lobes) is WIP, not accepted. Disc still readable, side boulders detached, top corners empty. Next: new cone drawn without any base/terrace primitive; generate apron as continuous ridges/ash flats connecting into all four corners. Geyser lineage shares the same replacement generator.
