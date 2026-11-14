@@ -90,7 +90,6 @@ var data_bar: ProgressBar
 var power_pips: Array = []
 var threat_label: Label
 var route_label: Label
-var quota_label: Label
 var dpad: Control
 var hold_btn: Button
 var extract_btn: Button

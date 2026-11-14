@@ -243,7 +243,7 @@ func _build_ranks() -> void:
 			sheet.add_child(rule)
 
 	var close := UIKit.button("CLOSE", Vector2(88, 22))
-	close.position = Vector2(350, 236)
+	close.position = Vector2(350, 244)
 	close.pressed.connect(func(): ranks_layer.visible = false)
 	sheet.add_child(close)
 
