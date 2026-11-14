@@ -17,6 +17,8 @@ static func bind(host: Control, title: String, body: String,
 	accent: Color = UIKit.CYAN) -> void:
 	if host == null:
 		return
+	if "--no-tips" in OS.get_cmdline_args() or "--no-tips" in OS.get_cmdline_user_args():
+		return
 	host.mouse_entered.connect(func(): _open(host, title, body, accent))
 	host.mouse_exited.connect(func(): _close(host))
 

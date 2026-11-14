@@ -34,12 +34,13 @@ const BEATS := [
 	},
 ]
 
-const PAPER := Color("#0e1624")
-const INK := Color("#e8eff7")
-const ORANGE := Color("#54e6d1")
-const SIGNAL := Color("#ff5d6c")
-const NIGHT := Color("#070a11")
-const TEAL := Color("#54e6d1")
+const PAPER := Color("#e8dfc8")
+const INK := Color("#1b1a17")
+const INK_SOFT := Color("#4a4438")
+const ORANGE := Color("#e4572e")
+const SIGNAL := Color("#b8332f")
+const NIGHT := Color("#101826")
+const TEAL := Color("#5f8f8a")
 const SHIP_DIR := "res://assets/sprites/crew/"
 
 var beat := 0
@@ -113,12 +114,12 @@ func _build() -> void:
 	kicker.size = Vector2(360, 10)
 	add_child(kicker)
 
-	progress = UIKit.label("01 / 07", 7, Color("#8ba0b6"), true, HORIZONTAL_ALIGNMENT_RIGHT)
+	progress = UIKit.label("01 / 07", 7, Color("#f2ead6"), true, HORIZONTAL_ALIGNMENT_RIGHT)
 	progress.position = Vector2(480, 18)
 	progress.size = Vector2(142, 10)
 	add_child(progress)
 
-	skip_btn = _paper_button("SKIP  [ESC]", Vector2(92, 20), true)
+	skip_btn = _paper_button("SKIP  [ESC]", Vector2(92, 20), false)
 	skip_btn.position = Vector2(530, 32)
 	skip_btn.pressed.connect(_skip)
 	add_child(skip_btn)
@@ -181,13 +182,6 @@ func _build() -> void:
 	photo_tape.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(photo_tape)
 
-	var shadow := ColorRect.new()
-	shadow.color = Color(0.0, 0.0, 0.0, 0.55)
-	shadow.position = Vector2(169, 251)
-	shadow.size = Vector2(466, 94)
-	shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(shadow)
-
 	var tab := Panel.new()
 	tab.position = Vector2(166, 228)
 	tab.size = Vector2(104, 20)
@@ -200,17 +194,11 @@ func _build() -> void:
 	card_label.size = Vector2(98, 12)
 	tab.add_child(card_label)
 
-	var tape := ColorRect.new()
-	tape.color = Color(0.90, 0.70, 0.36, 0.34)
-	tape.position = Vector2(360, 244)
-	tape.size = Vector2(74, 7)
-	tape.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(tape)
-
 	dialogue = Panel.new()
 	dialogue.position = Vector2(166, 248)
 	dialogue.size = Vector2(466, 94)
-	dialogue.add_theme_stylebox_override("panel", _paper_style(PAPER, INK, 1))
+	var dialog_style := _paper_style(PAPER, INK, 1)
+	dialogue.add_theme_stylebox_override("panel", dialog_style)
 	dialogue.mouse_filter = Control.MOUSE_FILTER_STOP
 	dialogue.gui_input.connect(_on_dialogue_input)
 	add_child(dialogue)
@@ -247,7 +235,7 @@ func _build() -> void:
 	body.add_theme_constant_override("line_spacing", 1)
 	dialogue.add_child(body)
 
-	var hint := UIKit.mono("SPACE / CLICK TO CONTINUE", 7, TEAL)
+	var hint := UIKit.mono("SPACE / CLICK TO CONTINUE", 7, INK_SOFT)
 	hint.position = Vector2(12, 72)
 	hint.size = Vector2(220, 14)
 	dialogue.add_child(hint)

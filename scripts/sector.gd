@@ -630,9 +630,11 @@ func _build_hud() -> void:
 	threat_label.position = Vector2(8, 3)
 	threat_label.size = Vector2(398, 12)
 	bc.add_child(threat_label)
-	route_label = UIKit.mono("—", 8, Color("#f7f0df"))
+	route_label = UIKit.mono("—", 8, Color("#f2ead6"))
 	route_label.position = Vector2(8, 18)
 	route_label.size = Vector2(398, 12)
+	route_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	route_label.add_theme_constant_override("outline_size", 1)
 	bc.add_child(route_label)
 
 	toast_label = UIKit.head("", 9, UIKit.CYAN, HORIZONTAL_ALIGNMENT_CENTER)

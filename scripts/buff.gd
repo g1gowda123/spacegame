@@ -9,9 +9,9 @@ const CARD_GAP := 15.0
 const CARD_Y := 72.0
 
 const RARITY_COLORS := {
-	"common": Color("#8ba0b6"),
-	"rare": Color("#54e6d1"),
-	"epic": Color("#b692ff"),
+	"common": Color("#5f8f8a"),
+	"rare": Color("#e4572e"),
+	"epic": Color("#6f5a8a"),
 }
 
 var cards: Array = []
@@ -48,13 +48,13 @@ func _build() -> void:
 	})
 	bg.modulate.a = 0.46
 
-	var kicker := UIKit.mono("AGENCY REVIEW  //  FIELD COMMISSION", 7, UIKit.AMBER,
+	var kicker := UIKit.mono("AGENCY REVIEW  //  FIELD COMMISSION", 7, UIKit.ORANGE,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	kicker.position = Vector2(0, 16)
 	kicker.size = Vector2(640, 12)
 	add_child(kicker)
 
-	var title := UIKit.head("SELECT FIELD COMMISSION", 16, UIKit.TEXT,
+	var title := UIKit.head("SELECT FIELD COMMISSION", 16, UIKit.NIGHT_TEXT,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	title.position = Vector2(0, 28)
 	title.size = Vector2(640, 20)
@@ -65,7 +65,7 @@ func _build() -> void:
 		"MILESTONE %d OF %d   ·   ONE FREE UPGRADE   ·   1 / 2 / 3 + ENTER" % [
 			milestone if milestone > 0 else 1,
 			GameState.BUFF_MILESTONES.size(),
-		], 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+		], 7, UIKit.NIGHT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	sub.position = Vector2(0, 50)
 	sub.size = Vector2(640, 12)
 	add_child(sub)
@@ -75,7 +75,7 @@ func _build() -> void:
 	for i in range(cards.size()):
 		_make_card(i, cards[i], start_x + i * (CARD_W + CARD_GAP), CARD_Y)
 
-	status_label = UIKit.mono("", 8, UIKit.GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	status_label = UIKit.mono("", 8, UIKit.LIVE, HORIZONTAL_ALIGNMENT_CENTER)
 	status_label.position = Vector2(0, 296)
 	status_label.size = Vector2(640, 12)
 	status_label.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.05, 0.95))
@@ -83,7 +83,7 @@ func _build() -> void:
 	status_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(status_label)
 
-	hint_label = UIKit.mono("", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	hint_label = UIKit.mono("", 7, UIKit.NIGHT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	hint_label.position = Vector2(0, 326)
 	hint_label.size = Vector2(640, 12)
 	hint_label.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.05, 0.95))
@@ -115,14 +115,14 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(strip)
 
-	var title_label := UIKit.head(str(buff.get("name", "COMMISSION")), 9, UIKit.TEXT,
+	var title_label := UIKit.head(str(buff.get("name", "COMMISSION")), 9, UIKit.INK,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	title_label.position = Vector2(4, 10)
 	title_label.size = Vector2(CARD_W - 8, 13)
 	title_label.clip_text = true
 	card.add_child(title_label)
 
-	var tag := UIKit.mono(rarity.to_upper(), 6, color, HORIZONTAL_ALIGNMENT_CENTER)
+	var tag := UIKit.mono(rarity.to_upper(), 6, color.darkened(0.18), HORIZONTAL_ALIGNMENT_CENTER)
 	tag.position = Vector2(4, 26)
 	tag.size = Vector2(CARD_W - 8, 11)
 	card.add_child(tag)
@@ -158,22 +158,25 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desc.add_theme_font_override("normal_font", UIKit.body_font)
 	desc.add_theme_font_size_override("normal_font_size", 7)
-	desc.add_theme_color_override("default_color", Color("#a9bccf"))
+	desc.add_theme_color_override("default_color", UIKit.INK_SOFT)
 	desc.add_theme_constant_override("line_separation", 0)
 	card.add_child(desc)
 
-	var num := UIKit.mono(str(index + 1), 7, UIKit.DIM)
+	var num := UIKit.mono(str(index + 1), 7, UIKit.INK_FAINT)
 	num.position = Vector2(10, 192)
 	num.size = Vector2(20, 12)
 	card.add_child(num)
-	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.INK_FAINT, HORIZONTAL_ALIGNMENT_RIGHT)
 	pick_hint.position = Vector2(CARD_W - 68, 192)
 	pick_hint.size = Vector2(54, 12)
 	card.add_child(pick_hint)
 
 
 func _card_style(color: Color, hover: bool) -> StyleBoxFlat:
-	var s := UIKit.style_panel(Color("#0b1420"), color.lightened(0.35) if hover else color, 2, 2 if hover else 1)
+	var s := UIKit.style_panel(UIKit.PAPER, UIKit.ORANGE if hover else UIKit.INK, 0, 2 if hover else 1)
+	s.shadow_color = Color(0.04, 0.03, 0.02, 0.46)
+	s.shadow_size = 2
+	s.shadow_offset = Vector2(2, 2)
 	s.content_margin_left = 0
 	s.content_margin_right = 0
 	s.content_margin_top = 0

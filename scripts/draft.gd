@@ -7,6 +7,7 @@ var detail_label: Label
 var objective_label: Label
 var selected_planet: Dictionary = {}
 var review_layer: CanvasLayer
+var _committing := false
 
 
 func _ready() -> void:
@@ -25,6 +26,8 @@ func _ready() -> void:
 		call_deferred("_hide_tips_for_capture")
 	if "--review" in OS.get_cmdline_args() or "--review" in OS.get_cmdline_user_args():
 		_show_mission_review()
+	if "--commit" in OS.get_cmdline_args() or "--commit" in OS.get_cmdline_user_args():
+		_commit_route.call_deferred()
 
 
 func _hide_tips_for_capture() -> void:
@@ -141,7 +144,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		UIKit.ORANGE_DARK)
 
 	var mark := UIKit.mono("SELECT", 7, UIKit.INK_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
-	mark.position = Vector2(10, 212)
+	mark.position = Vector2(10, 210)
 	mark.size = Vector2(172, 12)
 	c.add_child(mark)
 
@@ -316,25 +319,22 @@ func _show_mission_review() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	review_layer.add_child(root)
 	var shade := ColorRect.new()
-	shade.color = Color(0.01, 0.02, 0.04, 1.0)
+	shade.color = Color(0.01, 0.02, 0.04, 0.82)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(shade)
 
-	var panel := UIKit.panel(Color("#0b1320"), UIKit.CYAN)
-	panel.position = Vector2(20, 24)
-	panel.size = Vector2(600, 300)
-	root.add_child(panel)
+	var panel := UIKit.sheet(root, 20, 24, 600, 300)
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(c)
 
-	var kicker := UIKit.label("MISSION ARCHITECTURE REVIEW  //  PRE-COMMIT", 7, UIKit.AMBER, true)
+	var kicker := UIKit.label("MISSION ARCHITECTURE REVIEW  //  PRE-COMMIT", 7, UIKit.ORANGE, true)
 	kicker.position = Vector2(12, 8)
 	kicker.size = Vector2(560, 12)
 	c.add_child(kicker)
-	var title := UIKit.label("%s  ·  %s" % [str(p["name"]).to_upper(), GameState.biome_name(str(p["biome"])).to_upper()], 12, UIKit.CYAN, true)
+	var title := UIKit.label("%s  ·  %s" % [str(p["name"]).to_upper(), GameState.biome_name(str(p["biome"])).to_upper()], 12, UIKit.ORANGE_DARK, true)
 	title.position = Vector2(12, 22)
 	title.size = Vector2(560, 16)
 	c.add_child(title)
@@ -395,7 +395,7 @@ func _show_mission_review() -> void:
 	traj.add_child(flyer)
 	var arc_tw := flyer.create_tween()
 	arc_tw.tween_property(arc, "modulate:a", 1.0, 0.45)
-	var e1 := UIKit.label("EARTH", 5, UIKit.DIM, true)
+	var e1 := UIKit.label("EARTH", 5, UIKit.NIGHT_MUTED, true)
 	e1.position = Vector2(8, 96)
 	e1.size = Vector2(46, 10)
 	traj.add_child(e1)
@@ -423,7 +423,7 @@ func _show_mission_review() -> void:
 		+ "SURFACE WINDOW  %d SOLS   ·   DOWNLINK LOSS  -%d%%   ·   %s" % [
 			int(g["sols"]), int(g["comms_loss"]),
 			"3 RELAY BEACONS" if relay else "%d DATA NODES" % int(obj.get("quota", 3))
-		], 7, UIKit.MUTED)
+		], 7, UIKit.INK)
 	timeline.position = Vector2(12, 162)
 	timeline.size = Vector2(270, 42)
 	timeline.add_theme_constant_override("line_spacing", 1)
@@ -439,24 +439,24 @@ func _show_mission_review() -> void:
 	]
 	for i in range(segs.size()):
 		var y := 44.0 + i * 27.0
-		var lab := UIKit.label(str(segs[i][0]), 6, UIKit.DIM, true)
+		var lab := UIKit.label(str(segs[i][0]), 6, UIKit.INK, true)
 		lab.position = Vector2(seg_x, y)
 		lab.size = Vector2(38, 12)
 		c.add_child(lab)
-		var val := UIKit.label(str(segs[i][1]), 7, segs[i][2], true)
+		var val := UIKit.label(str(segs[i][1]), 7, UIKit.INK, true)
 		val.position = Vector2(seg_x + 42, y - 1)
 		val.size = Vector2(248, 12)
 		c.add_child(val)
 		var line := Line2D.new()
 		line.points = PackedVector2Array([Vector2(seg_x, y + 14), Vector2(seg_x + 286, y + 14)])
 		line.width = 1.0
-		line.default_color = Color(0.16, 0.25, 0.35, 0.9)
+		line.default_color = UIKit.SHEET_LINE
 		c.add_child(line)
 
 	var cml := UIKit.label("CML %d %s  ·  %s" % [
 		int(cm["level"]), str(cm["label"]),
 		"SCIENCE TRACEABILITY CLOSED" if bool(ship.get("science_fit", false)) else "SCIENCE FIT MISSING"
-	], 7, UIKit.GREEN if bool(ship.get("science_fit", false)) else UIKit.AMBER, true)
+	], 7, UIKit.TEAL if bool(ship.get("science_fit", false)) else UIKit.ORANGE_DARK, true)
 	cml.position = Vector2(seg_x, 158)
 	cml.size = Vector2(288, 12)
 	c.add_child(cml)
@@ -476,11 +476,97 @@ func _show_mission_review() -> void:
 
 
 func _commit_route() -> void:
-	if selected_planet.is_empty():
+	if selected_planet.is_empty() or _committing:
 		return
-	GameState.begin_sector(selected_planet)
+	_committing = true
+	var planet := selected_planet
+	GameState.begin_sector(planet)
 	GameState.sfx("confirm")
+	# The review's mini-viz becomes a full-screen transfer before the sector
+	# loads: the ship leaves Earth, crosses, and the cut lands on the surface.
+	_play_commit_transit(planet)
+	await get_tree().create_timer(1.85).timeout
 	get_tree().change_scene_to_file("res://scenes/sector.tscn")
+
+
+func _play_commit_transit(p: Dictionary) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(root)
+	var bg := ColorRect.new()
+	bg.color = Color(0.008, 0.012, 0.026, 1.0)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_child(bg)
+	var stars := SpaceBackdrop.new()
+	stars.configure({"planet_on": false, "dim": 0.30})
+	root.add_child(stars)
+	var earth := TextureRect.new()
+	earth.texture = load("res://assets/sprites/planets/temperate.png")
+	earth.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	earth.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	earth.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	earth.position = Vector2(54, 196)
+	earth.size = Vector2(84, 84)
+	root.add_child(earth)
+	var target := TextureRect.new()
+	var tp := SpaceBackdrop.asset_for_planet(p)
+	if ResourceLoader.exists(tp):
+		target.texture = load(tp)
+	target.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	target.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	target.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	target.position = Vector2(486, 58)
+	target.size = Vector2(100, 100)
+	root.add_child(target)
+	var pts := PackedVector2Array()
+	for i in range(30):
+		var t := float(i) / 29.0
+		var a := Vector2(132, 240)
+		var b := Vector2(286, 62)
+		var d := Vector2(506, 138)
+		pts.append(a.lerp(b, t).lerp(b.lerp(d, t), t))
+	var arc := Line2D.new()
+	arc.points = pts
+	arc.width = 1.4
+	arc.default_color = Color(0.33, 0.90, 0.84, 0.55)
+	root.add_child(arc)
+	var flyer := TransferShip.new()
+	flyer.points = pts
+	flyer.size = Vector2(640, 360)
+	flyer.travel_seconds = 1.35
+	flyer.hold_seconds = 0.30
+	flyer.accent = Color(1.0, 0.78, 0.30)
+	var hp := "res://assets/sprites/ships/%s.png" % str(GameState.hull().get("id", "pathfinder"))
+	if ResourceLoader.exists(hp):
+		flyer.ship_texture = load(hp) as Texture2D
+	root.add_child(flyer)
+	var lab := UIKit.label("TRANSIT  ·  %s" % str(p["name"]).to_upper(),
+		9, UIKit.CYAN, true, HORIZONTAL_ALIGNMENT_CENTER)
+	lab.position = Vector2(0, 24)
+	lab.size = Vector2(640, 16)
+	root.add_child(lab)
+	var sub := UIKit.label("%.1f LY  ·  %.1f YR @0.85c" % [
+		float(p["distance_ly"]), maxf(0.4, float(p["distance_ly"]) / 0.85)
+	], 7, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
+	sub.position = Vector2(0, 42)
+	sub.size = Vector2(640, 12)
+	root.add_child(sub)
+	var earth_lab := UIKit.label("EARTH", 6, UIKit.DIM, true)
+	earth_lab.position = Vector2(54, 284)
+	earth_lab.size = Vector2(84, 10)
+	root.add_child(earth_lab)
+	var dest_lab := UIKit.label(str(p["name"]).to_upper(), 6, UIKit.AMBER, true,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	dest_lab.position = Vector2(486, 162)
+	dest_lab.size = Vector2(100, 10)
+	root.add_child(dest_lab)
+	root.modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(root, "modulate:a", 1.0, 0.25)
 
 
 func _unhandled_input(event: InputEvent) -> void:

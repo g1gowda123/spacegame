@@ -25,6 +25,7 @@ DevRouter="*res://scripts/dev_router.gd"
 CaptureProbe="*res://scripts/capture_probe.gd"
 DemoDirector="*res://scripts/demo_director.gd"
 MCPRuntimeProbe="*res://addons/godot_mcp/mcp_runtime_probe.gd"
+PostFX="*res://scripts/post_fx.gd"
 
 [display]
 

@@ -19,6 +19,8 @@ func _ready() -> void:
 	_build_ranks()
 	if "--howto" in OS.get_cmdline_args() or "--howto" in OS.get_cmdline_user_args():
 		howto_layer.visible = true
+	if "--ranks" in OS.get_cmdline_args() or "--ranks" in OS.get_cmdline_user_args():
+		ranks_layer.visible = true
 	GameState.sfx("confirm")
 	if not GameState.briefing_seen and not _dev_screen():
 		call_deferred("_open_briefing")
@@ -200,16 +202,7 @@ func _build_ranks() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ranks_layer.add_child(shade)
 
-	var sheet := Panel.new()
-	sheet.position = Vector2(92, 44)
-	sheet.size = Vector2(456, 272)
-	var paper := StyleBoxFlat.new()
-	paper.bg_color = UIKit.PAPER
-	paper.border_color = UIKit.INK
-	paper.set_border_width_all(1)
-	paper.set_corner_radius_all(0)
-	sheet.add_theme_stylebox_override("panel", paper)
-	ranks_layer.add_child(sheet)
+	var sheet := UIKit.sheet(ranks_layer, 92, 44, 456, 272)
 
 	var kicker := UIKit.label("AGENCY HONOURS BOARD  //  LOCAL RECORDS", 7, UIKit.ORANGE, true)
 	kicker.position = Vector2(18, 16)

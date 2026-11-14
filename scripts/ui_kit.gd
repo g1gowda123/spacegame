@@ -247,6 +247,7 @@ static func button(
 		b.add_theme_stylebox_override("normal", _paper_skin("tab_idle", 5))
 		b.add_theme_stylebox_override("hover", _paper_skin("tab_hover", 5))
 		b.add_theme_stylebox_override("pressed", _paper_skin("tab_pressed", 5))
+		b.add_theme_stylebox_override("disabled", style_panel(PAPER_DEEP, Color("#8e7a5c"), 0, 1))
 		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		b.add_theme_color_override("font_color", INK)
 		b.add_theme_color_override("font_hover_color", INK)
