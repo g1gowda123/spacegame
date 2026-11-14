@@ -260,6 +260,14 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	pr.size = Vector2(70, 12)
 	card.add_child(pr)
 
+	# A one-line effect readout so the card explains itself before hover. The
+	# full plain-language copy still lives in the dossier.
+	var effect := UIKit.mono(str(up.get("desc", "")), 6, UIKit.MUTED)
+	effect.position = Vector2(58, 46)
+	effect.size = Vector2(150, 9)
+	effect.clip_text = true
+	card.add_child(effect)
+
 	var buy := UIKit.button("BUY", Vector2(58, 20), afford)
 	buy.position = Vector2(218, 26)
 	buy.size = Vector2(58, 20)

@@ -925,7 +925,7 @@ func _refresh_status() -> void:
 	var onboard := _sector_hint != "" and turn == 1 and not moved and not done 		and cursor_cell == player_cell
 	if onboard_label != null:
 		onboard_label.visible = onboard
-		onboard_label.text = "TURN %d · RANGE %d · %s" % [
+		onboard_label.text = "TURN %d · RANGE %d · %s · CLICK A TILE" % [
 			turn, _current_range(), _sector_hint
 		] if onboard else ""
 	# Do not stack the onboarding hint on top of the live route line; the
