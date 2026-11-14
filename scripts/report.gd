@@ -1,0 +1,233 @@
+extends Control
+## Final agency ledger and run summary.
+
+var score: Dictionary = {}
+
+
+func _ready() -> void:
+	score = GameState.calculate_score()
+	_build()
+
+
+func _build() -> void:
+	var bg := SpaceBackdrop.new()
+	add_child(bg)
+	bg.configure({
+		"planet_center": Vector2(0.88, 0.70),
+		"planet_size": 0.60,
+		"planet_asset": "ringed",
+		"dim": 0.22,
+	})
+	bg.modulate.a = 0.20
+
+	var title := UIKit.label("FINAL MISSION REPORT  //  AGENCY LEDGER", 14, UIKit.CYAN, true)
+	title.position = Vector2(10, 8)
+	title.size = Vector2(470, 18)
+	add_child(title)
+	var sub := UIKit.label(
+		"ORBIT + OUTPLAY  ·  NASA SPACE APPS 2026  ·  EXOPLANET SURVEY CAMPAIGN",
+		7, UIKit.MUTED, true)
+	sub.position = Vector2(10, 26)
+	sub.size = Vector2(520, 12)
+	add_child(sub)
+
+	_build_grade()
+	_build_ledger()
+	_build_footer()
+
+
+func _build_grade() -> void:
+	var p := UIKit.panel(Color(0.04, 0.07, 0.11, 0.94), Color("#2b4058"))
+	p.position = Vector2(10, 42)
+	p.size = Vector2(266, 248)
+	add_child(p)
+	var c := Control.new()
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(c)
+
+	var g := str(score.get("grade", "C"))
+	var gc := UIKit.CYAN
+	if g == "S":
+		gc = UIKit.CYAN
+	elif g == "A":
+		gc = UIKit.GREEN
+	elif g == "B":
+		gc = UIKit.AMBER
+	else:
+		gc = UIKit.RED
+	var grade := UIKit.label(g, 58, gc, true, HORIZONTAL_ALIGNMENT_CENTER)
+	grade.position = Vector2(0, 10)
+	grade.size = Vector2(266, 70)
+	c.add_child(grade)
+	var gl := UIKit.label("AGENCY GRADE", 7, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
+	gl.position = Vector2(0, 82)
+	gl.size = Vector2(266, 12)
+	c.add_child(gl)
+
+	var total := UIKit.label("%d" % int(score.get("total", 0)), 26, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_CENTER)
+	total.position = Vector2(0, 100)
+	total.size = Vector2(266, 32)
+	c.add_child(total)
+	var tl := UIKit.label("TOTAL SCORE", 7, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_CENTER)
+	tl.position = Vector2(0, 132)
+	tl.size = Vector2(266, 12)
+	c.add_child(tl)
+
+	c.add_child(_hr(14, 152, 238))
+	var rows := [
+		["SCIENCE", int(score.get("science", 0))],
+		["EFFICIENCY", int(score.get("efficiency", 0))],
+		["APPROVAL", int(score.get("approval", 0))],
+		["FUNDS", int(score.get("budget", 0))],
+		["COMPLETION", int(score.get("completion", 0))],
+		["ALL-SUCCESS BONUS", 400 if int(score.get("successes", 0)) >= GameState.SECTORS_PER_RUN else 0],
+	]
+	var y := 152.0
+	for row in rows:
+		var l := UIKit.label(str(row[0]), 7, UIKit.MUTED, true)
+		l.position = Vector2(14, y)
+		l.size = Vector2(140, 12)
+		c.add_child(l)
+		var v := UIKit.label("+%d" % int(row[1]), 8, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_RIGHT)
+		v.position = Vector2(154, y)
+		v.size = Vector2(98, 12)
+		c.add_child(v)
+		y += 14.0
+
+
+func _build_ledger() -> void:
+	var p := UIKit.panel(Color(0.04, 0.07, 0.11, 0.94), Color("#2b4058"))
+	p.position = Vector2(286, 42)
+	p.size = Vector2(344, 248)
+	add_child(p)
+	var c := Control.new()
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(c)
+
+	var h := UIKit.label("SECTOR LEDGER", 9, UIKit.AMBER, true)
+	h.position = Vector2(12, 7)
+	h.size = Vector2(220, 12)
+	c.add_child(h)
+	var best := UIKit.label("BEST %d" % int(GameState.best_score), 7, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_RIGHT)
+	best.position = Vector2(210, 8)
+	best.size = Vector2(122, 10)
+	c.add_child(best)
+
+	var y := 28.0
+	for i in range(GameState.SECTORS_PER_RUN):
+		if i < GameState.history.size():
+			var hrow: Dictionary = GameState.history[i]
+			var ok := bool(hrow.get("success", false))
+			var planet: Dictionary = hrow.get("planet", {})
+			var num := UIKit.label("%02d" % (i + 1), 8, UIKit.DIM, true)
+			num.position = Vector2(12, y + 1)
+			num.size = Vector2(22, 12)
+			c.add_child(num)
+			var nm := UIKit.label(str(planet.get("name", "—")).to_upper(), 8,
+				UIKit.TEXT if ok else UIKit.RED, true)
+			nm.position = Vector2(36, y + 1)
+			nm.size = Vector2(150, 12)
+			c.add_child(nm)
+			var dat := UIKit.label("%d/%d" % [int(hrow.get("delivered", 0)), int(hrow.get("quota", 3))],
+				8, UIKit.GREEN if ok else UIKit.RED, true, HORIZONTAL_ALIGNMENT_RIGHT)
+			dat.position = Vector2(190, y + 1)
+			dat.size = Vector2(46, 12)
+			c.add_child(dat)
+			var gr := UIKit.label("+$%dM" % int(hrow.get("grant", 0)), 8, UIKit.AMBER, true,
+				HORIZONTAL_ALIGNMENT_RIGHT)
+			gr.position = Vector2(240, y + 1)
+			gr.size = Vector2(92, 12)
+			c.add_child(gr)
+		else:
+			var dash := UIKit.label("%02d  —  NOT FLOWN" % (i + 1), 8, UIKit.DIM, true)
+			dash.position = Vector2(12, y + 1)
+			dash.size = Vector2(320, 12)
+			c.add_child(dash)
+		y += 20.0
+
+	c.add_child(_hr(12, 92, 320))
+	var successes := int(score.get("successes", 0))
+	var story := "Three clean surveys. The agency's\ncadence is now the envy of the field."
+	if successes == 2:
+		story = "Two clean surveys. A credible program\nwith room to grow."
+	elif successes == 1:
+		story = "One survey delivered. The agency\nsurvives, bruised but funded."
+	elif successes == 0:
+		story = "No data recovered. The review board\nis drafting a shutdown memo."
+	if int(GameState.run.get("approval", 0)) <= 0:
+		story = "Approval collapsed. The agency has\nbeen defunded."
+	var narrative := UIKit.label(story, 8, UIKit.TEXT, false)
+	narrative.position = Vector2(12, 98)
+	narrative.size = Vector2(320, 30)
+	narrative.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(narrative)
+
+	var cm := GameState.cml()
+	var stats := UIKit.label(
+		"TARGETS FLOWN  %d / %d\nDATA DELIVERED  %d NODES\nGRANTS REMAINING  $%dM\nAPPROVAL  %d / 100\nCONCEPT  CML %d · %s" % [
+			GameState.history.size(), GameState.SECTORS_PER_RUN,
+			int(score.get("delivered", 0)),
+			int(GameState.run.get("budget", 0)),
+			int(GameState.run.get("approval", 0)),
+			int(cm["level"]), str(cm["label"]),
+		], 7, UIKit.MUTED, false)
+	stats.position = Vector2(12, 130)
+	stats.size = Vector2(300, 64)
+	stats.add_theme_constant_override("line_spacing", 2)
+	c.add_child(stats)
+
+	var last_planet: Dictionary = {}
+	if not GameState.history.is_empty():
+		last_planet = GameState.history[GameState.history.size() - 1].get("planet", {})
+	var orbit_line := "ORBIT PROFILE  ·  LOW"
+	if not last_planet.is_empty():
+		orbit_line = GameState.orbit_summary(last_planet)
+	var notes := UIKit.label(
+		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nTEQ drives thermal load · gravity drives delta-v." % orbit_line,
+		6, UIKit.DIM, false)
+	notes.position = Vector2(12, 198)
+	notes.size = Vector2(320, 34)
+	notes.add_theme_constant_override("line_spacing", 1)
+	c.add_child(notes)
+
+
+func _hr(x: float, y: float, w: float) -> HSeparator:
+	var sep := UIKit.rule()
+	sep.position = Vector2(x, y)
+	sep.size = Vector2(w, 1)
+	sep.custom_minimum_size = Vector2(w, 1)
+	return sep
+
+
+func _build_footer() -> void:
+	var p := UIKit.panel(Color(0.04, 0.07, 0.11, 0.94), Color("#2b4058"))
+	p.position = Vector2(10, 300)
+	p.size = Vector2(620, 50)
+	add_child(p)
+	var c := Control.new()
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(c)
+
+	var l := UIKit.label(
+		"THE CAMPAIGN IS OVER  ·  YOUR AGENCY'S RECORD IS FILED",
+		8, UIKit.CYAN, true)
+	l.position = Vector2(12, 8)
+	l.size = Vector2(360, 12)
+	c.add_child(l)
+	var s := UIKit.label(
+		"Built in Godot 4 for NASA Space Apps 2026 · Data: NASA Exoplanet Archive.",
+		7, UIKit.MUTED, false)
+	s.position = Vector2(12, 23)
+	s.size = Vector2(390, 14)
+	c.add_child(s)
+
+	var again := UIKit.button("NEW CAMPAIGN >", Vector2(150, 28), true)
+	again.position = Vector2(456, 11)
+	again.pressed.connect(func():
+		GameState.new_run()
+		get_tree().change_scene_to_file("res://scenes/title.tscn")
+	)
+	c.add_child(again)
