@@ -152,7 +152,7 @@ underlying archive values.
 - No new runtime dependencies and no server: the whole feature works in the
   threadless WebGL 2 export.
 
-## QA evidence (12:44–12:48)
+## QA evidence (12:44–13:18)
 
 - `qa_daily_a.png` and `qa_daily_b.png` are byte-identical after two separate
   launches: the daily draft is deterministic.
@@ -162,5 +162,7 @@ underlying archive values.
 - Meta probe output: Director + 3-player crew gives `delta_v +3`,
   `integrity +1`, `science ×1.10`, `hazard_mod 1`, `heat +1`; campaign code
   `OO-043AF-D3` parses back to the same seed, difficulty and crew size.
-- Screens: `qa_title.png`, `crew5.png`, `qa_design.png`, `qa_draft.png`,
-  `qa2_sector.png`, `qa2_debrief.png`, `qa_report3.png`, `qa2_report.png`.
+- Screens: `qa_title3.png`, `crew6.png`, `crew4p.png`, `crew_daily.png`,
+  `qa_design.png`, `qa_draft.png`, `qa2_sector.png`, `qa4_debrief.png`,
+  `qa_report8.png`, `qa2_report.png`; `screenshots/crew.png` is the README
+  gallery image.

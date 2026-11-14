@@ -2,10 +2,14 @@ extends Control
 ## Final agency ledger and run summary.
 
 var score: Dictionary = {}
+var share_code := ""
+var share_line: Label
 
 
 func _ready() -> void:
 	score = GameState.calculate_score()
+	share_code = str(score.get("share_code", CrewDirector.code_for_run()))
+	CrewDirector.note_report_score(int(score.get("total", 0)))
 	_build()
 
 
@@ -24,11 +28,17 @@ func _build() -> void:
 	title.position = Vector2(10, 8)
 	title.size = Vector2(470, 18)
 	add_child(title)
+	var mode_label := "CAMPAIGN"
+	if bool(GameState.run.get("daily", false)):
+		mode_label = "DAILY " + str(GameState.run.get("daily_key", ""))
+	var diff_name := str(CrewDirector.DIFFICULTIES.get(str(GameState.run.get("difficulty", "standard")), {}).get("name", "STANDARD"))
 	var sub := UIKit.label(
-		"ORBIT + OUTPLAY  ·  NASA SPACE APPS 2026  ·  EXOPLANET SURVEY CAMPAIGN",
-		7, UIKit.MUTED, true)
+		"ORBIT + OUTPLAY  ·  NASA SPACE APPS 2026  ·  %s  ·  %s  ·  %d PLAYER%s" % [
+			mode_label, diff_name, int(GameState.run.get("players", 1)),
+			"" if int(GameState.run.get("players", 1)) == 1 else "S",
+		], 7, UIKit.MUTED, true)
 	sub.position = Vector2(10, 26)
-	sub.size = Vector2(520, 12)
+	sub.size = Vector2(600, 12)
 	add_child(sub)
 
 	_build_grade()
@@ -57,43 +67,59 @@ func _build_grade() -> void:
 	else:
 		gc = UIKit.RED
 	var grade := UIKit.label(g, 58, gc, true, HORIZONTAL_ALIGNMENT_CENTER)
-	grade.position = Vector2(0, 10)
+	grade.position = Vector2(0, 0)
 	grade.size = Vector2(266, 70)
 	c.add_child(grade)
 	var gl := UIKit.label("AGENCY GRADE", 7, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
-	gl.position = Vector2(0, 82)
+	gl.position = Vector2(0, 66)
 	gl.size = Vector2(266, 12)
 	c.add_child(gl)
 
 	var total := UIKit.label("%d" % int(score.get("total", 0)), 26, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_CENTER)
-	total.position = Vector2(0, 100)
+	total.position = Vector2(0, 84)
 	total.size = Vector2(266, 32)
 	c.add_child(total)
 	var tl := UIKit.label("TOTAL SCORE", 7, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_CENTER)
-	tl.position = Vector2(0, 132)
+	tl.position = Vector2(0, 114)
 	tl.size = Vector2(266, 12)
 	c.add_child(tl)
 
-	c.add_child(_hr(14, 152, 238))
+	c.add_child(_hr(14, 128, 238))
 	var rows := [
-		["SCIENCE", int(score.get("science", 0))],
-		["EFFICIENCY", int(score.get("efficiency", 0))],
-		["APPROVAL", int(score.get("approval", 0))],
-		["FUNDS", int(score.get("budget", 0))],
-		["COMPLETION", int(score.get("completion", 0))],
-		["ALL-SUCCESS BONUS", 400 if int(score.get("successes", 0)) >= GameState.SECTORS_PER_RUN else 0],
+		["SCIENCE", "+%d" % int(score.get("science", 0)), UIKit.TEXT],
+		["EFFICIENCY", "+%d" % int(score.get("efficiency", 0)), UIKit.TEXT],
+		["APPROVAL", "+%d" % int(score.get("approval", 0)), UIKit.TEXT],
+		["FUNDS", "+%d" % int(score.get("budget", 0)), UIKit.TEXT],
+		["COMPLETION/SWEEP", "+%d" % (int(score.get("completion", 0)) + (400 if int(score.get("successes", 0)) >= GameState.SECTORS_PER_RUN else 0)), UIKit.TEXT],
 	]
-	var y := 152.0
+	if int(score.get("crew_bonus", 0)) > 0 or int(GameState.run.get("players", 1)) > 1:
+		rows.append([
+			"CREW GOALS %d/%d" % [CrewDirector.achieved_goals(), CrewDirector.total_goals()],
+			"+%d" % int(score.get("crew_bonus", 0)), UIKit.GREEN,
+		])
+	rows.append(["DIFFICULTY x%.2f" % float(score.get("score_mult", 1.0)),
+		"%+d" % int(score.get("difficulty_delta", 0)), UIKit.MUTED])
+	var y := 130.0
 	for row in rows:
 		var l := UIKit.label(str(row[0]), 7, UIKit.MUTED, true)
 		l.position = Vector2(14, y)
-		l.size = Vector2(140, 12)
+		l.size = Vector2(150, 12)
 		c.add_child(l)
-		var v := UIKit.label("+%d" % int(row[1]), 8, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_RIGHT)
+		var v := UIKit.label(str(row[1]), 8, row[2], true, HORIZONTAL_ALIGNMENT_RIGHT)
 		v.position = Vector2(154, y)
 		v.size = Vector2(98, 12)
 		c.add_child(v)
-		y += 14.0
+		y += 12.0
+
+	var next_grade := str(score.get("next_grade", "MAX"))
+	var next_gap := int(score.get("next_gap", 0))
+	var next_text := "S GRADE  ·  MAXIMUM"
+	if next_grade != "MAX":
+		next_text = "NEXT  +%d TO GRADE %s" % [next_gap, next_grade]
+	var next := UIKit.label(next_text, 6, UIKit.CYAN if next_grade == "MAX" else UIKit.DIM, true)
+	next.position = Vector2(14, 210)
+	next.size = Vector2(238, 8)
+	c.add_child(next)
 
 
 func _build_ledger() -> void:
@@ -165,13 +191,16 @@ func _build_ledger() -> void:
 	c.add_child(narrative)
 
 	var cm := GameState.cml()
+	var risk_note := ""
+	if int(score.get("risk_points", 0)) > 0:
+		risk_note = " · RISK %d" % int(score.get("risk_points", 0))
 	var stats := UIKit.label(
-		"TARGETS FLOWN  %d / %d\nDATA DELIVERED  %d NODES\nGRANTS REMAINING  $%dM\nAPPROVAL  %d / 100\nCONCEPT  CML %d · %s" % [
+		"TARGETS FLOWN  %d / %d\nDATA DELIVERED  %d NODES\nGRANTS REMAINING  $%dM\nAPPROVAL  %d / 100\nCONCEPT  CML %d · %s%s" % [
 			GameState.history.size(), GameState.SECTORS_PER_RUN,
 			int(score.get("delivered", 0)),
 			int(GameState.run.get("budget", 0)),
 			int(GameState.run.get("approval", 0)),
-			int(cm["level"]), str(cm["label"]),
+			int(cm["level"]), str(cm["label"]), risk_note,
 		], 7, UIKit.MUTED, false)
 	stats.position = Vector2(12, 142)
 	stats.size = Vector2(300, 54)
@@ -196,6 +225,7 @@ func _build_ledger() -> void:
 	notes.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	notes.add_theme_constant_override("line_spacing", 0)
 	c.add_child(notes)
+
 
 
 func _hr(x: float, y: float, w: float) -> HSeparator:
@@ -223,10 +253,12 @@ func _build_footer() -> void:
 	l.size = Vector2(360, 12)
 	c.add_child(l)
 	var s := UIKit.label(
-		"Built in Godot 4 for NASA Space Apps 2026 · Data: NASA Exoplanet Archive.",
-		7, UIKit.MUTED, false)
+		"CAMPAIGN CODE  %s  ·  SAME WORLDS + STACK  ·  PRESS C TO COPY" % share_code,
+		6, UIKit.MUTED, false)
 	s.position = Vector2(12, 23)
-	s.size = Vector2(390, 14)
+	s.size = Vector2(420, 14)
+	s.name = "ShareLine"
+	share_line = s
 	c.add_child(s)
 
 	var again := UIKit.button("NEW CAMPAIGN >", Vector2(150, 28), true)
@@ -236,3 +268,13 @@ func _build_footer() -> void:
 		get_tree().change_scene_to_file("res://scenes/title.tscn")
 	)
 	c.add_child(again)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_C:
+			DisplayServer.clipboard_set(share_code)
+			if share_line != null:
+				share_line.text = "COPIED  %s  ·  PASTE IT IN MISSION CONTROL" % share_code
+				share_line.add_theme_color_override("font_color", UIKit.GREEN)
+			GameState.sfx("confirm")

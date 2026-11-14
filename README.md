@@ -1,6 +1,6 @@
 # Orbit & Outplay — Exoplanet Survey
 
-A turn-based **mission-architecture roguelite**. You run a small space agency: build a spacecraft, pick a real exoplanet from the NASA Exoplanet Archive, fly a telegraphed hazard course across its surface, bring the data home, and keep the agency funded long enough to file a campaign record.
+A turn-based **mission-architecture roguelite for 1–4 players**. You run a small space agency: build a spacecraft, pick a real exoplanet from the NASA Exoplanet Archive, fly a telegraphed hazard course across its surface, bring the data home, and keep the agency funded long enough to file a campaign record.
 
 Every destination is a real planet. Every hazard is derived from that planet's measured temperature, gravity, radiation environment, and distance from Earth.
 
@@ -21,8 +21,10 @@ Every destination is a real planet. Every hazard is derived from that planet's m
 |---|---|
 | <img src="screenshots/draft.png" width="480" alt="Target draft"> | <img src="screenshots/surface.png" width="480" alt="Surface sector"> |
 | **Pick a real world.** Three archive planets, each with measured properties and derived hazard bars. | **Fly the surface.** One move per turn, telegraphed hazards, and a limited hull. |
-| <img src="screenshots/debrief.png" width="480" alt="Debrief and refit"> | <img src="screenshots/report.png" width="480" alt="Final report"> |
-| **Spend the grant.** Repair, refit, and buy rule-bending firmware between sectors. | **File the report.** Grade, score breakdown, and the story of what the agency found. |
+| <img src="screenshots/crew.png" width="480" alt="Mission Control crew manifest"> | <img src="screenshots/debrief.png" width="480" alt="Debrief and refit"> |
+| **Build the crew.** 1–4 players, four roles whose personal goals conflict, three difficulty tiers, and a shared campaign code. | **Spend the grant.** Repair, refit, and buy rule-bending firmware between sectors. |
+| <img src="screenshots/report.png" width="480" alt="Final report"> | |
+| **File the report.** Grade, score breakdown, role-goal result, and the story of what the agency found. | |
 
 Each run is three planets. At every stop you draft one of three real archive worlds, pick a route across its surface, and decide when to spend fuel, hold position, or extract before the next hazard lands. Between planets you spend the grant on repairs, instruments, and firmware that bend the rules.
 
@@ -48,17 +50,18 @@ Every sector is drawn from a different archive world. The surface generator swit
 3. [A run, step by step](#a-run-step-by-step)
 4. [Mission design](#mission-design)
 5. [Surface operations](#surface-operations)
-6. [Debrief and refit](#debrief-and-refit)
-7. [Scoring](#scoring)
-8. [Where the science comes from](#where-the-science-comes-from)
-9. [Controls](#controls)
-10. [Running the project](#running-the-project)
-11. [How the code is organised](#how-the-code-is-organised)
-12. [The surface generator](#the-surface-generator)
-13. [Art pipeline](#art-pipeline)
-14. [Working with agents](#working-with-agents)
-15. [Repository layout](#repository-layout)
-16. [Credits](#credits)
+6. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
+7. [Debrief and refit](#debrief-and-refit)
+8. [Scoring](#scoring)
+9. [Where the science comes from](#where-the-science-comes-from)
+10. [Controls](#controls)
+11. [Running the project](#running-the-project)
+12. [How the code is organised](#how-the-code-is-organised)
+13. [The surface generator](#the-surface-generator)
+14. [Art pipeline](#art-pipeline)
+15. [Working with agents](#working-with-agents)
+16. [Repository layout](#repository-layout)
+17. [Credits](#credits)
 
 ---
 
@@ -80,7 +83,8 @@ Three ideas hold the design together:
 
 | Phase | What happens | What you decide |
 |---|---|---|
-| **Title** | Starfield, ringed planet, best score, How to Play overlay | Start a run |
+| **Title** | Starfield, ringed planet, best score, daily best, How to Play overlay | Quick run, daily run, or Mission Control |
+| **Mission Control** | Campaign or Daily, crew size 1–4, difficulty tier, campaign-code entry | Who is flying and at what difficulty |
 | **Mission design** | Pick a hull, launch vehicle, orbit, science objective, and exactly two instruments | What kind of mission this is |
 | **Target draft** | Three real exoplanets are drawn from the archive, each with measured properties and five derived hazard bars | Which world to risk |
 | **Surface sector** | One move per turn across a chunked alien landscape; hazards telegraph, then resolve at end of turn | Route, when to hold, when to extract |
@@ -89,7 +93,7 @@ Three ideas hold the design together:
 
 The draft is deliberately weighted: one **mild**, one **moderate**, and one **harsh** destination, with distinct biomes, so every choice is a real risk/reward decision.
 
-Approval starts at **62**. A successful sector is worth approval; a failed one costs **−24**. If approval hits zero, the agency is defunded and the run ends early — even in sector one.
+Approval starts at **62 on Standard** (72 on Cadet, 52 on Director). A successful sector is worth approval; a failed one costs **−24**. If approval hits zero, the agency is defunded and the run ends early — even in sector one.
 
 ---
 
@@ -213,6 +217,39 @@ At the start of a sector, the planet's measured values are converted into run co
 
 ---
 
+## Crew, difficulty and daily runs
+
+Mission Control is the run-shape screen between the title and mission design. It is optional: **Begin Mission** on the title starts a solo Standard run immediately.
+
+### Crew mode (1–4 players, local hot-seat)
+
+Choose 2–4 players and each gets one or two roles. Before every decision phase the game shows a handoff banner naming whose call it is.
+
+| Role | Buff | Personal goal (worth +180) |
+|---|---|---|
+| **Flight Director** | +$30M starting budget | Finish with approval 60+ |
+| **Science Lead** | +10% science all run | Deliver 9 data nodes |
+| **Flight Dynamics** | +3 delta-v every sector | Finish with 12+ delta-v left |
+| **Field Commander** | +1 integrity every sector | All three sectors successful |
+
+The goals conflict on purpose: more nodes cost fuel and heat, safe extraction starves the science goal, and a risky route threatens the field commander's clean sheet. The final report records how many role goals the crew met.
+
+### Difficulty tiers
+
+| Tier | Budget | Approval | Hazard fronts | Heat per tile | Score |
+|---|---|---|---|---|---|
+| **Cadet** | +$100M | +10 | −1 | −1 | ×0.90 |
+| **Standard** | — | — | — | — | ×1.00 |
+| **Director** | −$75M | −10 | +1 | +1 | ×1.25 |
+
+Every modifier is printed on the difficulty card before the run. The multiplier is a separate row in the final score breakdown.
+
+### Daily Challenge and campaign codes
+
+The **Daily Run** uses a date-derived seed, so everyone gets the same three exoplanets for that day; the title shows the player's daily best. The final report prints a campaign code: `OO-0F7A5-S1` (seed, difficulty, crew size) or `OO-0F7A5-S1-PAVMOLOA-SPTH` once a design is committed (adds hull, vehicle, orbit, objective and both instruments). Press `C` to copy it; paste it into Mission Control to fly the same worlds, or the exact same stack, and compare results.
+
+---
+
 ## Debrief and refit
 
 After every sector you get a result screen and a **three-offer refit shop**. Modules stack, so a run becomes a build.
@@ -304,7 +341,8 @@ The challenge resource tab maps directly onto the design loop:
 - **GMAT** — orbit choice (LOW/POLAR/HIGH) is translated into altitude, period, eclipse fraction, and passes/day; the final report prints the flown profile.
 - **Concept Maturity Levels (CMLs)** — the design validation line reports CML 1 CONCEPT, 2 FEASIBILITY, 3 TRADE STUDY, or 4 POINT DESIGN from mass margin, power margin, and science traceability.
 - **Mission Design Lab (MDL)** — mission design is staged as a trade study, then a point design; the between-sector refit is the redesign loop.
-- **Mission Viz** — the orbit profile in the final ledger connects the surface run to the orbital geometry that enabled it.
+- **NASA Mission Viz** — the pre-commit Mission Architecture Review draws an Earth-to-target transfer arc and the final report keeps the flown orbit profile.
+- **Visualize a Space Mission Using Virtual Reality (2023)** — the review screen satisfies the mission-concept, trajectory and timeline parts in 2D: launch, cruise, insertion, surface ops, downlink, end of mission.
 - **A Learning Game About Telescopes** — an instrument family that matches the objective earns a **science fit +10%** bonus; a mismatched payload is legal but loses science return.
 - **CubeSat 101** — the run is a compressed ConOps: design, launch, insertion, surface operations, downlink, end of mission, with mass/power/thermal/data/budget as the budget lines.
 - **CSA digital games** — short browser runs, readable HUD, and explicit feedback keep the game pick-up-and-play.
@@ -323,6 +361,9 @@ Source: <https://exoplanetarchive.ipac.caltech.edu/> — NASA Exoplanet Archive,
 | Hold position (vent heat, recharge, end turn) | `SPACE` / **HOLD** |
 | Extract from the surface | `E` / **EXTRACT** |
 | Toggle grid overlay | `G` |
+| Copy campaign code (report) | `C` |
+| Open Mission Control (title) | `C` |
+| How to Play overlay | `H` |
 | Screenshot (development) | `F10` |
 | Everything else | Mouse or touch |
 

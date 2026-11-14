@@ -17,3 +17,34 @@
 {"file": "crystal_nub.png", "method": "make_prop.py", "raw": "/tmp/opencode/pr_crystal_nub_954.png", "seed": 954, "palette": "crystal ramp", "size": 48, "shadow": 0.0, "clear_pct": 54.0, "note": "three cyan crystal nubs in dark rock"}
 {"file": "ice_teeth.png", "method": "make_prop.py", "raw": "/tmp/opencode/pr_ice_teeth_955.png", "seed": 955, "palette": "cryo", "size": 48, "shadow": 0.0, "clear_pct": 59.8, "note": "jagged pale ice teeth on a dark base"}
 {"file": "ash_mound.png", "method": "make_prop.py", "raw": "/tmp/opencode/pr_ash_mound_956.png", "seed": 956, "palette": "barren", "size": 48, "shadow": 0.0, "clear_pct": 50.9, "note": "porous grey ash rock lump with ember specks"}
+{"file": "relay_beacon.png", "method": "procedural (PIL)", "seed": null, "palette": "hardware", "size": 64, "shadow": 0.0, "clear_pct": 85.7, "note": "tripod relay beacon with cyan lens, built from primitives for the RELAY SURVEY objective; diffusion returned fields of devices and a robot"}
+{"file": "accent_arid_bones.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 81.9}
+{"file": "accent_arid_crack.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 88.6}
+{"file": "accent_arid_ice_teeth.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 85.7}
+{"file": "accent_arid_shell.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.0}
+{"file": "accent_arid_tuft.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 86.8}
+{"file": "accent_arid_vent.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.0}
+{"file": "accent_barren_bones.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.5}
+{"file": "accent_barren_crack.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 88.0}
+{"file": "accent_barren_ice_teeth.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 84.2}
+{"file": "accent_barren_shell.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.0}
+{"file": "accent_barren_tuft.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 87.9}
+{"file": "accent_barren_vent.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.0}
+{"file": "accent_cryo_bones.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 83.6}
+{"file": "accent_cryo_crack.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 89.9}
+{"file": "accent_cryo_ice_teeth.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 84.3}
+{"file": "accent_cryo_shell.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.0}
+{"file": "accent_cryo_tuft.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 85.1}
+{"file": "accent_cryo_vent.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.0}
+{"file": "accent_temperate_bones.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 83.5}
+{"file": "accent_temperate_crack.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.7}
+{"file": "accent_temperate_ice_teeth.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.3}
+{"file": "accent_temperate_shell.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.0}
+{"file": "accent_temperate_tuft.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 86.8}
+{"file": "accent_temperate_vent.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.0}
+{"file": "accent_volcanic_bones.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 81.5}
+{"file": "accent_volcanic_crack.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.4}
+{"file": "accent_volcanic_ice_teeth.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 84.0}
+{"file": "accent_volcanic_shell.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 82.0}
+{"file": "accent_volcanic_tuft.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 85.5}
+{"file": "accent_volcanic_vent.png", "method": "procedural (tools/make_accent.py)", "size": 48, "shadow": 0.0, "clear_pct": 90.0}

@@ -19,7 +19,31 @@ func _ready() -> void:
 
 
 func _route() -> void:
-	GameState.new_run()
+	# Optional crew-mode shortcuts for screenshots and smoke tests:
+	#   --crew=3 --difficulty=director
+	var crew := 0
+	var diff := "standard"
+	var daily := false
+	var forced_biome := ""
+	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		var arg := str(raw)
+		if arg.begins_with("--crew="):
+			crew = int(arg.substr(7))
+		elif arg.begins_with("--difficulty="):
+			diff = arg.substr(13)
+		elif arg == "--daily":
+			daily = true
+		elif arg.begins_with("--biome="):
+			forced_biome = arg.substr(8)
+	if _screen == "crew":
+		get_tree().change_scene_to_file("res://scenes/crew.tscn")
+		return
+	if daily:
+		CrewDirector.begin_run("daily", 1, "standard")
+	elif crew > 0:
+		CrewDirector.begin_run("campaign", crew, diff)
+	else:
+		GameState.new_run()
 	match _screen:
 		"design":
 			if "--loadout" in OS.get_cmdline_user_args() or "--loadout" in OS.get_cmdline_args():
@@ -36,7 +60,17 @@ func _route() -> void:
 	if GameState.draft.is_empty():
 		GameState.roll_draft()
 	var planet: Dictionary = GameState.draft[0]
+	if forced_biome != "":
+		for fp in GameState.planets:
+			if str(fp.get("biome", "")) == forced_biome:
+				planet = fp
+				break
 	if _screen == "sector":
+		GameState.begin_sector(planet)
+		get_tree().change_scene_to_file("res://scenes/sector.tscn")
+		return
+	if _screen == "relay":
+		GameState.run["sector"] = 2
 		GameState.begin_sector(planet)
 		get_tree().change_scene_to_file("res://scenes/sector.tscn")
 		return

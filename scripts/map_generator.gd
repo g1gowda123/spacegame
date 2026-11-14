@@ -63,26 +63,27 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "cryo", "name": "Cryo", "profile": "cryo", "life": "lifeless", "generator": "fractured",
-		"tint": "#ffffff", "tint_strength": 0.0,
-		"base": "cryo/glacier", "detail": "cryo/ice",
-		"detail_alt": "cryo/glacier", "detail_alt2": "cryo/ice",
-		"detail_alt3": "cryo/glacier",
-		"rock": "cryo/glacier", "rock_alt": "cryo/ice", "shore": "", "water": "",
+		"cliffs": false, "tint": "#ffffff", "tint_strength": 0.0,
+		"base": "cryo/ice_flat_a",
+		"detail": "cryo/ice_cloud_a",
+		"detail_alt": "cryo/ice_cloud_b", "detail_alt2": "cryo/ice_cloud_c",
+		"detail_alt3": "cryo/ice_cloud_a",
+		"rock": "cryo/ice_flat_a", "rock_alt": "cryo/ice_flat_a", "shore": "", "water": "",
 	},
 	{
 		"id": "volcanic", "name": "Volcanic", "profile": "volcanic", "generator": "caldera",
 		"life": "lifeless", "tint": "#ffffff", "tint_strength": 0.0,
-		"base": "volcanic/ash", "detail": "volcanic/basalt",
-		"detail_alt": "volcanic/sulfur", "detail_alt2": "volcanic/pumice",
-		"rock": "volcanic/basalt", "rock_alt": "volcanic/obsidian",
-		"shore": "", "water": "volcanic/lava",
+		"base": "volcanic/ash_rim", "detail": "volcanic/ash_rim",
+		"detail_alt": "volcanic/basalt_shelf", "detail_alt2": "volcanic/ash_rim",
+		"rock": "volcanic/basalt_shelf", "rock_alt": "volcanic/basalt_shelf",
+		"shore": "", "water": "volcanic/lava_core",
 	},
 	{
 		"id": "ocean", "name": "Ocean", "profile": "ocean", "life": "lifeless", "generator": "archipelago",
 		"tint": "#ffffff", "tint_strength": 0.0, "shore_ring": true,
 		"base": "ocean/water_shallow", "detail": "ocean/water_deep",
-		"rock": "ocean/beach", "rock_alt": "ocean/beach",
-		"shore": "ocean/beach", "water": "",
+		"rock": "temperate/beach", "rock_alt": "temperate/beach",
+		"shore": "ocean/beach", "water": "ocean/water_deep",
 	},
 	{
 		"id": "barren", "name": "Barren", "profile": "barren", "life": "lifeless", "generator": "cratered",
@@ -169,15 +170,15 @@ const TERRAIN_ARCHETYPES: Array = [
 var STRUCTURES: Dictionary = {
 	"mountain_range": {
 		"path": "res://assets/tilesets/structures/mountain_range.png",
-		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.55,
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 2.40,
 	},
 	"mountain_massif": {
 		"path": "res://assets/tilesets/structures/mountain_massif.png",
-		"w": 3, "h": 3, "occludes": true, "sprite_scale": 1.05,
+		"w": 3, "h": 3, "occludes": true, "sprite_scale": 1.95,
 	},
 	"volcano": {
 		"path": "res://assets/tilesets/structures/volcano.png",
-		"w": 3, "h": 3, "occludes": true,
+		"w": 3, "h": 3, "occludes": true, "sprite_scale": 1.75,
 	},
 	"impact_crater": {
 		"path": "res://assets/tilesets/structures/impact_crater.png",
@@ -186,19 +187,19 @@ var STRUCTURES: Dictionary = {
 	},
 	"mesa": {
 		"path": "res://assets/tilesets/structures/mesa.png",
-		"w": 2, "h": 2, "occludes": true,
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.40,
 	},
 	"iceberg": {
 		"path": "res://assets/tilesets/structures/iceberg.png",
-		"w": 2, "h": 2, "occludes": true,
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.30,
 	},
 	"geyser": {
 		"path": "res://assets/tilesets/structures/geyser.png",
-		"w": 2, "h": 2,
+		"w": 2, "h": 2, "sprite_scale": 1.15,
 	},
 	"coral_spire": {
 		"path": "res://assets/tilesets/structures/coral_spire.png",
-		"w": 2, "h": 2, "occludes": true,
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.20,
 	},
 	"crystal_outcrop": {
 		"path": "res://assets/tilesets/structures/crystal_outcrop.png",
@@ -212,7 +213,7 @@ var STRUCTURES: Dictionary = {
 	# unused; outpost complexes now place them as a deliberate cluster.
 	"habitat_dome": {
 		"path": "res://assets/tilesets/structures/habitat_dome.png",
-		"w": 2, "h": 2,
+		"w": 2, "h": 2, "sprite_scale": 1.10,
 	},
 	"solar_farm": {
 		"path": "res://assets/tilesets/structures/solar_farm.png",
@@ -226,6 +227,11 @@ var STRUCTURES: Dictionary = {
 
 # Per-biome prop density. Default 6% reads as "inhabited"; sparse worlds use
 # less so a single coral shard or shrub stays a landmark, not a lawn.
+const WATER_BANDS: Dictionary = {
+	"temperate": ["temperate/water_lake_shallow", "temperate/water_lake", "temperate/water_lake_deep"],
+	"ocean": ["ocean/water_shallow", "ocean/water_shelf", "ocean/water_deep"],
+}
+
 const PROP_DENSITY: Dictionary = {
 	"temperate": 0.045,
 	"ocean": 0.015,
@@ -236,7 +242,7 @@ const PROP_DENSITY: Dictionary = {
 const PROPS: Dictionary = {
 	"temperate": ["boulder", "shrub"],
 	"arid": ["dead_bush"],
-	"cryo": ["ice_chunk"],
+	"cryo": ["ice_chunk", "ice_teeth"],
 	"volcanic": ["lava_rock", "sulfur_nodule"],
 	"ocean": ["coral_shard"],
 	"barren": ["barren_rock"],
@@ -324,6 +330,7 @@ var player_sprite: Sprite2D
 var player_shadow: Polygon2D
 var player_tween: Tween
 var node_tex: Texture2D
+var relay_tex: Texture2D
 var _tex_bounds: Dictionary = {}
 var _prop_ok: Dictionary = {}
 var cli_seed: int = -1
@@ -339,6 +346,7 @@ var minimap: Control
 var player_cell := Vector2i.ZERO
 var objectives: Array[Vector2i] = []
 var collected: Array[bool] = []
+var objective_mode := "survey"
 var turns_left: int = TURNS_START
 var hull: int = HULL_START
 var data_collected: int = 0
@@ -607,7 +615,7 @@ func _build_view() -> void:
 	add_child(cliff_layer)
 
 	overlay_layer = Node2D.new()
-	overlay_layer.z_index = 12
+	overlay_layer.z_index = 22
 	add_child(overlay_layer)
 
 	structure_layer = Node2D.new()
@@ -627,6 +635,8 @@ func _build_view() -> void:
 	player_tex = load("res://assets/tilesets/structures/lander.png") as Texture2D
 	if ResourceLoader.exists("res://assets/sprites/markers/data_node.png"):
 		node_tex = load("res://assets/sprites/markers/data_node.png") as Texture2D
+	if ResourceLoader.exists("res://assets/props/relay_beacon.png"):
+		relay_tex = load("res://assets/props/relay_beacon.png") as Texture2D
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	_update_view()
 
@@ -1217,7 +1227,7 @@ func _sample_terrain(b: Dictionary, wx: int, wy: int) -> String:
 			# a higher-frequency one tears channels through them.
 			var groups := elevation.get_noise_2d(sx * 0.62 + 17.0, sy * 0.62 - 9.0)
 			var cuts := detail.get_noise_2d(sx * 1.65 - 31.0, sy * 1.65 + 23.0)
-			elev = groups * 0.72 + cuts * 0.36 + 0.10
+			elev = groups * 0.68 + cuts * 0.36 - 0.04
 			det += cuts * 0.35
 		"dunes":
 			# Wind-aligned dunes: a directional wave warped by low-frequency
@@ -1414,7 +1424,7 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 				return _detail_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"arid":
-			if elev < -0.35:
+			if elev < -0.35 or det > 0.42:
 				return _detail_choice(b, det)
 			if elev > 0.42 and rock != "":
 				return _rock_choice(b, det)
@@ -1424,11 +1434,11 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 			# base: cryo/rock is a high-frequency speckle tile and turns the
 			# whole field into TV static when the fractured plateau is mapped
 			# to rock.
-			if elev < -0.25:
+			if elev < 0.05 or det > 0.45:
 				return _detail_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"volcanic":
-			if water != "" and elev < 0.25:
+			if water != "" and elev < 0.10:
 				return water
 			if elev > 0.55 and rock != "":
 				return _rock_choice(b, det)
@@ -1438,16 +1448,16 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 		"ocean":
 			if wet < -0.24:
 				return _detail_choice(b, det)
-			var reef_at := 0.20 if str(b.get("generator", "")) == "archipelago" else 0.52
-			if elev > 0.30 and rock != "":
+			var reef_at := 0.04 if str(b.get("generator", "")) == "archipelago" else 0.52
+			if elev > 0.12 and rock != "":
 				return _rock_choice(b, det)
 			if elev > reef_at:
 				return "ocean/reef"
 			return _base_choice(b, det, wx, wy)
 		"crystal":
-			if elev > 0.18 and rock != "":
+			if elev > 0.10 and rock != "":
 				return _rock_choice(b, det)
-			if elev < -0.35 or det > 0.30:
+			if elev < -0.30 or det > 0.24:
 				return _detail_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"barren":
@@ -1774,7 +1784,22 @@ func _raw_terrain_world(x: int, y: int) -> String:
 func _render_terrain_world(x: int, y: int) -> String:
 	var raw := _raw_terrain_world(x, y)
 	var b: Dictionary = BIOMES[biome_index]
-	if bool(b.get("shore_ring", false)) and raw != str(b.get("water", "")):
+	var water := str(b.get("water", ""))
+	var is_water := raw == water
+	if is_water:
+		var land := 0
+		for d in DIRS:
+			if _raw_terrain_world(x + d.x, y + d.y) != water:
+				land += 1
+		var bands: Array = WATER_BANDS.get(str(b.get("id", "")), [])
+		if bands.size() >= 3:
+			if land >= 3:
+				raw = str(bands[0])
+			elif land >= 1:
+				raw = str(bands[1])
+			else:
+				raw = str(bands[2])
+	if bool(b.get("shore_ring", false)) and not is_water:
 		for d in DIRS + CORNER_DIRS:
 			if _raw_terrain_world(x + d.x, y + d.y) == str(b.get("water", "")):
 				return str(b["shore"])
@@ -1871,6 +1896,8 @@ func _rebuild_cliffs() -> void:
 	for child in cliff_layer.get_children():
 		child.free()
 	var b: Dictionary = BIOMES[biome_index]
+	if not bool(b.get("cliffs", true)):
+		return
 	var rock := str(b.get("rock", ""))
 	if rock == "" or not bool(feature_toggles.get("mountains", true)):
 		return
@@ -2439,7 +2466,7 @@ func _rebuild_actors() -> void:
 	))
 	player_shadow = Polygon2D.new()
 	player_shadow.polygon = _ellipse_points(
-		Vector2.ZERO, TILE * map_scale * 0.62, TILE * map_scale * 0.18
+		Vector2.ZERO, TILE * map_scale * 0.30, TILE * map_scale * 0.09
 	)
 	player_shadow.color = Color(0.0, 0.0, 0.0, 0.42)
 	player_shadow.position = player_screen
@@ -2447,7 +2474,9 @@ func _rebuild_actors() -> void:
 	actor_layer.add_child(player_shadow)
 
 	if player_tex != null:
-		var ps := map_scale * 1.15
+		# The lander is a small vehicle, not a building: keep it clearly below
+		# one tile wide so mountains and craters read as landscape-scale.
+		var ps := map_scale * 0.66
 		var pb := _texture_bounds(player_tex)
 		player_sprite = Sprite2D.new()
 		player_sprite.texture = player_tex
@@ -2461,46 +2490,70 @@ func _rebuild_actors() -> void:
 		player_sprite.z_index = int(player_screen.y)
 		actor_layer.add_child(player_sprite)
 
-	# Data nodes.
+	# Objective pickups: cyan data nodes, amber relay beacons.
 	for i in range(objectives.size()):
 		if collected[i]:
 			continue
 		var c := objectives[i]
 		if not _in_view(c.x, c.y):
 			continue
+		var relay := objective_mode == "relay"
+		var base_col := Color(1.0, 0.68, 0.24) if relay else Color(0.20, 1.0, 0.90)
 		var pos := _project(Vector2((c.x + 0.5) * TILE, (c.y + 0.5) * TILE))
 		var marker := Node2D.new()
 		marker.position = pos
 		# Map geometry is projected at map_scale, but markers are UI-scale
 		# pickups. Keep them readable at the 640x360 logical resolution.
-		marker.scale = Vector2(0.42, 0.42)
+		marker.scale = Vector2(0.56, 0.56) if relay else Vector2(0.42, 0.42)
 		var glow := Polygon2D.new()
 		glow.polygon = _diamond_points(20.0)
-		glow.color = Color(0.20, 1.0, 0.90, 0.30)
+		glow.color = Color(base_col.r, base_col.g, base_col.b, 0.30)
 		marker.add_child(glow)
 		var beam := Polygon2D.new()
 		beam.polygon = PackedVector2Array([
 			Vector2(-3, -30), Vector2(3, -30), Vector2(2, 0), Vector2(-2, 0)
 		])
-		beam.color = Color(0.20, 1.0, 0.90, 0.38)
+		beam.color = Color(base_col.r, base_col.g, base_col.b, 0.38)
 		marker.add_child(beam)
-		if node_tex != null:
+		if relay and relay_tex != null:
+			# VEGA's purpose-built relay beacon: tripod, mast and cyan lens.
+			var beacon := Sprite2D.new()
+			beacon.texture = relay_tex
+			beacon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			beacon.position = Vector2(0, -21)
+			beacon.scale = Vector2(0.52, 0.52)
+			beacon.modulate = Color(1.0, 0.92, 0.72)
+			marker.add_child(beacon)
+		elif relay:
+			# Fallback mast silhouette if the prop is missing.
+			var mast := Line2D.new()
+			mast.points = PackedVector2Array([Vector2(0, 4), Vector2(0, -16)])
+			mast.width = 1.6
+			mast.default_color = Color(base_col.r, base_col.g, base_col.b, 0.95)
+			marker.add_child(mast)
+			var dish := Polygon2D.new()
+			dish.polygon = PackedVector2Array([
+				Vector2(-7, -16), Vector2(7, -16), Vector2(4, -10), Vector2(-4, -10)
+			])
+			dish.color = Color(base_col.r, base_col.g, base_col.b, 0.95)
+			marker.add_child(dish)
+		if node_tex != null and not (relay and relay_tex != null):
 			var icon := Sprite2D.new()
 			icon.texture = node_tex
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			icon.scale = Vector2(0.40, 0.40)
-			icon.modulate = Color(0.72, 1.0, 1.0)
+			icon.modulate = Color(1.0, 0.86, 0.62) if relay else Color(0.72, 1.0, 1.0)
 			marker.add_child(icon)
-		else:
+		elif not (relay and relay_tex != null):
 			var core := Polygon2D.new()
 			core.polygon = _diamond_points(12.0)
-			core.color = Color(0.40, 1.0, 0.92)
+			core.color = base_col
 			marker.add_child(core)
 			var outline := Line2D.new()
 			outline.points = _diamond_points(12.0)
 			outline.closed = true
 			outline.width = 1.4
-			outline.default_color = Color(0.02, 0.15, 0.15)
+			outline.default_color = Color(0.10, 0.06, 0.01) if relay else Color(0.02, 0.15, 0.15)
 			marker.add_child(outline)
 		actor_layer.add_child(marker)
 

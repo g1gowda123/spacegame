@@ -77,6 +77,7 @@ var int_label: Label
 var dv_label: Label
 var sol_label: Label
 var data_label: Label
+var data_caption: Label
 var heat_bar: ProgressBar
 var heat_val: Label
 var data_bar: ProgressBar
@@ -105,11 +106,14 @@ var result_layer: Control
 
 func _ready() -> void:
 	sec = GameState.current_sector
+	var force_relay := "--relay" in OS.get_cmdline_args() or "--relay" in OS.get_cmdline_user_args()
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.
 		GameState.new_run()
 		GameState.quick_loadout()
 		GameState.commit_design()
+		if force_relay:
+			GameState.run["sector"] = 2
 		var p: Dictionary = GameState.draft[0]
 		GameState.begin_sector(p)
 		sec = GameState.current_sector
@@ -217,6 +221,7 @@ func _paint_space_planet() -> void:
 
 
 func _start_sector() -> void:
+	objective_mode = str(sec.get("mode", "survey"))
 	_configure_map()
 	_paint_space_planet()
 	turn = 1
@@ -268,7 +273,14 @@ func _build_hud() -> void:
 	int_label = _top_stat(tc, 150, "INTEGRITY", UIKit.RED)
 	dv_label = _top_stat(tc, 206, "DELTA-V", UIKit.CYAN)
 	sol_label = _top_stat(tc, 262, "SOLS", UIKit.AMBER)
-	data_label = _top_stat(tc, 318, "DATA", UIKit.GREEN, 64)
+	data_caption = UIKit.label("DATA", 6, UIKit.DIM, true)
+	data_caption.position = Vector2(318, 4)
+	data_caption.size = Vector2(64, 10)
+	tc.add_child(data_caption)
+	data_label = UIKit.label("—", 10, UIKit.GREEN, true)
+	data_label.position = Vector2(318, 14)
+	data_label.size = Vector2(64, 14)
+	tc.add_child(data_label)
 
 	var heat_l := UIKit.label("THERMAL", 6, UIKit.DIM, true)
 	heat_l.position = Vector2(388, 4)
@@ -337,16 +349,16 @@ func _build_hud() -> void:
 	_add_dpad(Vector2(50, 25), "D", Vector2i(1, 0))
 	_add_dpad(Vector2(25, 50), "S", Vector2i(0, 1))
 
-	move_btn = UIKit.button("MOVE  (ENTER)", Vector2(92, 22), true)
-	move_btn.position = Vector2(452, 268)
+	move_btn = UIKit.button("MOVE  (ENTER)", Vector2(100, 22), true)
+	move_btn.position = Vector2(444, 268)
 	move_btn.pressed.connect(_execute_path)
 	root.add_child(move_btn)
-	hold_btn = UIKit.button("HOLD  (SPACE)", Vector2(92, 22))
-	hold_btn.position = Vector2(452, 294)
+	hold_btn = UIKit.button("HOLD  (SPACE)", Vector2(100, 22))
+	hold_btn.position = Vector2(444, 294)
 	hold_btn.pressed.connect(_hold)
 	root.add_child(hold_btn)
-	extract_btn = UIKit.button("EXTRACT  (E)", Vector2(92, 22))
-	extract_btn.position = Vector2(452, 320)
+	extract_btn = UIKit.button("EXTRACT  (E)", Vector2(100, 22))
+	extract_btn.position = Vector2(444, 320)
 	extract_btn.pressed.connect(_extract)
 	root.add_child(extract_btn)
 
@@ -390,6 +402,14 @@ func _run_dev_moves(seq: String) -> void:
 				_extract()
 
 
+func _is_relay() -> bool:
+	return str(sec.get("mode", "survey")) == "relay"
+
+
+func _objective_cap() -> int:
+	return int(sec.get("quota", 3)) if _is_relay() else OBJECTIVE_NODES
+
+
 func _refresh_all() -> void:
 	_refresh_status()
 
@@ -400,8 +420,9 @@ func _refresh_status() -> void:
 	var p: Dictionary = sec["planet"]
 	name_label.text = str(p["name"])
 	var sector_no := int(sec["sector"])
-	biome_label.text = "%s · %d/3 · T%d" % [
-		GameState.biome_name(str(p["biome"])).to_upper(), sector_no, turn
+	biome_label.text = "%s · %s · %d/3 · T%d" % [
+		GameState.biome_name(str(p["biome"])).to_upper(),
+		"RELAY" if _is_relay() else "SURVEY", sector_no, turn
 	]
 	biome_label.add_theme_color_override("font_color", GameState.biome_color(str(p["biome"])))
 
@@ -414,7 +435,8 @@ func _refresh_status() -> void:
 	sol_label.text = str(int(sec["sols"]))
 	sol_label.add_theme_color_override("font_color",
 		UIKit.RED if int(sec["sols"]) <= 5 else UIKit.AMBER)
-	data_label.text = "%d/4" % int(sec["data"])
+	data_caption.text = "RELAYS" if _is_relay() else "DATA"
+	data_label.text = "%d/%d" % [int(sec["data"]), _objective_cap()]
 	quota_label.text = "QUOTA %d" % int(sec["quota"])
 
 	UIKit.set_bar(heat_bar, float(sec["thermal"]), 100.0)
@@ -441,15 +463,20 @@ func _refresh_status() -> void:
 		var first: Dictionary = hazards[0]["info"]
 		var shield := int(sec["shield_cost"])
 		var sweep := false
+		var forming := false
 		for h in hazards:
 			if int(h["speed"]) > 0:
 				sweep = true
+			if int(h.get("age", 1)) < 1:
+				forming = true
 		var names: Array[String] = []
 		for h in hazards:
 			names.append(str(h["info"]["name"]).split(" ")[0])
 		var tag := names[0] if names.size() == 1 else "%s +%d" % [names[0], names.size() - 1]
 		var tail := "SWEEP" if sweep else ("SHIELD %d PWR OR -%d INT" % [shield, int(first["integrity"])] if bool(first["block"]) else "UNBLOCKABLE")
-		threat_label.text = "INCOMING: %s  ·  %s" % [tag, tail]
+		if forming:
+			tail = "ARMS NEXT TURN"
+		threat_label.text = "%s: %s  ·  %s" % ["FORMING" if forming else "INCOMING", tag, tail]
 		threat_label.add_theme_color_override("font_color", first["color"])
 	else:
 		threat_label.text = "—"
@@ -463,7 +490,7 @@ func _refresh_status() -> void:
 	var quota := int(sec["quota"])
 	var base := "TURN %d · RANGE %d" % [turn, move_range]
 	if int(sec["data"]) >= quota:
-		route_label.text = "%s · QUOTA MET — E EXTRACT" % base
+		route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
 		route_label.add_theme_color_override("font_color", UIKit.GREEN)
 	elif cursor_cell != player_cell:
 		if path_valid:
@@ -477,10 +504,11 @@ func _refresh_status() -> void:
 			route_label.text = "%s · NO PATH / OUT OF RANGE" % base
 			route_label.add_theme_color_override("font_color", UIKit.RED)
 	else:
-		route_label.text = "%s · need %d more node%s · CLICK A TILE" % [
-			base, quota - int(sec["data"]),
-			"" if quota - int(sec["data"]) == 1 else "s"
-		]
+		var need := quota - int(sec["data"])
+		var noun := "relay" if need == 1 else "relays"
+		if not _is_relay():
+			noun = "node" if need == 1 else "nodes"
+		route_label.text = "%s · need %d more %s · CLICK A TILE" % [base, need, noun]
 		route_label.add_theme_color_override("font_color", Color("#a9bccf"))
 	if move_btn != null:
 		move_btn.disabled = done or moved or not path_valid or path_cost <= 0
@@ -519,7 +547,8 @@ func _hazard_budget() -> int:
 		b += 1
 	if int(sec.get("sector", 1)) >= 2 and turn >= 4:
 		b += 1
-	return mini(b, 3)
+	b += int(sec.get("hazard_mod", 0))
+	return clampi(b, 1, 4)
 
 
 func _roll_hazard() -> Dictionary:
@@ -577,6 +606,9 @@ func _roll_hazard() -> Dictionary:
 			"kind": kind, "info": info, "cells": cells,
 			"origin": cells[0], "shape": shape, "dir": dir,
 			"speed": 1 if sweep else 0, "life": life,
+			# A front forms for one turn (faint, not yet dangerous) before it
+			# arms. That extra read is the planning window, not extra damage.
+			"age": 0,
 		}
 	return {}
 
@@ -615,14 +647,17 @@ func _hazard_overlaps(h: Dictionary) -> bool:
 func _advance_hazards() -> void:
 	var kept: Array[Dictionary] = []
 	for h in hazards:
-		h["life"] = int(h["life"]) - 1
-		if int(h["speed"]) > 0:
-			var d: Vector2i = h["dir"]
-			var moved: Array[Vector2i] = []
-			for c in h["cells"]:
-				moved.append(c + d)
-			h["cells"] = moved
-			h["origin"] = Vector2i(h["origin"]) + d
+		var age := int(h.get("age", 1))
+		if age >= 1:
+			h["life"] = int(h["life"]) - 1
+			if int(h["speed"]) > 0:
+				var d: Vector2i = h["dir"]
+				var moved: Array[Vector2i] = []
+				for c in h["cells"]:
+					moved.append(c + d)
+				h["cells"] = moved
+				h["origin"] = Vector2i(h["origin"]) + d
+		h["age"] = age + 1
 		if int(h["life"]) > 0 and not h["cells"].is_empty():
 			var visible := false
 			for c in h["cells"]:
@@ -700,11 +735,11 @@ func _try_move(dir: Vector2i) -> void:
 			var rock := str(sec["planet"]["biome"]) in ["arid", "barren", "volcanic", "iron", "crystal", "sulfur"]
 			if rock and int(sec["bonus_data"]) > 0:
 				gain += int(sec["bonus_data"])
-			sec["data"] = mini(OBJECTIVE_NODES, int(sec["data"]) + gain)
+			sec["data"] = mini(_objective_cap(), int(sec["data"]) + gain)
 			data_collected = int(sec["data"])
 			GameState.sfx("confirm")
-			message_text = "DATA NODE SECURED  +%d" % gain
-			message_color = UIKit.CYAN
+			message_text = ("RELAY BEACON PLANTED  +%d" if _is_relay() else "DATA NODE SECURED  +%d") % gain
+			message_color = UIKit.AMBER if _is_relay() else UIKit.CYAN
 			_show_toast(message_text, message_color)
 			_pickup_flash()
 
@@ -722,7 +757,7 @@ func _try_move(dir: Vector2i) -> void:
 	if int(sec["integrity"]) <= 0:
 		_end(false, "HULL BREACH")
 		return
-	if int(sec["data"]) >= OBJECTIVE_NODES:
+	if int(sec["data"]) >= _objective_cap():
 		_end(true, "SURVEY COMPLETE")
 		return
 	if int(sec["sols"]) <= 0:
@@ -847,11 +882,11 @@ func _collect_node_at(cell: Vector2i) -> void:
 			var rock := str(sec["planet"]["biome"]) in ["arid", "barren", "volcanic", "iron", "crystal", "sulfur"]
 			if rock and int(sec["bonus_data"]) > 0:
 				gain += int(sec["bonus_data"])
-			sec["data"] = mini(OBJECTIVE_NODES, int(sec["data"]) + gain)
+			sec["data"] = mini(_objective_cap(), int(sec["data"]) + gain)
 			data_collected = int(sec["data"])
 			GameState.sfx("confirm")
-			message_text = "DATA NODE SECURED  +%d" % gain
-			message_color = UIKit.CYAN
+			message_text = ("RELAY BEACON PLANTED  +%d" if _is_relay() else "DATA NODE SECURED  +%d") % gain
+			message_color = UIKit.AMBER if _is_relay() else UIKit.CYAN
 			_show_toast(message_text, message_color)
 			_pickup_flash()
 			return
@@ -896,7 +931,7 @@ func _execute_path() -> void:
 		if int(sec["integrity"]) <= 0:
 			_end(false, "HULL BREACH")
 			return
-		if int(sec["data"]) >= OBJECTIVE_NODES:
+		if int(sec["data"]) >= _objective_cap():
 			_end(true, "SURVEY COMPLETE")
 			return
 	if not done:
@@ -1106,19 +1141,20 @@ func _draw_hazards() -> void:
 		var info: Dictionary = h["info"]
 		var col: Color = info["color"]
 		var cells: Array[Vector2i] = h["cells"]
+		var armed := int(h.get("age", 1)) >= 1
 		for c in cells:
 			if not _in_view(c.x, c.y):
 				continue
 			var quad := _hazard_quad(c)
 			var fill := Polygon2D.new()
 			fill.polygon = quad
-			fill.color = Color(col.r, col.g, col.b, 0.28)
+			fill.color = Color(col.r, col.g, col.b, 0.28 if armed else 0.10)
 			fx_layer.add_child(fill)
 			var line := Line2D.new()
 			line.points = quad
 			line.closed = true
-			line.width = 1.8
-			line.default_color = Color(col.r, col.g, col.b, 0.95)
+			line.width = 1.8 if armed else 0.8
+			line.default_color = Color(col.r, col.g, col.b, 0.95 if armed else 0.38)
 			fx_layer.add_child(line)
 		if int(h["speed"]) > 0:
 			var origin: Vector2i = h["origin"]
@@ -1128,12 +1164,12 @@ func _draw_hazards() -> void:
 			var arrow := Line2D.new()
 			arrow.points = PackedVector2Array([from, to])
 			arrow.width = 2.2
-			arrow.default_color = Color(col.r, col.g, col.b, 0.92)
+			arrow.default_color = Color(col.r, col.g, col.b, 0.92 if armed else 0.30)
 			fx_layer.add_child(arrow)
 			var tip := Polygon2D.new()
 			tip.polygon = _diamond_points(4.5 * map_scale)
 			tip.position = to
-			tip.color = Color(col.r, col.g, col.b, 0.95)
+			tip.color = Color(col.r, col.g, col.b, 0.95 if armed else 0.35)
 			fx_layer.add_child(tip)
 
 
@@ -1161,7 +1197,7 @@ func _resolve_hazard() -> void:
 		return
 	var hits: Array[Dictionary] = []
 	for h in hazards:
-		if h["cells"].has(player_cell):
+		if int(h.get("age", 1)) >= 1 and h["cells"].has(player_cell):
 			hits.append(h)
 	if hits.is_empty():
 		return
@@ -1274,10 +1310,21 @@ func _float_text(text: String, cell: Vector2i, color: Color) -> void:
 	tw.chain().tween_callback(l.queue_free)
 
 
+func _risk_bonus_nearby() -> int:
+	# Extracting while a live front is inside two tiles is the greedy play.
+	# The bonus is capped across the run in GameState.
+	for h in hazards:
+		for c in h["cells"]:
+			if maxi(absi(c.x - player_cell.x), absi(c.y - player_cell.y)) <= 2:
+				return 1
+	return 0
+
+
 func _extract() -> void:
 	if done:
 		return
 	var ok := int(sec["data"]) >= int(sec["quota"])
+	sec["risk_bonus"] = _risk_bonus_nearby()
 	_end(ok, "EXTRACTION")
 
 
@@ -1286,6 +1333,8 @@ func _end(extracted: bool, reason: String) -> void:
 		return
 	done = true
 	game_over = true
+	if not sec.has("risk_bonus"):
+		sec["risk_bonus"] = _risk_bonus_nearby()
 	hazard_info = {}
 	if hold_btn != null:
 		hold_btn.disabled = true
@@ -1311,9 +1360,10 @@ func _show_result(success: bool, reason: String) -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	result_layer.add_child(shade)
 
+	var has_risk := int(GameState.last_result.get("risk_bonus", 0)) > 0
 	var p := UIKit.panel(Color("#0d1522"), UIKit.CYAN_DARK if success else Color("#5a2630"))
-	p.position = Vector2(150, 76)
-	p.size = Vector2(340, 206)
+	p.position = Vector2(150, 70)
+	p.size = Vector2(340, 226 if has_risk else 212)
 	result_layer.add_child(p)
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1330,9 +1380,9 @@ func _show_result(success: bool, reason: String) -> void:
 	sub.position = Vector2(0, 42)
 	sub.size = Vector2(340, 14)
 	c.add_child(sub)
-	c.add_child(_result_line(64, "DATA RECOVERED", "%d / 4  (quota %d)" % [
-		int(sec["data"]), int(sec["quota"])
-	], UIKit.GREEN))
+	c.add_child(_result_line(64, "BEACONS PLACED" if _is_relay() else "DATA RECOVERED", "%d / %d  (quota %d)" % [
+		int(sec["data"]), _objective_cap(), int(sec["quota"])
+	], UIKit.AMBER if _is_relay() else UIKit.GREEN))
 	c.add_child(_result_line(82, "INTEGRITY LEFT", "%d / %d" % [
 		int(sec["integrity"]), int(sec["integrity_max"])
 	], UIKit.TEXT))
@@ -1341,11 +1391,13 @@ func _show_result(success: bool, reason: String) -> void:
 	], UIKit.CYAN))
 	c.add_child(_result_line(118, "GRANTS AWARDED", "$%dM" % int(GameState.last_result.get("grant", 0)), UIKit.AMBER))
 	c.add_child(_result_line(136, "AGENCY APPROVAL", "%+d" % int(GameState.last_result.get("approval_delta", 0)), UIKit.GREEN if success else UIKit.RED))
+	if has_risk:
+		c.add_child(_result_line(154, "RISK BONUS", "+1 CLASSIFIED", UIKit.PURPLE))
 
 	var btn := UIKit.button(
 		"CONTINUE TO DEBRIEF >", Vector2(200, 26), true
 	)
-	btn.position = Vector2(70, 166)
+	btn.position = Vector2(70, 182 if has_risk else 170)
 	btn.pressed.connect(func():
 		get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	)

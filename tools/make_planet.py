@@ -52,8 +52,8 @@ RAMPS = {
                    sea=["5a5320", "73682a"], accent="e8dc84", cap=None),
     "crystal": dict(style="continents", land=["6f5fa8", "8a78c9", "b6a8e8"],
                     sea=["2a2144", "3a2f5e"], accent="e0d6ff", cap=None),
-    "obsidian": dict(style="continents", land=["241f2e", "332b3f", "453a56"],
-                     sea=["0d0a12", "17121c"], accent="7a5fbf", cap=None),
+    "obsidian": dict(style="continents", land=["3a3348", "4b4260", "5d5375"],
+                     sea=["16111f", "221a2c"], accent="9a7ee6", cap=None),
     "ammonia": dict(style="continents", land=["6fa9b5", "8fc4c9", "b8dcd8"],
                     sea=["1f3d4d", "2f5d70"], accent="cfece8", cap="e0f2ef"),
     "carbon": dict(style="continents", land=["4a4a4e", "63636a", "85858c"],
@@ -135,7 +135,8 @@ def surface(biome: str, size: int, rng: np.random.Generator) -> np.ndarray:
 
 
 def sphere(surf: np.ndarray, out_size: int, light: tuple[float, float, float],
-           rim: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+           rim: np.ndarray, rotation: float = 0.0,
+           tilt: float = 0.0) -> tuple[np.ndarray, np.ndarray]:
     size = surf.shape[0]
     r = out_size * 0.47
     cx = out_size / 2 - 0.5
@@ -145,9 +146,14 @@ def sphere(surf: np.ndarray, out_size: int, light: tuple[float, float, float],
     d2 = nx ** 2 + ny ** 2
     nz = np.sqrt(np.clip(1.0 - d2, 0.0, 1.0))
 
-    # orthographic lookup, nudged off-axis so the disc is not a mirror of the uv grid
-    u = (nx * 0.94 + ny * 0.12) * 0.5 + 0.5
-    v = (ny * 0.94 - nx * 0.12) * 0.5 + 0.5
+    # orthographic lookup; rotation + tilt are per-planet so two worlds of the
+    # same biome never show the same continents in the same place
+    ca, sa = np.cos(rotation), np.sin(rotation)
+    rx = nx * ca - ny * sa
+    ry = nx * sa + ny * ca
+    cb, sb = np.cos(tilt), np.sin(tilt)
+    u = (rx * 0.94 + ry * 0.12) * 0.5 + 0.5
+    v = (ry * 0.94 * cb - rx * 0.12 * cb + sb * 0.35) * 0.5 + 0.5
     sx = np.clip((u * size).astype(int), 0, size - 1)
     sy = np.clip((v * size).astype(int), 0, size - 1)
     col = surf[sy, sx].astype(np.float32)
@@ -176,13 +182,20 @@ def main() -> None:
     ap.add_argument("--size", type=int, default=256)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--surface", type=int, default=512)
+    ap.add_argument("--rotation", type=float, default=None,
+                   help="uv rotation in radians (default: seeded per planet)")
+    ap.add_argument("--tilt", type=float, default=None,
+                   help="surface tilt in radians (default: seeded per planet)")
     args = ap.parse_args()
 
     rng = np.random.default_rng(args.seed)
     surf = surface(args.biome, args.surface, rng)
     spec = RAMPS[args.biome]
     cols = spec["land"] + spec["sea"] + [spec["accent"]] + ([spec["cap"]] if spec["cap"] else [])
-    rgb, alpha = sphere(surf, args.size, (-0.42, -0.50, 0.76), hex2rgb(spec["accent"]) * 0.75)
+    rot = args.rotation if args.rotation is not None else rng.uniform(0.0, 6.283)
+    tilt = args.tilt if args.tilt is not None else rng.uniform(-0.35, 0.35)
+    rgb, alpha = sphere(surf, args.size, (-0.42, -0.50, 0.76),
+                        hex2rgb(spec["accent"]) * 0.75, rot, tilt)
 
     im = Image.fromarray(rgb.astype(np.uint8), "RGB").convert("RGBA")
     im.putalpha(Image.fromarray(alpha.astype(np.uint8), "L"))
