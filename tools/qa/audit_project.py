@@ -177,6 +177,10 @@ def check_literal_refs() -> None:
         for path in re.findall(r'"(res://[^"\\]+)"', text):
             if "%s" in path or "%d" in path or path.endswith("/"):
                 continue
+            # Runtime output dirs are gitignored, just like build/ and submission/:
+            # demo_director writes capture frames under res://demo/capture at run time.
+            if path.startswith("res://demo/"):
+                continue
             if not rel_exists(path[6:]):
                 missing.append(f"{gd.name}: {path}")
     if missing:

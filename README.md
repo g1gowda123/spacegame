@@ -455,7 +455,7 @@ The sector renderer is the largest system in the project and the reason the game
 
 - **Chunked streaming:** 16×16-cell chunks, only the visible window is drawn.
 - **13 terrain biomes:** temperate, arid, cryo, volcanic, ocean, barren, methane lakes, iron desert, sulfur plains, crystal field, obsidian glass, ammonia ice, carbon world. Nine are landable in the current planet pool (temperate, arid, cryo, volcanic, barren, iron, sulfur, crystal, ammonia); ocean, methane, obsidian, and carbon are generator set-pieces that no curated planet currently selects. Each biome declares its own generator archetype — continents, dunes, fractured ice, caldera, archipelago, craters, faceted crystal — plus its own tile keys, tints, props, and life status.
-- **Terrain and transitions:** palette-locked 64×64 tiles with per-material edge bands (98 transition pairs), corner matching, shoreline rings, and a roughness mask so coastlines alternate between clean and frayed stretches.
+- **Terrain and transitions:** palette-locked 64×64 tiles with per-material edge bands (100 transition pairs), corner matching, shoreline rings, and a roughness mask so coastlines alternate between clean and frayed stretches.
 - **Structures and props:** multi-tile natural landmarks (2×2 or 3×3) and biome-specific ambient props, both placed deterministically from the world seed.
 - **Projection:** the same world renders in three modes — three-quarter tilt, isometric, and top-down — with a tunable shader for lighting and grain.
 - **Determinism:** a seed reproduces the whole map. The CLI can capture any seed, biome, and view.

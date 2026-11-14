@@ -32,7 +32,8 @@ func _build() -> void:
 	step.position = Vector2(10, 24)
 	add_child(step)
 
-	var src := UIKit.label("NASA EXOPLANET ARCHIVE  ·  PSCompPars", 7, UIKit.DIM, true)
+	# Body face: the pixel font is uppercase-only and would print PSCOMPPARS.
+	var src := UIKit.label("NASA EXOPLANET ARCHIVE  ·  PSCompPars", 7, UIKit.DIM, false)
 	src.position = Vector2(10, 33)
 	add_child(src)
 

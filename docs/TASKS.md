@@ -98,7 +98,7 @@ d owns QA per `docs/BOARD.md` (browser loops, claim-vs-evidence checks, bug list
 
 ## Map visual debt (lead-maintained, 03:30 — the surface renderer is NOT "done" until these land)
 
-The surface renderer is functionally complete: 13 biomes, palette-locked 64 px tiles, 98 transition pairs, corner matching, props, structures, minimap, telegraphed hazards. Remaining visual debt — more than one item; the submission must not overclaim:
+The surface renderer is functionally complete: 13 biomes, palette-locked 64 px tiles, 100 transition pairs, corner matching, props, structures, minimap, telegraphed hazards. Remaining visual debt — more than one item; the submission must not overclaim:
 
 | # | Item | Notes |
 |---|---|---|
@@ -373,3 +373,15 @@ Boss approved the story frame. Full beat sheet, layout and acceptance: `docs/BRI
 | Full measurement | **DONE** | 1,064 chunks, 28 over budget (2.6%) |
 | New finding: no major landform in arid/cryo/ocean | **DONE** | Ridge types are 2×2 mesa/iceberg and 1–2-cell islet |
 | Enforcement in `_generate_chunk_structures()` | **QUEUED (freeze)** | Accumulate footprint, stop at `0.25*W_walk`; `--gate` is acceptance |
+
+## QA close-out (16:29, this pass)
+
+Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both are closed and the two static-audit fails that appeared after that pass are fixed.
+
+| Task | Status | Notes |
+|---|---|---|
+| Archive credit `PSCompPars` casing (title + draft) | **DONE** | Pixel font is uppercase-only; both credit labels now use the body face (`pixel=false`). Verified in `qa/artifacts/native/qa_title.png` and `qa_draft.png`: reads `PSCompPars` |
+| Radiator -3 vs -6 | **VERIFIED FIXED (no-op)** | `game_state.gd:136` is `thermal_res: 3` (landed in `9d49310`); copy and effect agree. The 16:05 report was stale |
+| Static audit fails: `res://demo/capture` + transition count | **DONE** | `tools/qa/audit_project.py` treats `res://demo/*` as runtime output; README/TASKS corrected 98 -> 100 pairs to match `tools/transitions.json` |
+| `MAP_GENERATOR.md` main-scene claim | **DONE** | Doc now says `scenes/title.tscn` is the project main scene; map scene is the direct-launch dev entry |
+| Verification | **DONE** | `audit_project.py --check` 28 pass / 0 fail / 3 warn, exit 0; headless `--quit-after 8` exit 0; native screens 10/10 |

@@ -93,9 +93,11 @@ func _build_ui() -> void:
 	line.size = Vector2(316, 1)
 	add_child(line)
 
+	# Body face here: the pixel font is uppercase-only, so it would render the
+	# archive table name as PSCOMPPARS. The source name is PSCompPars.
 	var credit := UIKit.label(
 		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars",
-		7, UIKit.DIM, true
+		7, UIKit.DIM, false
 	)
 	credit.position = Vector2(44, 322)
 	add_child(credit)

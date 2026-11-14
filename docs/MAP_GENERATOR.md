@@ -2,12 +2,12 @@
 
 ## Current state
 
-- Main scene: `scenes/map_generator.tscn`
+- Dev scene: `scenes/map_generator.tscn`
 - Script: `scripts/map_generator.gd`
 - Shader: `shaders/map_view.gdshader`
-- The scene is wired and the project main scene is set. The generator is now verified through in-game capture (`godot --path . -- --capture`); the script still needs broader visual passes.
+- The project main scene is `scenes/title.tscn`; this scene is the generator's development entry point and is launched directly (`godot --path . scenes/map_generator.tscn`). It is wired and verified through in-game capture (`-- --capture`); the script still needs broader visual passes.
 - The generator is currently monolithic. Splitting terrain/chunk/UI into modules is an open task.
-- **Scope:** the map generator is the product. Gameplay systems (turns/data/hull/hazards) are present only as a demo/telegraph; art/tiles are owned by another agent.
+- **Scope:** the generator is the foundation of the surface sectors. Gameplay systems (turns/data/hull/hazards) live in `scripts/game_state.gd` and `scripts/sector.gd`; art/tiles are owned by another agent.
 
 ## Controls
 
