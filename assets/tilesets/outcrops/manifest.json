@@ -14,17 +14,24 @@
           ]
         },
         {
+          "file": "res://assets/tilesets/outcrops/temperate_hero_b.png",
+          "size": [
+            119,
+            122
+          ]
+        },
+        {
           "file": "res://assets/tilesets/outcrops/temperate_sup_a.png",
           "size": [
             65,
-            67
+            66
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/temperate_sup_b.png",
           "size": [
-            41,
-            42
+            39,
+            40
           ]
         }
       ]
@@ -35,15 +42,22 @@
         {
           "file": "res://assets/tilesets/outcrops/arid_hero.png",
           "size": [
-            111,
-            115
+            109,
+            114
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/arid_hero_b.png",
+          "size": [
+            108,
+            113
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/arid_sup_a.png",
           "size": [
-            60,
-            62
+            66,
+            69
           ]
         },
         {
@@ -61,15 +75,22 @@
         {
           "file": "res://assets/tilesets/outcrops/cryo_hero.png",
           "size": [
-            69,
-            119
+            63,
+            109
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/cryo_hero_b.png",
+          "size": [
+            62,
+            107
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/cryo_sup_a.png",
           "size": [
-            34,
-            58
+            33,
+            57
           ]
         },
         {
@@ -87,22 +108,29 @@
         {
           "file": "res://assets/tilesets/outcrops/volcanic_hero.png",
           "size": [
-            70,
-            104
+            69,
+            103
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/volcanic_hero_b.png",
+          "size": [
+            73,
+            109
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/volcanic_sup_a.png",
           "size": [
-            37,
-            56
+            41,
+            62
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/volcanic_sup_b.png",
           "size": [
-            24,
-            37
+            26,
+            40
           ]
         }
       ]
@@ -113,22 +141,29 @@
         {
           "file": "res://assets/tilesets/outcrops/ocean_hero.png",
           "size": [
+            61,
+            108
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/ocean_hero_b.png",
+          "size": [
             60,
-            107
+            106
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/ocean_sup_a.png",
           "size": [
             35,
-            62
+            63
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/ocean_sup_b.png",
           "size": [
-            23,
-            41
+            21,
+            37
           ]
         }
       ]
@@ -139,22 +174,29 @@
         {
           "file": "res://assets/tilesets/outcrops/barren_hero.png",
           "size": [
-            184,
-            179
+            169,
+            165
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/barren_hero_b.png",
+          "size": [
+            182,
+            177
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/barren_sup_a.png",
           "size": [
-            91,
-            89
+            94,
+            92
           ]
         },
         {
           "file": "res://assets/tilesets/outcrops/barren_sup_b.png",
           "size": [
-            57,
-            55
+            62,
+            60
           ]
         }
       ]

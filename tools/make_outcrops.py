@@ -46,11 +46,13 @@ def main():
         if bbox:
             src = src.crop(bbox)
         entries = []
-        for role, scale in (("hero", 1.0), ("sup_a", 0.55), ("sup_b", 0.35)):
+        for role, scale in (("hero", 1.0), ("hero_b", 1.0), ("sup_a", 0.55), ("sup_b", 0.35)):
             jitter = 1.0 + rng.uniform(-0.08, 0.08)
             w = max(8, int(src.size[0] * scale * jitter))
             h = max(8, int(src.size[1] * scale * jitter))
             im = src.resize((w, h), Image.Resampling.LANCZOS)
+            if role == "hero_b":
+                im = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             im = apply_palette(tint(im, rng), spec(biome))
             name = f"{biome}_{role}.png"
             im.save(OUT / name)
@@ -61,7 +63,7 @@ def main():
     sheet = Image.new("RGBA", (560, 300), (16, 24, 38, 255))
     x = 10
     for biome in SRC:
-        for role in ("hero", "sup_a", "sup_b"):
+        for role in ("hero", "hero_b", "sup_a", "sup_b"):
             im = Image.open(OUT / f"{biome}_{role}.png")
             sheet.alpha_composite(im, (x, 150 - im.size[1] // 2))
             x += im.size[0] + 6
@@ -69,7 +71,7 @@ def main():
         if x > 480:
             x = 10
     sheet.resize((1120, 600), Image.Resampling.NEAREST).save(OUT / "preview.png")
-    print(f"wrote {len(SRC) * 3} outcrops")
+    print(f"wrote {len(SRC) * 4} outcrops")
 
 
 if __name__ == "__main__":
