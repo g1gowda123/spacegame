@@ -216,6 +216,10 @@ wanted.
 | coral_shard | ocean | 681 | bleached alien coral shard (wired in `PROPS["ocean"]`) |
 | obsidian_shard | obsidian / iron | 741 | grey glass shard, alien fracture planes (needs wiring) |
 | sulfur_nodule | sulfur / volcanic | 742 | mineral nodule cluster with orange crystal specks (needs wiring) |
+| shell_spiral | crystal / ammonia | 952 | 48 px alien spiral shell |
+| crystal_nub | crystal / obsidian | 954 | 48 px three cyan crystal nubs in dark rock |
+| ice_teeth | cryo / ammonia | 955 | 48 px jagged pale ice teeth |
+| ash_mound | volcanic / barren | 956 | 48 px porous ash rock with ember specks |
 
 Props are **alien, not earthly**: crystalline, bulbous, spined or glowing forms.
 Only the general/grassy planet has vegetation; every other biome is lifeless
