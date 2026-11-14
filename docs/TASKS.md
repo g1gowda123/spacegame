@@ -491,7 +491,7 @@ Please deliver a small modular kit, same 64 px grid, transparent background, no 
 
 All segments must align at tile boundaries and preserve the existing 2×2/4×4 massif footprint language. Acceptance: a 9×2 chain and an L-shaped chain captured at 2× on temperate and arid, no visible rectangle seam, no detached boulders.
 
-## Upgrade feedback + extraction pad (NOVA, 22:3x)
+## Upgrade feedback + extraction pad (NOVA, 22:18)
 
 | Item | State | Notes |
 |---|---|---|

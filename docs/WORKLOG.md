@@ -999,7 +999,7 @@ to the lane owner.
 - **ComfyUI.** Started `/home/g1/ComfyUI` (`.venv/bin/python3 main.py --listen 127.0.0.1 --port 8188`) and generated a real flare source (`assets/raw/vfx/flare_4211.png`) through `tools/gen_vfx_sheet.py --kind flare --lora 0` (no LoRA produced a cleaner starburst). Added post-keying `strip_flare_haze()` to remove SDXL's grey cloud, keep the white core, and palette-lock shards to impact orange. Procedural smoke/ember restored (ComfyUI smoke read as a rock). Pipeline + `--lora` knob documented.
 - QA hooks: `--fx=disaster` (unblockable quake hit), `--fx=strike-miss`, `--fx=world`, `--fx=devil`, `--fx=meteor`. Evidence `/tmp/opencode/vfx/{quake2_pick,miss_38,met2_34,devil3,arc5,arc_sheet,flare_comfy7}.png`.
 
-## 2026-11-14 22:2x — Upgrade feedback + fixed extraction pad (NOVA)
+## 2026-11-14 22:18 — Upgrade feedback + fixed extraction pad (NOVA)
 
 - **Paid refit feedback.** `GameState.buy_offer()` now snapshots the ship before/after and stores a human-readable delta in `last_upgrade`; `consume_last_upgrade()` hands it to the debrief. `debrief.gd` shows `INSTALLED <name> · <delta>` in green and a rising stat tag over the ship card, while `ship_diagram.flash_build()` still flashes the changed module.
 - **Field feedback.** `sector.gd` re-states installed bonuses at the start of every sector in a readable green banner (`_show_rig_banner`) and a green VFX ring at the lander, with HUD pulses on ΔV / integrity / heat-res. This is the “feel the upgrade after leaving the shop” loop, not just a debrief number.
@@ -1007,3 +1007,5 @@ to the lane owner.
 - **Extraction pad fixed.** The amber LZ flag/mast/beam and the new cyan extraction pad are now re-projected by `_reposition_pad_beacon()` after every render-window recenter. The pad is chosen once (`_choose_extract_cell`, rings 2–6, deterministic seed+991, avoids objectives/hazards) and extraction requires standing on it. `--extract-test` verifies the real `_extract()` path.
 - **QA.** Headless `--quit-after 6` clean; `--screen=flowtest` 5246/S, 3 successes; `--screen=sector --owned=ion,wheel,radiator,armor --debug-rig` prints `RIGFEED +4 ΔV · +3 HEAT RES · +2 HULL`, HUD pulses, green banner + ring; `qa_rig_sector8.png`; debrief capture `qa_rig_pop2.png` shows `INSTALLED ION THRUSTER · +1 RANGE`; extraction `qa_extract_test.png` shows `SECTOR COMPLETE / EXTRACTION`.
 - **Files.** `scripts/game_state.gd`, `scripts/debrief.gd`, `scripts/sector.gd` (plus the existing uncommitted VFX-agent flare/smoke assets and tools, untouched). No push/export; ORION owns the gate.
+
+- **22:22 — Hazard fill hatching.** `hazard_field.gdshader` adds diagonal tape (armed +0.065 alpha, dark 0.55×; forming +0.022). QA hook `--arm-hazard` arms the first front for stills. Evidence `hazard_hatch.png`.
