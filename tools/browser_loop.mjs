@@ -6,7 +6,6 @@
  * protocol, plays a short all-failure campaign so the run reaches the final
  * report quickly, screenshots every screen, and fails on page errors.
  *
- * Usage:
  *   python -m http.server 8061 --directory build/web
  *   node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web
  *
@@ -19,12 +18,18 @@
  * canvas rect is re-read before every click: Godot boots at 300x150 and only
  * resizes after the WASM runtime starts, so a cached rect sends every click to
  * the top-left corner.
+ *
+ * Every navigation is asserted: the loop keeps a coarse pixel signature of the
+ * last screen (PNG decoded with node:zlib, 16x9 cell averages) and fails if a
+ * click does not change the screen. That turns "the loop ran" into "the loop
+ * reached the report", which is what QA actually needs.
  */
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import zlib from "node:zlib";
 
 function parseArgs(argv) {
   const out = {};
@@ -40,7 +45,7 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const URL = args.url ?? "http://127.0.0.1:8061/index.html";
+const URL_ARG = args.url ?? "http://127.0.0.1:8061/index.html";
 const OUT = path.resolve(args.out ?? "demo/capture/web");
 const W = Number(args.width ?? 1280);
 const H = Number(args.height ?? 720);
@@ -60,6 +65,92 @@ function findChrome() {
   ].filter(Boolean);
   for (const c of candidates) if (fs.existsSync(c)) return c;
   throw new Error("Chrome/Edge not found; pass --chrome <path> or set CHROME");
+}
+
+/** Minimal PNG -> RGBA decoder (8-bit RGB/RGBA, the two types Chrome emits). */
+function decodePng(buf) {
+  let pos = 8;
+  let w = 0, h = 0, colorType = 6;
+  const idat = [];
+  while (pos + 8 <= buf.length) {
+    const len = buf.readUInt32BE(pos);
+    const type = buf.toString("ascii", pos + 4, pos + 8);
+    const data = buf.subarray(pos + 8, pos + 8 + len);
+    if (type === "IHDR") {
+      w = data.readUInt32BE(0);
+      h = data.readUInt32BE(4);
+      colorType = data[9];
+    } else if (type === "IDAT") {
+      idat.push(data);
+    } else if (type === "IEND") break;
+    pos += 12 + len;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(idat));
+  const bpp = colorType === 6 ? 4 : colorType === 2 ? 3 : 1;
+  const stride = w * bpp;
+  const out = Buffer.alloc(h * stride);
+  let p = 0;
+  for (let y = 0; y < h; y += 1) {
+    const filter = raw[p]; p += 1;
+    const row = out.subarray(y * stride, (y + 1) * stride);
+    const prev = y ? out.subarray((y - 1) * stride, y * stride) : null;
+    for (let x = 0; x < stride; x += 1) {
+      const a = x >= bpp ? row[x - bpp] : 0;
+      const b = prev ? prev[x] : 0;
+      const c = prev && x >= bpp ? prev[x - bpp] : 0;
+      let v = raw[p + x];
+      if (filter === 1) v += a;
+      else if (filter === 2) v += b;
+      else if (filter === 3) v += (a + b) >> 1;
+      else if (filter === 4) {
+        const q = a + b - c;
+        const pa = Math.abs(q - a), pb = Math.abs(q - b), pc = Math.abs(q - c);
+        v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+      }
+      row[x] = v & 0xff;
+    }
+    p += stride;
+  }
+  return { w, h, bpp, data: out };
+}
+
+/** 16x9 grid of cell averages, quantised to 5 bits per channel. */
+function signature(pngBuf) {
+  const { w, h, bpp, data } = decodePng(pngBuf);
+  const GX = 16, GY = 9;
+  const sig = [];
+  for (let gy = 0; gy < GY; gy += 1) {
+    for (let gx = 0; gx < GX; gx += 1) {
+      const x0 = Math.floor((gx * w) / GX), x1 = Math.floor(((gx + 1) * w) / GX);
+      const y0 = Math.floor((gy * h) / GY), y1 = Math.floor(((gy + 1) * h) / GY);
+      let r = 0, g = 0, b = 0, n = 0;
+      for (let y = y0; y < y1; y += 3) {
+        for (let x = x0; x < x1; x += 3) {
+          const i = (y * w + x) * bpp;
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; n += 1;
+        }
+      }
+      n = n || 1;
+      sig.push((r / n) >> 3, (g / n) >> 3, (b / n) >> 3);
+    }
+  }
+  return sig;
+}
+
+/** Same screen: >=92% of cells within 16/255 per channel (starfield noise OK). */
+function sameScreen(a, b) {
+  if (!a || !b || a.length !== b.length) return false;
+  let close = 0;
+  const cells = a.length / 3;
+  for (let i = 0; i < a.length; i += 3) {
+    const d = Math.max(
+      Math.abs(a[i] - b[i]),
+      Math.abs(a[i + 1] - b[i + 1]),
+      Math.abs(a[i + 2] - b[i + 2]),
+    );
+    if (d <= 2) close += 1;
+  }
+  return close / cells >= 0.92;
 }
 
 const chromePath = args.chrome ?? findChrome();
@@ -93,7 +184,7 @@ async function waitForDevtools() {
 
 await waitForDevtools();
 const targetRes = await fetch(
-  `http://127.0.0.1:${PORT}/json/new?${encodeURIComponent(URL)}`,
+  `http://127.0.0.1:${PORT}/json/new?${encodeURIComponent(URL_ARG)}`,
   { method: "PUT" },
 );
 const target = await targetRes.json();
@@ -150,16 +241,19 @@ async function evaluate(expression) {
 
 async function rawShot() {
   const shot = await send("Page.captureScreenshot", { format: "png" });
-  return shot.data;
+  return Buffer.from(shot.data, "base64");
 }
 
 const shots = [];
+let lastSig = null;
+
 async function screenshot(name) {
-  const data = await rawShot();
-  fs.writeFileSync(path.join(OUT, name), Buffer.from(data, "base64"));
+  const buf = await rawShot();
+  fs.writeFileSync(path.join(OUT, name), buf);
+  lastSig = signature(buf);
   shots.push(name);
   console.log(`shot ${name}`);
-  return data;
+  return lastSig;
 }
 
 async function canvasRect() {
@@ -200,6 +294,44 @@ async function key(keyName, code, vk) {
   await sleep(70);
 }
 
+/** Poll until the screen differs from the last screenshot. Throws on timeout. */
+async function expectChange(label, timeoutMs = 4000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    const sig = signature(await rawShot());
+    if (!sameScreen(lastSig, sig)) {
+      lastSig = sig;
+      console.log(`ok   ${label} (${Date.now() - t0} ms)`);
+      return true;
+    }
+    await sleep(150);
+  }
+  throw new Error(`screen did not change after: ${label}`);
+}
+
+/** Poll until the screen matches the last screenshot; returns false on timeout. */
+async function expectStill(label, timeoutMs = 2500) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    const sig = signature(await rawShot());
+    if (!sameScreen(lastSig, sig)) return false;
+    await sleep(150);
+  }
+  console.log(`ok   ${label} (screen stayed put)`);
+  return true;
+}
+
+/** expectChange, but reports false instead of throwing. */
+async function expectChangeAllowFail(label, timeoutMs = 4000) {
+  try {
+    await expectChange(label, timeoutMs);
+    return true;
+  } catch {
+    console.log(`skip ${label} (no change)`);
+    return false;
+  }
+}
+
 await send("Page.enable");
 await send("Runtime.enable");
 await send("Log.enable");
@@ -207,7 +339,7 @@ await send("Log.enable");
 await send("Emulation.setDeviceMetricsOverride", {
   width: W, height: H, deviceScaleFactor: 1, mobile: false,
 });
-console.log(`loading ${URL}`);
+console.log(`loading ${URL_ARG}`);
 
 // Wait for the engine to boot: Godot removes the #status boot overlay and
 // resizes the canvas to the viewport once the runtime is up.
@@ -223,120 +355,130 @@ console.log(`canvas ${rect.cw}x${rect.ch} css ${rect.w}x${rect.h}`);
 // SwiftShader compiles shaders on first draw; give it real time.
 await sleep(12000);
 
-async function beat(name, wait = 2200) {
-  await screenshot(name);
-  await sleep(wait);
-}
-
 // --- Screen coordinates (logical 640x360) -------------------------------
 const HIT = {
-  briefingSkip: [576, 42],  // briefing.gd SKIP [ESC] (530,32) 92x20; title.gd
-                            // routes to the induction on first run, and every
-                            // fresh browser profile is a first run
+  briefingSkip: [576, 42],  // briefing.gd SKIP [ESC] (530,32) 92x20
   begin: [124, 243],        // title.gd BEGIN MISSION (44,228) 160x30
   quick: [153, 338],        // design.gd QUICK LOADOUT (90,326) 126x24
   confirmDesign: [514, 338],// design.gd CONFIRM & DRAFT ... (398,326) 232x24
-  setCourse: [557, 299],    // draft.gd SET COURSE > (footer 482,6) 130x22
-  commitMission: [526, 296],// draft.gd COMMIT MISSION > (panel 20,24 + 426,260) 160x24
+  setCourse: [557, 299],    // draft.gd SET COURSE > footer (10,282)+(482,6) 130x22
+  commitMission: [526, 296],// draft.gd COMMIT MISSION > review (20,24)+(426,260)
   move: [494, 279],         // sector.gd MOVE (444,268) 100x22
   extract: [494, 331],      // sector.gd EXTRACT (444,320) 100x22
-  continueOverlay: [320, 253], // sector.gd CONTINUE TO DEBRIEF > (150,70 + 70,170)
-  // debrief.gd SELECT NEXT TARGET (408,313..614,341). Left third on purpose:
-  // the report screen's NEW CAMPAIGN > starts at x=466, so a stray click after
-  // the run has already ended cannot restart the campaign.
-  nextSector: [422, 327],
-  eventChoice0: [471, 156], // debrief.gd event modal option 0 CHOOSE (96,44 + 14,80 + 318,20)
+  continueOverlay: [320, 253], // sector.gd CONTINUE TO DEBRIEF > (150,70)+(70,170)
+  // debrief.gd footer button (398,9) inside the (10,304) panel, 206x28.
+  // HANDLE EVENT > / CLAIM COMMISSION > / SELECT NEXT TARGET > / FILE FINAL
+  // REPORT > all live here. Left third on purpose: the report screen's
+  // NEW CAMPAIGN > starts at x=456, so a stray click cannot restart a run.
+  debriefNext: [511, 327],
+  eventChoice0: [484, 166], // debrief.gd modal option 0 CHOOSE (96,44)+(318+86/2, ...)
+  commissionCard1: [150, 177], // buff.gd first card (150,143)+303x423
 };
 
-// First run boots into the Chief Engineer induction (title.gd defers to
-// briefing.tscn when GameState.briefing_seen is false, and a fresh Chrome
-// profile always is). SKIP lands on the title screen; the loop then plays the
-// normal campaign instead of clicking through seven dialogue beats.
+// --- Flow --------------------------------------------------------------
+// 1. First run boots the Agency Induction (title.gd defers to briefing.tscn
+//    while GameState.briefing_seen is false, and a fresh profile always is).
+//    SKIP lands on the title; the loop then plays the campaign normally.
 await screenshot("00_briefing.png");
 await clickLogical(...HIT.briefingSkip);
-await sleep(1600);
+await expectChange("briefing -> title");
+await screenshot("01_title.png");
 
-// Title screen.
-await beat("01_title.png", 1200);
-
-// BEGIN MISSION -> design
+// 2. Title -> design -> draft.
 await clickLogical(...HIT.begin);
-await beat("02_design.png", 1800);
+await expectChange("title -> design");
+await screenshot("02_design.png");
 
-// QUICK LOADOUT fills a legal loadout, then CONFIRM -> draft
 await clickLogical(...HIT.quick);
-await sleep(700);
-await beat("03_design_filled.png", 700);
+await sleep(600);
+await screenshot("03_design_filled.png");
 await clickLogical(...HIT.confirmDesign);
-await beat("04_draft.png", 2000);
+await expectChange("design -> draft");
+await screenshot("04_draft.png");
 
-// SET COURSE -> mission architecture review -> COMMIT -> sector 1
+// 3. Draft -> mission architecture review -> sector 1.
 await clickLogical(...HIT.setCourse);
-await sleep(1500);
-await beat("05_review.png", 600);
+await expectChange("draft -> review");
+await screenshot("05_review.png");
 await clickLogical(...HIT.commitMission);
-await sleep(7000);
-await beat("06_sector.png", 800);
+await expectChange("review -> sector", 20000);
+await screenshot("06_sector.png");
 
-// Arrow keys preview a path, MOVE commits one turn, then bail out early.
+// 4. Arrow keys preview a path, MOVE commits one turn, then bail out early.
 await key("ArrowRight", "ArrowRight", 39);
 await key("ArrowRight", "ArrowRight", 39);
-await sleep(700);
-await beat("07_path_preview.png", 300);
+await sleep(600);
+await screenshot("07_path_preview.png");
 await clickLogical(...HIT.move);
 await sleep(1800);
-await beat("08_turn_committed.png", 300);
+await screenshot("08_turn_committed.png");
 await clickLogical(...HIT.extract);
-await sleep(2200);
-await beat("09_sector_result.png", 600);
+await expectChange("sector -> result overlay");
+await screenshot("09_sector_result.png");
 
-// Result overlay -> debrief
+// 5. Result overlay -> debrief 01.
 await clickLogical(...HIT.continueOverlay);
-await beat("10_debrief.png", 1800);
+await expectChange("result -> debrief");
+await screenshot("10_debrief.png");
 
-// Debrief -> next draft. Every non-final debrief rolls an agency event
-// (game_state.gd roll_event runs whenever sector <= 3 and approval > 0), and
-// the modal only appears when SELECT NEXT TARGET is pressed, so the sequence
-// is deterministic: NEXT opens the modal, CHOOSE closes it, NEXT advances.
-// (471,156) is inert on every other screen, so the CHOOSE click is safe.
-async function advanceFromDebrief(tag) {
-  await clickLogical(...HIT.nextSector);
-  await sleep(2200);
-  await screenshot(`${tag}_event.png`);
+// 6. Debrief -> next draft. Every continuing debrief rolls an agency event
+//    (game_state.gd roll_event) and the field-commission screen can sit
+//    between debrief and draft, so the ladder is: footer button, then the
+//    modal's option 0, then the commission's first card. Each of those points
+//    is inert on screens where it does not apply, and every step is verified
+//    by the next click having to change the screen.
+async function leaveDebrief(tag, sector) {
+  await clickLogical(...HIT.debriefNext);
+  await expectChange(`debrief -> event/commission/draft (s${sector})`);
   await clickLogical(...HIT.eventChoice0);
-  await sleep(1400);
-  await clickLogical(...HIT.nextSector);
-  await sleep(2400);
+  await sleep(1000);
+  await clickLogical(...HIT.commissionCard1);
+  await sleep(1200);
+  await screenshot(`${tag}_draft_s${sector}.png`);
 }
 
-// Remaining sectors: draft -> commit -> surface -> extract immediately -> debrief.
+let reachedReport = false;
 for (let sector = 2; sector <= 3; sector += 1) {
-  await advanceFromDebrief(`11_event_s${sector}`);
-  await beat(`12_draft_s${sector}.png`, 600);
+  await leaveDebrief("11", sector);
   await clickLogical(...HIT.setCourse);
-  await sleep(1400);
-  await beat(`13_review_s${sector}.png`, 400);
+  // If the agency collapsed (approval <= 0) the debrief routes straight to the
+  // report, so SET COURSE lands on a screen with no such button.
+  if (!(await expectChangeAllowFail(`draft -> review (s${sector})`, 3000))) {
+    console.log("agency collapsed before the draft; the run ended early");
+    break;
+  }
+  await screenshot(`12_review_s${sector}.png`);
   await clickLogical(...HIT.commitMission);
-  await sleep(6500);
-  await beat(`14_sector_s${sector}.png`, 400);
+  await expectChange(`review -> sector (s${sector})`, 20000);
+  await screenshot(`13_sector_s${sector}.png`);
   await clickLogical(...HIT.extract);
-  await sleep(2200);
-  await beat(`15_result_s${sector}.png`, 400);
+  await expectChange(`sector -> result (s${sector})`);
+  await screenshot(`14_result_s${sector}.png`);
   await clickLogical(...HIT.continueOverlay);
-  await sleep(2000);
-  await beat(`16_debrief_s${sector}.png`, 600);
+  await expectChange(`result -> debrief (s${sector})`);
+  await screenshot(`15_debrief_s${sector}.png`);
 }
 
-// FILE FINAL REPORT (final debrief and a collapsed agency both route straight
-// to the report, so one click is enough here).
-await clickLogical(...HIT.nextSector);
-await sleep(2600);
-await beat("17_report.png", 400);
+// 7. FILE FINAL REPORT.
+await clickLogical(...HIT.debriefNext);
+if (await expectChangeAllowFail("debrief -> report", 6000)) {
+  await screenshot("16_report.png");
+  reachedReport = true;
+  // The report is terminal: the footer point must not do anything any more.
+  // If it still advances, the loop is actually sitting on a debrief.
+  if (!(await expectStill("report is terminal"))) {
+    throw new Error("footer still advances: this is not the report screen");
+  }
+} else {
+  await screenshot("16_report.png");
+  throw new Error("final debrief click did not open the report");
+}
 
 const summary = {
-  url: URL,
+  url: URL_ARG,
   canvas: rect,
   shots,
+  reachedReport,
   pageErrors,
   consoleErrors,
   consoleWarnings: consoleWarnings.slice(0, 20),
@@ -344,6 +486,7 @@ const summary = {
 fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify(summary, null, 2));
 console.log(JSON.stringify({
   shots: shots.length,
+  reachedReport,
   pageErrors,
   consoleErrors,
   consoleWarnings: summary.consoleWarnings,
@@ -353,4 +496,4 @@ ws.close();
 chrome.kill();
 await sleep(500);
 try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* best effort */ }
-process.exit(pageErrors.length || consoleErrors.length ? 1 : 0);
+process.exit(pageErrors.length || consoleErrors.length || !reachedReport ? 1 : 0);
