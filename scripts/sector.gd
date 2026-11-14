@@ -1276,6 +1276,25 @@ func _process(delta: float) -> void:
 	# so the backdrop reads as depth behind the board.
 	if sector_planet != null:
 		sector_planet.position.y = -32.0 + sin(Time.get_ticks_msec() * 0.00011) * 5.0
+	# Live minimap: the radar sweep needs a redraw even when nothing changed.
+	if minimap != null and not done:
+		minimap.queue_redraw()
+
+
+func _draw_minimap() -> void:
+	super._draw_minimap()
+	if minimap == null or done:
+		return
+	var sz := minimap.size
+	var c := sz * 0.5
+	var r := minf(sz.x, sz.y) * 0.44
+	var ang := fmod(Time.get_ticks_msec() * 0.0011, TAU)
+	var col := Color(0.33, 0.90, 0.82, 0.16)
+	# A fading wedge trail behind the sweep line sells the rotation cheaply.
+	for i in range(4):
+		var a := ang - float(i) * 0.10
+		minimap.draw_line(c, c + Vector2(cos(a), sin(a)) * r,
+			Color(col.r, col.g, col.b, col.a * (1.0 - float(i) / 4.0)), 1.0, true)
 
 
 func _render_window() -> void:
@@ -1506,6 +1525,9 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 			VFX.shockwave(vfx_layer, at, color, 34.0)
 			VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 1.0), 12, 70.0, 110.0)
 			VFX.dust(vfx_layer, at, Color(0.55, 0.50, 0.44, 0.55), 7, 26.0)
+			VFX.sheet_burst(vfx_layer, at, "debris", Color(0.82, 0.74, 0.62, 0.9), 0.9, 8)
+			if dmg_t > 0:
+				VFX.embers(vfx_layer, at, Color(color.r, color.g, color.b, 0.9), 8)
 		else:
 			VFX.shield(vfx_layer, at, color)
 			VFX.ring(vfx_layer, at, Color(color.r, color.g, color.b, 0.9), 30.0, 0.34, 2.0)

@@ -231,35 +231,61 @@ static func _fade_ramp(color: Color) -> Gradient:
 	return g
 
 
+static var _manifest: Dictionary = {}
+
+
+static func _load_manifest() -> Dictionary:
+	if not _manifest.is_empty():
+		return _manifest
+	var path := FX_DIR + "manifest.json"
+	if FileAccess.file_exists(path):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if parsed is Dictionary:
+			_manifest = parsed
+	return _manifest
+
+
 static func frames_for(sheet: String) -> SpriteFrames:
-	## Build a SpriteFrames from `assets/vfx/<sheet>/frame_NN.png`. Returns null
-	## when the sheet has not been generated, so callers can fall back to a
-	## pure-shape effect.
+	## Build a SpriteFrames from `assets/vfx/<sheet>/frame_NN.png`. Prefers the
+	## manifest's frame count because `DirAccess.get_files()` is not reliable for
+	## imported textures inside an exported PCK; falls back to listing the folder
+	## when the sheet was added without regenerating the manifest, and returns
+	## null when the sheet does not exist so callers can use a shape effect.
 	var key := "frames_" + sheet
 	if _tex_cache.has(key):
 		return _tex_cache[key]
 	var dir_path := FX_DIR + sheet
-	var dir := DirAccess.open(dir_path)
-	if dir == null:
+	var count := -1
+	var manifest := _load_manifest()
+	if manifest.has("sheets") and manifest["sheets"] is Dictionary:
+		var entry: Variant = manifest["sheets"].get(sheet)
+		if entry is Dictionary and entry.has("frames"):
+			count = int(entry["frames"])
+	if count <= 0:
+		var dir := DirAccess.open(dir_path)
+		if dir != null:
+			count = 0
+			for f in dir.get_files():
+				if f.begins_with("frame_") and f.ends_with(".png"):
+					count += 1
+	if count <= 0:
 		_tex_cache[key] = null
 		return null
-	var names: Array[String] = []
-	for f in dir.get_files():
-		if f.begins_with("frame_") and f.ends_with(".png"):
-			names.append(f)
-	if names.is_empty():
-		_tex_cache[key] = null
-		return null
-	names.sort()
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 	sf.add_animation("play")
 	sf.set_animation_loop("play", false)
 	sf.set_animation_speed("play", 20.0)
-	for f in names:
-		var tex := load(dir_path + "/" + f) as Texture2D
+	for i in range(count):
+		var p := "%s/frame_%02d.png" % [dir_path, i]
+		if not ResourceLoader.exists(p):
+			continue
+		var tex := load(p) as Texture2D
 		if tex != null:
 			sf.add_frame("play", tex)
+	if sf.get_frame_count("play") <= 0:
+		_tex_cache[key] = null
+		return null
 	_tex_cache[key] = sf
 	return sf
 
