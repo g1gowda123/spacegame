@@ -906,7 +906,10 @@ func _refresh_status() -> void:
 				major = true
 		var names: Array[String] = []
 		for h in hazards:
-			names.append(str(h["info"]["name"]).split(" ")[0])
+			var nm := str(h["info"]["name"]).split(" ")[0]
+			if bool(h.get("major", false)):
+				nm = str(h["info"]["name"])
+			names.append(nm)
 		var tag := names[0] if names.size() == 1 else "%s +%d" % [names[0], names.size() - 1]
 		var tail := "SWEEP" if sweep else ("SHIELD %d PWR OR -%d INT" % [shield, int(first["integrity"])] if bool(first["block"]) else "UNBLOCKABLE")
 		if forming:
