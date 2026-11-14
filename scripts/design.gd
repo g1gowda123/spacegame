@@ -52,7 +52,10 @@ func _ready() -> void:
 func _dev_hover(p: Vector2) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
-	Input.warp_mouse(p)
+	if not hull_cards.is_empty():
+		var first: Dictionary = hull_cards.values()[0]
+		first["button"].mouse_entered.emit()
+	await get_tree().process_frame
 
 
 func _build() -> void:
