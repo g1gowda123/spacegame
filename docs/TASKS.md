@@ -395,3 +395,16 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 - **Creative freedom:** face, hair, uniform, badge, headset, silhouette, expression nuance. New ComfyUI workflows may be created at any time; if you use one, regenerate all three expressions from one reference so the face does not drift.
 - **Optional UI skin:** `assets/ui/skin/` buttons/tabs/strips in the old dark-blue/cyan palette; do not recolor the game to olive/amber.
 - **Acceptance:** three expressions + icon load in `scenes/briefing.tscn`; no black jacket block on the cream card; nameplate reads `EXECUTIVE SECRETARY`; no sexualised framing.
+## b — A3 small-island metric + pinhole coalescing (claimed 10:52, done 11:24)
+
+| Task | State | Notes |
+|---|---|---|
+| `tools/audit_islands.gd` (50 seeds x 4 biomes x 8x8, stitched components, per-chunk histogram, islets, `--gate`, `--dump`) | **DONE** | `godot --headless --path . --script tools/audit_islands.gd` |
+| Baseline numbers | **DONE** | 1,119 holes / 12,800 chunks = 0.087/chunk; ocean 1,002 (889 one-cell), lake biomes 117 |
+| Root cause 1: ocean `base` is water, speck fallback created pinholes | **DONE** | `_smooth_cell()` uses `land_fill` (shore/rock) + dominant-neighbour merge |
+| Root cause 2: per-cell smoothing disagrees with smoothed neighbours | **DONE** | `_coalesce_water_pinholes()` post-pass over a 1-cell smoothed halo |
+| Post-fix numbers | **DONE** | 8 / 12,800 = 0.001/chunk, max 1 per chunk; islets 142 -> 139 |
+| Reachability regression | **DONE** | 100 seeds x 6 biomes / 2,400 markers / 0 unreachable |
+| Density regression | **DONE** | 28 / 1,064 chunks over 25% (unchanged) |
+| Water diagnostics | **DONE** | `water_probe --diagcheck`: `diag_missing_by_key {}`, `tiny_water_cells 0` |
+| Residual seam-straddling 2-cell holes | **NOTE** | 8 total; require a 2-cell smoothed halo (raw pad 3); not worth the cost at 0.001/chunk |

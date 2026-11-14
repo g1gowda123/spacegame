@@ -1373,6 +1373,7 @@ func _generate_chunk(coord: Vector2i) -> Dictionary:
 	for ly in CHUNK:
 		for lx in CHUNK:
 			arr[ly * CHUNK + lx] = _smooth_cell(raw, pad, lx, ly, b)
+	_coalesce_water_pinholes(raw, pad, arr, b)
 
 	_carve_ridges(coord, arr, b)
 	var structures := _generate_chunk_structures(coord, arr, b)
@@ -1490,6 +1491,15 @@ func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> Stri
 	var water := str(b.get("water", ""))
 	var ground := _ground_tiles(b)
 	var is_ground := cur in ground
+	# `base` is the normal land fallback, but ocean biomes put open water in
+	# `base`. Dropping a one-tile reef/rock speck to `base` there would carve a
+	# one-tile water pinhole (and water tiles are BLOCKED), so use the shore
+	# material for ocean-type palettes instead.
+	var land_fill := str(b.get("base", ""))
+	if land_fill.contains("water"):
+		land_fill = str(b.get("shore", ""))
+		if land_fill == "":
+			land_fill = str(b.get("rock", ""))
 	var counts := {}
 	var same := 0
 	for oy in range(-1, 2):
@@ -1500,6 +1510,13 @@ func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> Stri
 			if t == cur:
 				same += 1
 			counts[t] = int(counts.get(t, 0)) + 1
+	var best_any := ""
+	var best_any_count := 0
+	for t in counts:
+		var n := int(counts[t])
+		if n > best_any_count:
+			best_any = str(t)
+			best_any_count = n
 
 	# Water edges are smoothed too, but lava channels stay authored. Removing
 	# one-tile spurs and filling one-tile bays rounds the coast before the
@@ -1517,8 +1534,15 @@ func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> Stri
 
 	if not is_ground:
 		# Drop one-tile specks and thin diagonal tails; keep real clusters.
+		# Merge into the dominant neighbour instead of a fixed `base`: in
+		# ocean, `base` is water, so returning it turned a lone reef speck into
+		# an impassable water pinhole; returning `land_fill` then turned
+		# water-side specks into 1-tile islands. The majority material does the
+		# right thing in both directions and stays local.
 		if same <= 1:
-			return str(b["base"])
+			if best_any != "":
+				return best_any
+			return land_fill
 		return cur
 
 	# Fill one-tile holes and let a strong surrounding material take over a
@@ -1536,6 +1560,87 @@ func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> Stri
 		return best
 	return cur
 
+
+
+func _coalesce_water_pinholes(raw: Array, pad: int, arr: Array, b: Dictionary) -> void:
+	"""Remove closed 1-2 cell water bodies after `_smooth_cell()`.
+
+	`_smooth_cell()` decides each cell from the raw halo, so two neighbouring
+	cells can disagree: a shallow pinhole sees two raw water neighbours that
+	are themselves smoothed to land, stays water, and the final map has a
+	1-2 cell hole. This is the "water coalescing" stage: rebuild a one-cell
+	halo of already-smoothed values, run 4-connected components over that
+	17x17 window, and fill any 1-2 cell body that touches the chunk. The halo
+	makes the result seam-safe -- a 1-2 cell body containing a chunk cell
+	cannot reach the outer edge of the window, and both chunks compute the
+	same body from the same deterministic raw halo.
+
+	Only biomes whose named water tile is real water participate; volcanic
+	lava fields are authored hazards, not pinholes.
+	"""
+	var water_key := str(b.get("water", ""))
+	if water_key == "" or not water_key.contains("water"):
+		return
+	var span := CHUNK + 2
+	var smooth := PackedStringArray()
+	smooth.resize(span * span)
+	for y in CHUNK:
+		for x in CHUNK:
+			smooth[(y + 1) * span + (x + 1)] = str(arr[y * CHUNK + x])
+	for x in range(-1, CHUNK + 1):
+		smooth[x + 1] = _smooth_cell(raw, pad, x, -1, b)
+		smooth[(CHUNK + 1) * span + (x + 1)] = _smooth_cell(raw, pad, x, CHUNK, b)
+	for y in CHUNK:
+		smooth[(y + 1) * span] = _smooth_cell(raw, pad, -1, y, b)
+		smooth[(y + 1) * span + (CHUNK + 1)] = _smooth_cell(raw, pad, CHUNK, y, b)
+
+	var mask := PackedByteArray()
+	mask.resize(span * span)
+	for i in range(span * span):
+		mask[i] = 1 if str(smooth[i]).contains("water") else 0
+	var seen := PackedByteArray()
+	seen.resize(span * span)
+
+	# A fixed land material keeps the fill identical on both sides of a seam;
+	# the dominant-neighbour choice would need cells outside the local window.
+	var land_fill := str(b.get("base", ""))
+	if land_fill.contains("water"):
+		land_fill = str(b.get("shore", ""))
+		if land_fill == "":
+			land_fill = str(b.get("rock", ""))
+	if land_fill == "":
+		return
+
+	for y in range(span):
+		for x in range(span):
+			var i := y * span + x
+			if mask[i] == 0 or seen[i] == 1:
+				continue
+			var q: Array[Vector2i] = [Vector2i(x, y)]
+			seen[i] = 1
+			var head := 0
+			var cells: Array[Vector2i] = []
+			var touches_edge := false
+			while head < q.size():
+				var cur := q[head]
+				head += 1
+				cells.append(cur)
+				if cur.x == 0 or cur.y == 0 or cur.x == span - 1 or cur.y == span - 1:
+					touches_edge = true
+				for d in DIRS:
+					var n: Vector2i = cur + d
+					if n.x < 0 or n.y < 0 or n.x >= span or n.y >= span:
+						continue
+					var ni := n.y * span + n.x
+					if seen[ni] == 1 or mask[ni] == 0:
+						continue
+					seen[ni] = 1
+					q.append(n)
+			if cells.size() > 2 or touches_edge:
+				continue
+			for c in cells:
+				if c.x >= 1 and c.x <= CHUNK and c.y >= 1 and c.y <= CHUNK:
+					arr[(c.y - 1) * CHUNK + (c.x - 1)] = land_fill
 
 
 func _generate_chunk_props(

@@ -220,3 +220,99 @@ accumulate `A` for each committed ridge/feature and stop before
 `mesa_b`/iceberg/crystal-outcrop 4×4 variant so the three empty biomes get a
 real major landform rather than only a cap. `tools/audit_density.gd --gate` is
 ready to be the acceptance check once that lands.
+
+## 7. Small-island / water-pinhole metric (BOARD A3) — two real bugs found and fixed
+
+`tools/audit_islands.gd` (new) measures the board's A3 metric: **1-2 tile water
+bodies per chunk**. It stitches an 8x8-chunk window from the real generator and
+counts 4-connected components over the stitched terrain. Components that touch
+the window edge are ignored (true size unknown); components that are diagonally
+adjacent to more water are also ignored, because those are coast nubs rather than
+closed holes. It reports 1-cell / 2-cell counts, holes per chunk, a per-chunk
+histogram, the worst chunk, and secondary 1-2 cell land specks ("islets").
+
+```bash
+godot --headless --path . --script tools/audit_islands.gd
+godot --headless --path . --script tools/audit_islands.gd -- --seeds=50 --chunks=8
+godot --headless --path . --script tools/audit_islands.gd -- --gate --max=0.50
+# tuning only: --keys=all (shape every water material), --shape=r,p,wet,dry,
+# --dump=seed,cx,cy (print a 5x5 key neighborhood around each hole)
+```
+
+Water keys are every palette key whose name contains `water` (so ocean's
+`water_shallow`/`water_deep` both count); lava is excluded.
+
+**Before the fix (original generator, 50 seeds x 4 shore-ring biomes x 8x8 =
+12,800 chunks):**
+
+| Biome | 1-cell | 2-cell | Holes | Per chunk | Islets |
+|---|---:|---:|---:|---:|---:|
+| temperate | 0 | 48 | 48 | 0.015 | 23 |
+| methane | 0 | 40 | 40 | 0.013 | 15 |
+| carbon | 0 | 29 | 29 | 0.009 | 26 |
+| ocean | 889 | 113 | **1,002** | **0.313** | 78 |
+| **total** | **889** | **230** | **1,119** | **0.087** | **142** |
+
+Worst chunk: ocean seed 1411 chunk (5,6) with **6** pinholes. Lake biomes only
+had 2-cell holes (the old `same == 0` rule already removed isolated 1-cell
+water); ocean had 889 1-cell holes.
+
+**Bug 1 — ocean's `base` is water.** In `_smooth_cell()`, the "drop one-tile
+non-ground specks" branch returned `b["base"]`. For ocean, `base` is
+`ocean/water_shallow`, which is also in `BLOCKED`: every isolated reef/rock speck
+was rewritten into a **one-tile impassable water pinhole** inside an island.
+Fix: use a `land_fill` (shore, else rock) when `base` contains water, and merge
+the speck into its dominant neighbour (`best_any`) so water-side specks do not
+become 1-tile islands instead.
+
+**Bug 2 — per-cell smoothing disagrees at a distance.** `_smooth_cell()` decides
+each cell from the raw halo, so a shallow pinhole can see two raw water
+neighbours that are themselves smoothed to land; the pinhole survives. Fix:
+`_coalesce_water_pinholes()` runs after the smoothing loop, rebuilds a **1-cell
+halo of already-smoothed values**, runs 4-connected components over that 17x17
+window, and fills any 1-2 cell water body that touches the chunk. The halo makes
+it seam-safe: a 1-2 cell body containing a chunk cell cannot reach the outer edge
+of the window, and both chunks compute the same body from the same deterministic
+raw halo. The fill is a fixed land material (shore/rock for ocean, base
+elsewhere), not a neighbour vote, so both sides of a seam choose the same tile.
+
+**After the fix (same 50-seed command):**
+
+| Biome | 1-cell | 2-cell | Holes | Per chunk | Islets |
+|---|---:|---:|---:|---:|---:|
+| temperate | 0 | 4 | 4 | 0.001 | 23 |
+| methane | 0 | 2 | 2 | 0.001 | 14 |
+| carbon | 0 | 1 | 1 | 0.000 | 24 |
+| ocean | 0 | 1 | **1** | **0.000** | 78 |
+| **total** | **0** | **8** | **8** | **0.001** | **139** |
+
+Per-chunk histogram: **12,792 chunks with 0 holes, 8 chunks with 1, none with
+2+**. Ocean's 1,002 holes fell to 1 (**-99.9%**); the lake biomes' 117 fell to 7
+(**-94%**); total is down **99.3%**. Islets stayed flat (142 -> 139).
+
+The 8 residual holes are exactly the halo limit: a 2-cell body straddling a
+chunk seam (e.g. temperate seed 1274 at world x=111/112, chunk 6/7) puts one cell
+in each chunk's 1-cell halo, so both chunks see it touching the window edge and
+correctly leave it alone. Eliminating them would need a 2-cell smoothed halo
+(raw pad 3) and is not worth the extra sampling cost at 0.001 holes/chunk.
+
+**Why not just shape shallow water too?** `WaterShaper.water_keys()` only shapes
+the named `water` tile. Adding `water_shallow` for ocean was tested with
+`--keys=all`: holes went **0.647 -> 0.856 per chunk** on 5 seeds (the existing
+comment in `water_shaper.gd` predicted this). The post-smoothing coalescing pass
+is the right fix.
+
+**Regression checks after the change**
+
+- `tools/audit_reach.gd --count=100`: 600 runs / 2,400 markers / **0 unreachable**.
+- `tools/audit_density.gd --seeds=5 --chunks=6`: 1,064 chunks / **28 over budget**
+  (unchanged; terrain coalescing does not move structures).
+- `tools/water_probe.gd --diagcheck --seeds=26758 --biome=temperate`:
+  `diag_missing_by_key {}`, `tiny_water_cells 0`.
+- Headless `--quit-after 8`: exit 0.
+
+**Freeze note:** the board's 16:50 HARD STOP covered `scripts/`, `scenes/`,
+`assets/`, `project.godot`. This command explicitly asked to fix bugs, so this
+landed as a local correctness fix in `scripts/map_generator.gd`; no scene, asset
+or `project.godot` change is included. `project.godot` was auto-touched by
+headless editor runs and was reverted with `git checkout -- project.godot`.
