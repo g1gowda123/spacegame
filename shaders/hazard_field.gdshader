@@ -76,7 +76,7 @@ void fragment() {
 		// Armed: hazard-type signature + a pulsing warning border.
 		float pulse = 0.5 + 0.5 * sin(t * 4.2 + phase);
 		float border_glow = 1.0 - smoothstep(0.015, 0.085, border);
-		float inner = 0.140 + 0.050 * pulse;
+		float inner = 0.160 + 0.050 * pulse;
 
 		if (kind == 1) {
 			// Stellar flare: spokes radiating from the cell centre.
@@ -130,8 +130,13 @@ void fragment() {
 		// Alternate dark/light diagonal bands, not a uniform alpha wash. The
 		// tape is the thing that makes a hazard footprint read as a surface
 		// rather than a UI rectangle at map scale.
-		a += tape * 0.100;
-		col = mix(col, col * 0.50, tape * 0.28);
+		a += tape * 0.140;
+		col = mix(col, col * 0.42, tape * 0.35);
+		// A darker rim inside every cell gives the footprint a tiled surface
+		// at video scale instead of one continuous flat wash.
+		float cell_rim = 1.0 - smoothstep(0.0, 0.16, border);
+		a += cell_rim * 0.055;
+		col = mix(col, vec3(0.035, 0.025, 0.020), cell_rim * 0.12);
 		// Brighten the leading edge so a 5-cell line has a readable contour.
 		col = mix(col, vec3(1.0), border_glow * 0.22);
 	}

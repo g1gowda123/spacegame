@@ -302,6 +302,9 @@ const PROP_DENSITY: Dictionary = {
 	"temperate": 0.045,
 	"ocean": 0.015,
 	"cryo": 0.032,
+	# Crystal already carries outcrops and prism ground clutter; the generic
+	# ice_chunk prop pushed the board into speckle.
+	"crystal": 0.024,
 }
 
 # Small non-blocking set dressing. These sit on top of the terrain but never
