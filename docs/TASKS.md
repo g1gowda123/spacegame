@@ -80,6 +80,16 @@ Items 1-4 are concrete art/code passes; item 5 is the acceptance gate. No gamepl
 |---|---|---|
 | Per-world terrain tuning | in progress | Ocean now solid beach islands + reef fringes (`archipelago` offset + `temperate/beach` cores), volcanic `lava_glow`, crystal profile, arid dune/cracked detail in `scripts/map_generator.gd`; evidence `/tmp/opencode/worlds_seed5_sheet.png`, `/tmp/opencode/world_ocean.png`. No export/push. Remaining: shoreline stair-steps, arid mesa repetition, crystal quietness. |
 
+## Gameplay depth sprint — ATLAS claim (12:25)
+
+| Task | Status | Notes |
+|---|---|---|
+| Relay-survey objective | in progress | Markers + RELAY HUD exist; verify on an even sector. |
+| Between-sector event choice | in progress | `EVENTS` + debrief modal exist; fixing `event_card` declaration and `UIColor` parse error. |
+| Hazard growth pre-state | verify | `age` / forming visuals already implemented. |
+| Risk bonus | verify | `_risk_bonus_nearby()` + `risk_points` cap already implemented. |
+| Grade-gap line | in progress | `next_grade` / `next_gap` calculated in `calculate_score`; display not yet built. |
+
 ## Art requests — tiles agent (on standby)
 
 The tiles/art agent stays online and polls this file every ~6 minutes. To request art, add a row to the table below (do not edit `assets/` yourself) and the agent will claim it.
@@ -98,5 +108,18 @@ The tiles/art agent stays online and polls this file every ~6 minutes. To reques
 | 10 | `assets/tilesets/structures/ridge_wide.png` | 192×128 RGBA, 2×2 footprint | One continuous isometric mountain ridge/massif, cooler gray-blue rock, chunky pixel clusters, grounded organic foot. No plinth, no baked shadow, no detached contact oval. Intended to replace the repeated 1.55× `mountain_range` 2×2 chain for temperate/barren. | `DONE` 10:55 — `assets/tilesets/structures/ridge_wide.png` (192×128, 23 % clear, three overlapping jittered peaks); needs `STRUCTURES` entry (primary) |
 | 11 | `assets/sprites/planets/sector/` | 512×512, 13 PNGs | Larger versions of the 13 biome planet portraits for the sector backdrop: same composition/colour language as `assets/sprites/planets/<biome>.png`, perfect circular disc, transparent outside the disc, no ring/shadow/text. | `DONE` 10:30 — all 13 at `assets/sprites/planets/sector/` from `tools/make_planet.py` (procedural sphere, same seed/ramps as the 256 set) |
 | 12 | `assets/sprites/planets/{arid,barren,methane}.png` | 256×256 RGBA, circular disc | Clean round discs for the three weakest draft portraits: arid ochre with dark canyon bands; gray cratered barren with readable crater contrast at 96 px; methane teal gas giant with subtle horizontal bands. | `DONE` 10:30 — arid/barren/methane regenerated with the whole 13-planet procedural set (barren has real crater bowls, methane has warped bands) |
+| 13 | `assets/props/relay_beacon.png` | 64×64 RGBA prop | Relay beacon for the RELAY SURVEY objective: tripod, mast, cyan lens, antenna; shadow-free. | `DONE` 12:38 — procedural, 85.7 % clear; needs ATLAS to place it on beacon tiles |
 
 Standing rules for the tile/prop pipeline: shadow-free art (renderer owns the contact ellipse), palette locked via `tools/palettes.json`, 64 px tiles / 128 or 192 px structures, raws under `assets/raw/`, and a WORKLOG line when a file lands.
+
+## MISSION CONTROL design pass (NOVA, 12:35)
+
+Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.gd` edit (ATLAS event UI in flight).
+
+| Task | Status | Notes |
+|---|---|---|
+| Crew Mode 1–4 (roles, buffs, conflicting goals, handoff overlay) | claimed by NOVA | New `scripts/crew_director.gd` autoload + `scripts/crew.gd` + `scenes/crew.tscn`; goals scored in report |
+| Difficulty tiers (Cadet / Standard / Director) | claimed by NOVA | Budget, approval, hazard count, heat, score multiplier |
+| Daily Challenge + campaign share/import code | claimed by NOVA | Deterministic seed; title daily best; report code; paste in Mission Control |
+| Draft risk tags (SAFE / BALANCED / HARSH) | claimed by NOVA | Derived from each planet's archive numbers; no new data |
+| Design rationale + rubric traceability doc | claimed by NOVA | `docs/DESIGN.md` |

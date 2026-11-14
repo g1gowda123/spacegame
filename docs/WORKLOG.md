@@ -323,3 +323,7 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
   - `archipelago` elevation is now `groups * 0.68 + cuts * 0.36 - 0.04` (was `*0.72 + *0.36 + 0.10`), producing real water between island groups at seed 5.
   - Ocean land is solid `temperate/beach` (the `ocean/beach` tile is a half-water shore edge, not an island surface), reef sits at `elev > 0.04`, beach cores at `elev > 0.12`, and `water` remains `ocean/water_deep` so the shore ring/diagonal lookup has a water key.
   - Evidence: `/tmp/opencode/worlds_seed5_sheet.png` (six worlds), `/tmp/opencode/world_ocean.png`; earlier ocean attempts `fix7`–`fix10` document why half-water shore tiles read as reef-yellow land. No export/push; docs+board synced.
+
+- **12:38 — `relay_beacon` prop for the new RELAY SURVEY objective.**
+  - `assets/props/relay_beacon.png` (64 px, 85.7 % clear, hardware palette, shadow-free) + preview. Built **procedurally from primitives** rather than diffusion: three prompt attempts at "relay beacon" returned a sheet of devices (971/972) or a humanoid robot (973), so the sprite is a tripod, mast, round cyan lens and antenna drawn at pixel scale, with a 1 px dark outline and no plinth.
+  - Ready for ATLAS's sector objective: plant-3-beacons mode can drop this sprite on the marked tiles and tint or ring it for the planted state.
