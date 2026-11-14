@@ -1011,3 +1011,6 @@ to the lane owner.
 - **22:22 — Hazard fill hatching.** `hazard_field.gdshader` adds diagonal tape (armed +0.065 alpha, dark 0.55×; forming +0.022). QA hook `--arm-hazard` arms the first front for stills. Evidence `hazard_hatch.png`.
 
 - **22:26 — Local audio mute.** `GameState` now starts muted in editor runs, supports `--mute` / `--unmute`, and toggles the Master bus with `M`. Exported builds stay audible by default so the submission/demo keep their audio; press `M` once in a browser run to silence it.
+
+- **22:34 — Hazard hatch at video scale.** Wider 2.4/cell tape, armed +0.10 alpha/0.50× dark, forming +0.04/0.55×; base inner .14. Evidence `hazard_hatch2.png`, `hazard_forming2.png`.
+- **22:20 — follow-up:** added the wind-gust front (three staggered `GustNode` streak groups crossing the board every 11–18 s), scar smoke (burned tiles keep puffing for their 3-turn scar life), structure glints for habitat/comms/solar, gradient meteor trails, and a visible thrust flame on the transfer ship. QA: `--fx=gust`, `--fx=meteor`, `--fx=devil`, `--fx=disaster`, `--fx=strike-miss`, `--screen=draft --review` all clean.

@@ -148,6 +148,8 @@ Runs from `sector.gd::_process` while the sector is live:
 | 2.2–4.4 s | `_world_event()`: authored structure signature (volcano smoke+embers, geyser steam, crystal/ice glints) or a biome micro-event (lava embers, water ring, ice sparks, dust devil, spores) |
 | 7–12 s | `_meteor_event()`: `VFX.meteor_streak()` at a cell near the player (gradient streak, dust, sparks, ring; cosmetic) |
 | 6–12 s | `_shooting_star()`: gradient streak across the sky |
+| 11–18 s | `_gust_event()`: three staggered `VFX.wind_gust()` streak fronts cross the board |
+| 0.9–1.6 s | `_smoke_scars()`: burned tiles puff smoke while their scar lives |
 
 `VFX.dust_devil()` uses the `DevilNode` inner class: four rotating arcs plus
 grit, drifting 18–36 px/s, 2.8 s life, sine fade. Ambient CPUParticles2D counts
