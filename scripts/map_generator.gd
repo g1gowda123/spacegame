@@ -56,7 +56,7 @@ var BIOMES: Array = [
 	{
 		"id": "temperate", "name": "Temperate", "profile": "temperate", "generator": "continents",
 		"life": "rare biosphere", "shore_ring": false,
-		"tint": "#ffffff", "tint_strength": 0.0,
+		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.45,
 		"base": "temperate/grass",
 		"base_variants": [
 			"temperate/grass",
@@ -68,7 +68,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "arid", "name": "Arid", "profile": "arid", "life": "lifeless", "generator": "dunes",
-		"tint": "#ffffff", "tint_strength": 0.0,
+		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.18,
 		"base": "arid/sand", "base_alt": "arid/dunes",
 		"base_variants": ["arid/sand", "arid/sand", "arid/dunes"],
 		"detail": "arid/cracked_earth", "detail_alt": "arid/salt_flat",
@@ -77,7 +77,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "cryo", "name": "Cryo", "profile": "cryo", "life": "lifeless", "generator": "fractured",
-		"cliffs": false, "occlusion": false, "tint": "#ffffff", "tint_strength": 0.0,
+		"cliffs": false, "occlusion": false, "tint": "#ffffff", "tint_strength": 0.0, "exposure": 0.72,
 		"base": "cryo/ice_flat_a",
 		"detail": "cryo/ice_cloud_a",
 		"detail_alt": "cryo/ice_cloud_b", "detail_alt2": "cryo/ice_cloud_c",
@@ -86,7 +86,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "volcanic", "name": "Volcanic", "profile": "volcanic", "generator": "caldera",
-		"life": "lifeless", "tint": "#ffffff", "tint_strength": 0.0,
+		"life": "lifeless", "tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.7,
 		"base": "volcanic/ash_rim", "detail": "volcanic/ash_rim",
 		"detail_alt": "volcanic/basalt_shelf", "detail_alt2": "volcanic/ash_rim",
 		"rock": "volcanic/basalt_shelf", "rock_alt": "volcanic/basalt_shelf",
@@ -94,7 +94,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ocean", "name": "Ocean", "profile": "ocean", "life": "lifeless", "generator": "archipelago",
-		"tint": "#ffffff", "tint_strength": 0.0, "shore_ring": true,
+		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.0, "shore_ring": true,
 		"base": "ocean/water_shallow", "detail": "ocean/water_deep",
 		"rock": "temperate/beach", "rock_alt": "temperate/beach",
 		"shore": "ocean/beach", "water": "ocean/water_deep",
@@ -111,7 +111,7 @@ var BIOMES: Array = [
 	{
 		"id": "methane", "name": "Methane Lakes", "profile": "temperate", "generator": "continents",
 		"life": "lifeless", "shore_ring": true,
-		"tint": "#63d6c4", "tint_strength": 0.38,
+		"tint": "#63d6c4", "tint_strength": 0.38, "exposure": 1.0,
 		"base": "cryo/ice",
 		"detail": "cryo/glacier", "detail_alt": "cryo/frozen_lake",
 		"rock": "barren/rock", "shore": "cryo/glacier",
@@ -126,7 +126,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "sulfur", "name": "Sulfur Plains", "profile": "volcanic", "generator": "caldera",
-		"life": "lifeless", "tint": "#f0dc5a", "tint_strength": 0.30,
+		"life": "lifeless", "tint": "#f0dc5a", "tint_strength": 0.30, "exposure": 2.0,
 		"base": "volcanic/sulfur", "detail": "volcanic/ash",
 		"detail_alt": "volcanic/pumice", "detail_alt2": "volcanic/basalt",
 		"rock": "volcanic/basalt", "rock_alt": "volcanic/obsidian",
@@ -134,7 +134,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "crystal", "name": "Crystal Field", "profile": "crystal", "generator": "faceted",
-		"life": "lifeless", "tint": "#b08cff", "tint_strength": 0.28,
+		"life": "lifeless", "tint": "#b08cff", "tint_strength": 0.28, "exposure": 0.72,
 		"base": "crystal/glass_ground",
 		"base_variants": ["crystal/glass_ground", "crystal/plate", "crystal/prism_plate"],
 		"detail": "crystal/plate",
@@ -143,14 +143,14 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "obsidian", "name": "Obsidian Glass", "profile": "volcanic", "generator": "fractured",
-		"life": "lifeless", "tint": "#9b7bd6", "tint_strength": 0.30,
+		"life": "lifeless", "tint": "#9b7bd6", "tint_strength": 0.30, "exposure": 1.55,
 		"base": "volcanic/obsidian", "detail": "volcanic/basalt",
 		"detail_alt": "volcanic/ash",
 		"rock": "volcanic/basalt", "shore": "", "water": "volcanic/lava",
 	},
 	{
 		"id": "ammonia", "name": "Ammonia Ice", "profile": "cryo", "generator": "fractured",
-		"life": "lifeless", "tint": "#72c8e8", "tint_strength": 0.30,
+		"life": "lifeless", "tint": "#72c8e8", "tint_strength": 0.30, "exposure": 0.85,
 		"base": "cryo/snow", "detail": "cryo/ice",
 		"detail_alt": "cryo/glacier", "detail_alt2": "cryo/frozen_lake",
 		"rock": "cryo/rock", "shore": "", "water": "",
@@ -158,7 +158,7 @@ var BIOMES: Array = [
 	{
 		"id": "carbon", "name": "Carbon World", "profile": "temperate", "generator": "continents",
 		"life": "lifeless", "shore_ring": true,
-		"tint": "#9aa2b2", "tint_strength": 0.30,
+		"tint": "#9aa2b2", "tint_strength": 0.30, "exposure": 1.05,
 		"base": "barren/regolith", "detail": "barren/dust",
 		"detail_alt": "volcanic/ash",
 		"rock": "volcanic/obsidian", "shore": "barren/rock",
