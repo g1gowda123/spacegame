@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "version": 1,
+    "count": 8,
+    "owner": "e (data & copy) - content ready, wiring owned by ATLAS",
+    "purpose": "Between-sector event cards: one card is drawn after each debrief (sectors 1 and 2 only). The player picks one of two options; the choice applies to the next sector.",
+    "selection": "Deterministic per run: index = (run.seed + sector * 17) % count, skipping any event id already used this run. No event after sector 3.",
+    "effect_notes": "All *_next effects are banked in run.pending and applied at the start of the next begin_sector(). budget_delta and approval_delta apply immediately. See docs/EVENTS.md for the exact clamps and insertion points.",
+    "effect_keys": [
+      "budget_delta", "approval_delta",
+      "integrity_next", "thermal_next", "heat_gain_next", "power_max_next",
+      "sols_next", "delta_v_pct_next", "science_mult_next", "grant_mult_next",
+      "move_range_next"
+    ]
+  },
+  "events": [
+    {
+      "id": "solar_storm",
+      "tag": "SPACE WEATHER",
+      "title": "SOLAR STORM",
+      "body": "A coronal mass ejection crosses the cruise. The bus can ride it out behind a thin shield, or go dark and lose the window.",
+      "choices": [
+        {
+          "label": "RIDE IT OUT",
+          "kind": "greedy",
+          "detail": "+10% science next sector, +8 starting heat.",
+          "effects": { "science_mult_next": 1.10, "thermal_next": 8 }
+        },
+        {
+          "label": "SAFE MODE",
+          "kind": "safe",
+          "detail": "-3 sols next sector, no extra heat.",
+          "effects": { "sols_next": -3 }
+        }
+      ]
+    },
+    {
+      "id": "private_donor",
+      "tag": "POLITICS",
+      "title": "PRIVATE DONOR",
+      "body": "A billionaire offers a no-strings grant. The review board reads the announcement as a conflict of interest.",
+      "choices": [
+        {
+          "label": "TAKE THE MONEY",
+          "kind": "greedy",
+          "detail": "+$60M, -6 approval.",
+          "effects": { "budget_delta": 60, "approval_delta": -6 }
+        },
+        {
+          "label": "DECLINE",
+          "kind": "safe",
+          "detail": "+2 approval.",
+          "effects": { "approval_delta": 2 }
+        }
+      ]
+    },
+    {
+      "id": "salvage_wreck",
+      "tag": "SALVAGE",
+      "title": "SALVAGE WRECK",
+      "body": "A derelict survey craft drifts on the same transfer. Its tanks are intact; its harness is not.",
+      "choices": [
+        {
+          "label": "DRAIN THE TANKS",
+          "kind": "greedy",
+          "detail": "+20% delta-v next sector, -1 integrity next sector.",
+          "effects": { "delta_v_pct_next": 20, "integrity_next": -1 }
+        },
+        {
+          "label": "STRIP THE BUS",
+          "kind": "safe",
+          "detail": "+$45M.",
+          "effects": { "budget_delta": 45 }
+        }
+      ]
+    },
+    {
+      "id": "window_slip",
+      "tag": "SCHEDULE",
+      "title": "WINDOW SLIP",
+      "body": "Launch integration slips. The agency can hold the date and rush the closeout, or take the later window and lose surface time.",
+      "choices": [
+        {
+          "label": "KEEP THE DATE",
+          "kind": "greedy",
+          "detail": "+4 sols next sector, -2 integrity next sector.",
+          "effects": { "sols_next": 4, "integrity_next": -2 }
+        },
+        {
+          "label": "SLIP THE WINDOW",
+          "kind": "safe",
+          "detail": "-2 sols next sector, +2 integrity next sector.",
+          "effects": { "sols_next": -2, "integrity_next": 2 }
+        }
+      ]
+    },
+    {
+      "id": "peer_review",
+      "tag": "SCIENCE",
+      "title": "PEER REVIEW",
+      "body": "The science board will either fast-track your results or bury them in review. Both cost the agency something.",
+      "choices": [
+        {
+          "label": "PUBLISH FAST",
+          "kind": "greedy",
+          "detail": "+20% science next sector, -4 approval.",
+          "effects": { "science_mult_next": 1.20, "approval_delta": -4 }
+        },
+        {
+          "label": "HOLD FOR REVIEW",
+          "kind": "safe",
+          "detail": "+4 approval, -8% science next sector.",
+          "effects": { "approval_delta": 4, "science_mult_next": 0.92 }
+        }
+      ]
+    },
+    {
+      "id": "contractor_audit",
+      "tag": "INDUSTRY",
+      "title": "CONTRACTOR AUDIT",
+      "body": "A supplier audit finds a cracked harness. Fix it properly, or take the rebate and fly with it.",
+      "choices": [
+        {
+          "label": "FIX IT",
+          "kind": "safe",
+          "detail": "-$40M, +2 integrity next sector.",
+          "effects": { "budget_delta": -40, "integrity_next": 2 }
+        },
+        {
+          "label": "FLY AS-IS",
+          "kind": "greedy",
+          "detail": "+$15M, -1 integrity next sector.",
+          "effects": { "budget_delta": 15, "integrity_next": -1 }
+        }
+      ]
+    },
+    {
+      "id": "rival_leak",
+      "tag": "PRESS",
+      "title": "RIVAL LEAK",
+      "body": "A rival agency leaks your route to the press. The agency can lean into the attention or stay quiet.",
+      "choices": [
+        {
+          "label": "LEAN INTO IT",
+          "kind": "greedy",
+          "detail": "+20% grants next sector, -3 approval.",
+          "effects": { "grant_mult_next": 1.20, "approval_delta": -3 }
+        },
+        {
+          "label": "STAY QUIET",
+          "kind": "safe",
+          "detail": "+1 power capacity next sector.",
+          "effects": { "power_max_next": 1 }
+        }
+      ]
+    },
+    {
+      "id": "gravity_assist",
+      "tag": "TRAJECTORY",
+      "title": "GRAVITY ASSIST",
+      "body": "A gas giant lines up for a free trajectory change - if the bus can take the burn.",
+      "choices": [
+        {
+          "label": "TAKE THE SLING",
+          "kind": "greedy",
+          "detail": "+1 move range next sector, -12% delta-v next sector.",
+          "effects": { "move_range_next": 1, "delta_v_pct_next": -12 }
+        },
+        {
+          "label": "BURN STRAIGHT",
+          "kind": "safe",
+          "detail": "+10% delta-v next sector, +6 starting heat.",
+          "effects": { "delta_v_pct_next": 10, "thermal_next": 6 }
+        }
+      ]
+    }
+  ]
+}

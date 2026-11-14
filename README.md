@@ -2,7 +2,7 @@
 
 A turn-based **mission-architecture roguelite**. You run a small space agency: build a spacecraft, pick a real exoplanet from the NASA Exoplanet Archive, fly a telegraphed hazard course across its surface, bring the data home, and keep the agency funded long enough to file a campaign record.
 
-Every destination is a real planet. Every hazard is derived from that planet's measured temperature, gravity, radiation environment, and distance from Earth.
+Every destination is a real planet. Every hazard is generated from its measured properties — equilibrium temperature, host-star radiation, and the surface archetype derived from its temperature and radius — while distance from Earth drives downlink loss.
 
 - **Engine:** Godot 4.7.2 (GDScript, GL Compatibility renderer)
 - **Viewport:** 640×360, pixel art, nearest-neighbour filtering
@@ -20,7 +20,7 @@ Every destination is a real planet. Every hazard is derived from that planet's m
 | | |
 |---|---|
 | <img src="screenshots/draft.png" width="480" alt="Target draft"> | <img src="screenshots/surface.png" width="480" alt="Surface sector"> |
-| **Pick a real world.** Three archive planets, each with measured properties and derived hazard bars. | **Fly the surface.** One move per turn, telegraphed hazards, and a limited hull. |
+| **Pick a real world.** Three archive planets, each with measured properties and five derived mission bars. | **Fly the surface.** One move per turn, telegraphed hazards, and a limited hull. |
 | <img src="screenshots/debrief.png" width="480" alt="Debrief and refit"> | <img src="screenshots/report.png" width="480" alt="Final report"> |
 | **Spend the grant.** Repair, refit, and buy rule-bending firmware between sectors. | **File the report.** Grade, score breakdown, and the story of what the agency found. |
 
@@ -28,14 +28,14 @@ Each run is three planets. At every stop you draft one of three real archive wor
 
 The loop is deliberately short: **build → draft → survive → refit → repeat**, three times, then a final grade. A run takes about 10–15 minutes.
 
-### Worlds you'll visit
+### Surface variety
 
-Every sector is drawn from a different archive world. The surface generator switches landform algorithms per biome, so an ocean world, an ice sheet, a volcanic caldera, and a cratered iron desert each ask for a different route.
+Every sector is drawn from a different archive world. The surface generator switches landform algorithms per biome, so an ice sheet, a volcanic caldera, a crystal field, and a cratered iron desert each ask for a different route. The current 72-planet pool is made of landable worlds; ocean, methane, obsidian, and carbon are terrain-renderer showcases outside the draft pool.
 
 | | |
 |---|---|
-| <img src="screenshots/world-ocean.png" width="480" alt="Ocean world surface"> | <img src="screenshots/world-ice.png" width="480" alt="Frozen world surface"> |
-| **Ocean worlds.** Island chains, shallow reefs, and long water crossings. | **Frozen worlds.** Fractured ice plates, open cracks, and little cover. |
+| <img src="screenshots/world-ocean.png" width="480" alt="Ocean terrain showcase"> | <img src="screenshots/world-ice.png" width="480" alt="Frozen world surface"> |
+| **Ocean terrain.** Island chains, shallow reefs, and long water crossings — a renderer showcase, not a draft destination. | **Frozen worlds.** Fractured ice plates, open cracks, and little cover. |
 | <img src="screenshots/world-volcanic.png" width="480" alt="Volcanic world surface"> | <img src="screenshots/world-iron.png" width="480" alt="Iron desert surface"> |
 | **Volcanic worlds.** Lava fields, ash, and thermal vents that punish a slow route. | **Iron deserts.** Crater rims, dust, and long exposed approaches. |
 
@@ -82,14 +82,14 @@ Three ideas hold the design together:
 |---|---|---|
 | **Title** | Starfield, ringed planet, best score, How to Play overlay | Start a run |
 | **Mission design** | Pick a hull, launch vehicle, orbit, science objective, and exactly two instruments | What kind of mission this is |
-| **Target draft** | Three real exoplanets are drawn from the archive, each with measured properties and five derived hazard bars | Which world to risk |
+| **Target draft** | Three real exoplanets are drawn from the archive, each with measured properties and five derived mission bars (thermal, radiation, gravity, comms, science) | Which world to risk |
 | **Surface sector** | One move per turn across a chunked alien landscape; hazards telegraph, then resolve at end of turn | Route, when to hold, when to extract |
 | **Debrief** | Success/failure review, data delivered, science, grant, approval change, three-offer refit shop | What to spend the grant on |
 | **Final report** | Grade C–S, score breakdown, sector ledger, narrative, educational notes | Whether to run again |
 
 The draft is deliberately weighted: one **mild**, one **moderate**, and one **harsh** destination, with distinct biomes, so every choice is a real risk/reward decision.
 
-Approval starts at **62**. A successful sector is worth approval; a failed one costs **−24**. If approval hits zero, the agency is defunded and the run ends early — even in sector one.
+Approval starts at **62**. A successful sector is worth **8 + 2 per data node collected**; a failed one costs **−24**. If approval hits zero, the agency is defunded and the run ends early — even in sector one.
 
 ---
 
@@ -164,11 +164,11 @@ The surface is one sector of a planet: a chunked 16×16-cell world streamed from
 | **Δv** | Remaining propellant | Each move and some hazards spend it |
 | **Power** | Shielding and systems | Regenerates each turn; blocking a hazard costs power |
 | **Sols** | Mission clock | One per turn; the sector fails when it runs out |
-| **Data** | Collected science nodes | Collect the quota, then extract |
+| **Data** | Collected science nodes | Collect the quota, then extract; a full 4/4 sweep auto-completes the sector |
 
 ### The movement rule
 
-Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn.
+Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Reaching all four nodes auto-completes the survey; reaching the objective quota and pressing **EXTRACT** banks the data early.
 
 That single rule is what makes the sector a route-planning problem rather than a walking simulator: you cannot creep forward one tile at a time, and you cannot see the next threat until you have spent this turn's move.
 
@@ -263,7 +263,8 @@ This is why the game rewards **efficiency over greed**: arriving home with prope
 
 The dataset is built from the **NASA Exoplanet Archive — Planetary Systems Composite Parameters (`pscomppars`)** table, which combines the best available parameters for each confirmed planet.
 
-- 72 curated planets, **0.35–2.2 Earth radii** (the size range where the derived gravity values stay playable).
+- 72 curated planets, **0.69–2.19 Earth radii** (the builder keeps 0.35–2.2 R⊕; the curated set lands inside that window, where the derived gravity values stay playable).
+- 54 host stars, 52 transit and 20 radial-velocity discoveries, 4.2–4,976 light-years out.
 - Raw query snapshot: `data/pscomppars_raw.csv` (5,801 rows).
 - Curated game set: `data/exoplanets.json` (each entry carries both the **raw measured values** and the derived `game` block).
 - Builder: `tools/build_exoplanets.py` — deterministic, so the dataset can be regenerated and diffed.
@@ -323,6 +324,8 @@ Source: <https://exoplanetarchive.ipac.caltech.edu/> — NASA Exoplanet Archive,
 | Hold position (vent heat, recharge, end turn) | `SPACE` / **HOLD** |
 | Extract from the surface | `E` / **EXTRACT** |
 | Toggle grid overlay | `G` |
+| Cycle map view (three-quarter / isometric / top-down) | `V` |
+| Open How to Play (title screen) | `H` / **HOW TO PLAY** |
 | Screenshot (development) | `F10` |
 | Everything else | Mouse or touch |
 
@@ -406,7 +409,7 @@ Nothing is persisted except the local best score (`user://orbit_save.cfg`). Runs
 The sector renderer is the largest system in the project and the reason the game looks like a place rather than a board.
 
 - **Chunked streaming:** 16×16-cell chunks, only the visible window is drawn.
-- **13 biomes:** temperate, arid, cryo, volcanic, ocean, barren, methane lakes, iron desert, sulfur plains, crystal field, obsidian glass, ammonia ice, carbon world. Each biome declares its own generator archetype — continents, dunes, fractured ice, caldera, archipelago, craters, faceted crystal — plus its own tile keys, tints, props, and life status.
+- **13 terrain biomes:** temperate, arid, cryo, volcanic, ocean, barren, methane lakes, iron desert, sulfur plains, crystal field, obsidian glass, ammonia ice, carbon world. Nine are landable in the current planet pool (temperate, arid, cryo, volcanic, barren, iron, sulfur, crystal, ammonia); ocean, methane, obsidian, and carbon are generator set-pieces that no curated planet currently selects. Each biome declares its own generator archetype — continents, dunes, fractured ice, caldera, archipelago, craters, faceted crystal — plus its own tile keys, tints, props, and life status.
 - **Terrain and transitions:** palette-locked 64×64 tiles with per-material edge bands (98 transition pairs), corner matching, shoreline rings, and a roughness mask so coastlines alternate between clean and frayed stretches.
 - **Structures and props:** multi-tile natural landmarks (2×2 or 3×3) and biome-specific ambient props, both placed deterministically from the world seed.
 - **Projection:** the same world renders in three modes — three-quarter tilt, isometric, and top-down — with a tunable shader for lighting and grain.

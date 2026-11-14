@@ -11,7 +11,7 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 | Real-exoplanet data | done | 72 curated `pscomppars` planets, derived hazards, biome classification, `mass_est` flag |
 | 3-planet draft | done | Biome-first planet colors, Teq/gravity/distance detail line, target selection |
 | Surface sector | done | Chunked alien terrain, one-move-per-turn path planning with range preview, Δv/sol/thermal/power/integrity/data resources, end-of-turn telegraphed hazards, HOLD, EXTRACT |
-| Hazards | done | Flare, thermal surge, dust storm, quake, radiation, eclipse, cryo; blockable via power |
+| Hazards | done | Nine: flare, thermal surge, dust storm, seismic shock, radiation belt, eclipse shadow, cryo quake, solar-wind front (sweeping line), meteor shower; blockable via power |
 | Debrief + shop | done | Success/failure review, science/grant/approval, 3-offer refit with stacking modules |
 | Campaign report | done | Grade C–S, category breakdown, sector ledger, narrative, educational notes |
 | Web export | done | `build/web/`, threadless WebGL 2, ~52 MB, static-host friendly |
@@ -37,6 +37,15 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 ### Submission package
 
 `submission/` contains the static game ZIP, the 29.6 s video, the 7-slide deck, and the project-page copy. The game ZIP is just `build/web/`; no server-side code.
+
+## Copy & data lane — e (claimed 12:20)
+
+| Task | Status | Notes |
+|---|---|---|
+| Claim audit: README / PROJECT / SUBMISSION vs code | done | 12:30. Fixed stale data + feature claims: curated radius range (0.69–2.19 R⊕, not 0.35), playable vs terrain-only biomes, hazard list (9, not 7), approval math, quota/extract/auto-sweep rule, controls (V, H), mission bars wording. File:line evidence in WORKLOG 12:30. |
+| Event cards (8, seeded between-sector choices) | content done — wiring pending ATLAS | `data/events.json` (8 cards x 2 choices, deterministic selection) + `docs/EVENTS.md` (schema, effect contract, clamps, balance table). No game file loads it yet. |
+| Onboarding hint card copy (first sector) | content done — widget pending ATLAS | Three-line copy in `docs/EVENTS.md` §6. Do not promise the H key in the sector: `sector.gd` overrides `_unhandled_input` and H is dead there. |
+| Copy/code mismatch list for ATLAS | open | `docs/EVENTS.md` §7: debrief hard-codes `ORBIT LOW`; eclipse power sign is inverted; sector H toggle dead; title says "3 of 4" for a 4-node objective. |
 
 ## Standing constraints
 

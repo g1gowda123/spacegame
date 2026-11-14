@@ -16,7 +16,7 @@ NASA Space Apps 2026 — *Space Mission Design Game*. The game asks the player t
 | Launch vehicle and orbit | Vector L/M/H; LOW / POLAR / HIGH orbit profiles with period, eclipse and pass readouts |
 | Mission objective and instruments | Four science objectives; six instruments with build effects and objective–instrument science fit |
 | Simulate / manage the mission | Three-sector campaign with telegraphed hazards, resource spending, extraction |
-| Multiple scenarios | Three real exoplanets per run, drawn from a 72-planet pool; 13 biomes |
+| Multiple scenarios | Three real exoplanets per run, drawn from a 72-planet pool; 9 landable biomes from a 13-biome terrain generator |
 | Scoring and feedback | Grants, approval, per-sector debrief, final grade C–S and category breakdown |
 | Educational explanations | Draft detail line, CML design gate, design telemetry labels, report notes, README formula table |
 | NASA data integral | All planet targets and their constraints come from `pscomppars`; mission-design resources are mapped in README/SUBMISSION |
@@ -26,7 +26,7 @@ NASA Space Apps 2026 — *Space Mission Design Game*. The game asks the player t
 
 1. **Title** → best score, how to play.
 2. **Mission Design** → hull + launch vehicle + objective + instruments; validation against budget and fairing mass.
-3. **Target Draft** → three real planets; each card exposes Teq, gravity, distance, biome, and five derived hazard bars.
+3. **Target Draft** → three real planets; each card exposes Teq, gravity, distance, biome, and five derived mission bars (thermal, radiation, gravity, comms, science).
 4. **Sector** → chunked alien surface; one move per turn within a 3–4 tile range; path preview shows distance, Δv/sol cost and heat; hazards telegraph and resolve at end of turn; HOLD to vent; EXTRACT to bank.
 5. **Debrief** → success/failure, data delivered, science, grant, approval delta, integrity, Δv, comms loss; three-offer refit shop.
 6. Repeat for three sectors; approval at zero ends the run early.
@@ -45,7 +45,7 @@ NASA Space Apps 2026 — *Space Mission Design Game*. The game asks the player t
 
 - Source: NASA Exoplanet Archive, **Planetary Systems Composite Parameters (`pscomppars`)**.
 - Raw query snapshot: `data/pscomppars_raw.csv` (5,801 rows).
-- Curated game set: `data/exoplanets.json` (72 planets, 0.35–2.2 R⊕).
+- Curated game set: `data/exoplanets.json` (72 planets, 0.69–2.19 R⊕; builder filter 0.35–2.2 R⊕).
 - Builder: `tools/build_exoplanets.py` (deterministic; can be re-run).
 - Missing or physically implausible masses use Chen & Kipping (2017) and are flagged `mass_est`.
 - Full field list, derived formulas, SI units, and citations: `README.md` and `docs/SUBMISSION.md`.
