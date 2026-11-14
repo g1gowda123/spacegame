@@ -994,8 +994,20 @@ func _spawn_hazard() -> void:
 			continue
 		if _hazard_overlaps(h):
 			continue
+		# One major footprint is readable; three fill the window and bury the
+		# terrain. Keep the active hazard area under 20% of the visible board.
+		var cap := maxi(8, int(float(view_w * view_h) * 0.20))
+		if _hazard_cell_count() + int(h["cells"].size()) > cap:
+			continue
 		hazards.append(h)
 	_sync_primary()
+
+
+func _hazard_cell_count() -> int:
+	var total := 0
+	for h in hazards:
+		total += int(h["cells"].size())
+	return total
 
 
 func _hazard_budget() -> int:
@@ -1699,7 +1711,7 @@ func _draw_move_preview() -> void:
 		var corners := _reach_cell_quad(cell)
 		var fill := Polygon2D.new()
 		fill.polygon = corners
-		fill.color = _alpha(base, 0.16 if danger else 0.055)
+		fill.color = _alpha(base, 0.11 if danger else 0.038)
 		move_layer.add_child(fill)
 		if danger:
 			# Hazards inside reach keep a per-cell red wireframe: the threat is
