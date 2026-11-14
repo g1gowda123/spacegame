@@ -26,9 +26,9 @@
   "band": 5,
   "scatter": 10,
   "wave": 12.0,
-  "extras_seed": 70088,
-  "extras_band": 5,
-  "extras_scatter": 10,
-  "extras_wave": 12.0,
+  "extras_seed": 101,
+  "extras_band": 3,
+  "extras_scatter": 8,
+  "extras_wave": 9.0,
   "extras_preview": "assets/tilesets/transitions/beach_moss/beach_moss_extras_preview.png"
 }
