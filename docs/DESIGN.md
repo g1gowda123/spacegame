@@ -90,10 +90,13 @@ subtotal and shown as an explicit report row.
 - The title shows today's date and the player's daily best.
 - The daily seed is `hash("orbit-daily-" + YYYY-MM-DD)`; the draft is drawn
   from that seed, so the same three worlds appear on every machine that day.
-- The report prints a campaign code, e.g. `OO-0F7A5-S1`:
-  `seed | difficulty (C/S/D) | crew size`.
-- The code can be pasted into Mission Control. It reproduces the seed,
-  difficulty and crew size — the same worlds, with each player's own design.
+- The report prints a campaign code, e.g. `OO-0F7A5-S1` (seed, difficulty,
+  crew size) or, once a design is committed,
+  `OO-0F7A5-S1-PAVMOLOA-SPTH` (same fields plus hull, vehicle, orbit,
+  objective and both instruments).
+- The code can be pasted into Mission Control. The short form reproduces the
+  same worlds with your own design; the full form reproduces the exact stack
+  and lets two players compare designs on identical planets and difficulty.
   Press `C` on the report to copy it.
 
 ### Draft threat tags
@@ -153,6 +156,9 @@ underlying archive values.
 
 - `qa_daily_a.png` and `qa_daily_b.png` are byte-identical after two separate
   launches: the daily draft is deterministic.
+- Full design code round-trip: `OO-01156-S2-PAVMOLOA-SPTH` parsed back to
+  seed 4438 / Standard / 2 players / Pathfinder / Vector M / Low /
+  Characterize Atmosphere / Spectrometer + Thermal.
 - Meta probe output: Director + 3-player crew gives `delta_v +3`,
   `integrity +1`, `science ×1.10`, `hazard_mod 1`, `heat +1`; campaign code
   `OO-043AF-D3` parses back to the same seed, difficulty and crew size.

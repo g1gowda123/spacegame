@@ -22,11 +22,12 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 
 | Task | Status | Notes |
 |---|---|---|
-| Relay Survey objective | in progress | Every 2nd sector plants 3 relay beacons instead of recovering data nodes; same extract verb |
-| Between-sector event cards | in progress | One seeded event, two choices, applied to the next sector/run |
-| Hazard growth pre-state | in progress | New fronts render faint for one turn before they can fire |
-| Risk bonus | in progress | Extract near a live front for +1 risk point, cap 2/run |
-| Report grade gap | in progress | Show score needed for the next grade |
+| Relay Survey objective | done | Every 2nd sector plants 3 relay beacons; amber mast markers, `RELAYS` HUD, relay-specific debrief/result copy. Web-tested at sector 2. |
+| Mission Architecture Review | done | Pre-commit overlay: transfer arc, four NASA segments, CML, ConOps timeline, orbit readout. Screenshot `qa_engine_review3.png`. |
+| Between-sector event cards | done | 8-card seeded pool, two trade-offs each, applied to budget/approval/next-sector heat/dv/power/sols/integrity/science. Web-tested through choice. |
+| Hazard growth pre-state | done | New fronts render faint and do not fire for one turn; HUD says `FORMING · ARMS NEXT TURN`. Verified live. |
+| Risk bonus | done | Extract with a live front within 2 tiles for +1 risk point, cap 2/run; report includes `RISK n` when earned. |
+| Report grade gap | done | Final ledger shows `NEXT +N TO GRADE X` or `S GRADE · MAXIMUM`. |
 
 ## Remaining — submission pass (as of 03:15)
 
@@ -123,3 +124,14 @@ Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.
 | Daily Challenge + campaign share/import code | claimed by NOVA | Deterministic seed; title daily best; report code; paste in Mission Control |
 | Draft risk tags (SAFE / BALANCED / HARSH) | claimed by NOVA | Derived from each planet's archive numbers; no new data |
 | Design rationale + rubric traceability doc | claimed by NOVA | `docs/DESIGN.md` |
+
+### MISSION CONTROL — complete (NOVA, 12:56)
+
+| Task | Status | Evidence |
+|---|---|---|
+| Crew Mode 1–4 (roles, buffs, conflicting goals, handoff overlay) | **DONE** | `crew5.png` (2-player manifest), `qa_design.png` / `qa_draft.png` / `qa2_sector.png` / `qa4_debrief.png` (handoff banners), `qa_report3.png` (3/4 goals, +540) |
+| Difficulty tiers (Cadet / Standard / Director) | **DONE** | Meta probe: Director + 3-crew → `delta_v 27` (30+3−planet), `integrity 5/5`, `science ×1.10`, `hazard_mod 1`, `heat_gain 6`, `budget 85` after design; report row `DIFFICULTY x1.25 +1471` |
+| Daily Challenge + campaign share/import code | **DONE** | `qa_daily_a.png` and `qa_daily_b.png` byte-identical (MD5 `532b20f8…`); code `OO-043AF-D3` round-trips to seed 17327 / director / 3 players; `qa2_report.png` shows daily header + code |
+| Draft risk tags (SAFE / BALANCED / HARSH) | **DONE** | `qa_draft.png`: threat 20 / 36 / 85 with green/amber/red tags |
+| Design rationale + rubric traceability doc | **DONE** | `docs/DESIGN.md`; README + PROJECT + SUBMISSION cross-links updated |
+| Nil-`run` crash guard (ORION 12:45 urgent) | **DONE** | `scripts/crew_director.gd` guards `crew_players()`, `goal_rows()`, `code_for_run()`, `note_report_score()`; headless smoke `--quit-after 8` = 0 error lines; title/design/draft/sector/debrief/report all parse clean |
