@@ -312,10 +312,14 @@ func _show_mission_review() -> void:
 	add_child(review_layer)
 	var root := Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The modal must swallow input: clicks and arrow keys used to fall through to
+	# the draft cards underneath and silently re-roll the chosen target.
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	review_layer.add_child(root)
 	var shade := ColorRect.new()
 	shade.color = Color(0.01, 0.02, 0.04, 1.0)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(shade)
 
 	var panel := UIKit.panel(Color("#0b1320"), UIKit.CYAN)
@@ -474,8 +478,23 @@ func _commit_route() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		# While the review is open it owns the keyboard: ENTER commits, ESC backs
+		# out of the modal. Without this the underlying draft kept reacting to
+		# arrows and the modal's commit could be missed.
+		if review_layer != null:
+			if event.keycode == KEY_ENTER:
+				_commit_route()
+			elif event.keycode == KEY_ESCAPE:
+				_close_review()
+			return
 		if event.keycode == KEY_ESCAPE:
 			GameState.undo_design()
 			get_tree().change_scene_to_file("res://scenes/design.tscn")
 		elif event.keycode == KEY_ENTER:
 			_confirm()
+
+
+func _close_review() -> void:
+	if review_layer != null:
+		review_layer.queue_free()
+		review_layer = null

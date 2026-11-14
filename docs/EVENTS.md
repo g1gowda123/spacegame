@@ -177,7 +177,7 @@ Second pass notes (still true):
 - The builder docstring in `tools/build_exoplanets.py` was corrected to the real
   filter, `0.35 <= radius <= 2.2` (it said `0.4-2.7`).
 - Approval is `8 + 2 * delivered` (`game_state.gd:965`); grant is
-  `(55 + 28 * delivered) * grant_mult` plus `+35` on a full sweep and `1.25x`
+  `(30 + 15 * delivered) * grant_mult` plus `+20` on a full sweep and `1.25x`
   for geology on rocky biomes (`:952-961`). README matches both.
 
 ---

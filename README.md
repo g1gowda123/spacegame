@@ -169,11 +169,11 @@ The surface is one sector of a planet: a chunked 16×16-cell world streamed from
 | **Δv** | Remaining propellant | Each tile moved and some hazards spend it |
 | **Power** | Shielding and systems | Regenerates each turn; blocking a hazard costs power |
 | **Sols** | Mission clock | One per tile moved (or one HOLD); the sector fails when it runs out |
-| **Data** | Collected science nodes | Collect the quota, then extract; a full 4/4 sweep auto-completes the sector |
+| **Data** | Collected science nodes | Collect the quota, return to the landing zone, then press **EXTRACT**; a full 4/4 sweep does **not** auto-complete the sector |
 
 ### The movement rule
 
-Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**; every tile on that path spends 1 Δv and 1 sol, so a three-tile move costs three of each. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Reaching all four nodes auto-completes the survey; reaching the objective quota and pressing **EXTRACT** banks the data early.
+Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**; every tile on that path spends 1 Δv and 1 sol, so a three-tile move costs three of each. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Once the quota is met, return to the landing zone and press **EXTRACT** to bank the data. The landing-zone return is the second half of the route plan, not a formality; a full 4/4 sweep still requires the trip home.
 
 That single rule is what makes the sector a route-planning problem rather than a walking simulator: you cannot creep forward one tile at a time, and you cannot see the next threat until you have spent this turn's move.
 
@@ -257,19 +257,19 @@ After every sector you get a result screen and a **three-offer refit shop**. Mod
 
 | Module | Cost | Kind | Effect |
 |---|---|---|---|
-| **RTG Auxiliary** | $70M | Module | +1 power regeneration |
-| **Deployable Radiator** | $65M | Module | Heat gain −3 per move |
-| **Reaction Wheel** | $55M | Module | +4 Δv every sector |
-| **Ablative Armor** | $60M | Module | +2 maximum integrity |
-| **Deep Data Buffer** | $50M | Module | +4 data buffer, comms loss −4% |
-| **High-Gain Antenna** | $80M | Module | Comms loss −10% |
-| **Science Package** | $75M | Firmware | +15% science value |
-| **Salvage Protocol** | $70M | Firmware | +30% grant from every sector |
-| **Field Repair Kit** | $40M | Module | Restore 2 integrity (repeatable) |
-| **Cryo Coolant Loop** | $55M | Firmware | Venting heat also restores +1 power |
-| **Ion Thruster** | $60M | Module | +1 tile movement range per turn |
+| **RTG Auxiliary** | $90M | Module | +1 power regeneration |
+| **Deployable Radiator** | $85M | Module | Heat gain −3 per move |
+| **Reaction Wheel** | $75M | Module | +4 Δv every sector |
+| **Ablative Armor** | $80M | Module | +2 maximum integrity |
+| **Deep Data Buffer** | $70M | Module | +4 data buffer, comms loss −4% |
+| **High-Gain Antenna** | $100M | Module | Comms loss −10% |
+| **Science Package** | $95M | Firmware | +15% science value |
+| **Salvage Protocol** | $90M | Firmware | +30% grant from every sector |
+| **Field Repair Kit** | $60M | Module | Restore 2 integrity (repeatable) |
+| **Cryo Coolant Loop** | $75M | Firmware | Venting heat also restores +1 power |
+| **Ion Thruster** | $80M | Module | +1 tile movement range per turn |
 
-Grants are `(55 + 28 × delivered data) × grant multiplier`, with a bonus for a full four-node sweep and a further 1.25× for geology objectives on rocky worlds.
+Grants are `(30 + 15 × delivered data) × grant multiplier`, plus $20M for a full four-node sweep and a further 1.25× for geology objectives on rocky worlds. The higher module prices mean a shop visit is a choice, not a clearance sale.
 
 ### Field commissions
 

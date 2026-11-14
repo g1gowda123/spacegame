@@ -147,7 +147,7 @@ func _build_howto() -> void:
 	var rows := [
 		["01  DESIGN", "Choose 1-4 players and a difficulty tier in MISSION CONTROL, then pick a hull, launch vehicle, mission objective and 2 instruments. Mass, power, budget and delta-v are real trade-offs."],
 		["02  DRAFT", "Choose 1 of 3 real exoplanets from the NASA Exoplanet Archive. Its temperature, gravity, radiation and distance generate the mission."],
-		["03  SURVIVE", "Click a tile to preview the path. One move per turn; ENTER commits. Collect 3 of 4 data nodes before sols or delta-v run out."],
+		["03  SURVIVE", "Click a tile to preview the path. ENTER commits the move. Collect the required data nodes, then return to the lander and press EXTRACT before sols or delta-v run out."],
 		["04  MANAGE", "Every path tile costs 1 dv + 1 sol and adds heat. Hazards resolve at end of turn. HOLD vents heat, recharges power, and burns a sol."],
 		["05  BUILD", "Spend grants between sectors on modules and firmware. Stack bonuses. No single build survives every planet."],
 	]

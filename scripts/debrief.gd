@@ -255,7 +255,8 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	nm.position = Vector2(56, 5)
 	nm.size = Vector2(154, 11)
 	card.add_child(nm)
-	var kind := UIKit.label(str(up["kind"]), 5, UIKit.CYAN, true, HORIZONTAL_ALIGNMENT_RIGHT)
+	var kind_text := "HARDWARE" if str(up["kind"]) == "MODULE" else "SOFTWARE"
+	var kind := UIKit.label(kind_text, 5, UIKit.CYAN, true, HORIZONTAL_ALIGNMENT_RIGHT)
 	kind.position = Vector2(212, 6)
 	kind.size = Vector2(68, 9)
 	card.add_child(kind)
