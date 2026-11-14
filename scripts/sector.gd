@@ -9,6 +9,16 @@ const MOVE_DIRS: Array[Vector2i] = [
 	Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1),
 ]
 
+# Boundary sides of a cell as [neighbour offset, first corner, second corner]
+# with corners numbered 0=NW, 1=NE, 2=SE, 3=SW. Clockwise order keeps the
+# union contour continuous when the strokes are drawn independently.
+const REACH_SIDES := [
+	[Vector2i(-1, 0), 0, 3],  # west  NW -> SW
+	[Vector2i(1, 0), 1, 2],   # east  NE -> SE
+	[Vector2i(0, -1), 0, 1],  # north NW -> NE
+	[Vector2i(0, 1), 3, 2],   # south SW -> SE
+]
+
 const HAZARDS := {
 	"flare": {
 		"name": "STELLAR FLARE", "color": Color("#ff6d5e"), "block": true,
@@ -930,6 +940,20 @@ func _cell_center(cell: Vector2i) -> Vector2:
 	return _project(Vector2((cell.x + 0.5) * TILE, (cell.y + 0.5) * TILE))
 
 
+func _reach_cell_quad(cell: Vector2i) -> PackedVector2Array:
+	return PackedVector2Array([
+		_cell_corner(cell, 0), _cell_corner(cell, 1),
+		_cell_corner(cell, 2), _cell_corner(cell, 3),
+	])
+
+
+func _cell_corner(cell: Vector2i, corner: int) -> Vector2:
+	# 0 = NW, 1 = NE, 2 = SE, 3 = SW in cell space, then projected.
+	var x := cell.x + (1 if corner == 1 or corner == 2 else 0)
+	var y := cell.y + (1 if corner == 2 or corner == 3 else 0)
+	return _project(Vector2(x * TILE, y * TILE))
+
+
 func _draw_move_preview() -> void:
 	if move_layer == null:
 		return
@@ -939,28 +963,47 @@ func _draw_move_preview() -> void:
 		return
 
 	var reach := _reachable_cells(move_range)
+	var drawn := {}
 	for key in reach.keys():
 		var cell: Vector2i = key
-		if cell == player_cell or not _in_view(cell.x, cell.y):
+		if not _in_view(cell.x, cell.y):
 			continue
+		drawn[cell] = true
 		var danger := _in_hazard(cell)
 		var base := Color("#ff5d6c") if danger else UIKit.CYAN
-		var corners := PackedVector2Array([
-			_project(Vector2(cell.x * TILE, cell.y * TILE)),
-			_project(Vector2((cell.x + 1) * TILE, cell.y * TILE)),
-			_project(Vector2((cell.x + 1) * TILE, (cell.y + 1) * TILE)),
-			_project(Vector2(cell.x * TILE, (cell.y + 1) * TILE)),
-		])
+		var corners := _reach_cell_quad(cell)
 		var fill := Polygon2D.new()
 		fill.polygon = corners
-		fill.color = _alpha(base, 0.10)
+		fill.color = _alpha(base, 0.16 if danger else 0.055)
 		move_layer.add_child(fill)
-		var edge := Line2D.new()
-		edge.points = corners
-		edge.closed = true
-		edge.width = 0.8
-		edge.default_color = _alpha(base, 0.38)
-		move_layer.add_child(edge)
+		if danger:
+			# Hazards inside reach keep a per-cell red wireframe: the threat is
+			# the actionable information, so it may break the calm union edge.
+			var edge := Line2D.new()
+			edge.points = corners
+			edge.closed = true
+			edge.width = 1.0
+			edge.default_color = _alpha(base, 0.55)
+			move_layer.add_child(edge)
+
+	# Reachability reads as one crisp boundary, not a lattice of cell borders.
+	# Each side is stroked only when the neighbour is outside the reachable
+	# (and visible) set, so shared borders never double-draw.
+	for cell in drawn.keys():
+		var c: Vector2i = cell
+		var base := Color("#ff5d6c") if _in_hazard(c) else UIKit.CYAN
+		for side in REACH_SIDES:
+			var offset: Vector2i = side[0]
+			if drawn.has(c + offset):
+				continue
+			var a := _cell_corner(c, int(side[1]))
+			var b := _cell_corner(c, int(side[2]))
+			var stroke := Line2D.new()
+			stroke.points = PackedVector2Array([a, b])
+			stroke.width = 1.5
+			stroke.antialiased = false
+			stroke.default_color = _alpha(base, 0.88)
+			move_layer.add_child(stroke)
 
 	if path_valid and not path_cells.is_empty():
 		var pts := PackedVector2Array()

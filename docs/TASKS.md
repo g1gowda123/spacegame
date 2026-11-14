@@ -135,3 +135,10 @@ Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.
 | Draft risk tags (SAFE / BALANCED / HARSH) | **DONE** | `qa_draft.png`: threat 20 / 36 / 85 with green/amber/red tags |
 | Design rationale + rubric traceability doc | **DONE** | `docs/DESIGN.md`; README + PROJECT + SUBMISSION cross-links updated |
 | Nil-`run` crash guard (ORION 12:45 urgent) | **DONE** | `scripts/crew_director.gd` guards `crew_players()`, `goal_rows()`, `code_for_run()`, `note_report_score()`; headless smoke `--quit-after 8` = 0 error lines; title/design/draft/sector/debrief/report all parse clean |
+## f — Feel pass (claimed 12:00)
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| 1 | Reachable-cells overlay crispness | **DONE 12:04** | `scripts/sector.gd` now strokes only the union perimeter of the visible reachable set (`REACH_SIDES`, `_cell_corner`); per-cell lattice removed, union fill 0.055, hazard cells keep a red wireframe, path + target markers unchanged. Evidence `/tmp/opencode/f_reach_before.png` → `f_reach_after.png`; hazard-in-reach `f_reach_after_t9_hazard.png`; 2× crops `f_reach_*_crop.png`. Native 1280×720 capture, 0 errors. |
+| 2 | Sector audio audit + headless leak regression check | **DONE 12:02** | Board premise corrected: three WAVs exist — `click.wav` 0.055 s, `confirm.wav` 0.180 s, `alarm.wav` 0.420 s (44.1 kHz mono 16-bit). Current cues: buttons click, screen/design/debrief-success confirm, hazard/overheat/failure alarm, shield/HOLD click; **move commit and cursor move are silent**. Headless exit on title/design/draft/sector/debrief/report is clean (no ObjectDB or resource warnings) — 02:56 fix has not regressed. Logs `/tmp/opencode/f_headless_*.log`. |
+| 3 | Minimal SFX set | **PROPOSED 12:06 — awaiting ORION** | Core: `move`, `extract`, `hazard`, `tick`. Optional: `deny`, `shield`, `node`. Code-only prerequisite: 4-voice player pool so cues do not cut each other. **No audio files added** per the 11:40 directive; see BOARD 12:06 for the scope request. |
