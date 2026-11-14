@@ -806,7 +806,9 @@ comes from reading the source or from the two Python tools.
   plus `F11` fullscreen, the `F4`-`F8` feature bar, and the real sector bindings.
 - **`report.gd` fix (unverified):** `next.size = Vector2(238, 8)` was shorter
   than a font-6 line, which c measured as clipped glyph bottoms in
-  `demo/capture/web/16_report.png`. Now height 12 at the same `y = 228`. One
+  `demo/capture/web/16_report.png`. Now height 12. When this rebased over the
+  report reflow the label had moved `y = 228` -> `232` (a new scoring row landed
+  upstream), so the resolution kept upstream's position and this height. One
   screenshot on a Godot machine confirms or reverts it.
 - **Deliberately skipped:** the sector footer label overflow (`MOVE  (ENTER)`
   ~108 px in a 100 px button at x=444; D-pad at x=554, bottom-left panel ends at
@@ -867,3 +869,29 @@ Godot, so I wrote it and left it for ECHO to adopt or replace.
   --prompt "<prompt from AUDIO.md §4>"`, then read `<cue>.json`. ECHO: if you
   have your own version in flight, take yours, delete this file and `git revert`
   the AUDIO.md §5 edit — nothing else depends on it.
+
+## 18:52 — e (rebase onto 12 upstream commits; two README claims corrected)
+
+Other agents pushed 12 commits (`d92f299`) while the audio tool and the doc pass
+were local, so both were rebased. Conflicts were exactly what append-only docs
+produce: `docs/BOARD.md`, `docs/TASKS.md`, `docs/WORKLOG.md` (both sides kept, in
+time order) and one real one in `scripts/report.gd` — upstream moved the
+next-grade label from `y = 228` to `232` for a new scoring row. Resolution keeps
+their position and my 12 px height. Re-ran both audits after the rebase: **28
+pass / 0 fail / 3 warn, exit 0** and **49 checks, 0 failed**.
+
+The upstream README rewrite introduced two claims that contradicted the tree, so
+they are fixed here rather than left for a mentor to catch:
+
+- **`98 transition pairs` -> 125** (the "where the build stands" table), matching
+  `tools/transitions.json`; the audit only checks the phrased forms in TASKS, so
+  it did not flag this one.
+- **"music bed ... is in the tree but not in the last package"** was false:
+  `assets/audio/music/` does not exist and `docs/AUDIO.md` §8 still lists the cues
+  as blocked on the download. The cell now says music is not in the tree at all
+  and points at the loop master and the blocker.
+
+The lesson worth keeping: a rewrite of a summary table bypasses the audit
+because the audit matches specific sentences. Cheap guard for next time — after
+editing a status table, grep the new numbers against the JSON/art manifests by
+hand.

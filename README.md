@@ -22,9 +22,9 @@ Every destination is a real planet. Every hazard is generated from its measured 
 | **Playable** | full run, native Godot: title → control → design → draft → 3 sectors → debrief → report |
 | **Packaged web build** | `build/web/` — 54 MB, threadless WebGL 2; ZIP `submission/orbit_outplay_web.zip` 24 MB |
 | **Verification** | `godot --headless --path . --quit-after 8` exits 0, no parser/runtime errors |
-| **Content** | 72 real exoplanets, 13 biomes, 98 transition pairs, 24 outcrop pieces, 5 SFX, full VFX layer |
+| **Content** | 72 real exoplanets, 13 biomes, 125 transition pairs, 24 outcrop pieces, 5 SFX, full VFX layer |
 | **Engine** | Godot 4.7.2, GDScript, GL Compatibility, 640×360 logical viewport |
-| **Not shipped yet** | music bed, UI identity pass, fog-of-war/signal-tier pass and VFX are **in the tree but not in the last package** — one re-export closes that gap |
+| **Not shipped yet** | UI identity pass, fog-of-war/signal-tier pass and VFX are **in the tree but not in the last package** — one re-export closes that gap. Music is not in the tree at all: the loop master is written (`tools/make_music_loop.py`), the cues are blocked on the Stable Audio 3 download (`docs/AUDIO.md` §8) |
 
 The honest split is **source vs package**. The tree is ahead of `build/web`: fog of war, signal-tier nodes, animated hazard shaders, the W6 outcrop set and the V5 effect library all landed after the last export. Re-exporting is a one-command step (`tools/release.sh`), not development work.
 
