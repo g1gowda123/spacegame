@@ -17,9 +17,9 @@ uniform vec4 biome_tint : source_color = vec4(1.0);
 uniform float biome_tint_strength = 0.0;
 uniform vec2 camera_offset = vec2(0.0);
 uniform int circle_view = 1;
-uniform float circle_radius = 0.32;
+uniform float circle_radius = 0.40;
 uniform float circle_soft = 0.055;
-uniform float circle_outer = 0.43;
+uniform float circle_outer = 0.56;
 uniform float circle_outer_soft = 0.06;
 
 void fragment() {
@@ -159,7 +159,7 @@ void fragment() {
         float rim = smoothstep(circle_radius - 0.030, circle_radius - 0.004, disc_dist);
         vec3 fog = vec3(0.025, 0.034, 0.047);
         COLOR.rgb = mix(COLOR.rgb, fog, (1.0 - focus) * 0.52);
-        COLOR.rgb = mix(COLOR.rgb, vec3(0.045, 0.058, 0.066), rim * 0.12);
+        
         COLOR.a *= mix(0.12, 1.0, focus) * outside;
     }
 }

@@ -9,8 +9,8 @@ extends Node2D
 
 const TILE := 64
 const CHUNK := 16
-const VIEW_W := 20
-const VIEW_H := 16
+const VIEW_W := 28
+const VIEW_H := 22
 const VIEW_PX := Vector2(VIEW_W * TILE, VIEW_H * TILE)
 const VIEW_TILES := 10.0
 const TURNS_START := 36
@@ -3115,8 +3115,8 @@ func _update_view() -> void:
 	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
 	shader_mat.set_shader_parameter("camera_offset", Vector2.ZERO)
 	shader_mat.set_shader_parameter("circle_view", 1 if circle_view else 0)
-	shader_mat.set_shader_parameter("circle_radius", 0.32)
-	shader_mat.set_shader_parameter("circle_outer", 0.43)
+	shader_mat.set_shader_parameter("circle_radius", 0.40)
+	shader_mat.set_shader_parameter("circle_outer", 0.56)
 	shader_mat.set_shader_parameter("show_grid", 1 if show_grid else 0)
 	_rebuild_structure_sprites()
 	_rebuild_actors()
