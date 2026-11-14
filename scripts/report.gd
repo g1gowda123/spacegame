@@ -27,7 +27,7 @@ func _build() -> void:
 	bg.modulate.a = 0.20
 
 	var title := UIKit.head("FINAL MISSION REPORT", 12, UIKit.NIGHT_TEXT)
-	title.position = Vector2(10, 6)
+	title.position = Vector2(10, 10)
 	title.size = Vector2(300, 18)
 	add_child(title)
 	var mode_label := "CAMPAIGN"
@@ -39,7 +39,7 @@ func _build() -> void:
 			mode_label, diff_name, int(GameState.run.get("players", 1)),
 			"" if int(GameState.run.get("players", 1)) == 1 else "S",
 		], 7, UIKit.NIGHT_MUTED)
-	sub.position = Vector2(10, 22)
+	sub.position = Vector2(10, 27)
 	add_child(sub)
 	sub.size = Vector2(600, 16)
 
