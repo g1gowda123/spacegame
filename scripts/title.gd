@@ -17,6 +17,8 @@ func _ready() -> void:
 	if "--howto" in OS.get_cmdline_args() or "--howto" in OS.get_cmdline_user_args():
 		howto_layer.visible = true
 	GameState.sfx("confirm")
+	if not GameState.briefing_seen and not _dev_screen():
+		call_deferred("_open_briefing")
 
 
 func _build_ui() -> void:
@@ -69,6 +71,11 @@ func _build_ui() -> void:
 	how.position = Vector2(200, 264)
 	how.pressed.connect(func(): howto_layer.visible = true)
 	add_child(how)
+
+	var story := UIKit.button("STORY", Vector2(104, 26))
+	story.position = Vector2(338, 264)
+	story.pressed.connect(_open_briefing)
+	add_child(story)
 
 	var daily_note := "BEST RUN  %s" % _fmt(GameState.best_score)
 	var today := CrewDirector.today_key()
@@ -151,6 +158,19 @@ func _build_howto() -> void:
 	close.position = Vector2(462, 296)
 	close.pressed.connect(func(): howto_layer.visible = false)
 	howto_layer.add_child(close)
+
+
+func _dev_screen() -> bool:
+	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		var arg := str(raw)
+		if arg.begins_with("--screen=") or arg == "--capture" \
+				or arg.begins_with("--capture-name=") or arg == "--howto":
+			return true
+	return false
+
+
+func _open_briefing() -> void:
+	get_tree().change_scene_to_file("res://scenes/briefing.tscn")
 
 
 func _start() -> void:

@@ -59,6 +59,14 @@ def retune_uniform(img: Image.Image) -> Image.Image:
     t = np.clip(lum / 190.0, 0, 1)
     for k, (lo, hi) in enumerate(zip((18, 24, 34), (44, 62, 92))):
         a[..., k] = np.where(magenta, lo + (hi - lo) * t, a[..., k])
+    # the other raws render the jacket as pale grey: bring it into the same navy
+    mx = np.maximum(np.maximum(r, g), b)
+    mn = np.minimum(np.minimum(r, g), b)
+    pale = (a[..., 3] > 0) & (mx > 120) & ((mx - mn) < 30)
+    pale[: int(a.shape[0] * 0.55), :] = False
+    for k, (lo, hi) in enumerate(zip((18, 24, 34), (44, 62, 92))):
+        a[..., k] = np.where(pale, lo + (hi - lo) * t, a[..., k])
+    a[pale & (mx > 210), :3] = (56, 74, 104)
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
@@ -80,6 +88,9 @@ def to_sprite(img: Image.Image) -> Image.Image:
     idx = d.argmin(-1)
     locked = PALETTE[idx].astype(np.uint8)
     alpha = (a[..., 3] > 110).astype(np.uint8) * 255
+    # soft bottom fade: the bust must not end on a hard rectangular cut
+    fade = np.clip((H - 1 - np.arange(H)) / 16.0, 0, 1)[:, None]
+    alpha = (alpha * fade).astype(np.uint8)
     out = np.dstack([locked, alpha])
 
     # 1 px ink contour
@@ -90,12 +101,42 @@ def to_sprite(img: Image.Image) -> Image.Image:
     return Image.fromarray(out, "RGBA")
 
 
+
+def expression_variant(base: Image.Image, mode: str) -> Image.Image:
+    """Derive neutral/stern from the smile frame so the face cannot drift."""
+    img = base.copy()
+    a = np.asarray(img).astype(np.int16)
+    r, g, b, al = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
+    white = (al > 0) & (r > 196) & (g > 186) & (b > 176)
+    white[:70] = False
+    white[150:] = False
+    ys, xs = np.nonzero(white)
+    if xs.size:
+        cx, cy = int(xs.mean()), int(ys.mean())
+        # open smile -> closed mouth: teeth become lip, one thin line kept
+        for y, x in zip(ys, xs):
+            a[y, x, :3] = (198, 152, 132)
+        line_y = int(ys.max()) - 1
+        for x in range(int(xs.min()) - 1, int(xs.max()) + 2):
+            a[line_y, x, :3] = (120, 74, 66)
+        if mode == "stern":
+            # flat, downturned mouth and a heavier brow shadow
+            for x in range(int(xs.min()) - 3, int(xs.max()) + 4):
+                a[line_y - 1, x, :3] = (110, 66, 60)
+            for x in (int(xs.min()) - 3, int(xs.min()) - 2, int(xs.max()) + 2, int(xs.max()) + 3):
+                a[line_y + 1, x, :3] = (110, 66, 60)
+            brow = a[cy - 46:cy - 36, max(0, cx - 34):cx + 34, :3]
+            a[cy - 46:cy - 36, max(0, cx - 34):cx + 34, :3] = (brow * 0.82).astype(np.int16)
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     sheets = []
+    # one canonical render; the other two are derived so the face cannot drift
+    base = to_sprite(retune_uniform(key_background(Image.open(RAW / "raw_smile_4001.png"))))
     for name in ("neutral", "smile", "stern"):
-        src = Image.open(RAW / f"raw_{name}_4001.png")
-        img = to_sprite(retune_uniform(key_background(src)))
+        img = base if name == "smile" else expression_variant(base, name)
         img.save(OUT / f"director_{name}.png")
         sheets.append((name, img))
         print(f"director_{name}.png {img.size}")
@@ -152,31 +193,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def expression_variant(base: Image.Image, mode: str) -> Image.Image:
-    """Derive neutral/stern from the smile frame so the face cannot drift."""
-    img = base.copy()
-    a = np.asarray(img).astype(np.int16)
-    r, g, b, al = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
-    white = (al > 0) & (r > 196) & (g > 186) & (b > 176)
-    white[:70] = False
-    white[150:] = False
-    ys, xs = np.nonzero(white)
-    if xs.size:
-        cx, cy = int(xs.mean()), int(ys.mean())
-        # open smile -> closed mouth: teeth become lip, one thin line kept
-        for y, x in zip(ys, xs):
-            a[y, x, :3] = (198, 152, 132)
-        line_y = int(ys.max()) - 1
-        for x in range(int(xs.min()) - 1, int(xs.max()) + 2):
-            a[line_y, x, :3] = (120, 74, 66)
-        if mode == "stern":
-            # flat, downturned mouth and a heavier brow shadow
-            for x in range(int(xs.min()) - 3, int(xs.max()) + 4):
-                a[line_y - 1, x, :3] = (110, 66, 60)
-            for x in (int(xs.min()) - 3, int(xs.min()) - 2, int(xs.max()) + 2, int(xs.max()) + 3):
-                a[line_y + 1, x, :3] = (110, 66, 60)
-            brow = a[cy - 46:cy - 36, max(0, cx - 34):cx + 34, :3]
-            a[cy - 46:cy - 36, max(0, cx - 34):cx + 34, :3] = (brow * 0.82).astype(np.int16)
-    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")

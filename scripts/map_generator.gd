@@ -2385,7 +2385,7 @@ func _add_piece_sprites(
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		sprite.position = top_left + Vector2(col, row) * unit * map_scale
 		sprite.scale = Vector2(map_scale, map_scale)
-		sprite.z_index = int(anchor_screen.y - float(h - 1 - row) * unit * map_scale)
+		sprite.z_index = min(int(anchor_screen.y - float(h - 1 - row) * unit * map_scale), 940)
 		structure_layer.add_child(sprite)
 	return true
 
@@ -2414,12 +2414,16 @@ func _add_structure_sprite(s: Dictionary) -> void:
 	var shadow_rx := w * TILE * map_scale * (0.46 if is_ground else 0.62) * sprite_boost
 	var shadow_ry := w * TILE * map_scale * (0.12 if is_ground else 0.13) * sprite_boost
 	var shadow := Polygon2D.new()
-	shadow.polygon = _ellipse_points(Vector2.ZERO, shadow_rx, shadow_ry)
-	shadow.color = Color(0.0, 0.0, 0.0, 0.26 if is_ground else 0.24)
-	# Tuck the ellipse up behind the sprite's base. Centred on the base line, its
-	# lower half shows as a detached disc under every structure.
+	# An ellipse under every structure reads as a pasted round plinth. Break the
+	# rim with two low-frequency harmonics so the contact patch looks like soil
+	# that pooled around an uneven base.
+	shadow.polygon = _contact_shadow_points(
+		Vector2.ZERO, shadow_rx, shadow_ry,
+		hash(Vector2i(roundi(anchor_screen.x), roundi(anchor_screen.y)))
+	)
+	shadow.color = Color(0.0, 0.0, 0.0, 0.20 if is_ground else 0.19)
 	shadow.position = anchor_screen + Vector2(0.0, -shadow_ry * 0.55)
-	shadow.z_index = int(anchor_screen.y) - 1
+	shadow.z_index = min(int(anchor_screen.y) - 1, 939)
 	structure_layer.add_child(shadow)
 
 	if _add_piece_sprites(info, gx, gy, w, h, anchor_screen):
@@ -2447,7 +2451,7 @@ func _add_structure_sprite(s: Dictionary) -> void:
 	)
 	sprite.position = anchor_screen - bbox_center * sprite.scale
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.z_index = int(anchor_screen.y)
+	sprite.z_index = min(int(anchor_screen.y), 940)
 	structure_layer.add_child(sprite)
 
 
@@ -2559,14 +2563,15 @@ func _add_prop_sprite(p: Dictionary) -> void:
 	var bounds := _texture_bounds(tex)
 	var scale: float = map_scale * float(p.get("scale", 0.72))
 
-	var prop_shadow_ry := TILE * map_scale * 0.10
+	var prop_shadow_ry := TILE * map_scale * 0.09
 	var shadow := Polygon2D.new()
-	shadow.polygon = _ellipse_points(
-		Vector2.ZERO, TILE * map_scale * 0.30, prop_shadow_ry
+	shadow.polygon = _contact_shadow_points(
+		Vector2.ZERO, TILE * map_scale * 0.30, prop_shadow_ry,
+		hash(Vector2i(roundi(base_screen.x), roundi(base_screen.y)))
 	)
-	shadow.color = Color(0.0, 0.0, 0.0, 0.22)
+	shadow.color = Color(0.0, 0.0, 0.0, 0.17)
 	shadow.position = base_screen + Vector2(0.0, -prop_shadow_ry * 0.5)
-	shadow.z_index = int(base_screen.y) - 1
+	shadow.z_index = min(int(base_screen.y) - 1, 939)
 	structure_layer.add_child(shadow)
 
 	var sprite := Sprite2D.new()
@@ -2579,7 +2584,7 @@ func _add_prop_sprite(p: Dictionary) -> void:
 		(bounds.position.y + bounds.size.y) * scale
 	)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.z_index = int(base_screen.y)
+	sprite.z_index = min(int(base_screen.y), 940)
 	structure_layer.add_child(sprite)
 
 
@@ -2740,6 +2745,18 @@ func _diamond_points(radius: float) -> PackedVector2Array:
 		Vector2(0, -radius), Vector2(radius, 0),
 		Vector2(0, radius), Vector2(-radius, 0),
 	])
+
+
+func _contact_shadow_points(
+	center: Vector2, rx: float, ry: float, seed_value: int
+) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var phase := float(seed_value % 628) / 100.0
+	for i in range(20):
+		var a := TAU * float(i) / 20.0
+		var rim := 1.0 + 0.10 * sin(3.0 * a + phase) + 0.06 * sin(5.0 * a - phase)
+		pts.append(center + Vector2(cos(a) * rx * rim, sin(a) * ry * rim))
+	return pts
 
 
 func _ellipse_points(center: Vector2, rx: float, ry: float) -> PackedVector2Array:
