@@ -255,14 +255,12 @@ the art queue shares this GPU.
 
 ---
 
-## 8. Open items
+## 8. Status & open items
 
-- [ ] User approval for the SA3 Small-Music download (3.46 GB).
-- [x] `tools/make_music_loop.py` (seam check + loudnorm + OGG) — shipped 18:40,
-      self-tested; see §5 for the two decisions (loudnorm as meter, auto curve).
-- [ ] Generate and master `title` / `sector` / `debrief`; post seam + LUFS numbers.
-- [ ] `MusicDirector` autoload + duck hook on the hazard telegraph.
-- [ ] Web re-export and size check (`build/web` + ≤3 MB music).
-- [ ] Phase 2 (optional): intensity variants for reactive layers. SA3 has no
-      stem output; ACE-Step's extract/lego nodes are WIP. Until then the reactive
-      story is volume ducking, not stem mixing — say so honestly in the README.
+- [x] `tools/make_music_loop.py` (seam check + loudnorm + OGG) — shipped 18:40 by `e`, self-tested.
+- [x] Generate and master 3 cues — landed in `assets/music/` (24 bars @ 84 BPM, 788 KiB total); measured in §5.1 (wrap seams clean 14–18 dB below baseline; 2 minor gain/peak adjustments noted).
+- [x] `MusicDirector` autoload (`scripts/music_director.gd`) + duck hook on the hazard telegraph in `sector.gd`.
+- [x] Size budget verified: 788 KiB total (well under the ≤3 MB budget).
+- [ ] Web re-export: package latest tree into `build/web` via `tools/release.sh`.
+- [ ] Optional: User approval for SA3 Small-Music download (3.46 GB) if external model stem replacements are desired later.
+- [ ] Phase 2 (optional): intensity variants for reactive layers. Currently reactive layer uses volume ducking (−6 dB on hazard telegraph).
