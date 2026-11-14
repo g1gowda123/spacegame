@@ -322,6 +322,7 @@ var mapped_hi := Vector2i.ZERO
 var has_mapped_bounds := false
 var elevation := FastNoiseLite.new()
 var detail := FastNoiseLite.new()
+var structure_variants: Dictionary = {}
 var variant_noise := FastNoiseLite.new()
 var warp_noise := FastNoiseLite.new()
 var shore_noise := FastNoiseLite.new()
@@ -830,6 +831,7 @@ func _add_tile(key: String, path: String) -> void:
 
 
 func _build_view() -> void:
+	_load_structure_variants()
 	# Deep-space plate. Layer -10 keeps it behind the map, structures and HUD
 	# even when the board uses a transparent SubViewport.
 	space_layer = CanvasLayer.new()
@@ -3204,13 +3206,36 @@ func _add_piece_sprites(
 	return true
 
 
+func _load_structure_variants() -> void:
+	structure_variants.clear()
+	var path := "res://assets/tilesets/structures/variants/manifest.json"
+	if not FileAccess.file_exists(path):
+		return
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not parsed is Dictionary:
+		return
+	var keys: Dictionary = parsed.get("keys", {})
+	for key in keys:
+		var paths: Array = []
+		for entry in keys[key]:
+			if entry is Dictionary and str(entry.get("file", "")) != "":
+				paths.append(str(entry["file"]))
+		if not paths.is_empty():
+			structure_variants[str(key)] = paths
+
+
 func _add_structure_sprite(s: Dictionary) -> void:
 	var info: Dictionary = STRUCTURES[s["key"]]
-	var tex := load(info["path"]) as Texture2D
-	if tex == null:
-		return
 	var gx: int = s["gx"]
 	var gy: int = s["gy"]
+	var tex_path := str(info["path"])
+	var variant_paths: Array = structure_variants.get(str(s["key"]), [])
+	if not variant_paths.is_empty():
+		var vi := _decal_hash(gx, gy, 0x51a7) % variant_paths.size()
+		tex_path = str(variant_paths[vi])
+	var tex := load(tex_path) as Texture2D
+	if tex == null:
+		return
 	var w: int = s["w"]
 	var h: int = s["h"]
 	var is_ground := bool(info.get("ground", false))

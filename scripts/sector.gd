@@ -76,6 +76,7 @@ var _ending_turn := false
 var _last_strike_near := false
 var _world_timer := 2.4
 var _star_timer := 5.0
+var _meteor_timer := 9.0
 var fx_root: Control
 var _state_overlay: ColorRect
 var _state_mat: ShaderMaterial
@@ -1397,6 +1398,10 @@ func _process(delta: float) -> void:
 		if _star_timer <= 0.0:
 			_star_timer = rng.randf_range(6.0, 12.0)
 			_shooting_star()
+		_meteor_timer -= delta
+		if _meteor_timer <= 0.0:
+			_meteor_timer = rng.randf_range(9.0, 16.0)
+			_meteor_event()
 
 
 func _visible_structures() -> Array[Dictionary]:
@@ -1467,12 +1472,27 @@ func _world_event() -> void:
 			"crystal":
 				VFX.sparks(vfx_layer, at, Color(0.80, 0.68, 1.0, 0.80), 3, 14.0, -8.0)
 			"arid", "barren", "iron", "carbon":
-				# Dust devil: three offset puffs that read as a moving column.
-				VFX.dust(vfx_layer, at, Color(0.72, 0.64, 0.52, 0.35), 3, 12.0)
-				VFX.dust(vfx_layer, at + Vector2(9, -4), Color(0.70, 0.62, 0.50, 0.26), 2, 10.0)
-				VFX.dust(vfx_layer, at + Vector2(18, -8), Color(0.68, 0.60, 0.48, 0.18), 2, 8.0)
+				VFX.dust_devil(vfx_layer, at, Color(0.72, 0.64, 0.52, 0.55))
 			_:
 				VFX.sparks(vfx_layer, at, Color(0.72, 0.96, 0.74, 0.55), 3, 10.0, -8.0)
+
+
+func _meteor_event() -> void:
+	if vfx_layer == null or done:
+		return
+	var cell := Vector2i(
+		player_cell.x + rng.randi_range(-6, 6),
+		player_cell.y + rng.randi_range(-4, 4)
+	)
+	if not _in_view(cell.x, cell.y):
+		return
+	var at := _cell_center(cell)
+	var hot := Color(1.0, 0.74, 0.42)
+	if str(sec["planet"]["biome"]) in ["cryo", "ammonia"]:
+		hot = Color(0.75, 0.92, 1.0)
+	elif str(sec["planet"]["biome"]) == "crystal":
+		hot = Color(0.85, 0.72, 1.0)
+	VFX.meteor_streak(vfx_layer, at, hot)
 
 
 func _shooting_star() -> void:

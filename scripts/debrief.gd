@@ -191,7 +191,7 @@ func _build_shop() -> void:
 	shop_root.size = Vector2(284, 216)
 	shop_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(shop_root)
-	var hover_hint := UIKit.mono("HOVER A REFIT FOR ITS EFFECT", 6, UIKit.DIM)
+	var hover_hint := UIKit.mono("HOVER A REFIT FOR ITS EFFECT", 7, UIKit.MUTED)
 	hover_hint.position = Vector2(12, 224)
 	c.add_child(hover_hint)
 	_refresh_shop()

@@ -350,7 +350,87 @@ static func _free_later(parent: Node, node: Node, seconds: float) -> void:
 	)
 
 
-# --- shield ---------------------------------------------------------------
+# --- ambient world motion ------------------------------------------------
+
+class DevilNode extends Node2D:
+	## A small spinning dust column that drifts across the board and fades at
+	## both ends. Drawn as three offset arcs plus grit, so it reads as motion
+	## without a sheet.
+	var life := 2.8
+	var age := 0.0
+	var tint := Color(0.72, 0.64, 0.52, 0.45)
+	var radius := 9.0
+	var drift := Vector2(26.0, -5.0)
+
+	func _ready() -> void:
+		set_process(true)
+
+	func _process(delta: float) -> void:
+		age += delta
+		position += drift * delta
+		var k := clampf(age / life, 0.0, 1.0)
+		modulate.a = sin(k * PI)
+		queue_redraw()
+		if age >= life:
+			queue_free()
+
+	func _draw() -> void:
+		for i in range(3):
+			var a := age * 5.0 + float(i) * 2.1
+			var r := radius * (1.0 - float(i) * 0.22)
+			draw_arc(Vector2(sin(a) * 2.2, -float(i) * 4.5), r, a, a + 2.7, 10,
+				Color(tint.r, tint.g, tint.b, tint.a * (0.85 - float(i) * 0.2)), 1.0, true)
+		var grit := Vector2(cos(age * 7.0) * 4.0, 3.0)
+		draw_rect(Rect2(grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.7), true)
+		draw_rect(Rect2(-grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.5), true)
+
+
+static func dust_devil(parent: Node, at: Vector2, color: Color, z := 6) -> void:
+	if parent == null:
+		return
+	var d := DevilNode.new()
+	d.position = at
+	d.tint = Color(color.r, color.g, color.b, 0.42)
+	d.drift = Vector2(18.0 + randf() * 18.0, -3.0 - randf() * 4.0)
+	d.z_index = z
+	d.z_as_relative = true
+	parent.add_child(d)
+
+
+static func meteor_streak(parent: Node, at: Vector2, color: Color, z := 12) -> void:
+	## A short diagonal meteor that lands at `at`, then kicks dust and a ring.
+	## Cosmetic only: no gameplay damage, but the sky is never empty.
+	if parent == null:
+		return
+	var dir := Vector2(1.0, 0.52).normalized()
+	var streak := Line2D.new()
+	streak.points = PackedVector2Array([Vector2.ZERO, -dir * 46.0])
+	streak.width = 1.4
+	streak.default_color = Color(color.r, color.g, color.b, 0.0)
+	streak.position = at - dir * 120.0
+	streak.z_index = z
+	parent.add_child(streak)
+	var head := ColorRect.new()
+	head.position = Vector2(-1, -1)
+	head.size = Vector2(2, 2)
+	head.color = Color(1, 1, 1, 0.9)
+	streak.add_child(head)
+	var tw := streak.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(streak, "position", at - dir * 44.0, 0.30) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(streak, "modulate:a", 1.0, 0.10)
+	tw.chain().tween_property(streak, "modulate:a", 0.0, 0.12)
+	tw.chain().tween_callback(streak.queue_free)
+	var t2 := parent.get_tree().create_timer(0.30)
+	t2.timeout.connect(func():
+		if not is_instance_valid(parent):
+			return
+		dust(parent, at, Color(color.r * 0.8, color.g * 0.7, color.b * 0.6, 0.5), 5, 18.0, z - 1)
+		sparks(parent, at, color, 6, 34.0, 60.0, z)
+		ring(parent, at, Color(color.r, color.g, color.b, 0.55), 16.0, 0.45, 1.2, z - 1)
+	)
+
 
 class ShieldNode extends Node2D:
 	var radius := 18.0:

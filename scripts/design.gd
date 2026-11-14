@@ -113,9 +113,14 @@ func _build_left() -> void:
 			], Color(str(h["color"])).lightened(0.2))
 		hull_cards[str(h["id"])] = card
 
-	_subhead(v, "LAUNCH VEHICLE")
+	var vehicle_head := HBoxContainer.new()
+	vehicle_head.add_theme_constant_override("separation", 4)
+	var vehicle_label := UIKit.mono("LAUNCH VEHICLE", 7, UIKit.DIM)
+	vehicle_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vehicle_head.add_child(vehicle_label)
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)
-	v.add_child(vehicle_requirement)
+	vehicle_head.add_child(vehicle_requirement)
+	v.add_child(vehicle_head)
 	for veh in GameState.VEHICLES:
 		var card := UIKit.option_card(
 			v, Rect2(0, 0, 184, 20), str(veh["name"]), "",
@@ -129,7 +134,7 @@ func _build_left() -> void:
 			])
 		vehicle_cards[str(veh["id"])] = card
 	v.add_child(UIKit.vspace(5))
-	v.add_child(UIKit.mono("HOVER A ROW FOR FULL SPECS", 6, UIKit.DIM))
+	v.add_child(UIKit.mono("HOVER A ROW FOR FULL SPECS", 7, UIKit.MUTED))
 
 
 func _build_center() -> void:

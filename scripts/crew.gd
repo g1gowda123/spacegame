@@ -257,6 +257,7 @@ func _refresh() -> void:
 	budget_label.text = "START $%dM" % int(budget)
 	approval_label.text = "APPROVAL %d" % approval
 	mode_note.text = "2-4 players share one console. 1 is solo." if mode == "campaign" else "Daily: one fixed seed for everyone today."
+	mode_note.visible = mode != "campaign"
 	start_btn.text = "START DAILY RUN >" if mode == "daily" else "BEGIN CAMPAIGN >"
 	if code_edit != null:
 		code_edit.editable = mode != "daily"
