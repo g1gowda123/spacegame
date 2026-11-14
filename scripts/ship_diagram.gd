@@ -1,6 +1,6 @@
 class_name ShipDiagram
-const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 extends Control
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## Generated spacecraft portrait with a live build layer.
 ##
 ## The hull PNG stays the authored pixel-art base. Modules and instruments are
@@ -25,6 +25,7 @@ var _has_live := false
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	clip_contents = true
 	set_process(true)
 	_load_texture()
 
@@ -46,8 +47,8 @@ func set_build(hull: String, insts: Array, refits: Array) -> void:
 			accent = Color("#b692ff")
 		_:
 			accent = Color("#54e6d1")
-	_refits = ShipBuild.refit_count(owned)
-	_modules = ShipBuild.modules(instruments, owned)
+	_refits = SHIP_BUILD.refit_count(owned)
+	_modules = SHIP_BUILD.modules(instruments, owned)
 	_has_live = false
 	for m in _modules:
 		if str(m["id"]) in ["antenna", "ion", "buffer", "radar", "camera"]:
@@ -65,11 +66,11 @@ func refit_count() -> int:
 
 
 func tier() -> Dictionary:
-	return ShipBuild.tier(_refits)
+	return SHIP_BUILD.tier(_refits)
 
 
 func module_line() -> String:
-	return ShipBuild.line(instruments, owned)
+	return SHIP_BUILD.line(instruments, owned)
 
 
 func flash_build() -> void:
@@ -128,13 +129,13 @@ func _slot_rect(slot: String, ts: Vector2) -> Rect2:
 		"nose_low":
 			r = Rect2(bbox_end_x() - 15.0, bbox_end_y() - 7.0, 10.0, 6.0)
 		"top_front":
-			r = Rect2(bx + bw * 0.66, by - 5.0, 10.0, 8.0)
+			r = Rect2(bx + bw * 0.66, by + 1.0, 10.0, 7.0)
 		"top_mid":
-			r = Rect2(bx + bw * 0.44, by - 8.0, 12.0, 9.0)
+			r = Rect2(bx + bw * 0.44, by + 1.0, 12.0, 8.0)
 		"top_rear":
-			r = Rect2(bx + bw * 0.18, by - 7.0, 14.0, 9.0)
+			r = Rect2(bx + bw * 0.18, by + 1.0, 14.0, 8.0)
 		"top_aux":
-			r = Rect2(bx + bw * 0.56, by - 12.0, 10.0, 7.0)
+			r = Rect2(bx + bw * 0.56, by + 1.0, 10.0, 6.0)
 		"rear":
 			r = Rect2(bx - 6.0, cy - 5.0, 10.0, 10.0)
 		"rear_low":

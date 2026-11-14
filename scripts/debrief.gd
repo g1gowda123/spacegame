@@ -147,35 +147,22 @@ func _build_summary() -> void:
 
 	c.add_child(_hr(10, 140, 286))
 	var build_head := UIKit.label("SHIP BUILD  //  LIVE REFIT", 6, UIKit.CYAN, true)
-	build_head.position = Vector2(10, 146)
+	build_head.position = Vector2(10, 142)
 	build_head.size = Vector2(286, 10)
 	c.add_child(build_head)
 	build_label = UIKit.label("", 6, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	build_label.position = Vector2(140, 146)
+	build_label.position = Vector2(140, 142)
 	build_label.size = Vector2(156, 10)
 	c.add_child(build_label)
 	ship_diagram = ShipDiagram.new()
-	ship_diagram.position = Vector2(58, 158)
+	ship_diagram.position = Vector2(58, 152)
 	ship_diagram.size = Vector2(190, 70)
 	c.add_child(ship_diagram)
 	build_line = UIKit.label("", 6, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
-	build_line.position = Vector2(10, 230)
-	build_line.size = Vector2(286, 10)
+	build_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	build_line.position = Vector2(10, 223)
+	build_line.size = Vector2(286, 18)
 	c.add_child(build_line)
-	var lock := GameState.hull()
-	var vehicle := GameState.vehicle()
-	var obj := GameState.objective()
-	var info := UIKit.label(
-		"OBJECTIVE  %s\nHULL  %s  ·  LAUNCH  %s\nORBIT  LOW INSERTION  ·  %d INSTRUMENTS" % [
-			str(obj.get("name", "—")).to_upper(),
-			str(lock.get("name", "—")).to_upper(),
-			str(vehicle.get("name", "—")).to_upper(),
-			GameState.run.get("instruments", []).size(),
-		], 6, UIKit.DIM, false)
-	info.position = Vector2(10, 244)
-	info.size = Vector2(286, 40)
-	info.add_theme_constant_override("line_spacing", 1)
-	c.add_child(info)
 	_refresh_ship()
 
 

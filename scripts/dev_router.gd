@@ -1,4 +1,5 @@
 extends Node
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## Development-only deep links for screenshots and smoke tests.
 ## `godot --path . -- --screen=draft` boots straight into a screen.
 
@@ -29,6 +30,33 @@ func _apply_owned(csv: String) -> void:
 				break
 
 
+func _run_flowtest() -> void:
+	GameState.new_run()
+	GameState.quick_loadout()
+	var launched := GameState.commit_design()
+	GameState.begin_sector(GameState.draft[0])
+	var base_range := int(GameState.current_sector.get("move_range", 0))
+	var base_dv := int(GameState.current_sector.get("delta_v", 0))
+	GameState.finish_sector(true, 3, GameState.current_sector)
+	GameState.make_shop()
+	GameState.shop_offers = [GameState.UPGRADES[10]]  # ION THRUSTER
+	var bought := GameState.buy_offer(0)
+	GameState.roll_draft()
+	GameState.begin_sector(GameState.draft[0])
+	var upgraded_range := int(GameState.current_sector.get("move_range", 0))
+	var upgraded_dv := int(GameState.current_sector.get("delta_v", 0))
+	print("SHIPFLOW launched=", launched, " bought=", bought, " range=", base_range, "->", upgraded_range, " dv=", base_dv, "->", upgraded_dv)
+	print("SHIPFLOW owned=", GameState.owned, " modules=", SHIP_BUILD.modules(GameState.run.get("instruments", []), GameState.owned).size(), " tier=", SHIP_BUILD.tier(SHIP_BUILD.refit_count(GameState.owned))["name"])
+	for i in range(2):
+		GameState.finish_sector(true, 3, GameState.current_sector)
+		if int(GameState.run.get("sector", 1)) <= GameState.SECTORS_PER_RUN:
+			GameState.roll_draft()
+			GameState.begin_sector(GameState.draft[0])
+	var score := GameState.calculate_score()
+	print("SHIPFLOW report total=", score["total"], " grade=", score["grade"], " successes=", score["successes"])
+	get_tree().quit()
+
+
 func _route() -> void:
 	# Optional crew-mode shortcuts for screenshots and smoke tests:
 	#   --crew=3 --difficulty=director
@@ -51,6 +79,9 @@ func _route() -> void:
 			owned_csv = arg.substr(8)
 	if _screen == "crew":
 		get_tree().change_scene_to_file("res://scenes/crew.tscn")
+		return
+	if _screen == "flowtest":
+		_run_flowtest()
 		return
 	if daily:
 		CrewDirector.begin_run("daily", 1, "standard")

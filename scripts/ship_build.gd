@@ -144,8 +144,13 @@ static func tier(refits: int) -> Dictionary:
 
 
 static func line(instruments: Array, owned: Array) -> String:
-	var mods := modules(instruments, owned)
-	var names: Array[String] = []
-	for m in mods:
-		names.append(str(m["short"]))
-	return " · ".join(names) if not names.is_empty() else "NO PAYLOAD"
+	var payload: Array[String] = []
+	var refits: Array[String] = []
+	for m in modules(instruments, owned):
+		if str(m.get("kind", "")) == "PAYLOAD":
+			payload.append(str(m["short"]))
+		else:
+			refits.append(str(m["short"]))
+	var rig := "RIG  " + (" · ".join(refits) if not refits.is_empty() else "STOCK")
+	var pay := "PAY  " + (" · ".join(payload) if not payload.is_empty() else "NONE")
+	return rig + "\n" + pay
