@@ -13,22 +13,40 @@ Every destination is a real planet. Every hazard is derived from that planet's m
 
 ---
 
+## What it looks like
+
+**In one sentence:** you design a spacecraft under a fixed budget, draft one of three real exoplanets, then keep it alive long enough to bring the data home.
+
+| | |
+|---|---|
+| <img src="screenshots/draft.png" width="480" alt="Target draft"> | <img src="screenshots/surface.png" width="480" alt="Surface sector"> |
+| **Pick a real world.** Three archive planets, each with measured properties and derived hazard bars. | **Fly the surface.** One move per turn, telegraphed hazards, and a limited hull. |
+| <img src="screenshots/debrief.png" width="480" alt="Debrief and refit"> | <img src="screenshots/report.png" width="480" alt="Final report"> |
+| **Spend the grant.** Repair, refit, and buy rule-bending firmware between sectors. | **File the report.** Grade, score breakdown, and the story of what the agency found. |
+
+Each run is three planets. At every stop you draft one of three real archive worlds, pick a route across its surface, and decide when to spend fuel, hold position, or extract before the next hazard lands. Between planets you spend the grant on repairs, instruments, and firmware that bend the rules.
+
+The loop is deliberately short: **build → draft → survive → refit → repeat**, three times, then a final grade. A run takes about 10–15 minutes.
+
+---
+
 ## Contents
 
-1. [What you actually do](#what-you-actually-do)
-2. [A run, step by step](#a-run-step-by-step)
-3. [Mission design](#mission-design)
-4. [Surface operations](#surface-operations)
-5. [Debrief and refit](#debrief-and-refit)
-6. [Scoring](#scoring)
-7. [Where the science comes from](#where-the-science-comes-from)
-8. [Controls](#controls)
-9. [Running the project](#running-the-project)
-10. [How the code is organised](#how-the-code-is-organised)
-11. [The surface generator](#the-surface-generator)
-12. [Art pipeline](#art-pipeline)
-13. [Repository layout](#repository-layout)
-14. [Credits](#credits)
+1. [What it looks like](#what-it-looks-like)
+2. [What you actually do](#what-you-actually-do)
+3. [A run, step by step](#a-run-step-by-step)
+4. [Mission design](#mission-design)
+5. [Surface operations](#surface-operations)
+6. [Debrief and refit](#debrief-and-refit)
+7. [Scoring](#scoring)
+8. [Where the science comes from](#where-the-science-comes-from)
+9. [Controls](#controls)
+10. [Running the project](#running-the-project)
+11. [How the code is organised](#how-the-code-is-organised)
+12. [The surface generator](#the-surface-generator)
+13. [Art pipeline](#art-pipeline)
+14. [Repository layout](#repository-layout)
+15. [Credits](#credits)
 
 ---
 
@@ -265,6 +283,19 @@ sols      = clamp(34 − |Teq − 280| / 55, 22, 36)
 ```
 
 The in-game **THERMAL**, **ΔV**, and **COMMS LOSS** values are documented gameplay abstractions, not flight dynamics. The measured archive values themselves are shown on the detail line of every draft card.
+
+### Mission-design framework used
+
+The challenge resource tab maps directly onto the design loop:
+
+- **Design and Develop Science Missions** — the game shows the four mission segments explicitly: launch (vehicle), space (hull + payload), ground (downlink/comms loss), and user (science objective).
+- **GMAT** — orbit choice (LOW/POLAR/HIGH) is translated into altitude, period, eclipse fraction, and passes/day; the final report prints the flown profile.
+- **Concept Maturity Levels (CMLs)** — the design validation line reports CML 1 CONCEPT, 2 FEASIBILITY, 3 TRADE STUDY, or 4 POINT DESIGN from mass margin, power margin, and science traceability.
+- **Mission Design Lab (MDL)** — mission design is staged as a trade study, then a point design; the between-sector refit is the redesign loop.
+- **Mission Viz** — the orbit profile in the final ledger connects the surface run to the orbital geometry that enabled it.
+- **A Learning Game About Telescopes** — an instrument family that matches the objective earns a **science fit +10%** bonus; a mismatched payload is legal but loses science return.
+- **CubeSat 101** — the run is a compressed ConOps: design, launch, insertion, surface operations, downlink, end of mission, with mass/power/thermal/data/budget as the budget lines.
+- **CSA digital games** — short browser runs, readable HUD, and explicit feedback keep the game pick-up-and-play.
 
 Source: <https://exoplanetarchive.ipac.caltech.edu/> — NASA Exoplanet Archive, California Institute of Technology, operated under contract with NASA.
 
