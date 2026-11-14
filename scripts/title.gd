@@ -25,25 +25,43 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	var kicker := UIKit.mono("NASA SPACE APPS CHALLENGE 2026", 8, UIKit.CYAN)
+	# A manila program poster taped over the star chart. The planet stays the
+	# hero on the right; the left is the agency's filed mission cover.
+	UIKit.sheet(self, 18, 10, 456, 338)
+	var margin_rule := ColorRect.new()
+	margin_rule.color = Color(0.72, 0.20, 0.18, 0.35)
+	margin_rule.position = Vector2(34, 18)
+	margin_rule.size = Vector2(1, 322)
+	add_child(margin_rule)
+	var stamp := TextureRect.new()
+	stamp.texture = load("res://assets/ui/skin/stamp_approved.png")
+	stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stamp.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	stamp.position = Vector2(366, 26)
+	stamp.size = Vector2(92, 30)
+	stamp.rotation = -0.06
+	stamp.modulate = Color(1, 1, 1, 0.82)
+	add_child(stamp)
+
+	var kicker := UIKit.mono("NASA SPACE APPS CHALLENGE 2026", 8, UIKit.ORANGE)
 	kicker.position = Vector2(42, 24)
 	add_child(kicker)
-	var sub := UIKit.mono("OFFICIAL CHALLENGE  //  SPACE MISSION DESIGN GAME", 7, UIKit.DIM)
+	var sub := UIKit.mono("OFFICIAL CHALLENGE  //  SPACE MISSION DESIGN GAME", 7, UIKit.INK_SOFT)
 	sub.position = Vector2(42, 37)
 	add_child(sub)
 
 	var logo := UIKit.label("ORBIT", 46, UIKit.TEXT, true)
 	logo.position = Vector2(38, 66)
 	add_child(logo)
-	var amp := UIKit.label("&", 34, UIKit.AMBER, false)
+	var amp := UIKit.label("&", 34, UIKit.ORANGE, false)
 	amp.position = Vector2(40, 110)
 	amp.size = Vector2(22, 34)
 	add_child(amp)
-	var outplay := UIKit.label("OUTPLAY", 30, UIKit.AMBER, true)
+	var outplay := UIKit.label("OUTPLAY", 30, UIKit.ORANGE, true)
 	outplay.position = Vector2(64, 112)
 	add_child(outplay)
 
-	var tag := UIKit.mono("MISSION ARCHITECTURE ROGUELITE", 8, UIKit.CYAN)
+	var tag := UIKit.mono("MISSION ARCHITECTURE ROGUELITE", 8, UIKit.SIGNAL)
 	tag.position = Vector2(44, 160)
 	add_child(tag)
 
@@ -95,7 +113,7 @@ func _build_ui() -> void:
 		daily_note += "   ·   DAILY %s  %d" % [today, CrewDirector.daily_best]
 	else:
 		daily_note += "   ·   DAILY %s  %s" % [today, _fmt(0)]
-	var best := UIKit.mono(daily_note, 7, UIKit.MUTED)
+	var best := UIKit.mono(daily_note, 7, UIKit.INK_SOFT)
 	best.position = Vector2(44, 290)
 	add_child(best)
 
@@ -104,18 +122,18 @@ func _build_ui() -> void:
 	# archive table name as PSCOMPPARS. The source name is PSCompPars.
 	var credit := UIKit.mono(
 		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars",
-		6, UIKit.DIM
+		6, UIKit.INK_FAINT
 	)
 	credit.position = Vector2(44, 314)
 	add_child(credit)
 
-	var proto := UIKit.mono("PROTOTYPE 1.0  ·  WEB BUILD", 6, UIKit.DIM,
+	var proto := UIKit.mono("PROTOTYPE 1.0  ·  WEB BUILD", 6, UIKit.INK_FAINT,
 		HORIZONTAL_ALIGNMENT_RIGHT)
-	proto.position = Vector2(410, 314)
-	proto.size = Vector2(180, 12)
 	add_child(proto)
+	proto.position = Vector2(352, 332)
+	proto.size = Vector2(112, 12)
 
-	var sig := UIKit.mono("●  SIGNAL LOCKED", 6, UIKit.GREEN)
+	var sig := UIKit.mono("●  SIGNAL LOCKED", 6, UIKit.SIGNAL)
 	sig.position = Vector2(44, 332)
 	add_child(sig)
 	var tw := create_tween().set_loops()
@@ -134,7 +152,7 @@ func _build_howto() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	howto_layer.add_child(shade)
 
-	var p := UIKit.panel(Color("#0d1522"), UIKit.CYAN_DARK)
+	var p := UIKit.panel(UIKit.PAPER, UIKit.INK)
 	p.position = Vector2(70, 34)
 	p.size = Vector2(500, 292)
 	howto_layer.add_child(p)
@@ -142,8 +160,8 @@ func _build_howto() -> void:
 	v.add_theme_constant_override("separation", 6)
 	p.add_child(v)
 
-	v.add_child(UIKit.label("HOW TO PLAY", 20, UIKit.CYAN, true))
-	v.add_child(UIKit.label("ONE RUN = 3 EXOPLANETS. PICK 1-4 CREW AND A DIFFICULTY IN MISSION CONTROL.", 7, UIKit.AMBER, true))
+	v.add_child(UIKit.label("HOW TO PLAY", 20, UIKit.ORANGE, true))
+	v.add_child(UIKit.label("ONE RUN = 3 EXOPLANETS. PICK 1-4 CREW AND A DIFFICULTY IN MISSION CONTROL.", 7, UIKit.SIGNAL, true))
 	v.add_child(UIKit.rule())
 
 	var rows := [
@@ -156,7 +174,7 @@ func _build_howto() -> void:
 	for r in rows:
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 10)
-		var key := UIKit.label(r[0], 8, UIKit.CYAN, true)
+		var key := UIKit.label(r[0], 8, UIKit.ORANGE, true)
 		key.custom_minimum_size = Vector2(86, 0)
 		h.add_child(key)
 		var body := UIKit.label(r[1], 8, UIKit.MUTED, false)

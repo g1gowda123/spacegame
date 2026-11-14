@@ -2,44 +2,55 @@ class_name UIKit
 extends RefCounted
 ## Shared visual language for every screen.
 ##
-## Navy console grammar: one textured sheet per decision area, flat rows inside
-## it, a hairline rule between regions, and an accent that only marks the
-## current choice. Cyan is an accent, not the default border.
+## FLIGHT BINDER // 1975: cream paper dossiers, hard ink rules, agency orange
+## for the current action, and a dark night console reserved for the map/HUD.
 
-const BG := Color("#070a11")
-const PANEL := Color("#0e1624")
-const PANEL_2 := Color("#131f31")
-const PANEL_3 := Color("#1a2940")
-const LINE := Color("#27384f")
-const TEXT := Color("#e8eff7")
-const MUTED := Color("#8ba0b6")
-const DIM := Color("#5d7186")
-const CYAN := Color("#54e6d1")
-const CYAN_DARK := Color("#1f7f78")
-const AMBER := Color("#ffc45c")
-const RED := Color("#ff5d6c")
-const GREEN := Color("#7fe08a")
-const PURPLE := Color("#b692ff")
-const BLUE := Color("#7cc8ff")
+# FLIGHT BINDER // 1975 — paper, ink, agency orange, night telemetry.
+# The map and sector HUD stay night; menu surfaces are paper dossiers.
+const PAPER := Color("#e8dfc8")
+const PAPER_HI := Color("#f4ecd9")
+const PAPER_DEEP := Color("#d8c9ab")
+const INK := Color("#1b1a17")
+const INK_SOFT := Color("#4a4438")
+const INK_FAINT := Color("#75674f")
+const NIGHT := Color("#101826")
+const NIGHT_2 := Color("#0b1220")
+const NIGHT_PANEL := Color("#0e1624")
+const NIGHT_LINE := Color("#354253")
+const NIGHT_TEXT := Color("#f2ead6")
+const NIGHT_MUTED := Color("#bfb39c")
+const NIGHT_DIM := Color("#817968")
+const ORANGE := Color("#e4572e")
+const ORANGE_DARK := Color("#a83a1e")
+const SIGNAL := Color("#b8332f")
+const TEAL := Color("#5f8f8a")
+const LIVE := Color("#54e6d1")
+const CAUTION := Color("#ffc45c")
 
-# Surface tokens (flatter than the old panel-on-panel stack).
-const SHEET := Color("#0b1522")
-const SHEET_LINE := Color("#22364c")
-const ROW_BG := Color("#0b1725")
-const ROW_HOVER := Color("#102030")
-const ROW_SELECTED := Color("#0d2630")
-
-# Aliases used by the briefing/title cards; keep them on the original palette.
-const PAPER := PANEL
-const INK := TEXT
-const ORANGE := CYAN
-const SIGNAL := RED
-const NIGHT := BG
-const BOARD := PANEL
-const RAIL := LINE
-const STRIP := PANEL_2
-const STRIP_DIM := PANEL
-const CRT := GREEN
+# Legacy names used across the screens. They now resolve to the binder palette
+# so the whole UI shifts together; night-specific surfaces use NIGHT_* above.
+const BG := NIGHT
+const PANEL := PAPER
+const PANEL_2 := PAPER_DEEP
+const PANEL_3 := Color("#cbb994")
+const LINE := Color("#a99779")
+const TEXT := INK
+const MUTED := INK_SOFT
+const DIM := INK_FAINT
+const CYAN := ORANGE
+const CYAN_DARK := ORANGE_DARK
+const AMBER := CAUTION
+const RED := SIGNAL
+const GREEN := TEAL
+const PURPLE := Color("#6f5a8a")
+const BLUE := TEAL
+const SHEET := PAPER
+const SHEET_LINE := Color("#b7a586")
+const ROW_BG := Color("#efe7d4")
+const ROW_HOVER := Color("#f7efdd")
+const ROW_SELECTED := Color("#f3e4c2")
+const CRT := TEAL
+const NIGHT_SHEET := NIGHT_2
 
 static var pixel_font: Font
 static var body_font: Font
@@ -70,10 +81,31 @@ static func _skin(name: String) -> StyleBoxTexture:
 	return sb
 
 
+static func _paper_skin(name: String, margin: int = 5) -> StyleBoxTexture:
+	if _skin_cache.has(name):
+		return _skin_cache[name]
+	var sb := StyleBoxTexture.new()
+	sb.texture = load("res://assets/ui/skin/%s.png" % name)
+	sb.texture_margin_left = margin
+	sb.texture_margin_right = margin
+	sb.texture_margin_top = margin
+	sb.texture_margin_bottom = margin
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	_skin_cache[name] = sb
+	return sb
+
+
 static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> PanelContainer:
-	## A major decision surface: dark navy 9-slice, no nested card borders.
+	## A major decision surface: a hard-edged paper dossier with a 2 px ink
+	## shadow. No rounded panel glow; the paper and rule do the hierarchy.
 	var p := PanelContainer.new()
-	var sb := _skin("panel")
+	var sb := style_panel(PAPER, INK, 0, 1)
+	sb.shadow_color = Color(0.06, 0.05, 0.04, 0.46)
+	sb.shadow_size = 2
+	sb.shadow_offset = Vector2(2, 2)
 	sb.content_margin_left = 0
 	sb.content_margin_right = 0
 	sb.content_margin_top = 0
@@ -198,31 +230,33 @@ static func button(
 	b.add_theme_font_override("font", _font(pixel))
 	b.add_theme_font_size_override("font_size", 10 if pixel else 9)
 	if not accent:
-		b.add_theme_stylebox_override("normal", _skin("button_idle"))
-		b.add_theme_stylebox_override("hover", _skin("button_hover"))
-		b.add_theme_stylebox_override("pressed", _skin("button_pressed"))
+		b.add_theme_stylebox_override("normal", _paper_skin("tab_idle", 5))
+		b.add_theme_stylebox_override("hover", _paper_skin("tab_hover", 5))
+		b.add_theme_stylebox_override("pressed", _paper_skin("tab_pressed", 5))
 		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		b.add_theme_color_override("font_color", TEXT)
-		b.add_theme_color_override("font_hover_color", Color("#ffffff"))
-		b.add_theme_color_override("font_pressed_color", CYAN)
-		b.add_theme_color_override("font_disabled_color", DIM)
+		b.add_theme_color_override("font_color", INK)
+		b.add_theme_color_override("font_hover_color", INK)
+		b.add_theme_color_override("font_pressed_color", INK)
+		b.add_theme_color_override("font_disabled_color", INK_FAINT)
 		b.pressed.connect(func(): if GameState: GameState.sfx("click"))
 		return b
-	# Accent button: dark ink fill with a cyan edge. High contrast, not a slab
-	# of saturated colour.
-	var base := style_panel(Color("#0e3336"), CYAN_DARK, 2)
+	# Primary action: agency-orange paper with an ink edge and a hard shadow.
+	var base := style_panel(ORANGE, INK, 0, 1)
 	base.content_margin_left = 6
 	base.content_margin_right = 6
-	var hover := style_panel(Color("#124a4d"), CYAN, 2)
-	var press := style_panel(Color("#123f42"), CYAN, 2)
+	base.shadow_color = Color(0.06, 0.05, 0.04, 0.55)
+	base.shadow_size = 2
+	base.shadow_offset = Vector2(2, 2)
+	var hover := style_panel(Color("#f06a3e"), INK, 0, 1)
+	var press := style_panel(ORANGE_DARK, INK, 0, 1)
 	b.add_theme_stylebox_override("normal", base)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", press)
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.add_theme_color_override("font_color", Color("#d9fbf5"))
-	b.add_theme_color_override("font_hover_color", Color("#ffffff"))
-	b.add_theme_color_override("font_pressed_color", Color("#ffffff"))
-	b.add_theme_color_override("font_disabled_color", DIM)
+	b.add_theme_color_override("font_color", INK)
+	b.add_theme_color_override("font_hover_color", INK)
+	b.add_theme_color_override("font_pressed_color", PAPER)
+	b.add_theme_color_override("font_disabled_color", INK_FAINT)
 	b.pressed.connect(func(): if GameState: GameState.sfx("click"))
 	return b
 
@@ -254,8 +288,7 @@ static func set_bar_color(pb, color: Color) -> void:
 
 static func chip(text: String, color: Color, pixel: bool = false) -> PanelContainer:
 	var p := PanelContainer.new()
-	var st := style_panel(Color(color.r * 0.12, color.g * 0.12, color.b * 0.12, 0.7),
-		Color(color.r, color.g, color.b, 0.32), 2)
+	var st := style_panel(PAPER_HI, color, 0, 1)
 	st.content_margin_left = 4
 	st.content_margin_right = 4
 	st.content_margin_top = 0
@@ -322,12 +355,12 @@ static func row_style(selected: bool, hovered: bool = false,
 	if selected:
 		s.bg_color = ROW_SELECTED
 		s.border_color = accent
-		s.border_width_left = 2
+		s.border_width_left = 3
 	else:
 		s.bg_color = ROW_HOVER if hovered else ROW_BG
-		s.border_color = LINE
+		s.border_color = INK if hovered else SHEET_LINE
 		s.border_width_left = 1 if hovered else 0
-	s.set_corner_radius_all(2)
+	s.set_corner_radius_all(0)
 	s.content_margin_left = 8
 	s.content_margin_right = 6
 	s.content_margin_top = 2
