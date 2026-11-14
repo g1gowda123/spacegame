@@ -169,11 +169,14 @@ func _build_chip(e: Dictionary) -> Panel:
 	var icon_path := "res://assets/sprites/buffs/%s.png" % str(e["icon"])
 	if ResourceLoader.exists(icon_path):
 		var icon := TextureRect.new()
+		# Set the expand mode before the size: TextureRect clamps its minimum
+		# to the texture until it is told to ignore it, which made 48 px art
+		# overflow a 22 px chip.
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture = load(icon_path) as Texture2D
 		icon.position = Vector2(3, 3)
 		icon.size = Vector2(16, 16)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		chip.add_child(icon)
@@ -213,6 +216,9 @@ func _build_chip(e: Dictionary) -> Panel:
 	else:
 		type_line = "FIRMWARE" if bool(e["firmware"]) else "HARDWARE"
 	body += "\n\n%s · INSTALLED x%d" % [type_line, int(e["count"])]
+	chip.set_meta("tip_title", str(e["name"]))
+	chip.set_meta("tip_body", body)
+	chip.set_meta("tip_accent", accent)
 	UIKit.hover_info(chip, str(e["name"]), body, accent)
 
 	chip.mouse_entered.connect(func():
@@ -312,6 +318,15 @@ func pop_chip(chip: Control, color: Color) -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(chip, "modulate", Color.WHITE, 0.36)
 	chip.set_meta("pulse_tw", tw)
+
+
+func preview_tip(index: int) -> void:
+	## QA hook: show the dossier for one chip without moving the mouse.
+	if index < 0 or index >= _chips.size():
+		return
+	var chip: Control = _chips[index]
+	UITip.preview(chip, str(chip.get_meta("tip_title", "")),
+		str(chip.get_meta("tip_body", "")), chip.get_meta("tip_accent", UIKit.CYAN))
 
 
 func toggle_arsenal() -> void:
@@ -421,11 +436,11 @@ func _build_arsenal_rows(panel: Control) -> void:
 		var icon_path := "res://assets/sprites/buffs/%s.png" % str(e["icon"])
 		if ResourceLoader.exists(icon_path):
 			var icon := TextureRect.new()
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			icon.texture = load(icon_path) as Texture2D
 			icon.position = Vector2(3, 3)
 			icon.size = Vector2(16, 16)
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			icon_frame.add_child(icon)

@@ -60,6 +60,14 @@ static func _close(host: Control) -> void:
 	_inst.visible = false
 
 
+static func preview(host: Control, title: String, body: String,
+	accent: Color = UIKit.CYAN) -> void:
+	## Debug/QA entry point: open the dossier without a real mouse hover.
+	if host == null:
+		return
+	_open(host, title, body, accent)
+
+
 static func hide_tip() -> void:
 	if _inst != null and is_instance_valid(_inst):
 		_inst.visible = false

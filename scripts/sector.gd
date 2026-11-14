@@ -226,6 +226,10 @@ func _ready() -> void:
 			if not hazards.is_empty():
 				player_cell = hazards[0]["cells"][0]
 				_end_turn()
+		elif arg == "--arsenal":
+			_debug_rack(-1)
+		elif arg.begins_with("--rack-tip="):
+			_debug_rack(int(arg.substr(11)))
 		elif arg == "--arm-hazard":
 			if not hazards.is_empty():
 				hazards[0]["age"] = 1
@@ -1350,6 +1354,17 @@ func _pulse(node: Control, color: Color) -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(node, "modulate", Color.WHITE, 0.32)
 	node.set_meta("pulse_tw", tw)
+
+
+func _debug_rack(index: int) -> void:
+	## QA: -1 opens the arsenal sheet, >=0 pins one chip dossier.
+	await get_tree().create_timer(1.0).timeout
+	if upgrade_strip == null:
+		return
+	if index < 0:
+		upgrade_strip.toggle_arsenal()
+	else:
+		upgrade_strip.preview_tip(index)
 
 
 func _run_fx_demo(kind: String) -> void:
