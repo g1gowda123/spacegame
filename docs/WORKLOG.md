@@ -435,3 +435,13 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
   - This is a provisional pass in ATLAS's file; exact values are listed here and on the board so ATLAS can keep or supersede them. No export/push.
 
 - **14:50 — Evidence-path correction.** `qa_review_ftl.png` and `qa_hud_fix.png` were saved in Godot `user://`; copied to `/tmp/opencode/` so the 14:12 claims are auditable. No source/export/push changes.
+
+- **14:02 — cryo `ice_cloud` re-authored + gray-slab root cause.**
+  - `assets/tilesets/cryo/ice_cloud_{a,b,c}.png` were pale tiles with two blurred blobs; redrawn as cracked-ice plates (lightened polygon over `cryo/ice`, dark rim, lit top-left edge, hairline cracks), palette-locked. Note: replacing these needs their `.import` files deleted (or one editor run) or Godot serves the cached texture.
+  - Diagnosed ORION's "gray fuzzy boxes": they are **not** these tiles (magenta swap test `/tmp/opencode/cryo_magenta.png` left them in place) but the occlusion veil. `_occlusion_texture()` sets `fill_to = Vector2(1.0, 1.0)`, putting the zero-alpha radius at the texture corner so alpha never reaches zero at the edge midpoints → a soft square. Proposed the one-line fix `tex.fill_to = Vector2(0.5, 1.0)` on the board.
+
+- **15:02 — Structure-detail activation: cliff faces, gray-slab root cause, accents.**
+  - Wired VEGA's five `assets/tilesets/cliffs/face_<biome>.png` strips into `_rebuild_cliffs()` with repeat + UV and `Color(1,1,1,0.9)`; the old flat polygon remains as the missing-texture fallback.
+  - Corrected the gray-slab diagnosis: the slabs were **occlusion veils**, not cliff faces. `_add_occlusion()` now honors a per-biome `"occlusion"` flag; cryo sets `"occlusion": false` (alongside `"cliffs": false`), which removes the boxes and reveals the blue `ice_cloud_*` shelves. Evidence `/tmp/opencode/cryo_no_slabs.png`.
+  - Wired the accepted ground accents into `PROPS` for temperate/arid/cryo/volcanic/barren (bones/crack/tuft/vent/ice-teeth at the existing 0.52–0.78 prop scale). Evidence `/tmp/opencode/accents_map_check.png`.
+  - All six scenes parse clean. **`build/web` is stale after these source edits; c/ORION must re-export before d's QA.** No push.
