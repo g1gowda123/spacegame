@@ -597,42 +597,42 @@ func _ambient_profile() -> Dictionary:
 	match id:
 		"cryo", "ammonia":
 			return {
-				"tex": "particle_snow", "amount": 38, "life": 9.0,
+				"tex": "particle_snow", "amount": 62, "life": 9.0,
 				"dir": Vector2(0.15, 1.0), "spread": 28.0,
 				"vel": Vector2(5.0, 15.0), "gravity": Vector2(6.0, 18.0),
-				"scale": Vector2(0.35, 0.9), "color": Color(0.86, 0.96, 1.0, 0.55),
+				"scale": Vector2(0.45, 1.15), "color": Color(0.90, 0.98, 1.0, 0.70),
 			}
 		"volcanic", "sulfur", "obsidian":
 			return {
-				"tex": "particle_ember", "amount": 30, "life": 6.0,
+				"tex": "particle_ember", "amount": 44, "life": 6.0,
 				"dir": Vector2(0.12, -1.0), "spread": 26.0,
 				"vel": Vector2(8.0, 26.0), "gravity": Vector2(0.0, -10.0),
 				"scale": Vector2(0.55, 1.35), "color": Color(1.0, 0.64, 0.28, 0.75),
 			}
 		"ocean", "methane":
 			return {
-				"tex": "particle_dot", "amount": 18, "life": 13.0,
+				"tex": "particle_dot", "amount": 26, "life": 13.0,
 				"dir": Vector2(1.0, 0.05), "spread": 10.0,
 				"vel": Vector2(4.0, 11.0), "gravity": Vector2.ZERO,
 				"scale": Vector2(0.6, 1.8), "color": Color(0.55, 0.92, 0.92, 0.22),
 			}
 		"crystal":
 			return {
-				"tex": "particle_spark", "amount": 16, "life": 3.2,
+				"tex": "particle_spark", "amount": 24, "life": 3.2,
 				"dir": Vector2(0.0, -1.0), "spread": 180.0,
 				"vel": Vector2(1.5, 6.0), "gravity": Vector2.ZERO,
 				"scale": Vector2(0.18, 0.55), "color": Color(0.85, 0.72, 1.0, 0.7),
 			}
 		"arid", "iron", "barren", "carbon":
 			return {
-				"tex": "particle_dot", "amount": 30, "life": 12.0,
+				"tex": "particle_dot", "amount": 48, "life": 12.0,
 				"dir": Vector2(1.0, 0.12), "spread": 14.0,
 				"vel": Vector2(7.0, 19.0), "gravity": Vector2.ZERO,
-				"scale": Vector2(0.35, 0.95), "color": Color(0.86, 0.76, 0.58, 0.26),
+				"scale": Vector2(0.45, 1.2), "color": Color(0.88, 0.78, 0.60, 0.36),
 			}
 		_:
 			return {
-				"tex": "particle_spore", "amount": 24, "life": 13.0,
+				"tex": "particle_spore", "amount": 34, "life": 13.0,
 				"dir": Vector2(0.25, -0.7), "spread": 58.0,
 				"vel": Vector2(2.5, 8.0), "gravity": Vector2(0.0, -2.0),
 				"scale": Vector2(0.35, 1.0), "color": Color(0.72, 0.96, 0.78, 0.42),

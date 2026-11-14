@@ -359,7 +359,7 @@ class DevilNode extends Node2D:
 	var life := 2.8
 	var age := 0.0
 	var tint := Color(0.72, 0.64, 0.52, 0.45)
-	var radius := 9.0
+	var radius := 14.0
 	var drift := Vector2(26.0, -5.0)
 
 	func _ready() -> void:
@@ -375,11 +375,11 @@ class DevilNode extends Node2D:
 			queue_free()
 
 	func _draw() -> void:
-		for i in range(3):
-			var a := age * 5.0 + float(i) * 2.1
-			var r := radius * (1.0 - float(i) * 0.22)
+		for i in range(4):
+			var a := age * 5.0 + float(i) * 1.9
+			var r := radius * (1.0 - float(i) * 0.18)
 			draw_arc(Vector2(sin(a) * 2.2, -float(i) * 4.5), r, a, a + 2.7, 10,
-				Color(tint.r, tint.g, tint.b, tint.a * (0.85 - float(i) * 0.2)), 1.0, true)
+				Color(tint.r, tint.g, tint.b, tint.a * (0.95 - float(i) * 0.18)), 1.4, true)
 		var grit := Vector2(cos(age * 7.0) * 4.0, 3.0)
 		draw_rect(Rect2(grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.7), true)
 		draw_rect(Rect2(-grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.5), true)

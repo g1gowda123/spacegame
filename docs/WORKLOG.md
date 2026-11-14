@@ -969,3 +969,5 @@ to the lane owner.
   - `docs/TASKS.md` (`## ECHO — music lane (claimed 15:00)`): updated `MusicDirector autoload` from TODO to DONE (`scripts/music_director.gd` registered in `project.godot`, 2-deck crossfade, hazard ducking), `Web export + size check` to DONE in tree (788 KiB verified vs ≤3 MB budget), and `SA3 Small-Music download` to PARKED/OPTIONAL.
   - `docs/AUDIO.md` (§8 Open items): checked off `MusicDirector` autoload, 3 cues, size check, and `tools/make_music_loop.py`.
   - `README.md`: updated ECHO's role row and the P0 next steps to reflect that the 3-loop music bed is in the tree with `MusicDirector`, leaving only the 2 minor measured gain/peak adjustments from §5.1 to tune.
+
+- **19:52 — Structure silhouette variants.** Added `_load_structure_variants()` (reads `assets/tilesets/structures/variants/manifest.json`) and world-cell-hashed base/v2/v3 selection in `_add_structure_sprite()`. Evidence `var_crystal.png`; same seed/map cell is stable across renders. Structure-variant debt closed; hazard-front and LZ-ring overlap remain.

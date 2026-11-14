@@ -278,8 +278,8 @@ func _refresh() -> void:
 		return
 	var p := selected_planet
 	var g: Dictionary = p["game"]
-	detail_label.text = "SURFACE WINDOW %d SOLS   ·   DELTA-V %d   ·   %d DATA NODES REQUIRED" % [
-		int(g["sols"]), int(g["delta_v"]), int(GameState.objective().get("quota", 3))
+	detail_label.text = "SURFACE WINDOW %d SOLS   ·   DELTA-V %d" % [
+		int(g["sols"]), int(g["delta_v"])
 	]
 	detail_label.add_theme_color_override("font_color", UIKit.TEXT)
 

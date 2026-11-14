@@ -86,11 +86,16 @@ void fragment() {
         // extra texture fetch, and needs no screen-copy pass.
         float warm_guess = smoothstep(0.10, 0.42, source.r - max(source.g, source.b));
         float wet_guess = smoothstep(0.14, 0.46, source.b - max(source.r, source.g));
+        // Vegetation is green-dominant; shift only those pixels so a field of
+        // grass/scrub sways while rock and regolith stay planted.
+        float veg_guess = smoothstep(0.025, 0.18, source.g - max(source.r, source.b));
         vec2 wobble = vec2(
             sin(uv.y * map_size.y * 0.55 + TIME * 3.1),
             cos(uv.x * map_size.x * 0.48 + TIME * 2.6)
         );
         uv += wobble * 0.00085 * (warm_guess * 1.0 + wet_guess * 0.55);
+        uv.x += sin(TIME * 1.7 + uv.y * map_size.y * 0.021) * 0.0013 * veg_guess;
+        uv.y += cos(TIME * 1.3 + uv.x * map_size.x * 0.016) * 0.0006 * veg_guess;
         COLOR = texture(TEXTURE, uv);
 
         // Sub-cell material edge: sample the 4x material field on both sides of

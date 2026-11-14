@@ -71,7 +71,7 @@ var toast_label: Label
 var _toast_tween: Tween
 var fx_layer: Node2D
 var vfx_layer: Node2D
-var pad_beacon: VFX.RingNode
+var pad_beacon: Node2D
 var _ending_turn := false
 var _last_strike_near := false
 var _world_timer := 2.4
@@ -328,21 +328,38 @@ func _spawn_pad_beacon() -> void:
 	lz_flag.color = Color(1.0, 0.69, 0.0, 0.95)
 	lz_flag.position = _cell_center(start_cell) + Vector2(0, -44)
 	vfx_layer.add_child(lz_flag)
-	var ring := VFX.RingNode.new()
-	ring.position = _cell_center(start_cell)
-	ring.z_index = 2
-	ring.z_as_relative = true
-	ring.radius = 17.0
-	ring.width = 1.6
-	ring.ring_color = Color(0.33, 0.90, 0.82, 0.55)
-	ring.set_meta("pad_beacon", true)
-	vfx_layer.add_child(ring)
-	pad_beacon = ring
-	var tw := ring.create_tween().set_loops()
-	tw.tween_property(ring, "radius", 25.0, 1.1).set_ease(Tween.EASE_IN_OUT)
-	tw.parallel().tween_property(ring, "ring_color:a", 0.10, 1.1)
-	tw.tween_property(ring, "radius", 17.0, 1.1).set_ease(Tween.EASE_IN_OUT)
-	tw.parallel().tween_property(ring, "ring_color:a", 0.55, 1.1)
+	var ring_tex := load("res://assets/tilesets/fx/lz_ring.png") as Texture2D
+	if ring_tex != null:
+		# Dashed, gap-cut ring: it sits under the lander and reads as a marking
+		# on the ground, not a second glowing target competing with the craft.
+		var pad := Sprite2D.new()
+		pad.texture = ring_tex
+		pad.centered = true
+		pad.position = _cell_center(start_cell)
+		pad.z_index = 2
+		pad.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		pad.modulate = Color(1.0, 1.0, 1.0, 0.72)
+		vfx_layer.add_child(pad)
+		pad_beacon = pad
+		var tw := pad.create_tween().set_loops()
+		tw.tween_property(pad, "modulate:a", 0.92, 1.4).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(pad, "modulate:a", 0.66, 1.4).set_ease(Tween.EASE_IN_OUT)
+	else:
+		var ring := VFX.RingNode.new()
+		ring.position = _cell_center(start_cell)
+		ring.z_index = 2
+		ring.z_as_relative = true
+		ring.radius = 17.0
+		ring.width = 1.6
+		ring.ring_color = Color(0.33, 0.90, 0.82, 0.55)
+		ring.set_meta("pad_beacon", true)
+		vfx_layer.add_child(ring)
+		pad_beacon = ring
+		var tw := ring.create_tween().set_loops()
+		tw.tween_property(ring, "radius", 25.0, 1.1).set_ease(Tween.EASE_IN_OUT)
+		tw.parallel().tween_property(ring, "ring_color:a", 0.10, 1.1)
+		tw.tween_property(ring, "radius", 17.0, 1.1).set_ease(Tween.EASE_IN_OUT)
+		tw.parallel().tween_property(ring, "ring_color:a", 0.55, 1.1)
 
 
 func _build_hud() -> void:
@@ -1080,6 +1097,19 @@ func _run_fx_demo(kind: String) -> void:
 			}
 			hazards.append(h)
 			_resolve_hazard()
+		"strike-miss":
+			var m := {
+				"kind": "quake", "info": HAZARDS["quake"],
+				"cells": [player_cell + Vector2i(2, 1), player_cell + Vector2i(3, 1)],
+				"origin": player_cell + Vector2i(2, 1), "shape": "block",
+				"dir": Vector2i.ZERO, "speed": 0, "life": 2, "age": 1,
+			}
+			hazards.append(m)
+			_resolve_hazard()
+		"world":
+			_world_event()
+			_meteor_event()
+			_shooting_star()
 		_:
 			_impact(player_cell, Color("#ff9c4a"), 2, 24)
 			await get_tree().create_timer(0.75).timeout
@@ -1626,6 +1656,7 @@ func _draw_hazards() -> void:
 			fill.uv = _hazard_uvs(c)
 			fill.material = mat
 			fx_layer.add_child(fill)
+		_draw_hazard_edges(cells, armed, h.get("dir", Vector2i.ZERO))
 		if int(h["speed"]) > 0:
 			var origin: Vector2i = h["origin"]
 			var d: Vector2i = h["dir"]
@@ -1648,6 +1679,75 @@ func _draw_hazards() -> void:
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 			march.tween_property(arrow, "modulate:a", 1.0, 0.35) \
 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+const HAZARD_EDGE_SIDES := [
+	[Vector2i(0, -1), "hazard_edge_n"],
+	[Vector2i(1, 0), "hazard_edge_e"],
+	[Vector2i(0, 1), "hazard_edge_s"],
+	[Vector2i(-1, 0), "hazard_edge_w"],
+]
+
+
+func _draw_hazard_edges(cells: Array[Vector2i], armed: bool, dir: Vector2i) -> void:
+	# The fill says "dangerous cell"; the broken leading edge says "front".
+	# Only the face in the direction of travel is drawn for a sweep, so the
+	# band gets a readable lip instead of a second flat outline all around.
+	if cells.is_empty():
+		return
+	var set := {}
+	for c in cells:
+		set[c] = true
+	for c in cells:
+		if not _in_view(c.x, c.y):
+			continue
+		for side in HAZARD_EDGE_SIDES:
+			var n: Vector2i = side[0]
+			if dir != Vector2i.ZERO and n != dir:
+				continue
+			if set.has(c + n):
+				continue
+			var tex := load("res://assets/tilesets/fx/%s.png" % str(side[1])) as Texture2D
+			if tex == null:
+				continue
+			var a: Vector2i
+			var b: Vector2i
+			match n:
+				Vector2i(0, -1):
+					a = Vector2i(c.x, c.y)
+					b = Vector2i(c.x + 1, c.y)
+				Vector2i(1, 0):
+					a = Vector2i(c.x + 1, c.y)
+					b = Vector2i(c.x + 1, c.y + 1)
+				Vector2i(0, 1):
+					a = Vector2i(c.x, c.y + 1)
+					b = Vector2i(c.x + 1, c.y + 1)
+				_:
+					a = Vector2i(c.x, c.y)
+					b = Vector2i(c.x, c.y + 1)
+			var p1 := _project(Vector2(a.x * TILE, a.y * TILE))
+			var p2 := _project(Vector2(b.x * TILE, b.y * TILE))
+			var d := (p2 - p1).normalized()
+			var perp := Vector2(-d.y, d.x)
+			var half := 7.0
+			var poly := PackedVector2Array([
+				p1 - perp * half, p2 - perp * half,
+				p2 + perp * half, p1 + perp * half,
+			])
+			var uv := PackedVector2Array([
+				Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1),
+			])
+			if n == Vector2i(1, 0) or n == Vector2i(-1, 0):
+				uv = PackedVector2Array([
+					Vector2(0, 0), Vector2(0, 1), Vector2(1, 1), Vector2(1, 0),
+				])
+			var edge := Polygon2D.new()
+			edge.polygon = poly
+			edge.uv = uv
+			edge.texture = tex
+			edge.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			edge.modulate = Color(1, 1, 1, 0.82 if armed else 0.30)
+			fx_layer.add_child(edge)
 
 
 func _hold() -> void:
