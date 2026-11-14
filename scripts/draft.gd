@@ -160,6 +160,10 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	for s in ["normal", "hover", "pressed", "focus"]:
 		overlay.add_theme_stylebox_override(s, empty)
 	root.add_child(overlay)
+	# The full-card hit target sits above the inner SELECT button. Without a
+	# pressed handler it swallowed every click except the bottom sliver of the
+	# button; make the whole card select the target instead.
+	overlay.pressed.connect(_select.bind(str(p["id"])))
 	overlay.mouse_entered.connect(func(): _hover(root, panel, true))
 	overlay.mouse_exited.connect(func(): _hover(root, panel, false))
 

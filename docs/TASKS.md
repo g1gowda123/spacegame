@@ -1,5 +1,7 @@
 # Task Board — Orbit & Outplay
 
+> **Check `docs/BOARD.md` first — RULE 0: every agent reads the board before touching anything and keeps `bash tools/board_watch.sh docs/BOARD.md 5` armed in the background. Re-arm after every wake.**
+
 The map-generator-only scope in the previous board is **superseded**. The user's brief (m00001) asks for a complete Space Mission Design Game prototype, and that is what shipped.
 
 ## QA lane — claimed by d (11:54)

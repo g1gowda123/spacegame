@@ -101,7 +101,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "barren", "name": "Barren", "profile": "barren", "life": "lifeless", "generator": "cratered",
-		"tint": "#d9b98e", "tint_strength": 0.28,
+		"tint": "#c9b6a0", "tint_strength": 0.20,
 		"base": "barren/regolith", "detail": "barren/dust",
 		"rock": "barren/rock", "shore": "", "water": "",
 	},
@@ -119,7 +119,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "iron", "name": "Iron Desert", "profile": "arid", "generator": "dunes",
-		"life": "lifeless", "tint": "#d97a50", "tint_strength": 0.45,
+		"life": "lifeless", "tint": "#c98a62", "tint_strength": 0.35,
 		"base": "arid/sand", "base_alt": "arid/dunes",
 		"detail": "arid/cracked_earth", "detail_alt": "arid/salt_flat",
 		"rock": "barren/rock", "shore": "", "water": "",

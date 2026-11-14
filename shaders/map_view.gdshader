@@ -15,6 +15,7 @@ uniform float brightness = 1.08;
 uniform vec3 tint = vec3(0.97, 1.0, 0.99);
 uniform vec4 biome_tint : source_color = vec4(1.0);
 uniform float biome_tint_strength = 0.0;
+uniform float exposure = 1.0;
 uniform vec2 camera_offset = vec2(0.0);
 uniform int circle_view = 1;
 uniform float circle_radius = 0.40;
@@ -72,15 +73,23 @@ void fragment() {
     } else {
         COLOR = texture(TEXTURE, uv);
 
-        // Biome tint: sell exotic mineral/ice chemistry without replacing the
-        // shared terrain atlas. Strength comes from the biome definition.
-        COLOR.rgb = mix(COLOR.rgb, COLOR.rgb * biome_tint.rgb, biome_tint_strength);
+        // Biome tint, hue-only. Multiplying by the raw tint colour darkened the
+        // board (barren measured 40 % of its source luma); normalising the tint
+        // to unit luma shifts hue without stealing brightness.
+        vec3 tint_unit = biome_tint.rgb / max(dot(biome_tint.rgb, vec3(0.299, 0.587, 0.114)), 0.001);
+        COLOR.rgb = mix(COLOR.rgb, COLOR.rgb * tint_unit, biome_tint_strength);
+
+        // Per-biome exposure: dark ash/sulfur tiles and bright ice tiles share
+        // one atlas and one grade chain, so each board is normalised to the
+        // same readable mid-tone instead of inheriting its tile brightness.
+        COLOR.rgb *= exposure;
 
         // Directional key light from the upper-left. A flat board reads as a
         // tile editor; a single strong light direction makes the terrain feel
-        // like a physical surface under a sun.
+        // like a physical surface under a sun. Keep the range narrow so the
+        // shadow side still carries readable ground colour (W5 luminance floor).
         float sun = clamp(0.5 + (UV.x - UV.y) * 0.62, 0.0, 1.0);
-        COLOR.rgb *= mix(0.76, 1.12, sun);
+        COLOR.rgb *= mix(0.86, 1.10, sun);
 
         // Slow cloud shadows drifting across whole regions. This is the main
         // scale cue on the ground: the eye reads weather, not a texture repeat.
@@ -88,7 +97,7 @@ void fragment() {
         float cloud = sin(cloud_uv.x * 2.7 + sin(cloud_uv.y * 1.9) * 1.4);
         cloud += sin(cloud_uv.y * 3.4 + sin(cloud_uv.x * 2.2) * 1.1) * 0.55;
         cloud = smoothstep(-0.55, 0.85, cloud);
-        COLOR.rgb *= mix(0.74, 1.02, cloud);
+        COLOR.rgb *= mix(0.91, 1.03, cloud);
 
         // Mute the raw diffusion palette toward Into the Breach's dusty,
         // slightly cool board colors.
@@ -96,12 +105,16 @@ void fragment() {
         COLOR.rgb = mix(vec3(luma), COLOR.rgb, saturation) * tint * brightness;
 
         // Grade shadows toward cold teal and highlights toward pale amber.
-        // This is deliberately stronger than a neutral curve: the survey
-        // board should look lit, not color-corrected.
-        vec3 shadow_grade = vec3(0.70, 0.88, 0.95);
-        vec3 high_grade = vec3(1.07, 1.02, 0.92);
+        // The dark band stops at 0.84, not 0.70: at 0.70 a barren board lost a
+        // third of its luma before it ever reached the screen.
+        vec3 shadow_grade = vec3(0.84, 0.92, 0.97);
+        vec3 high_grade = vec3(1.05, 1.02, 0.96);
         COLOR.rgb *= mix(shadow_grade, high_grade, smoothstep(0.18, 0.82, luma));
-        COLOR.rgb = (COLOR.rgb - 0.5) * 1.10 + 0.5;
+        COLOR.rgb = (COLOR.rgb - 0.5) * 1.06 + 0.5;
+        // Soft highlight rolloff keeps the brightest snow/light tiles from
+        // clipping to flat white once the midtones are lifted.
+        COLOR.rgb = COLOR.rgb / (1.0 + max(COLOR.rgb - 0.86, 0.0) * 0.55);
+        COLOR.rgb = clamp(COLOR.rgb, 0.0, 1.0);
 
         // Cold water catches a moving specular glint; land stays matte.
         float water_mask = smoothstep(0.16, 0.52, COLOR.b - max(COLOR.r, COLOR.g));
@@ -113,18 +126,18 @@ void fragment() {
         vec2 macro_uv = uv * map_size * 0.0042;
         float macro = sin(macro_uv.x + sin(macro_uv.y * 1.37) * 1.8) * 0.5 + 0.5;
         float macro2 = sin(macro_uv.y * 0.71 + macro_uv.x * 0.23) * 0.5 + 0.5;
-        COLOR.rgb *= mix(0.95, 1.05, macro * 0.55 + macro2 * 0.45);
+        COLOR.rgb *= mix(0.97, 1.03, macro * 0.55 + macro2 * 0.45);
 
         // 4px variant grain: enough to stop large fields reading as one flat
         // swatch, coarse enough that it never becomes per-pixel noise.
         vec2 grain_cell = floor(uv * map_size / 4.0);
         float grain = fract(sin(dot(grain_cell, vec2(12.9898, 78.233))) * 43758.5453);
-        COLOR.rgb *= mix(0.975, 1.025, grain);
+        COLOR.rgb *= mix(0.985, 1.015, grain);
 
         // A restrained top-left ambient keeps the board from looking evenly
         // lit like a tile editor; the vignette is separate and stays centered.
         float ambient = clamp(0.5 + (UV.x - UV.y) * 0.12, 0.0, 1.0);
-        COLOR.rgb *= mix(0.97, 1.03, ambient);
+        COLOR.rgb *= mix(1.0, 1.03, ambient);
 
         // Board rim: a thin dark bevel at the edge of the visible slab.
         vec2 edge_px = min(uv * map_size, (1.0 - uv) * map_size);
@@ -135,9 +148,10 @@ void fragment() {
             COLOR.rgb *= mix(0.55, 1.0, (edge - 1.5) / 3.5);
         }
 
-        // Gentle vignette keeps the eye on the lander and objectives.
+        // Gentle vignette keeps the eye on the lander and objectives. It stops
+        // at 0.95: the darker band was eating board luma at the edges (W5).
         float vig = smoothstep(0.78, 0.24, length(UV - 0.5));
-        COLOR.rgb *= mix(0.86, 1.0, vig);
+        COLOR.rgb *= mix(0.95, 1.0, vig);
 
         if (show_grid == 1) {
             vec2 g = fract(uv * map_tiles);
