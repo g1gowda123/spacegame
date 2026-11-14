@@ -25,6 +25,7 @@ var _known: Dictionary = {}
 var _sig := ""
 var _first := true
 var _arsenal: Control
+var _arsenal_layer: CanvasLayer
 var arsenal_open := false
 
 
@@ -341,10 +342,15 @@ func _open_arsenal() -> void:
 		return
 	arsenal_open = true
 	UITip.hide_tip()
+	# A dedicated layer keeps the sheet above the sector HUD *and* the fx
+	# canvas (layer 26) where the rig banner lives, but below UITip (60).
+	_arsenal_layer = CanvasLayer.new()
+	_arsenal_layer.layer = 55
+	get_parent().add_child(_arsenal_layer)
 	_arsenal = Control.new()
 	_arsenal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_arsenal.mouse_filter = Control.MOUSE_FILTER_STOP
-	get_parent().add_child(_arsenal)
+	_arsenal_layer.add_child(_arsenal)
 
 	var shade := ColorRect.new()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -447,16 +453,12 @@ func _build_arsenal_rows(panel: Control) -> void:
 
 		var nm := UIKit.head(str(e["name"]), 8, UIKit.CREAM)
 		nm.position = Vector2(28, 1)
-		nm.size = Vector2(col_w - 44.0, 12)
+		nm.size = Vector2(col_w - 62.0, 12)
 		card.add_child(nm)
-		var kind := UIKit.mono(
-			("x%d  " % int(e["count"]) if int(e["count"]) > 1 else "")
-			+ ("COMMISSION" if str(e["kind"]) == "BUFF" else
-				("FIRMWARE" if bool(e["firmware"]) else "HARDWARE")),
-			6, accent, HORIZONTAL_ALIGNMENT_RIGHT
-		)
-		kind.position = Vector2(28, 1)
-		kind.size = Vector2(col_w - 44.0, 12)
+		var count_tag := "x%d" % int(e["count"]) if int(e["count"]) > 1 else ""
+		var kind := UIKit.mono(count_tag, 6, accent, HORIZONTAL_ALIGNMENT_RIGHT)
+		kind.position = Vector2(col_w - 40.0, 1)
+		kind.size = Vector2(32, 12)
 		card.add_child(kind)
 		var desc := UIKit.mono(str(e["desc"]), 7, UIKit.MUTED_C)
 		desc.position = Vector2(28, 13)
@@ -477,8 +479,9 @@ func _rebuild_arsenal() -> void:
 
 func _close_arsenal() -> void:
 	arsenal_open = false
-	if _arsenal != null and is_instance_valid(_arsenal):
-		_arsenal.queue_free()
+	if _arsenal_layer != null and is_instance_valid(_arsenal_layer):
+		_arsenal_layer.queue_free()
+	_arsenal_layer = null
 	_arsenal = null
 
 
