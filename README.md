@@ -28,6 +28,20 @@ Every destination is a real planet. Every hazard is generated from its measured 
 
 The honest split is **source vs package**. The tree is ahead of `build/web`: fog of war, signal-tier nodes, animated hazard shaders, the W6 outcrop set and the V5 effect library all landed after the last export. Re-exporting is a one-command step (`tools/release.sh`), not development work.
 
+### Newest look — what changed in this pass
+
+<img src="screenshots/latest_sector.png" width="920" alt="Current surface sector with hero outcrops, hazard telegraph and the new HUD">
+
+Captured from the current build (survey fog switched off here so the whole board is visible). What is new in this frame:
+
+- **Hazard telegraphs are now animated fields**, not flat squares — this one reads `INCOMING: DUST · SHIELD 1 PWR OR −1 INT`, so the player can price the hit before moving.
+- **W6 hero outcrops**: one large landmark plus two or three smaller supporting rocks per board, with scale and tint jitter, instead of a repeated stamp.
+- **New console HUD**: one top telemetry strip (integrity, Δv, sols, data, thermal, power) and a physical-looking move/HOLD/EXTRACT cluster.
+- **Lighting grade**: per-biome exposure, hue-only tint and a soft highlight rolloff, so volcanic and sulfur worlds stop clipping while temperate stays readable.
+- **Reachable cells** are outlined as one shape, not a grid of boxes.
+
+The same board with the default **survey fog** on is further down in [The loop on screen](#the-loop-on-screen).
+
 ### In plain words
 
 You get **$500M**, build a survey spacecraft, and pick one of **three real planets**. Then you cross that planet's surface one move at a time, dodge hazards its own physics creates, collect data, and get home. Three planets later, you get a grade.
@@ -49,6 +63,29 @@ The 2026 Space Apps rubric scores **Impact, Creativity, Validity, Relevance, Pre
 | **Presentation** | Can the team tell the story? | A 30-second video, a 7-slide deck, a written project page, and an in-game final report that reads like a real mission ledger. | `demo/`, `docs/DECK_NOTES.md`, [Final report screenshot](screenshots/report.png) |
 
 The single strongest artefact for a judge is the **final report screen**: grade, score breakdown, sector ledger, CML design level, orbit profile, launch/space/ground/user segments, and the campaign code — one frame that proves the science and the game are the same thing.
+
+### NASA data and resources — what we use, and where
+
+**Say this in 20 seconds:** *the NASA Exoplanet Archive gives us the planets, the challenge brief gives us the mission, and NASA's mission-design resources give us the language and the readouts. Every number the player sees traces back to a real archive row or a published design method.*
+
+| NASA resource | What we take from it | Where the player sees it | Proof in the repo |
+|---|---|---|---|
+| **Exoplanet Archive — Planetary Systems Composite Parameters (`pscomppars`)** | 72 real planets: equilibrium temperature, mass/radius, insolation, distance, host star | Draft cards (measured line + five hazard bars); per-move heat, Δv cost and downlink loss in a sector | `data/pscomppars_raw.csv`, `data/exoplanets.json`, `tools/build_exoplanets.py` |
+| **Space Apps 2026 — *Space Mission Design Game* brief** | The 15 design requirements the game must cover | Mission design → architecture review → surface run → report | `docs/SUBMISSION.md` (requirement trace) |
+| **Design and Develop Science Missions** | The four mission segments: launch, space, ground, user | Design screen grouping; `SEGMENTS` line on the final report | `scripts/report.gd`, `docs/SUBMISSION.md` |
+| **General Mission Analysis Tool (GMAT)** | Orbit as real quantities: altitude, period, eclipse fraction, passes/day | Orbit choice on the design screen; `ORBIT` readout on the report | `scripts/game_state.gd` |
+| **Concept Maturity Levels (CML)** | Design maturity 1–4, earned from mass margin, power margin and science traceability | Design validation line; review gate; `CONCEPT` line on the report | `scripts/game_state.gd`, `scripts/design.gd` |
+| **Mission Design Lab (MDL)** | Trade study first, point design second | The design screen is the trade study; the between-sector refit is the point design | `scenes/design.tscn`, `scenes/debrief.tscn` |
+| **NASA Mission Viz** | An Earth-to-target transfer arc and mission timeline | Mission Architecture Review, before the target is committed | `scripts/draft.gd` |
+| **Visualize a Space Mission Using Virtual Reality (2023)** | Concept, trajectory and timeline in one view (we do it in 2D, not VR) | The six-stage ConOps timeline on the review screen | `scripts/draft.gd` |
+| **A Learning Game About Telescopes** | Instruments should answer the science question | `SCIENCE FIT +10%` when the payload matches the objective | `scripts/game_state.gd` |
+| **CubeSat 101** | A compressed ConOps with mass, power, thermal, data and budget lines | The whole run: design → launch → surface ops → downlink → end of mission | `docs/PROJECT.md`, final report |
+| **CSA digital games and activities** | Short, readable, pick-up-and-play browser games | 640×360, 10–15 minute run, mouse/touch, no install | `project.godot`, `build/web/` |
+| **Chen & Kipping (2017)** *(external paper, not NASA)* | Mass–radius relation for planets with missing or implausible masses | Flagged `mass_est: true` in the data and on the card | `tools/build_exoplanets.py` |
+
+**What we do not use:** no NASA logos, flags, mission identifiers or NASA imagery — the event name appears only as plain text on the title screen and report. All in-game art is original, AI-generated art, disclosed in [Credits](#credits).
+
+Deeper detail — the exact derived formulas and the full resource-to-screen mapping — is in [Where the science comes from](#where-the-science-comes-from) and [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
 
 ### Who is doing what
 
