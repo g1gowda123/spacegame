@@ -1,0 +1,2874 @@
+extends Node2D
+
+# Chunked exoplanet survey prototype.
+#
+# The world is infinite and generated deterministically per 16x16 chunk.
+# Only a 20x16 tile window around the lander is rendered into a small
+# SubViewport, so the texture and UI stay within a mobile-friendly budget.
+# Chunks outside a 5x5 neighbourhood are dropped from memory.
+
+const TILE := 64
+const CHUNK := 16
+const VIEW_W := 20
+const VIEW_H := 16
+const VIEW_PX := Vector2(VIEW_W * TILE, VIEW_H * TILE)
+const VIEW_TILES := 10.0
+const TURNS_START := 36
+const OBJECTIVE_COUNT := 4
+const HULL_START := 3
+
+const DIRS: Array[Vector2i] = [
+	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
+]
+const DIR_NAMES: Array[String] = ["east", "west", "south", "north"]
+
+const EDGE_DIRS: Array[Vector2i] = [
+	Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)
+]
+const EDGE_NAMES: Array[String] = ["north", "east", "south", "west"]
+const CORNER_DIRS: Array[Vector2i] = [
+	Vector2i(-1, -1), Vector2i(1, -1), Vector2i(1, 1), Vector2i(-1, 1)
+]
+const CORNER_NAMES: Array[String] = ["nw", "ne", "se", "sw"]
+
+var BLOCKED: Array[String] = [
+	"temperate/water_lake",
+	"volcanic/lava",
+	"ocean/water_shallow",
+	"ocean/water_deep",
+]
+
+var BIOMES: Array = [
+	{
+		"id": "temperate", "name": "Temperate", "profile": "temperate", "generator": "continents",
+		"life": "rare biosphere", "shore_ring": true,
+		"tint": "#ffffff", "tint_strength": 0.0,
+		"base": "temperate/grass",
+		"base_variants": [
+			"temperate/grass",
+		],
+		"detail": "temperate/dirt",
+		"detail_alt": "temperate/moss", "detail_alt2": "temperate/mud",
+		"rock": "temperate/rock", "shore": "temperate/beach",
+		"water": "temperate/water_lake",
+	},
+	{
+		"id": "arid", "name": "Arid", "profile": "arid", "life": "lifeless", "generator": "dunes",
+		"tint": "#ffffff", "tint_strength": 0.0,
+		"base": "arid/sand", "base_alt": "arid/dunes",
+		"detail": "arid/cracked_earth", "detail_alt": "arid/salt_flat",
+		"detail_alt2": "arid/dry_river",
+		"rock": "arid/rock", "shore": "", "water": "",
+	},
+	{
+		"id": "cryo", "name": "Cryo", "profile": "cryo", "life": "lifeless", "generator": "fractured",
+		"tint": "#ffffff", "tint_strength": 0.0,
+		"base": "cryo/lake_32s", "detail": "cryo/lake_32s",
+		"detail_alt": "cryo/glacier", "detail_alt2": "cryo/ice",
+		"detail_alt3": "cryo/glacier",
+		"rock": "cryo/glacier", "shore": "", "water": "",
+	},
+	{
+		"id": "volcanic", "name": "Volcanic", "profile": "volcanic", "generator": "caldera",
+		"life": "lifeless", "tint": "#ffffff", "tint_strength": 0.0,
+		"base": "volcanic/ash", "detail": "volcanic/basalt",
+		"detail_alt": "volcanic/sulfur", "detail_alt2": "volcanic/pumice",
+		"rock": "volcanic/basalt", "rock_alt": "volcanic/obsidian",
+		"shore": "", "water": "volcanic/lava",
+	},
+	{
+		"id": "ocean", "name": "Ocean", "profile": "ocean", "life": "lifeless", "generator": "archipelago",
+		"tint": "#ffffff", "tint_strength": 0.0,
+		"base": "ocean/water_shallow", "detail": "ocean/water_deep",
+		"rock": "ocean/reef", "shore": "ocean/beach", "water": "",
+	},
+	{
+		"id": "barren", "name": "Barren", "profile": "barren", "life": "lifeless", "generator": "cratered",
+		"tint": "#ffffff", "tint_strength": 0.0,
+		"base": "barren/regolith", "detail": "barren/dust",
+		"rock": "barren/rock", "shore": "", "water": "",
+	},
+	# Alien archetypes. They deliberately reuse existing material tiles with a
+	# data-driven profile and colour grade, so dedicated tiles can be swapped in
+	# later without changing the generator.
+	{
+		"id": "methane", "name": "Methane Lakes", "profile": "temperate", "generator": "continents",
+		"life": "lifeless", "shore_ring": true,
+		"tint": "#63d6c4", "tint_strength": 0.38,
+		"base": "cryo/ice",
+		"detail": "cryo/glacier", "detail_alt": "cryo/frozen_lake",
+		"rock": "barren/rock", "shore": "cryo/glacier",
+		"water": "ocean/water_deep",
+	},
+	{
+		"id": "iron", "name": "Iron Desert", "profile": "arid", "generator": "dunes",
+		"life": "lifeless", "tint": "#d97a50", "tint_strength": 0.45,
+		"base": "arid/sand", "base_alt": "arid/dunes",
+		"detail": "arid/cracked_earth", "detail_alt": "arid/salt_flat",
+		"rock": "barren/rock", "shore": "", "water": "",
+	},
+	{
+		"id": "sulfur", "name": "Sulfur Plains", "profile": "volcanic", "generator": "caldera",
+		"life": "lifeless", "tint": "#f0dc5a", "tint_strength": 0.30,
+		"base": "volcanic/sulfur", "detail": "volcanic/ash",
+		"detail_alt": "volcanic/pumice", "detail_alt2": "volcanic/basalt",
+		"rock": "volcanic/basalt", "rock_alt": "volcanic/obsidian",
+		"shore": "", "water": "volcanic/lava",
+	},
+	{
+		"id": "crystal", "name": "Crystal Field", "profile": "barren", "generator": "faceted",
+		"life": "lifeless", "tint": "#b08cff", "tint_strength": 0.28,
+		"base": "cryo/ice", "detail": "cryo/glacier",
+		"detail_alt": "barren/regolith",
+		"rock": "barren/rock", "shore": "", "water": "",
+	},
+	{
+		"id": "obsidian", "name": "Obsidian Glass", "profile": "volcanic", "generator": "fractured",
+		"life": "lifeless", "tint": "#9b7bd6", "tint_strength": 0.30,
+		"base": "volcanic/obsidian", "detail": "volcanic/basalt",
+		"detail_alt": "volcanic/ash",
+		"rock": "volcanic/basalt", "shore": "", "water": "volcanic/lava",
+	},
+	{
+		"id": "ammonia", "name": "Ammonia Ice", "profile": "cryo", "generator": "fractured",
+		"life": "lifeless", "tint": "#72c8e8", "tint_strength": 0.30,
+		"base": "cryo/snow", "detail": "cryo/ice",
+		"detail_alt": "cryo/glacier", "detail_alt2": "cryo/frozen_lake",
+		"rock": "cryo/rock", "shore": "", "water": "",
+	},
+	{
+		"id": "carbon", "name": "Carbon World", "profile": "temperate", "generator": "continents",
+		"life": "lifeless", "shore_ring": true,
+		"tint": "#9aa2b2", "tint_strength": 0.30,
+		"base": "barren/regolith", "detail": "barren/dust",
+		"detail_alt": "volcanic/ash",
+		"rock": "volcanic/obsidian", "shore": "barren/rock",
+		"water": "ocean/water_deep",
+	},
+]
+
+# One low-frequency personality per seed. The seed still owns every detail,
+# but this bias decides whether the run opens on an ocean, a mountain wall, a
+# canyon field, or a plain. It is applied in world space, so it holds across
+# chunk borders and survives the infinite scroll.
+const TERRAIN_ARCHETYPES: Array = [
+	{"name": "Open Plains", "elev": 0.02, "water": 0.06, "ridge": 0.035, "detail": -0.02, "ridge_chance": -0.56},
+	{"name": "Mountainous", "elev": 0.14, "water": -0.03, "ridge": 0.300, "detail": -0.03, "ridge_chance": 0.26},
+	{"name": "Broken Highlands", "elev": 0.08, "water": -0.01, "ridge": 0.220, "detail": 0.03, "ridge_chance": 0.10},
+	{"name": "Lake District", "elev": -0.12, "water": -0.22, "ridge": 0.050, "detail": 0.00, "ridge_chance": -0.44},
+	{"name": "Archipelago", "elev": -0.20, "water": -0.32, "ridge": 0.050, "detail": -0.02, "ridge_chance": -0.48},
+	{"name": "Canyonlands", "elev": 0.06, "water": 0.03, "ridge": 0.300, "detail": 0.06, "ridge_chance": 0.10},
+	{"name": "Cratered", "elev": 0.02, "water": -0.02, "ridge": 0.100, "detail": 0.09, "ridge_chance": -0.20},
+	{"name": "Fractured", "elev": 0.04, "water": 0.01, "ridge": 0.340, "detail": 0.10, "ridge_chance": 0.14},
+]
+
+var STRUCTURES: Dictionary = {
+	"mountain_range": {
+		"path": "res://assets/tilesets/structures/mountain_range.png",
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.55,
+	},
+	"mountain_massif": {
+		"path": "res://assets/tilesets/structures/mountain_massif.png",
+		"w": 3, "h": 3, "occludes": true, "sprite_scale": 1.05,
+	},
+	"volcano": {
+		"path": "res://assets/tilesets/structures/volcano.png",
+		"w": 3, "h": 3, "occludes": true,
+	},
+	"impact_crater": {
+		"path": "res://assets/tilesets/structures/impact_crater.png",
+		"w": 3, "h": 3,
+		"ground": true,
+	},
+	"mesa": {
+		"path": "res://assets/tilesets/structures/mesa.png",
+		"w": 2, "h": 2, "occludes": true,
+	},
+	"iceberg": {
+		"path": "res://assets/tilesets/structures/iceberg.png",
+		"w": 2, "h": 2, "occludes": true,
+	},
+	"geyser": {
+		"path": "res://assets/tilesets/structures/geyser.png",
+		"w": 2, "h": 2,
+	},
+	"coral_spire": {
+		"path": "res://assets/tilesets/structures/coral_spire.png",
+		"w": 2, "h": 2, "occludes": true,
+	},
+	"crystal_outcrop": {
+		"path": "res://assets/tilesets/structures/crystal_outcrop.png",
+		"w": 1, "h": 1, "occludes": true,
+	},
+	"islet": {
+		"path": "res://assets/tilesets/structures/islet.png",
+		"w": 2, "h": 2,
+	},
+	# Large abandoned survey architecture. These were already on disk but
+	# unused; outpost complexes now place them as a deliberate cluster.
+	"habitat_dome": {
+		"path": "res://assets/tilesets/structures/habitat_dome.png",
+		"w": 2, "h": 2,
+	},
+	"solar_farm": {
+		"path": "res://assets/tilesets/structures/solar_farm.png",
+		"w": 2, "h": 2,
+	},
+	"comms_dish": {
+		"path": "res://assets/tilesets/structures/comms_dish.png",
+		"w": 2, "h": 2,
+	},
+}
+
+# Per-biome prop density. Default 6% reads as "inhabited"; sparse worlds use
+# less so a single coral shard or shrub stays a landmark, not a lawn.
+const PROP_DENSITY: Dictionary = {
+	"temperate": 0.045,
+	"ocean": 0.015,
+}
+
+# Small non-blocking set dressing. These sit on top of the terrain but never
+# affect movement, so they add life without turning the board into clutter.
+const PROPS: Dictionary = {
+	"temperate": ["boulder", "shrub"],
+	"arid": ["dead_bush"],
+	"cryo": ["ice_chunk"],
+	"volcanic": ["lava_rock", "sulfur_nodule"],
+	"ocean": ["coral_shard"],
+	"barren": ["barren_rock"],
+	"methane": ["ice_chunk", "barren_rock"],
+	"iron": ["dead_bush", "barren_rock", "obsidian_shard"],
+	"sulfur": ["lava_rock", "sulfur_nodule"],
+	"crystal": ["ice_chunk"],
+	"obsidian": ["lava_rock", "obsidian_shard"],
+	"ammonia": ["ice_chunk"],
+	"carbon": ["barren_rock"],
+}
+
+var TRANSITION_PAIRS: Array = [
+	["volcanic/lava", "volcanic/ash"],
+	["volcanic/lava", "volcanic/basalt"],
+	["volcanic/basalt", "volcanic/ash"],
+	["temperate/grass", "temperate/dirt"],
+	["temperate/grass", "temperate/rock"],
+	["temperate/grass", "temperate/beach"],
+	["temperate/beach", "temperate/water_lake"],
+	["arid/sand", "arid/cracked_earth"],
+	["arid/sand", "arid/rock"],
+	["arid/cracked_earth", "arid/rock"],
+	["cryo/snow", "cryo/ice"],
+	["cryo/snow", "cryo/rock"],
+	["ocean/water_shallow", "ocean/water_deep"],
+	["ocean/water_shallow", "ocean/reef"],
+	["ocean/reef", "ocean/beach"],
+]
+
+var tile_set: TileSet
+var source_ids: Dictionary = {}
+var source_alts: Dictionary = {}
+var transition_pairs: Dictionary = {}
+
+var chunks: Dictionary = {}
+var elevation := FastNoiseLite.new()
+var detail := FastNoiseLite.new()
+var variant_noise := FastNoiseLite.new()
+var warp_noise := FastNoiseLite.new()
+var shore_noise := FastNoiseLite.new()
+var rough_noise := FastNoiseLite.new()
+var ridge_noise := FastNoiseLite.new()
+
+# Roguelike-safe feature flags: new mechanics and art passes should be
+# switchable without deleting code. F4-F7 toggle these live in the viewer.
+var feature_toggles: Dictionary = {
+	"mountains": true,
+	"outposts": true,
+	"occlusion": true,
+	"props": true,
+}
+
+var rng := RandomNumberGenerator.new()
+var ui_rng := RandomNumberGenerator.new()
+var seed_value: int = 4217
+var planet_name: String = ""
+var biome_index: int = 0
+var terrain_archetype: Dictionary = {}
+var archetype_name: String = "Open Plains"
+
+var view_mode: int = 1  # 0 = 3/4 tilt, 1 = isometric, 2 = top-down
+var show_grid: bool = false
+var zoom: float = 0.88
+var tilt: float = 0.75
+var map_scale: float = 0.92
+var view_origin := Vector2i.ZERO
+
+var sub_viewport: SubViewport
+var tilemap: TileMapLayer
+var rockmap: TileMapLayer
+var cliff_layer: Node2D
+var overlay_layer: Node2D
+var structure_layer: Node2D
+var actor_layer: Node2D
+var occlusion_layer: Node2D
+var occlusion_tex: Texture2D
+var display: TextureRect
+var shader_mat: ShaderMaterial
+var space_layer: CanvasLayer
+var space_rect: TextureRect
+var player_tex: Texture2D
+var player_sprite: Sprite2D
+var player_shadow: Polygon2D
+var player_tween: Tween
+var node_tex: Texture2D
+var _tex_bounds: Dictionary = {}
+var _prop_ok: Dictionary = {}
+var cli_seed: int = -1
+var cli_biome: int = -1
+var cli_view: int = -1
+var cli_hide_ui: bool = false
+var debug_visible: bool = false
+var debug_elapsed: float = 0.0
+var nav_label: Label
+var debug_label: Label
+var minimap: Control
+
+var player_cell := Vector2i.ZERO
+var objectives: Array[Vector2i] = []
+var collected: Array[bool] = []
+var turns_left: int = TURNS_START
+var hull: int = HULL_START
+var data_collected: int = 0
+var game_over: bool = false
+var message_text: String = ""
+var hazard_cell := Vector2i(-999, -999)
+var hazard_kind: String = ""
+var hazard_color := Color(1.0, 0.35, 0.2)
+
+var info_label: Label
+var status_label: Label
+var hazard_label: Label
+var view_label: Label
+var ui_layer: CanvasLayer
+var ui_root: Control
+var message_label: Label
+var capture_requested: bool = false
+var capture_elapsed: float = 0.0
+const CAPTURE_PATH := "user://map_capture.png"
+
+
+func _ready() -> void:
+	RenderingServer.set_default_clear_color(Color("#0f0e14"))
+	ui_rng.randomize()
+	_parse_cli()
+	capture_requested = (
+		"--capture" in OS.get_cmdline_args()
+		or "--capture" in OS.get_cmdline_user_args()
+	)
+	_build_tileset()
+	_build_view()
+	_build_ui()
+	if cli_hide_ui:
+		ui_layer.visible = false
+	if cli_seed >= 0:
+		seed_value = cli_seed
+		_generate()
+	else:
+		_new_seed()
+
+
+func _parse_cli() -> void:
+	"""Small command-line surface for reproducible screenshots and debugging.
+
+	Examples:
+	  godot --path . -- --capture --seed=4217 --biome=temperate --view=iso
+	  godot --path . -- --seed=4217 --grid --no-ui
+	"""
+	var args: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
+	for raw in args:
+		var arg := str(raw)
+		if arg.begins_with("--seed="):
+			cli_seed = int(arg.substr(7))
+		elif arg.begins_with("--biome="):
+			var name := arg.substr(8).to_lower()
+			for i in range(BIOMES.size()):
+				if str(BIOMES[i]["id"]) == name:
+					cli_biome = i
+					break
+			if cli_biome < 0:
+				if name.is_valid_int():
+					cli_biome = clampi(int(name), 0, BIOMES.size() - 1)
+		elif arg.begins_with("--view="):
+			match arg.substr(7).to_lower():
+				"tilt", "3/4", "dimetric":
+					cli_view = 0
+				"iso", "isometric":
+					cli_view = 1
+				"top", "topdown", "flat":
+					cli_view = 2
+		elif arg == "--grid":
+			show_grid = true
+		elif arg == "--debug":
+			debug_visible = true
+		elif arg == "--no-ui":
+			cli_hide_ui = true
+	if cli_biome >= 0:
+		biome_index = cli_biome
+	if cli_view >= 0:
+		view_mode = cli_view
+
+
+func _process(delta: float) -> void:
+	if capture_requested:
+		capture_elapsed += delta
+		if capture_elapsed >= 1.2:
+			capture_requested = false
+			_save_capture(CAPTURE_PATH)
+	if debug_visible:
+		debug_elapsed += delta
+		if debug_elapsed >= 0.25:
+			debug_elapsed = 0.0
+			_refresh_debug()
+
+
+func _save_capture(path: String) -> void:
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	if img == null:
+		push_error("viewport capture returned no image")
+		return
+	var err := img.save_png(path)
+	print("capture: ", ProjectSettings.globalize_path(path), " (err=", err, ")")
+
+
+func _build_tileset() -> void:
+	tile_set = TileSet.new()
+	tile_set.tile_size = Vector2i(TILE, TILE)
+	source_ids.clear()
+	source_alts.clear()
+	transition_pairs.clear()
+
+	for biome in BIOMES:
+		for field in [
+			"base", "base_alt", "detail", "detail_alt", "detail_alt2",
+			"detail_alt3", "rock", "rock_alt", "shore", "water",
+		]:
+			var key := str(biome.get(field, ""))
+			if key != "":
+				_add_tile(key, "res://assets/tilesets/%s.png" % key)
+		for variant_key in biome.get("base_variants", []):
+			var vk := str(variant_key)
+			if vk != "":
+				_add_tile(vk, "res://assets/tilesets/%s.png" % vk)
+
+	var pairs: Array = _load_transition_pairs()
+	for pair in pairs:
+		var a: String = pair[0]
+		var other: String = pair[1]
+		var a_name := a.get_file()
+		var b_name := other.get_file()
+		var dir := "res://assets/tilesets/transitions/%s_%s" % [a_name, b_name]
+		var info := {"a": a, "b": other, "a_name": a_name, "b_name": b_name}
+		transition_pairs[a + "|" + other] = info
+		transition_pairs[other + "|" + a] = info
+		for side in ["west", "east", "north", "south"]:
+			var path := "%s/%s_%s.png" % [dir, a_name, side]
+			_add_tile(a + "|" + other + "|" + side, path)
+		for corner in CORNER_NAMES:
+			for prefix in ["outer", "inner"]:
+				var extra_path := "%s/%s_%s_%s.png" % [dir, a_name, prefix, corner]
+				if ResourceLoader.exists(extra_path):
+					_add_tile(
+						a + "|" + other + "|" + prefix + "_" + corner,
+						extra_path
+					)
+		for axis in ["ns", "ew"]:
+			var stripe_path := "%s/%s_stripe_%s.png" % [dir, a_name, axis]
+			if ResourceLoader.exists(stripe_path):
+				_add_tile(a + "|" + other + "|stripe_" + axis, stripe_path)
+			var reverse_stripe := "%s/%s_stripe_%s.png" % [dir, b_name, axis]
+			if ResourceLoader.exists(reverse_stripe):
+				_add_tile(other + "|" + a + "|stripe_" + axis, reverse_stripe)
+		# Hand-authored 45-degree coast splits, keyed by which half-cell the
+		# water occupies. These are only used when the cell owns the land side;
+		# the water cell keeps its normal tile.
+		var diag_dir := "res://assets/tilesets/transitions/diagonal/%s_%s" % [
+			a.replace("/", "_"), other.replace("/", "_")
+		]
+		for corner in CORNER_NAMES:
+			var diag_path := "%s/%s.png" % [diag_dir, corner]
+			if ResourceLoader.exists(diag_path):
+				_add_tile("diag|" + a + "|" + other + "|" + corner, diag_path)
+
+
+func _load_transition_pairs() -> Array:
+	var path := "res://tools/transitions.json"
+	if FileAccess.file_exists(path):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if parsed is Dictionary and parsed.has("pairs"):
+			return parsed["pairs"]
+	return TRANSITION_PAIRS
+
+
+func _add_tile(key: String, path: String) -> void:
+	if not ResourceLoader.exists(path):
+		push_warning("Missing tile: " + path)
+		return
+	var tex := load(path) as Texture2D
+	if tex == null:
+		push_warning("Failed to load tile: " + path)
+		return
+	var src := TileSetAtlasSource.new()
+	src.texture = tex
+	src.texture_region_size = Vector2i(TILE, TILE)
+	src.create_tile(Vector2i.ZERO)
+	source_ids[key] = tile_set.add_source(src)
+	# Flips are free, are seamless for a tileable texture, and break the
+	# obvious 64px repeat without changing the art.
+	var alts: Array = [0]
+	for flip in range(1, 4):
+		var alt_id := src.create_alternative_tile(Vector2i.ZERO)
+		var td := src.get_tile_data(Vector2i.ZERO, alt_id)
+		td.flip_h = (flip & 1) != 0
+		td.flip_v = (flip & 2) != 0
+		alts.append(alt_id)
+	source_alts[key] = alts
+
+
+func _build_view() -> void:
+	# Deep-space plate. Layer -10 keeps it behind the map, structures and HUD
+	# even when the board uses a transparent SubViewport.
+	space_layer = CanvasLayer.new()
+	space_layer.layer = -10
+	add_child(space_layer)
+	space_rect = TextureRect.new()
+	space_rect.texture = load("res://assets/backgrounds/space.png") as Texture2D
+	space_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	space_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	space_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	space_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	space_rect.size = get_viewport_rect().size
+	space_rect.modulate = Color(1, 1, 1, 0.78)
+	space_layer.add_child(space_rect)
+
+	sub_viewport = SubViewport.new()
+	sub_viewport.size = Vector2i(VIEW_PX)
+	sub_viewport.transparent_bg = true
+	sub_viewport.disable_3d = true
+	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	add_child(sub_viewport)
+
+	tilemap = TileMapLayer.new()
+	tilemap.tile_set = tile_set
+	tilemap.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sub_viewport.add_child(tilemap)
+
+	# Rock is a material, not a decal: duplicate only the plain rock cells on a
+	# dark layer. The mossy temperate rock otherwise blends into grass and the
+	# ridge belts disappear. Transition cells stay on the base layer so their
+	# baked edges are not double-darkened.
+	rockmap = TileMapLayer.new()
+	rockmap.tile_set = tile_set
+	rockmap.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	rockmap.modulate = Color(1.18, 1.16, 1.08, 1.0)
+	rockmap.z_index = 1
+	sub_viewport.add_child(rockmap)
+
+	display = TextureRect.new()
+	display.texture = sub_viewport.get_texture()
+	display.size = get_viewport_rect().size
+	display.position = Vector2.ZERO
+	display.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	display.stretch_mode = TextureRect.STRETCH_SCALE
+	# Linear on the projected viewport smooths the isometric resample; the
+	# underlying 64 px tile textures stay nearest-filtered inside the SubViewport.
+	display.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	display.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shader_mat = ShaderMaterial.new()
+	shader_mat.shader = load("res://shaders/map_view.gdshader") as Shader
+	display.material = shader_mat
+	add_child(display)
+
+	# Painted below structures and actors: a south-face shadow turns the rock
+	# belt from a recoloured tile into a readable plateau without new art.
+	cliff_layer = Node2D.new()
+	cliff_layer.z_index = 11
+	add_child(cliff_layer)
+
+	overlay_layer = Node2D.new()
+	overlay_layer.z_index = 12
+	add_child(overlay_layer)
+
+	structure_layer = Node2D.new()
+	structure_layer.z_index = 20
+	add_child(structure_layer)
+
+	actor_layer = Node2D.new()
+	actor_layer.z_index = 25
+	add_child(actor_layer)
+
+	# Veil drawn above actors so a ridge really hides the tile behind it.
+	# Toggleable: F6 turns line-of-sight masking off for clarity.
+	occlusion_layer = Node2D.new()
+	occlusion_layer.z_index = 1000
+	add_child(occlusion_layer)
+
+	player_tex = load("res://assets/tilesets/structures/lander.png") as Texture2D
+	if ResourceLoader.exists("res://assets/sprites/markers/data_node.png"):
+		node_tex = load("res://assets/sprites/markers/data_node.png") as Texture2D
+	get_viewport().size_changed.connect(_on_viewport_resized)
+	_update_view()
+
+
+func _build_ui() -> void:
+	ui_layer = CanvasLayer.new()
+	ui_layer.layer = 10
+	add_child(ui_layer)
+
+	var root := Control.new()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui_layer.add_child(root)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ui_root = root
+
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.04, 0.045, 0.06, 0.92)
+	style.border_color = Color(0.25, 0.35, 0.40, 0.75)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
+	panel.add_theme_stylebox_override("panel", style)
+	panel.position = Vector2(8, 8)
+	panel.custom_minimum_size = Vector2(160, 0)
+	root.add_child(panel)
+
+	minimap = Control.new()
+	minimap.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	minimap.offset_left = -90.0
+	minimap.offset_top = 8.0
+	minimap.offset_right = -8.0
+	minimap.offset_bottom = 90.0
+	minimap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	minimap.draw.connect(_draw_minimap)
+	root.add_child(minimap)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "EXOPLANET SURVEY"
+	title.add_theme_font_size_override("font_size", 11)
+	title.add_theme_color_override("font_color", Color("#d9e6e1"))
+	vbox.add_child(title)
+
+	info_label = Label.new()
+	info_label.add_theme_font_size_override("font_size", 9)
+	info_label.add_theme_color_override("font_color", Color("#9fc6b8"))
+	vbox.add_child(info_label)
+
+	status_label = Label.new()
+	status_label.add_theme_font_size_override("font_size", 9)
+	status_label.add_theme_color_override("font_color", Color("#e8f0ea"))
+	vbox.add_child(status_label)
+
+	hazard_label = Label.new()
+	hazard_label.add_theme_font_size_override("font_size", 9)
+	vbox.add_child(hazard_label)
+
+	nav_label = Label.new()
+	nav_label.add_theme_font_size_override("font_size", 8)
+	nav_label.add_theme_color_override("font_color", Color("#65e6d6"))
+	vbox.add_child(nav_label)
+
+	view_label = Label.new()
+	view_label.add_theme_font_size_override("font_size", 8)
+	view_label.add_theme_color_override("font_color", Color("#7f9aa8"))
+	vbox.add_child(view_label)
+
+	var row1 := HBoxContainer.new()
+	row1.add_theme_constant_override("separation", 4)
+	vbox.add_child(row1)
+	var new_btn := _make_button("New (R)", Vector2(64, 18))
+	new_btn.pressed.connect(_on_new_pressed)
+	row1.add_child(new_btn)
+	var biome_btn := _make_button("Biome (B)", Vector2(64, 18))
+	biome_btn.pressed.connect(_on_biome_pressed)
+	row1.add_child(biome_btn)
+
+	var row2 := HBoxContainer.new()
+	row2.add_theme_constant_override("separation", 4)
+	vbox.add_child(row2)
+	var view_btn := _make_button("View (V)", Vector2(64, 18))
+	view_btn.pressed.connect(_on_view_pressed)
+	row2.add_child(view_btn)
+	var grid_btn := _make_button("Grid (G)", Vector2(64, 18))
+	grid_btn.pressed.connect(_on_grid_pressed)
+	row2.add_child(grid_btn)
+
+	var row3 := HBoxContainer.new()
+	row3.add_theme_constant_override("separation", 4)
+	vbox.add_child(row3)
+	var same_btn := _make_button("Same (T)", Vector2(64, 18))
+	same_btn.pressed.connect(_on_same_pressed)
+	row3.add_child(same_btn)
+	var copy_btn := _make_button("Copy (C)", Vector2(64, 18))
+	copy_btn.pressed.connect(_on_copy_seed)
+	row3.add_child(copy_btn)
+
+	var dpad := GridContainer.new()
+	dpad.columns = 3
+	dpad.add_theme_constant_override("h_separation", 2)
+	dpad.add_theme_constant_override("v_separation", 2)
+	dpad.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	dpad.offset_left = -110.0
+	dpad.offset_top = -92.0
+	dpad.offset_right = -8.0
+	dpad.offset_bottom = -8.0
+	root.add_child(dpad)
+	dpad.add_child(_blank_cell())
+	dpad.add_child(_make_dpad_button("W", Vector2i(0, -1)))
+	dpad.add_child(_blank_cell())
+	dpad.add_child(_make_dpad_button("A", Vector2i(-1, 0)))
+	dpad.add_child(_blank_cell())
+	dpad.add_child(_make_dpad_button("D", Vector2i(1, 0)))
+	dpad.add_child(_blank_cell())
+	dpad.add_child(_make_dpad_button("S", Vector2i(0, 1)))
+	dpad.add_child(_blank_cell())
+
+	var hint := Label.new()
+	hint.text = "WASD move • B biome • V view • F4 mountains • F5 outposts • F6 sight • F7 props • F8 sky • H UI"
+	hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	hint.offset_left = 10.0
+	hint.offset_right = 500.0
+	hint.offset_top = -20.0
+	hint.offset_bottom = -4.0
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 9)
+	hint.add_theme_color_override("font_color", Color("#6f8790"))
+	root.add_child(hint)
+
+	message_label = Label.new()
+	message_label.set_anchors_preset(Control.PRESET_CENTER)
+	message_label.offset_left = -230.0
+	message_label.offset_right = 230.0
+	message_label.offset_top = -34.0
+	message_label.offset_bottom = 34.0
+	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	message_label.add_theme_font_size_override("font_size", 18)
+	message_label.add_theme_color_override("font_color", Color("#ffd479"))
+	message_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.85))
+	message_label.add_theme_constant_override("outline_size", 4)
+	message_label.visible = false
+	root.add_child(message_label)
+
+	debug_label = Label.new()
+	debug_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	debug_label.offset_left = -330.0
+	debug_label.offset_right = -10.0
+	debug_label.offset_top = 98.0
+	debug_label.offset_bottom = 220.0
+	debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	debug_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	debug_label.add_theme_font_size_override("font_size", 9)
+	debug_label.add_theme_color_override("font_color", Color("#9fc6b8"))
+	debug_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.8))
+	debug_label.add_theme_constant_override("outline_size", 3)
+	debug_label.visible = debug_visible
+	root.add_child(debug_label)
+
+
+func _make_button(text: String, size: Vector2) -> Button:
+	var btn := Button.new()
+	btn.text = text
+	btn.custom_minimum_size = size
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.add_theme_font_size_override("font_size", 9)
+	return btn
+
+
+func _make_dpad_button(text: String, dir: Vector2i) -> Button:
+	var btn := _make_button(text, Vector2(30, 24))
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.pressed.connect(_on_dpad.bind(dir))
+	return btn
+
+
+func _blank_cell() -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(30, 24)
+	return c
+
+
+func _new_seed() -> void:
+	seed_value = ui_rng.randi_range(1000, 99999)
+	_generate()
+
+
+
+
+func _generate() -> void:
+	rng.seed = seed_value
+	planet_name = "KOI-%04d b" % (seed_value % 9999)
+	chunks.clear()
+	game_over = false
+	message_text = ""
+	turns_left = TURNS_START
+	hull = HULL_START
+	data_collected = 0
+	hazard_cell = Vector2i(-999, -999)
+	hazard_kind = ""
+	objectives.clear()
+	collected.clear()
+	_init_noise()
+	player_cell = _find_start()
+	_place_start_landmark()
+	# A single opening landmark still reads as "one rock in a lawn". Mountain
+	# archetypes get two more chains around the lander so the promise of the
+	# seed is visible before the player moves.
+	if archetype_name in ["Mountainous", "Broken Highlands", "Canyonlands", "Fractured"]:
+		for i in range(2):
+			_place_start_landmark()
+	_place_objectives()
+	_spawn_hazard()
+	_update_chunks()
+	_render_window()
+	_apply_biome_tint()
+	_refresh_status()
+
+
+func _refresh_world() -> void:
+	"""Regenerate loaded chunks after a feature toggle, keeping the player."""
+	chunks.clear()
+	_update_chunks()
+	_render_window()
+	_refresh_status()
+
+
+func _init_noise() -> void:
+	elevation.seed = seed_value
+	elevation.frequency = 0.035
+	elevation.fractal_octaves = 4
+	elevation.fractal_gain = 0.5
+	elevation.fractal_lacunarity = 2.0
+
+	detail.seed = seed_value + 911
+	detail.frequency = 0.05
+	detail.fractal_octaves = 3
+	detail.fractal_gain = 0.5
+	detail.fractal_lacunarity = 2.0
+
+	variant_noise.seed = seed_value + 1777
+	variant_noise.frequency = 0.045
+	variant_noise.fractal_octaves = 2
+	variant_noise.fractal_gain = 0.5
+	variant_noise.fractal_lacunarity = 2.0
+
+	# Domain warp breaks up the long, straight noise contours that otherwise
+	# make lakes and coastlines read as diagonal bands.
+	warp_noise.seed = seed_value + 2503
+	warp_noise.frequency = 0.018
+	warp_noise.fractal_octaves = 2
+	warp_noise.fractal_gain = 0.5
+	warp_noise.fractal_lacunarity = 2.0
+
+	# High-frequency shoreline jitter so the water threshold does not cut
+	# long orthogonal slabs. Kept small: it should wobble the coast, not
+	# fragment the lakes.
+	shore_noise.seed = seed_value + 3301
+	shore_noise.frequency = 0.14
+	shore_noise.fractal_octaves = 2
+	shore_noise.fractal_gain = 0.5
+	shore_noise.fractal_lacunarity = 2.0
+
+	# Low-frequency mask: some stretches of coast should stay clean while
+	# others fray. Without it every lake edge gets the same high-frequency
+	# "eaten away" treatment.
+	rough_noise.seed = seed_value + 4703
+	rough_noise.frequency = 0.045
+	rough_noise.fractal_octaves = 2
+	rough_noise.fractal_gain = 0.5
+	rough_noise.fractal_lacunarity = 2.0
+
+	# Low-frequency belts, not another shoreline. A narrow band of rock terrain
+	# crosses several chunks, so the eye reads a mountain range rather than
+	# isolated boulders. World coordinates keep it continuous at chunk edges.
+	ridge_noise.seed = seed_value + 6101
+	ridge_noise.frequency = 0.035
+	ridge_noise.fractal_octaves = 3
+	ridge_noise.fractal_gain = 0.5
+	ridge_noise.fractal_lacunarity = 2.0
+
+	_pick_archetype()
+
+
+func _pick_archetype() -> void:
+	# String.hash() avalanches small sequential seeds much better than a
+	# linear congruential seed, so seed 1/2/3 do not all land in the same
+	# terrain family. The biome index keeps the same seed different per world.
+	var h := ("%d:%d" % [seed_value, biome_index]).hash()
+	terrain_archetype = TERRAIN_ARCHETYPES[
+		absi(h) % TERRAIN_ARCHETYPES.size()
+	]
+	archetype_name = str(terrain_archetype["name"])
+
+
+func _find_start() -> Vector2i:
+	# Prefer a broad landing site, not a one-tile island. Score a 5x5 patch of
+	# walkable cells and take the first good site, otherwise the best seen.
+	var best := Vector2i.ZERO
+	var best_score := -1
+	for r in range(0, 13):
+		for dx in range(-r, r + 1):
+			for dy in range(-r, r + 1):
+				if r > 0 and abs(dx) != r and abs(dy) != r:
+					continue
+				var c := Vector2i(dx, dy)
+				if not _is_walkable_world(c):
+					continue
+				var score := 0
+				for oy in range(-2, 3):
+					for ox in range(-2, 3):
+						if _is_walkable_world(c + Vector2i(ox, oy)):
+							score += 1
+				if score > best_score:
+					best_score = score
+					best = c
+				if score >= 18:
+					return c
+	return best
+
+
+func _place_start_landmark() -> void:
+	# Guarantee one readable natural landmark near the lander so the opening
+	# screen shows more than flat terrain. The rest still comes from chunks.
+	if not bool(feature_toggles.get("mountains", true)):
+		return
+	var b: Dictionary = BIOMES[biome_index]
+	var biome_id := str(b["id"])
+	var key := "mountain_massif" if biome_id == "temperate" else "mountain_range"
+	match biome_id:
+		"volcanic":
+			key = "geyser"
+		"arid":
+			key = "mesa"
+		"cryo":
+			key = "iceberg"
+		"ocean":
+			key = "islet"
+		"barren":
+			key = "impact_crater"
+		"methane":
+			key = "iceberg"
+		"iron":
+			key = "mesa"
+		"sulfur":
+			key = "geyser"
+		"crystal":
+			key = "crystal_outcrop"
+		"obsidian":
+			key = "geyser"
+		"ammonia":
+			key = "iceberg"
+		"carbon":
+			key = "impact_crater"
+	# A plains/archipelago opening should not put a mountain wall beside the
+	# lander; use a low, readable landmark instead.
+	if archetype_name == "Open Plains":
+		key = "impact_crater"
+	elif archetype_name in ["Lake District", "Archipelago"]:
+		key = "islet" if biome_id == "ocean" else "geyser"
+	var info: Dictionary = STRUCTURES[key]
+	var w: int = info["w"]
+	var h: int = info["h"]
+
+	var allowed: Array = []
+	for field in [
+		"base", "base_alt", "detail", "detail_alt", "detail_alt2",
+		"detail_alt3", "rock", "rock_alt",
+	]:
+		var tile := str(b.get(field, ""))
+		if tile != "":
+			allowed.append(tile)
+	for variant_key in b.get("base_variants", []):
+		var vk := str(variant_key)
+		if vk != "":
+			allowed.append(vk)
+	if biome_id == "ocean":
+		# Islets sit in shallow water; reef/beach edges are also valid.
+		allowed = [str(b["base"]), str(b["rock"])]
+		if str(b.get("shore", "")) != "":
+			allowed.append(str(b["shore"]))
+	elif biome_id == "barren":
+		allowed = [str(b["base"]), str(b["detail"]), str(b["rock"])]
+
+	for attempt in range(240):
+		var ang := rng.randf() * TAU
+		var dist := rng.randf_range(4.0, 8.0)
+		var gx := int(round(player_cell.x + cos(ang) * dist)) - (w >> 1)
+		var gy := int(round(player_cell.y + sin(ang) * dist)) - (h >> 1)
+		var c := _world_to_chunk(Vector2i(gx, gy))
+		var lx := gx - c.x * CHUNK
+		var ly := gy - c.y * CHUNK
+		if lx < 0 or ly < 0 or lx + w > CHUNK or ly + h > CHUNK:
+			continue
+
+		var ok := true
+		for yy in range(h):
+			for xx in range(w):
+				var cell := Vector2i(gx + xx, gy + yy)
+				if cell == player_cell or not (_raw_terrain_world(cell.x, cell.y) in allowed):
+					ok = false
+					break
+			if not ok:
+				break
+		if not ok:
+			continue
+
+		var data := _get_chunk(c)
+		for s in data["structures"]:
+			if gx < int(s["gx"]) + int(s["w"]) and gx + w > int(s["gx"]) \
+					and gy < int(s["gy"]) + int(s["h"]) and gy + h > int(s["gy"]):
+				ok = false
+				break
+		if ok:
+			data["structures"].append({
+				"key": key, "gx": gx, "gy": gy, "w": w, "h": h,
+			})
+			return
+
+
+func _place_objectives() -> void:
+	for i in range(OBJECTIVE_COUNT):
+		var placed := false
+		for attempt in range(1200):
+			var ang := rng.randf() * TAU
+			var dist := rng.randf_range(4.0, 9.0)
+			var c := Vector2i(
+				int(round(player_cell.x + cos(ang) * dist)),
+				int(round(player_cell.y + sin(ang) * dist))
+			)
+			if not _is_walkable_world(c) or c == player_cell or objectives.has(c):
+				continue
+			var ok := true
+			for o in objectives:
+				if abs(o.x - c.x) + abs(o.y - c.y) < 3:
+					ok = false
+					break
+			if ok:
+				objectives.append(c)
+				collected.append(false)
+				placed = true
+				break
+		if not placed:
+			for attempt in range(2000):
+				var c := Vector2i(
+					player_cell.x + rng.randi_range(-14, 14),
+					player_cell.y + rng.randi_range(-14, 14)
+				)
+				if _is_walkable_world(c) and c != player_cell and not objectives.has(c):
+					objectives.append(c)
+					collected.append(false)
+					break
+
+
+func _spawn_hazard() -> void:
+	if game_over:
+		return
+	var kinds := [
+		{"name": "Solar flare", "color": Color(1.0, 0.35, 0.20)},
+		{"name": "Dust storm", "color": Color(0.86, 0.68, 0.35)},
+		{"name": "Radiation surge", "color": Color(0.55, 1.0, 0.45)},
+		{"name": "Seismic shock", "color": Color(1.0, 0.62, 0.25)},
+	]
+	var k: Dictionary = kinds[rng.randi_range(0, kinds.size() - 1)]
+	hazard_kind = k["name"]
+	hazard_color = k["color"]
+	hazard_cell = Vector2i(
+		player_cell.x + rng.randi_range(-6, 6) - 1,
+		player_cell.y + rng.randi_range(-6, 6) - 1
+	)
+
+
+func _try_move(dir: Vector2i) -> void:
+	if game_over:
+		return
+	var target := player_cell + dir
+	if not _is_walkable_world(target):
+		return
+
+	var from_cell := player_cell
+	player_cell = target
+	turns_left -= 1
+
+	for i in range(objectives.size()):
+		if objectives[i] == player_cell and not collected[i]:
+			collected[i] = true
+			data_collected += 1
+
+	if _in_hazard(player_cell):
+		hull -= 1
+
+	if hull <= 0:
+		game_over = true
+		message_text = "LANDER LOST\nPress R for a new map"
+	elif data_collected >= objectives.size() and objectives.size() > 0:
+		game_over = true
+		message_text = "MISSION COMPLETE\nPress R for a new map"
+	elif turns_left <= 0:
+		game_over = true
+		message_text = "OUT OF TURNS\nPress R for a new map"
+	else:
+		_spawn_hazard()
+
+	_update_chunks()
+	_render_window()
+	_animate_player(from_cell)
+	_refresh_status()
+
+
+func _in_hazard(cell: Vector2i) -> bool:
+	return (
+		cell.x >= hazard_cell.x and cell.x < hazard_cell.x + 3
+		and cell.y >= hazard_cell.y and cell.y < hazard_cell.y + 3
+	)
+
+
+func _update_chunks() -> void:
+	var center := _world_to_chunk(player_cell)
+	for cy in range(center.y - 1, center.y + 2):
+		for cx in range(center.x - 1, center.x + 2):
+			_get_chunk(Vector2i(cx, cy))
+	var keys := chunks.keys()
+	for key in keys:
+		if abs(key.x - center.x) > 2 or abs(key.y - center.y) > 2:
+			chunks.erase(key)
+
+
+func _get_chunk(coord: Vector2i) -> Dictionary:
+	if chunks.has(coord):
+		return chunks[coord]
+	var data := _generate_chunk(coord)
+	chunks[coord] = data
+	return data
+
+
+func _generate_chunk(coord: Vector2i) -> Dictionary:
+	var arr: Array = []
+	arr.resize(CHUNK * CHUNK)
+	var b: Dictionary = BIOMES[biome_index]
+
+	# Sample one cell of padding around the chunk so the smoothing pass sees
+	# the same neighbours from every chunk and the seams stay deterministic.
+	var pad := CHUNK + 2
+	var raw: Array = []
+	raw.resize(pad * pad)
+	for ly in range(-1, CHUNK + 1):
+		for lx in range(-1, CHUNK + 1):
+			raw[(ly + 1) * pad + (lx + 1)] = _sample_terrain(
+				b, coord.x * CHUNK + lx, coord.y * CHUNK + ly
+			)
+	for ly in CHUNK:
+		for lx in CHUNK:
+			arr[ly * CHUNK + lx] = _smooth_cell(raw, pad, lx, ly, b)
+
+	_carve_ridges(coord, arr, b)
+	var structures := _generate_chunk_structures(coord, arr, b)
+	var props := _generate_chunk_props(coord, arr, structures, b)
+	return {"terrain": arr, "structures": structures, "props": props}
+
+
+func _sample_terrain(b: Dictionary, wx: int, wy: int) -> String:
+	var fx := float(wx)
+	var fy := float(wy)
+	# Two decorrelated samples give the contours a natural wobble instead of
+	# stretching the same warp in both axes.
+	var sx := fx + warp_noise.get_noise_2d(fx, fy) * 14.0
+	var sy := fy + warp_noise.get_noise_2d(fx + 41.0, fy - 29.0) * 14.0
+	var n := elevation.get_noise_2d(sx, sy)
+	var det := detail.get_noise_2d(sx, sy) + float(terrain_archetype.get("detail", 0.0))
+	var elev := n + float(terrain_archetype.get("elev", 0.0))
+	var gen := str(b.get("generator", "continents"))
+
+	# Each world gets its own landform grammar instead of every biome reusing
+	# the same thresholded fBm field. The underlying noise is still seeded by
+	# the world seed, so a seed remains reproducible; only the shape language
+	# changes. Keep the output in the -1..1 range _pick_terrain expects.
+	match gen:
+		"archipelago":
+			# Island chains: a lower-frequency mask chooses island groups,
+			# a higher-frequency one tears channels through them.
+			var groups := elevation.get_noise_2d(sx * 0.62 + 17.0, sy * 0.62 - 9.0)
+			var cuts := detail.get_noise_2d(sx * 1.65 - 31.0, sy * 1.65 + 23.0)
+			elev = groups * 0.72 + cuts * 0.36 + 0.10
+			det += cuts * 0.35
+		"dunes":
+			# Wind-aligned dunes: a directional wave warped by low-frequency
+			# noise. Broad bands, not another isotropic blob field.
+			var warp := warp_noise.get_noise_2d(fx * 0.42, fy * 0.42)
+			var dune := sin((fx * 0.72 + fy * 0.35) * 0.055 + warp * 5.0)
+			elev = n * 0.55 + dune * 0.22 + float(terrain_archetype.get("elev", 0.0))
+			det += dune * 0.42
+		"caldera":
+			# Concentric volcanic provinces: low centres become lava, high
+			# rims become basalt/obsidian. abs() makes rings instead of blobs.
+			var ring := absf(n)
+			elev = -1.0 + 2.35 * smoothstep(0.015, 0.42, ring)
+			elev += float(terrain_archetype.get("elev", 0.0)) * 0.45
+			det += (1.0 - ring) * 0.45
+		"fractured":
+			# Ice/glass plates separated by narrow cracks; the cracks read as
+			# frozen lakes or dark seams, the plates as raised shelves.
+			var crack := absf(n)
+			elev = -1.0 + 2.0 * smoothstep(0.012, 0.075, crack)
+			elev += float(terrain_archetype.get("elev", 0.0)) * 0.40
+			det += (1.0 - crack) * 0.35
+		"cratered":
+			# Basins and rims from two crater scales. abs() gives the bowl,
+			# the offset second field breaks the circular repetition.
+			var bowl := absf(elevation.get_noise_2d(sx * 1.9 + 53.0, sy * 1.9 - 47.0))
+			elev = -1.0 + 2.1 * smoothstep(0.01, 0.13, bowl)
+			elev += float(terrain_archetype.get("elev", 0.0)) * 0.35
+			det += (1.0 - bowl) * 0.40
+		"faceted":
+			# Quantised crystal facets: stepped elevation and detail create
+			# angular plates instead of smooth organic fBm.
+			elev = floor(n * 5.0) / 5.0
+			det = floor(det * 6.0) / 6.0
+			elev += float(terrain_archetype.get("elev", 0.0)) * 0.35
+		_:
+			pass
+
+	return _pick_terrain(b, elev, det, wx, wy)
+
+
+func _carve_ridges(coord: Vector2i, arr: Array, b: Dictionary) -> void:
+	"""Turn narrow low-frequency noise bands into walkable rock belts.
+
+	The band is sampled in world space, so the same ridge continues across
+	chunk borders. Rock is a terrain material, not a decal: it participates in
+	transitions and gives the large mountain sprites a visual base to sit on.
+	"""
+	if not bool(feature_toggles["mountains"]):
+		return
+	var biome_id := str(b["id"])
+	if biome_id == "ocean":
+		return
+	var rock := str(b.get("rock", ""))
+	if rock == "":
+		return
+	var water := str(b.get("water", ""))
+	var shore := str(b.get("shore", ""))
+	var ridge_width := float(terrain_archetype.get("ridge", 0.105))
+	for ly in CHUNK:
+		for lx in CHUNK:
+			var wx := coord.x * CHUNK + lx
+			var wy := coord.y * CHUNK + ly
+			if absf(ridge_noise.get_noise_2d(float(wx), float(wy))) > ridge_width:
+				continue
+			var idx := ly * CHUNK + lx
+			var cur := str(arr[idx])
+			if cur == water or (shore != "" and cur == shore):
+				continue
+			arr[idx] = rock
+
+
+func _ground_tiles(b: Dictionary) -> Array:
+	var ground: Array = [str(b["base"])]
+	for key in ["base_alt"]:
+		if b.has(key) and str(b[key]) != "":
+			ground.append(str(b[key]))
+	for key in b.get("base_variants", []):
+		ground.append(str(key))
+	return ground
+
+
+func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> String:
+	var cur := str(raw[(ly + 1) * pad + (lx + 1)])
+	var water := str(b.get("water", ""))
+	var ground := _ground_tiles(b)
+	var is_ground := cur in ground
+	var counts := {}
+	var same := 0
+	for oy in range(-1, 2):
+		for ox in range(-1, 2):
+			if ox == 0 and oy == 0:
+				continue
+			var t := str(raw[(ly + 1 + oy) * pad + (lx + 1 + ox)])
+			if t == cur:
+				same += 1
+			counts[t] = int(counts.get(t, 0)) + 1
+
+	# Water edges are smoothed too, but lava channels stay authored. Removing
+	# one-tile spurs and filling one-tile bays rounds the coast before the
+	# shore ring and keeps the 64px grid from reading as stair steps.
+	if water != "" and str(b.get("id", "")) != "volcanic":
+		if cur == water:
+			# Only drop truly isolated water. Keeping one-neighbour spurs is
+			# what lets the corner tiles cut a diagonal coast; the old <=1
+			# rule erased every diagonal and left rectangular slabs.
+			if same == 0:
+				return str(b["base"])
+			return cur
+		if int(counts.get(water, 0)) >= 7:
+			return water
+
+	if not is_ground:
+		# Drop one-tile specks and thin diagonal tails; keep real clusters.
+		if same <= 1:
+			return str(b["base"])
+		return cur
+
+	# Fill one-tile holes and let a strong surrounding material take over a
+	# base cell, which rounds off the noisy edges of detail patches.
+	var best := ""
+	var best_count := 0
+	for t in counts:
+		if str(t) in ground:
+			continue
+		var n := int(counts[t])
+		if n > best_count:
+			best = str(t)
+			best_count = n
+	if best_count >= 5:
+		return best
+	return cur
+
+
+
+func _generate_chunk_props(
+	coord: Vector2i, arr: Array, structures: Array, b: Dictionary
+) -> Array:
+	var out: Array = []
+	if not bool(feature_toggles["props"]):
+		return out
+	var choices: Array = PROPS.get(str(b["id"]), [])
+	if choices.is_empty():
+		return out
+	var density := float(PROP_DENSITY.get(str(b["id"]), 0.06))
+
+	var occupied := {}
+	for s in structures:
+		for y in range(s["gy"], s["gy"] + s["h"]):
+			for x in range(s["gx"], s["gx"] + s["w"]):
+				occupied[Vector2i(x, y)] = true
+
+	var crng := RandomNumberGenerator.new()
+	crng.seed = _chunk_seed(coord) ^ 0x2c1b3c6d
+	for ly in CHUNK:
+		for lx in CHUNK:
+			var wx := coord.x * CHUNK + lx
+			var wy := coord.y * CHUNK + ly
+			var t := str(arr[ly * CHUNK + lx])
+			if t in BLOCKED or occupied.has(Vector2i(wx, wy)):
+				continue
+			# Per-biome density keeps sparse worlds sparse: a coral shard or
+			# shrub should be an accent, not a lawn.
+			if crng.randf() > density:
+				continue
+			out.append({
+				"key": str(choices[crng.randi_range(0, choices.size() - 1)]),
+				"gx": wx, "gy": wy,
+				"flip": crng.randf() < 0.5,
+				"scale": crng.randf_range(0.52, 0.78),
+			})
+	return out
+
+
+
+func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> String:
+	var water: String = str(b.get("water", ""))
+	var rock: String = str(b.get("rock", ""))
+	var wet := elev + float(terrain_archetype.get("water", 0.0))
+	if str(b.get("profile", b["id"])) != "volcanic":
+		var rough := rough_noise.get_noise_2d(float(wx), float(wy))
+		var jag := lerpf(0.015, 0.155, smoothstep(-0.30, 0.30, rough))
+		wet += shore_noise.get_noise_2d(float(wx), float(wy)) * jag
+
+	match str(b.get("profile", b["id"])):
+		"temperate":
+			# Keep the rare biosphere mostly walkable: lakes are punctuation,
+			# not the dominant surface.
+			if water != "" and wet < -0.30:
+				return water
+			if elev > 0.50 and rock != "":
+				return _rock_choice(b, det)
+			if det > 0.30:
+				return _detail_choice(b, det)
+			return _base_choice(b, det, wx, wy)
+		"arid":
+			if elev < -0.35:
+				return _detail_choice(b, det)
+			if elev > 0.42 and rock != "":
+				return _rock_choice(b, det)
+			return _base_choice(b, det, wx, wy)
+		"cryo":
+			# Cracks are the low shelves. Keep the plateau on the smooth ice
+			# base: cryo/rock is a high-frequency speckle tile and turns the
+			# whole field into TV static when the fractured plateau is mapped
+			# to rock.
+			if elev < -0.25:
+				return _detail_choice(b, det)
+			return _base_choice(b, det, wx, wy)
+		"volcanic":
+			if water != "" and elev < -0.32:
+				return water
+			if elev > 0.55 and rock != "":
+				return _rock_choice(b, det)
+			if elev > 0.35:
+				return _detail_choice(b, det)
+			return _base_choice(b, det, wx, wy)
+		"ocean":
+			if wet < -0.24:
+				return _detail_choice(b, det)
+			var reef_at := 0.20 if str(b.get("generator", "")) == "archipelago" else 0.52
+			if elev > reef_at and rock != "":
+				return _rock_choice(b, det)
+			return _base_choice(b, det, wx, wy)
+		"barren":
+			if elev > 0.48 and rock != "":
+				return _rock_choice(b, det)
+			if det > 0.35:
+				return _detail_choice(b, det)
+			return _base_choice(b, det, wx, wy)
+	return str(b["base"])
+
+
+func _base_choice(b: Dictionary, det: float, wx: int, wy: int) -> String:
+	var variants: Array = b.get("base_variants", [])
+	if not variants.is_empty():
+		var v := variant_noise.get_noise_2d(float(wx), float(wy))
+		var idx := clampi(
+			int(floor((v + 1.0) * 0.5 * float(variants.size()))),
+			0,
+			variants.size() - 1,
+		)
+		return str(variants[idx])
+	var alt := str(b.get("base_alt", ""))
+	if alt != "" and det > 0.42:
+		return alt
+	return str(b["base"])
+
+
+func _detail_choice(b: Dictionary, det: float) -> String:
+	var alt3 := str(b.get("detail_alt3", ""))
+	var alt2 := str(b.get("detail_alt2", ""))
+	var alt := str(b.get("detail_alt", ""))
+	if alt3 != "" and det > 0.68:
+		return alt3
+	if alt2 != "" and det > 0.56:
+		return alt2
+	if alt != "" and det > 0.40:
+		return alt
+	return str(b["detail"])
+
+
+func _rock_choice(b: Dictionary, det: float) -> String:
+	var alt := str(b.get("rock_alt", ""))
+	if alt != "" and det > 0.52:
+		return alt
+	return str(b.get("rock", b["base"]))
+
+
+func _structure_allowed_tiles(b: Dictionary) -> Array:
+	var allowed: Array = []
+	for field in [
+		"base", "base_alt", "detail", "detail_alt", "detail_alt2",
+		"detail_alt3", "rock", "rock_alt",
+	]:
+		var tile := str(b.get(field, ""))
+		if tile != "":
+			allowed.append(tile)
+	for variant_key in b.get("base_variants", []):
+		var vk := str(variant_key)
+		if vk != "":
+			allowed.append(vk)
+	var biome_id := str(b["id"])
+	if biome_id == "ocean":
+		allowed = [str(b["base"]), str(b["rock"])]
+		if str(b.get("shore", "")) != "":
+			allowed.append(str(b["shore"]))
+	elif biome_id == "barren":
+		allowed = [str(b["base"]), str(b["detail"]), str(b["rock"])]
+	return allowed
+
+
+func _structure_fits(
+	arr: Array, allowed: Array, occupied: Array, lx: int, ly: int, w: int, h: int
+) -> bool:
+	if lx < 1 or ly < 1 or lx + w > CHUNK - 1 or ly + h > CHUNK - 1:
+		return false
+	for yy in range(ly, ly + h):
+		for xx in range(lx, lx + w):
+			if not (arr[yy * CHUNK + xx] in allowed):
+				return false
+	var rect := Rect2i(lx, ly, w, h)
+	for r in occupied:
+		if rect.intersects(r):
+			return false
+	return true
+
+
+func _append_structure(
+	out: Array, occupied: Array, arr: Array, allowed: Array,
+	coord: Vector2i, key: String, lx: int, ly: int
+) -> bool:
+	var info: Dictionary = STRUCTURES[key]
+	var w: int = info["w"]
+	var h: int = info["h"]
+	if not _structure_fits(arr, allowed, occupied, lx, ly, w, h):
+		return false
+	out.append({
+		"key": key,
+		"gx": coord.x * CHUNK + lx,
+		"gy": coord.y * CHUNK + ly,
+		"w": w,
+		"h": h,
+	})
+	occupied.append(Rect2i(lx, ly, w, h))
+	return true
+
+
+func _ridge_key(biome_id: String) -> String:
+	match biome_id:
+		"volcanic", "sulfur", "obsidian":
+			return "volcano"
+		"arid", "iron":
+			return "mesa"
+		"cryo", "methane", "ammonia":
+			return "iceberg"
+		"barren":
+			return "impact_crater"
+		"temperate", "carbon":
+			return "mountain_massif"
+	return "mountain_range"
+
+
+func _feature_key(biome_id: String, roll: float) -> String:
+	match biome_id:
+		"volcanic":
+			return "volcano" if roll < 0.40 else "geyser"
+		"arid":
+			return "mesa" if roll < 0.52 else "impact_crater"
+		"cryo":
+			return "iceberg" if roll < 0.50 else "crystal_outcrop"
+		"ocean":
+			# Coral is the ocean's native landmark; islets still break up the
+			# water so every ocean chunk is not the same spire.
+			return "coral_spire" if roll < 0.55 else "islet"
+		"barren":
+			return "impact_crater"
+		"methane":
+			return "iceberg" if roll < 0.55 else "crystal_outcrop"
+		"iron":
+			return "mesa" if roll < 0.55 else "impact_crater"
+		"sulfur":
+			return "volcano" if roll < 0.50 else "geyser"
+		"crystal":
+			return "crystal_outcrop"
+		"obsidian":
+			return "volcano" if roll < 0.55 else "geyser"
+		"ammonia":
+			return "iceberg"
+		"carbon":
+			return "impact_crater" if roll < 0.55 else "mesa"
+	return "mountain_range"
+
+
+func _place_ridge(
+	out: Array, occupied: Array, arr: Array, allowed: Array,
+	coord: Vector2i, biome_id: String, rng: RandomNumberGenerator
+) -> void:
+	if biome_id == "ocean":
+		# Ocean ridges are chains of islets, not mountain walls.
+		var ilx := rng.randi_range(2, CHUNK - 3)
+		var ily := rng.randi_range(2, CHUNK - 3)
+		var idir: Vector2i = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)][rng.randi_range(0, 2)]
+		for i in range(rng.randi_range(2, 4)):
+			if not _append_structure(out, occupied, arr, allowed, coord, "islet", ilx, ily):
+				break
+			ilx += idir.x * 2
+			ily += idir.y * 2
+		return
+
+	var key := _ridge_key(biome_id)
+	var info: Dictionary = STRUCTURES[key]
+	var w: int = info["w"]
+	var h: int = info["h"]
+	var step := maxi(w, 2)
+	var dirs: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)
+	]
+	var dir: Vector2i = dirs[rng.randi_range(0, dirs.size() - 1)]
+	var count := rng.randi_range(4, 7) if key == "mountain_range" else rng.randi_range(3, 6)
+	if key == "mountain_massif":
+		count = rng.randi_range(1, 2)
+
+	# A chain that starts at the chunk edge and walks out is truncated to one
+	# rock, which is why the first density pass still looked sparse. Try
+	# several starts and only commit a chain that fits end-to-end.
+	for attempt in range(12):
+		var lx := rng.randi_range(2, maxi(2, CHUNK - w - 2))
+		var ly := rng.randi_range(2, maxi(2, CHUNK - h - 2))
+		var tx := lx
+		var ty := ly
+		var links: Array[Rect2i] = []
+		var ok := true
+		for i in range(count):
+			if not _structure_fits(arr, allowed, occupied, tx, ty, w, h):
+				ok = false
+				break
+			var rect := Rect2i(tx, ty, w, h)
+			for other in links:
+				if rect.intersects(other):
+					ok = false
+					break
+			if not ok:
+				break
+			links.append(rect)
+			tx += dir.x * step
+			ty += dir.y * step
+		if not ok:
+			continue
+		tx = lx
+		ty = ly
+		for i in range(count):
+			if not _append_structure(out, occupied, arr, allowed, coord, key, tx, ty):
+				break
+			tx += dir.x * step
+			ty += dir.y * step
+		return
+
+	# Fallback: a single hill is better than an empty chunk.
+	for attempt in range(6):
+		var sx := rng.randi_range(2, maxi(2, CHUNK - w - 2))
+		var sy := rng.randi_range(2, maxi(2, CHUNK - h - 2))
+		if _append_structure(out, occupied, arr, allowed, coord, key, sx, sy):
+			return
+
+
+func _place_outpost(
+	out: Array, occupied: Array, arr: Array, allowed: Array,
+	coord: Vector2i, rng: RandomNumberGenerator
+) -> void:
+	var modules: Array[String] = ["habitat_dome", "solar_farm", "comms_dish"]
+	modules.shuffle()
+	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
+	var dir: Vector2i = dirs[rng.randi_range(0, dirs.size() - 1)]
+	var lx := rng.randi_range(2, CHUNK - 4)
+	var ly := rng.randi_range(2, CHUNK - 4)
+	# One or two modules per outpost. Three identical dome clusters in one
+	# view read as copy-paste, which was the wrong kind of "big structure".
+	var count := rng.randi_range(1, 2)
+	for i in range(count):
+		var key := modules[i % modules.size()]
+		if not _append_structure(out, occupied, arr, allowed, coord, key, lx, ly):
+			break
+		lx += dir.x * 2
+		ly += dir.y * 2
+
+
+func _generate_chunk_structures(coord: Vector2i, arr: Array, b: Dictionary) -> Array:
+	var out: Array = []
+	var crng := RandomNumberGenerator.new()
+	crng.seed = _chunk_seed(coord)
+	var biome_id := str(b["id"])
+	var allowed := _structure_allowed_tiles(b)
+	var occupied: Array[Rect2i] = []
+
+	# Mountains are the silhouette of the map. Two attempts per chunk give a
+	# proper range instead of one lonely rock; an empty chunk always gets a
+	# fallback so the play area never opens on a flat lawn.
+	var arch_ridge := float(terrain_archetype.get("ridge_chance", 0.0))
+	var ridge_chance := 0.62 + arch_ridge
+	if arch_ridge < 0.0:
+		# Open Plains / Lake District / Archipelago are allowed to stay open;
+		# the generic 0.62 base made every one of them grow mountains.
+		ridge_chance = maxf(0.06, 0.30 + arch_ridge)
+	match biome_id:
+		"temperate", "arid", "barren", "iron", "carbon", "cryo", "methane", "volcanic", "sulfur", "obsidian", "crystal", "ammonia":
+			ridge_chance = clampf(ridge_chance, 0.38, 0.96)
+		"ocean":
+			ridge_chance = clampf(0.38 + arch_ridge * 0.5, 0.24, 0.72)
+	if bool(feature_toggles["mountains"]):
+		# Mountainous archetypes get one more chain: the 20x16 window only
+		# shows ~1.5 chunks, so two chains per 16x16 chunk still read as a
+		# single lonely rock on screen.
+		var ridge_attempts := 3 if arch_ridge >= 0.10 else 2
+		for attempt in range(ridge_attempts):
+			var chance := ridge_chance if attempt == 0 else 0.50 + arch_ridge * 0.5
+			if crng.randf() < chance:
+				_place_ridge(out, occupied, arr, allowed, coord, biome_id, crng)
+		# Open water/plain archetypes must be allowed to stay open; only a
+		# genuinely mountainous roll gets the guaranteed landmark.
+		if out.is_empty() and arch_ridge >= 0.0:
+			_place_ridge(out, occupied, arr, allowed, coord, biome_id, crng)
+
+	# Abandoned survey outposts are the "big structure" beat. They read as a
+	# deliberate complex rather than another rock, and their footprint blocks
+	# movement, so they matter tactically.
+	if (
+		bool(feature_toggles["outposts"])
+		and biome_id in ["arid", "barren", "iron", "carbon", "obsidian"]
+		and crng.randf() < 0.18
+	):
+		_place_outpost(out, occupied, arr, allowed, coord, crng)
+
+	# One additional natural feature keeps chunks from having a single motif.
+	if crng.randf() < 0.44:
+		var key := _feature_key(biome_id, crng.randf())
+		var info: Dictionary = STRUCTURES[key]
+		var w: int = info["w"]
+		var h: int = info["h"]
+		for attempt in range(10):
+			var lx := crng.randi_range(2, maxi(2, CHUNK - w - 2))
+			var ly := crng.randi_range(2, maxi(2, CHUNK - h - 2))
+			if _append_structure(out, occupied, arr, allowed, coord, key, lx, ly):
+				break
+	return out
+
+
+func _chunk_seed(coord: Vector2i) -> int:
+	var h := int(seed_value) & 0x7fffffff
+	h = (h * 374761393 + coord.x * 668265263 + coord.y * 1442695041) & 0x7fffffff
+	h = (h ^ (h >> 13)) & 0x7fffffff
+	h = (h * 1274126177) & 0x7fffffff
+	return h
+
+
+func _raw_terrain_world(x: int, y: int) -> String:
+	var c := _world_to_chunk(Vector2i(x, y))
+	var data := _get_chunk(c)
+	var lx := x - c.x * CHUNK
+	var ly := y - c.y * CHUNK
+	return data["terrain"][ly * CHUNK + lx]
+
+
+func _render_terrain_world(x: int, y: int) -> String:
+	var raw := _raw_terrain_world(x, y)
+	var b: Dictionary = BIOMES[biome_index]
+	if bool(b.get("shore_ring", false)) and raw != str(b.get("water", "")):
+		for d in DIRS + CORNER_DIRS:
+			if _raw_terrain_world(x + d.x, y + d.y) == str(b.get("water", "")):
+				return str(b["shore"])
+	return raw
+
+
+func _is_walkable_world(cell: Vector2i) -> bool:
+	var t := _render_terrain_world(cell.x, cell.y)
+	if t in BLOCKED:
+		return false
+	var data := _get_chunk(_world_to_chunk(cell))
+	for s in data["structures"]:
+		var gx: int = s["gx"]
+		var gy: int = s["gy"]
+		var w: int = s["w"]
+		var h: int = s["h"]
+		if cell.x >= gx and cell.x < gx + w and cell.y >= gy and cell.y < gy + h:
+			return false
+	return true
+
+
+func _world_to_chunk(cell: Vector2i) -> Vector2i:
+	return Vector2i(
+		int(floor(float(cell.x) / float(CHUNK))),
+		int(floor(float(cell.y) / float(CHUNK)))
+	)
+
+
+func _flip_alt(key: String, wx: int, wy: int) -> int:
+	var alts: Array = source_alts.get(key, [])
+	if alts.size() < 2:
+		return 0
+	var h := int((wx * 73856093) ^ (wy * 19349663) ^ seed_value)
+	return int(alts[absi(h) % alts.size()])
+
+
+func _render_window() -> void:
+	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
+	tilemap.clear()
+	rockmap.clear()
+	var b: Dictionary = BIOMES[biome_index]
+	var rock := str(b.get("rock", ""))
+	var prio := _priority_map(b)
+
+	for ly in VIEW_H:
+		for lx in VIEW_W:
+			var wx := view_origin.x + lx
+			var wy := view_origin.y + ly
+			var t := _render_terrain_world(wx, wy)
+			var best_key := _transition_choice(t, wx, wy, prio)
+			if source_ids.has(best_key):
+				var alt := 0
+				if best_key == t:
+					alt = _flip_alt(best_key, wx, wy)
+				tilemap.set_cell(Vector2i(lx, ly), source_ids[best_key], Vector2i.ZERO, alt)
+			elif source_ids.has(t):
+				tilemap.set_cell(
+					Vector2i(lx, ly), source_ids[t], Vector2i.ZERO,
+					_flip_alt(t, wx, wy)
+				)
+			if t == rock and source_ids.has(t):
+				rockmap.set_cell(
+					Vector2i(lx, ly), source_ids[t], Vector2i.ZERO,
+					_flip_alt(t, wx, wy)
+				)
+
+	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	_rebuild_structure_sprites()
+	_rebuild_cliffs()
+	_rebuild_actors()
+
+
+func _cell_quad(wx: int, wy: int) -> PackedVector2Array:
+	var x0 := float(wx * TILE)
+	var y0 := float(wy * TILE)
+	return PackedVector2Array([
+		_project(Vector2(x0, y0 + TILE * 0.5)),
+		_project(Vector2(x0 + TILE * 0.5, y0 + TILE)),
+		_project(Vector2(x0 + TILE, y0 + TILE * 0.5)),
+		_project(Vector2(x0 + TILE * 0.5, y0)),
+	])
+
+
+func _rebuild_cliffs() -> void:
+	if cliff_layer == null:
+		return
+	for child in cliff_layer.get_children():
+		child.free()
+	var b: Dictionary = BIOMES[biome_index]
+	var rock := str(b.get("rock", ""))
+	if rock == "" or not bool(feature_toggles.get("mountains", true)):
+		return
+	for ly in VIEW_H:
+		for lx in VIEW_W:
+			var wx := view_origin.x + lx
+			var wy := view_origin.y + ly
+			if _render_terrain_world(wx, wy) != rock:
+				continue
+			# Only the exposed south rim gets a wall. Filling every cell with a
+			# face reads as a dark grid; edge-only faces read as a plateau.
+			if _render_terrain_world(wx, wy + 1) == rock:
+				continue
+			var q := _cell_quad(wx, wy)
+			if q.size() != 4:
+				continue
+			var drop := 6.0
+			var face := Polygon2D.new()
+			face.polygon = PackedVector2Array([
+				q[0], q[1],
+				q[1] + Vector2(0, drop), q[0] + Vector2(0, drop),
+			])
+			face.color = Color(0.025, 0.035, 0.03, 0.55)
+			cliff_layer.add_child(face)
+			var lip := Line2D.new()
+			lip.points = PackedVector2Array([q[0], q[1]])
+			lip.width = 1.5
+			lip.default_color = Color(0.12, 0.14, 0.10, 0.72)
+			cliff_layer.add_child(lip)
+
+func _priority_map(b: Dictionary) -> Dictionary:
+	var prio := {}
+	for field in ["base", "base_alt"]:
+		var base_tile := str(b.get(field, ""))
+		if base_tile != "":
+			prio[base_tile] = 1
+	for variant_key in b.get("base_variants", []):
+		var vk := str(variant_key)
+		if vk != "":
+			prio[vk] = 1
+	for field in ["detail", "detail_alt", "detail_alt2", "detail_alt3"]:
+		var detail_tile := str(b.get(field, ""))
+		if detail_tile != "":
+			prio[detail_tile] = 2
+	for field in ["rock", "rock_alt"]:
+		var rock_tile := str(b.get(field, ""))
+		if rock_tile != "":
+			prio[rock_tile] = 3
+	var shore_tile := str(b.get("shore", ""))
+	if shore_tile != "":
+		prio[shore_tile] = 4
+	var water_tile := str(b.get("water", ""))
+	if water_tile != "" and water_tile != str(b["base"]):
+		prio[water_tile] = 5
+	return prio
+
+
+func _transition_key(t: String, n: String, dir: String) -> String:
+	var pair_key := t + "|" + n
+	if not transition_pairs.has(pair_key):
+		return ""
+	var info: Dictionary = transition_pairs[pair_key]
+	var side := dir
+	if info["a"] != n:
+		side = _opposite(dir)
+	var key: String = info["a"] + "|" + info["b"] + "|" + side
+	if source_ids.has(key):
+		return key
+	return ""
+
+
+func _opposite(dir: String) -> String:
+	match dir:
+		"east":
+			return "west"
+		"west":
+			return "east"
+		"south":
+			return "north"
+		"north":
+			return "south"
+	return dir
+
+
+func _transition_choice(t: String, wx: int, wy: int, prio: Dictionary) -> String:
+	"""Pick the tile that best matches all eight neighbours.
+
+	Priority still decides which material wins when a cell touches several
+	biome materials; the pattern score only breaks ties between equally
+	important neighbours.
+	"""
+	var neighbours: Array[Vector2i] = []
+	neighbours.append_array(EDGE_DIRS)
+	neighbours.append_array(CORNER_DIRS)
+	var seen := {}
+	var best_key := t
+	var best_prio := -1
+	var best_score := -1
+	for d in neighbours:
+		var n := _render_terrain_world(wx + d.x, wy + d.y)
+		if n == t or seen.has(n):
+			continue
+		seen[n] = true
+		var pair_key := t + "|" + n
+		if not transition_pairs.has(pair_key):
+			continue
+		var info: Dictionary = transition_pairs[pair_key]
+		var data := _pattern_data(t, n, wx, wy, info)
+		var key := str(data.get("key", ""))
+		if key == "":
+			continue
+		var p := int(prio.get(n, 0))
+		var s := int(data.get("score", 0))
+		if p > best_prio or (p == best_prio and s > best_score):
+			best_prio = p
+			best_score = s
+			best_key = key
+	return best_key
+
+
+func _pattern_data(t: String, n: String, wx: int, wy: int, info: Dictionary) -> Dictionary:
+	"""Return the best extra/straight tile for one neighbour material.
+
+	Edges are N/E/S/W, corners are NW/NE/SE/SW. ``n`` is the foreign material;
+	``t`` is the cell material. The score is used only to compare patterns for
+	the same material at the same priority.
+	"""
+	var edges: Array[bool] = [false, false, false, false]
+	var corners: Array[bool] = [false, false, false, false]
+	var edge_count := 0
+	var corner_count := 0
+	for i in range(4):
+		edges[i] = _render_terrain_world(
+			wx + EDGE_DIRS[i].x, wy + EDGE_DIRS[i].y
+		) == n
+		if edges[i]:
+			edge_count += 1
+	for i in range(4):
+		corners[i] = _render_terrain_world(
+			wx + CORNER_DIRS[i].x, wy + CORNER_DIRS[i].y
+		) == n
+		if corners[i]:
+			corner_count += 1
+
+	var score := edge_count * 2 + corner_count
+	var key := ""
+	if edge_count == 0:
+		if corner_count == 1:
+			var c := corners.find(true)
+			key = _diagonal_key(info, n, CORNER_NAMES[c])
+			if key == "":
+				key = _extra_key(info, n, _foreign_prefix(info, n), CORNER_NAMES[c])
+		elif corner_count == 2:
+			var implied_edge := -1
+			if corners[0] and corners[1]:
+				implied_edge = 0
+			elif corners[1] and corners[2]:
+				implied_edge = 1
+			elif corners[2] and corners[3]:
+				implied_edge = 2
+			elif corners[3] and corners[0]:
+				implied_edge = 3
+			if implied_edge >= 0:
+				key = _transition_key(t, n, EDGE_NAMES[implied_edge])
+			else:
+				var c := corners.find(true)
+				key = _extra_key(
+					info, n, _foreign_prefix(info, n), CORNER_NAMES[c]
+				)
+		elif corner_count == 3:
+			var c := corners.find(false)
+			key = _extra_key(info, n, _cell_prefix(info, n), CORNER_NAMES[c])
+	elif edge_count == 1:
+		var e := edges.find(true)
+		key = _transition_key(t, n, EDGE_NAMES[e])
+	elif edge_count == 2:
+		var opposite := (edges[0] and edges[2]) or (edges[1] and edges[3])
+		if opposite:
+			var axis := "ns" if edges[0] and edges[2] else "ew"
+			key = _stripe_key(info, n, axis)
+			if key == "":
+				var e := edges.find(true)
+				key = _transition_key(t, n, EDGE_NAMES[e])
+		else:
+			var c := -1
+			if edges[0] and edges[1]:
+				c = 1
+			elif edges[1] and edges[2]:
+				c = 2
+			elif edges[2] and edges[3]:
+				c = 3
+			elif edges[3] and edges[0]:
+				c = 0
+			if c >= 0:
+				key = _extra_key(info, n, _foreign_prefix(info, n), CORNER_NAMES[c])
+	elif edge_count == 3:
+		var missing := edges.find(false)
+		if missing >= 0:
+			var c1 := -1
+			var c2 := -1
+			match missing:
+				0:
+					c1 = 0
+					c2 = 1
+				1:
+					c1 = 1
+					c2 = 2
+				2:
+					c1 = 2
+					c2 = 3
+				3:
+					c1 = 3
+					c2 = 0
+			var c := c1
+			if corners[c1] and not corners[c2]:
+				c = c2
+			key = _extra_key(info, n, _cell_prefix(info, n), CORNER_NAMES[c])
+	return {"key": key, "score": score}
+
+
+func _diagonal_key(info: Dictionary, n: String, corner: String) -> String:
+	if n != str(info["b"]):
+		return ""
+	var key := "diag|" + str(info["a"]) + "|" + str(info["b"]) + "|" + corner
+	if source_ids.has(key):
+		return key
+	return ""
+
+
+func _extra_key(info: Dictionary, n: String, prefix: String, corner: String) -> String:
+	var key := str(info["a"]) + "|" + str(info["b"]) + "|" + prefix + "_" + corner
+	if source_ids.has(key):
+		return key
+	return ""
+
+
+func _stripe_key(info: Dictionary, n: String, axis: String) -> String:
+	var a := str(info["a"])
+	var b := str(info["b"])
+	var key := ""
+	if n == b:
+		key = a + "|" + b + "|stripe_" + axis
+	elif n == a:
+		key = b + "|" + a + "|stripe_" + axis
+	else:
+		return ""
+	if source_ids.has(key):
+		return key
+	return ""
+
+
+func _cell_prefix(info: Dictionary, n: String) -> String:
+	# inner_* = the cell material owns a corner; outer_* = the neighbour does.
+	return "inner" if n == str(info["b"]) else "outer"
+
+
+func _foreign_prefix(info: Dictionary, n: String) -> String:
+	return "outer" if n == str(info["b"]) else "inner"
+
+
+func _in_view(gx: int, gy: int, w: int = 1, h: int = 1) -> bool:
+	"""Only draw features whose footprint lies inside the rendered window.
+
+	The ground is a 20x16 SubViewport window. Anything outside it would be
+	projected onto the empty border, so structures, props and markers must be
+	culled here rather than by the shader.
+	"""
+	return (
+		gx >= view_origin.x
+		and gy >= view_origin.y
+		and gx + w <= view_origin.x + VIEW_W
+		and gy + h <= view_origin.y + VIEW_H
+	)
+
+
+func _rebuild_structure_sprites() -> void:
+	if structure_layer == null or chunks.is_empty():
+		return
+	for child in structure_layer.get_children():
+		child.free()
+	if occlusion_layer != null:
+		for child in occlusion_layer.get_children():
+			child.free()
+	var center := _world_to_chunk(player_cell)
+	for cy in range(center.y - 2, center.y + 3):
+		for cx in range(center.x - 2, center.x + 3):
+			var coord := Vector2i(cx, cy)
+			if not chunks.has(coord):
+				continue
+			var data: Dictionary = chunks[coord]
+			for s in data["structures"]:
+				if _in_view(int(s["gx"]), int(s["gy"]), int(s["w"]), int(s["h"])):
+					_add_structure_sprite(s)
+					_add_occlusion(s)
+			for p in data.get("props", []):
+				if _in_view(int(p["gx"]), int(p["gy"])):
+					_add_prop_sprite(p)
+
+
+func _texture_bounds(tex: Texture2D) -> Rect2i:
+	"""Alpha bounding box in texture pixels, cached per texture.
+
+	Diffusion structures are centred in a square canvas, so several have
+	transparent rows below the visible base. Anchoring by the full texture
+	bottom leaves those structures hovering above the tile.
+	"""
+	var key := tex.resource_path
+	if key != "" and _tex_bounds.has(key):
+		return _tex_bounds[key]
+	var full := Rect2i(0, 0, tex.get_width(), tex.get_height())
+	var img := tex.get_image()
+	var bounds := full
+	if img != null:
+		var used := img.get_used_rect()
+		if used.size.x > 0 and used.size.y > 0:
+			bounds = used
+	if key != "":
+		_tex_bounds[key] = bounds
+	return bounds
+
+
+func _add_structure_sprite(s: Dictionary) -> void:
+	var info: Dictionary = STRUCTURES[s["key"]]
+	var tex := load(info["path"]) as Texture2D
+	if tex == null:
+		return
+	var gx: int = s["gx"]
+	var gy: int = s["gy"]
+	var w: int = s["w"]
+	var h: int = s["h"]
+	var is_ground := bool(info.get("ground", false))
+	# Upright props stand on the footprint's south edge; ground decals such as
+	# craters sit in the centre of the footprint. Anchoring both by the visible
+	# alpha bbox keeps transparent padding from making them hover.
+	var anchor_world := Vector2(
+		(gx + w * 0.5) * TILE,
+		(gy + (0.5 if is_ground else 1.0) * h) * TILE
+	)
+	var anchor_screen := _project(anchor_world)
+	var bounds := _texture_bounds(tex)
+
+	var sprite_boost := float(info.get("sprite_scale", 1.0))
+	var shadow_rx := w * TILE * map_scale * (0.46 if is_ground else 0.62) * sprite_boost
+	var shadow_ry := w * TILE * map_scale * (0.12 if is_ground else 0.13) * sprite_boost
+	var shadow := Polygon2D.new()
+	shadow.polygon = _ellipse_points(Vector2.ZERO, shadow_rx, shadow_ry)
+	shadow.color = Color(0.0, 0.0, 0.0, 0.26 if is_ground else 0.24)
+	# Tuck the ellipse up behind the sprite's base. Centred on the base line, its
+	# lower half shows as a detached disc under every structure.
+	shadow.position = anchor_screen + Vector2(0.0, -shadow_ry * 0.55)
+	shadow.z_index = int(anchor_screen.y) - 1
+	structure_layer.add_child(shadow)
+
+	var sprite := Sprite2D.new()
+	sprite.texture = tex
+	sprite.centered = false
+	var fit := Vector2.ONE
+	if is_ground and tex.get_width() > 0 and tex.get_height() > 0:
+		# Ground decals are authored at their native footprint scale; a smaller
+		# texture (e.g. the 64px crater) is stretched to fill its footprint.
+		fit = Vector2(
+			float(w * TILE) / tex.get_width(),
+			float(h * TILE) / tex.get_height()
+		)
+	var extra_scale := float(info.get("sprite_scale", 1.0))
+	sprite.scale = Vector2(
+		map_scale * fit.x * extra_scale,
+		map_scale * fit.y * (tilt if is_ground else 1.0) * extra_scale
+	)
+	var bbox_center := Vector2(
+		bounds.position.x + bounds.size.x * 0.5,
+		bounds.position.y + (bounds.size.y * (0.5 if is_ground else 1.0))
+	)
+	sprite.position = anchor_screen - bbox_center * sprite.scale
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = int(anchor_screen.y)
+	structure_layer.add_child(sprite)
+
+
+func _add_occlusion(s: Dictionary) -> void:
+	"""Darken the row immediately north of a tall structure.
+
+	A full line-of-sight system would be overkill for a terrain viewer. The
+	readable rule is: the cell behind a ridge is hidden. Drawing the veil above
+	the actor layer means the lander can actually disappear behind a mountain;
+	F6 toggles it off for clarity.
+	"""
+	if occlusion_layer == null or not bool(feature_toggles["occlusion"]):
+		return
+	var info: Dictionary = STRUCTURES[s["key"]]
+	if not bool(info.get("occludes", false)):
+		return
+	var gx: int = s["gx"]
+	var gy: int = s["gy"]
+	var w: int = s["w"]
+	var tex := _occlusion_texture()
+	for x in range(gx, gx + w):
+		var cell := Vector2i(x, gy - 1)
+		if not _in_view(cell.x, cell.y, 1, 1):
+			continue
+		var corners := PackedVector2Array([
+			_project(Vector2(cell.x * TILE, cell.y * TILE)),
+			_project(Vector2((cell.x + 1) * TILE, cell.y * TILE)),
+			_project(Vector2((cell.x + 1) * TILE, (cell.y + 1) * TILE)),
+			_project(Vector2(cell.x * TILE, (cell.y + 1) * TILE)),
+		])
+		var lo := corners[0]
+		var hi := corners[0]
+		for p in corners:
+			lo.x = minf(lo.x, p.x)
+			lo.y = minf(lo.y, p.y)
+			hi.x = maxf(hi.x, p.x)
+			hi.y = maxf(hi.y, p.y)
+		var fog := Sprite2D.new()
+		fog.texture = tex
+		fog.centered = true
+		fog.position = (lo + hi) * 0.5
+		fog.scale = Vector2(
+			(hi.x - lo.x) / float(tex.get_width()) * 1.10,
+			(hi.y - lo.y) / float(tex.get_height()) * 1.10
+		)
+		fog.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		occlusion_layer.add_child(fog)
+
+
+func _occlusion_texture() -> Texture2D:
+	if occlusion_tex != null:
+		return occlusion_tex
+	var gradient := Gradient.new()
+	# Read as a haze over the hidden cells, not three black blobs. The veil is
+	# an occlusion cue, not a shadow: at 0.94 alpha each radial sprite showed as
+	# a distinct dark oval floating behind tall structures.
+	gradient.offsets = PackedFloat32Array([0.0, 0.68, 1.0])
+	gradient.colors = PackedColorArray([
+		Color(0.020, 0.028, 0.042, 0.30),
+		Color(0.024, 0.032, 0.046, 0.24),
+		Color(0.024, 0.032, 0.046, 0.0),
+	])
+	var tex := GradientTexture2D.new()
+	tex.gradient = gradient
+	tex.width = 64
+	tex.height = 64
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 1.0)
+	occlusion_tex = tex
+	return tex
+
+
+func _prop_is_usable(tex: Texture2D) -> bool:
+	"""Reject prop sprites that still have an opaque sheet background.
+
+	Props are authored as single objects on a transparent background. A sprite
+	that still carries an opaque sheet background would drop a solid beige
+	square on the map, which is worse than omitting the prop.
+	"""
+	var key := tex.resource_path
+	if key != "" and _prop_ok.has(key):
+		return bool(_prop_ok[key])
+	var ok := false
+	var img := tex.get_image()
+	if img != null:
+		var total := img.get_width() * img.get_height()
+		if total > 0:
+			var data := img.get_data()
+			var clear := 0
+			for i in range(3, data.size(), 4):
+				if data[i] < 8:
+					clear += 1
+			ok = float(clear) / float(total) >= 0.08
+	if key != "":
+		_prop_ok[key] = ok
+	return ok
+
+
+func _add_prop_sprite(p: Dictionary) -> void:
+	var tex := load("res://assets/props/%s.png" % str(p["key"])) as Texture2D
+	if tex == null or not _prop_is_usable(tex):
+		return
+	var base_world := Vector2((int(p["gx"]) + 0.5) * TILE, (int(p["gy"]) + 1.0) * TILE)
+	var base_screen := _project(base_world)
+	var bounds := _texture_bounds(tex)
+	var scale: float = map_scale * float(p.get("scale", 0.72))
+
+	var prop_shadow_ry := TILE * map_scale * 0.10
+	var shadow := Polygon2D.new()
+	shadow.polygon = _ellipse_points(
+		Vector2.ZERO, TILE * map_scale * 0.30, prop_shadow_ry
+	)
+	shadow.color = Color(0.0, 0.0, 0.0, 0.22)
+	shadow.position = base_screen + Vector2(0.0, -prop_shadow_ry * 0.5)
+	shadow.z_index = int(base_screen.y) - 1
+	structure_layer.add_child(shadow)
+
+	var sprite := Sprite2D.new()
+	sprite.texture = tex
+	sprite.centered = false
+	sprite.scale = Vector2(scale, scale)
+	sprite.flip_h = bool(p.get("flip", false))
+	sprite.position = base_screen - Vector2(
+		(bounds.position.x + bounds.size.x * 0.5) * scale,
+		(bounds.position.y + bounds.size.y) * scale
+	)
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = int(base_screen.y)
+	structure_layer.add_child(sprite)
+
+
+func _rebuild_actors() -> void:
+	if actor_layer == null or overlay_layer == null or chunks.is_empty():
+		return
+	for child in actor_layer.get_children():
+		child.free()
+	for child in overlay_layer.get_children():
+		child.free()
+
+	# Tile selection under the lander.
+	var corners := PackedVector2Array([
+		_project(Vector2(player_cell.x * TILE, player_cell.y * TILE)),
+		_project(Vector2((player_cell.x + 1) * TILE, player_cell.y * TILE)),
+		_project(Vector2((player_cell.x + 1) * TILE, (player_cell.y + 1) * TILE)),
+		_project(Vector2(player_cell.x * TILE, (player_cell.y + 1) * TILE)),
+	])
+	var tile_fill := Polygon2D.new()
+	tile_fill.polygon = corners
+	tile_fill.color = Color(0.40, 1.0, 0.90, 0.10)
+	overlay_layer.add_child(tile_fill)
+	var tile_line := Line2D.new()
+	tile_line.points = corners
+	tile_line.closed = true
+	tile_line.width = 1.5
+	tile_line.default_color = Color(0.50, 1.0, 0.90, 0.9)
+	overlay_layer.add_child(tile_line)
+
+	# Hazard telegraph for the next turn: one diamond per affected cell.
+	if hazard_kind != "":
+		for oy in range(3):
+			for ox in range(3):
+				if not _in_view(hazard_cell.x + ox, hazard_cell.y + oy):
+					continue
+				var cx := (hazard_cell.x + ox) * TILE
+				var cy := (hazard_cell.y + oy) * TILE
+				var hz := PackedVector2Array([
+					_project(Vector2(cx, cy)),
+					_project(Vector2(cx + TILE, cy)),
+					_project(Vector2(cx + TILE, cy + TILE)),
+					_project(Vector2(cx, cy + TILE)),
+				])
+				var hz_fill := Polygon2D.new()
+				hz_fill.polygon = hz
+				hz_fill.color = Color(hazard_color.r, hazard_color.g, hazard_color.b, 0.09)
+				overlay_layer.add_child(hz_fill)
+				var hz_line := Line2D.new()
+				hz_line.points = hz
+				hz_line.closed = true
+				hz_line.width = 1.0
+				hz_line.default_color = Color(
+					hazard_color.r, hazard_color.g, hazard_color.b, 0.55
+				)
+				overlay_layer.add_child(hz_line)
+
+	# Lander.
+	var player_screen := _project(Vector2(
+		(player_cell.x + 0.5) * TILE,
+		(player_cell.y + 0.5) * TILE
+	))
+	player_shadow = Polygon2D.new()
+	player_shadow.polygon = _ellipse_points(
+		Vector2.ZERO, TILE * map_scale * 0.62, TILE * map_scale * 0.18
+	)
+	player_shadow.color = Color(0.0, 0.0, 0.0, 0.42)
+	player_shadow.position = player_screen
+	player_shadow.z_index = int(player_screen.y) - 1
+	actor_layer.add_child(player_shadow)
+
+	if player_tex != null:
+		var ps := map_scale * 1.15
+		var pb := _texture_bounds(player_tex)
+		player_sprite = Sprite2D.new()
+		player_sprite.texture = player_tex
+		player_sprite.centered = false
+		player_sprite.scale = Vector2(ps, ps)
+		player_sprite.position = player_screen - Vector2(
+			(pb.position.x + pb.size.x * 0.5) * ps,
+			(pb.position.y + pb.size.y) * ps
+		)
+		player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		player_sprite.z_index = int(player_screen.y)
+		actor_layer.add_child(player_sprite)
+
+	# Data nodes.
+	for i in range(objectives.size()):
+		if collected[i]:
+			continue
+		var c := objectives[i]
+		if not _in_view(c.x, c.y):
+			continue
+		var pos := _project(Vector2((c.x + 0.5) * TILE, (c.y + 0.5) * TILE))
+		var marker := Node2D.new()
+		marker.position = pos
+		# Map geometry is projected at map_scale, but markers are UI-scale
+		# pickups. Keep them readable at the 640x360 logical resolution.
+		marker.scale = Vector2(0.42, 0.42)
+		var glow := Polygon2D.new()
+		glow.polygon = _diamond_points(20.0)
+		glow.color = Color(0.20, 1.0, 0.90, 0.30)
+		marker.add_child(glow)
+		var beam := Polygon2D.new()
+		beam.polygon = PackedVector2Array([
+			Vector2(-3, -30), Vector2(3, -30), Vector2(2, 0), Vector2(-2, 0)
+		])
+		beam.color = Color(0.20, 1.0, 0.90, 0.38)
+		marker.add_child(beam)
+		if node_tex != null:
+			var icon := Sprite2D.new()
+			icon.texture = node_tex
+			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			icon.scale = Vector2(0.40, 0.40)
+			icon.modulate = Color(0.72, 1.0, 1.0)
+			marker.add_child(icon)
+		else:
+			var core := Polygon2D.new()
+			core.polygon = _diamond_points(12.0)
+			core.color = Color(0.40, 1.0, 0.92)
+			marker.add_child(core)
+			var outline := Line2D.new()
+			outline.points = _diamond_points(12.0)
+			outline.closed = true
+			outline.width = 1.4
+			outline.default_color = Color(0.02, 0.15, 0.15)
+			marker.add_child(outline)
+		actor_layer.add_child(marker)
+
+
+func _diamond_points(radius: float) -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(0, -radius), Vector2(radius, 0),
+		Vector2(0, radius), Vector2(-radius, 0),
+	])
+
+
+func _ellipse_points(center: Vector2, rx: float, ry: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in range(16):
+		var a := TAU * float(i) / 16.0
+		pts.append(center + Vector2(cos(a) * rx, sin(a) * ry))
+	return pts
+
+
+func _animate_player(from_cell: Vector2i) -> void:
+	if player_sprite == null or player_shadow == null:
+		return
+	if player_tween != null and player_tween.is_valid():
+		player_tween.kill()
+	var from_screen := _project(Vector2(
+		(from_cell.x + 0.5) * TILE,
+		(from_cell.y + 0.5) * TILE
+	))
+	var to_screen := _project(Vector2(
+		(player_cell.x + 0.5) * TILE,
+		(player_cell.y + 0.5) * TILE
+	))
+	var delta := from_screen - to_screen
+	var sprite_target := player_sprite.position
+	var shadow_target := player_shadow.position
+	player_sprite.position = sprite_target + delta
+	player_shadow.position = shadow_target + delta
+	player_tween = create_tween().set_parallel(true)
+	player_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	player_tween.tween_property(player_sprite, "position", sprite_target, 0.16)
+	player_tween.tween_property(player_shadow, "position", shadow_target, 0.16)
+
+
+func _project(world: Vector2) -> Vector2:
+	var vp := get_viewport_rect().size
+	var local := world - Vector2(float(view_origin.x), float(view_origin.y)) * TILE
+	var p := local - VIEW_PX * 0.5
+	var screen := vp * 0.5
+	match view_mode:
+		0:
+			return screen + Vector2(p.x * map_scale, p.y * map_scale * tilt)
+		1:
+			var u := (p.x - p.y) * 0.70710678
+			var v := (p.x + p.y) * 0.70710678
+			return screen + Vector2(u * map_scale, v * map_scale * tilt)
+		_:
+			return screen + p * map_scale
+
+
+func _apply_biome_tint() -> void:
+	if shader_mat == null:
+		return
+	var b: Dictionary = BIOMES[biome_index]
+	var c := Color(str(b.get("tint", "#ffffff")))
+	shader_mat.set_shader_parameter("biome_tint", c)
+	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
+
+
+func _update_view() -> void:
+	if display == null:
+		return
+	_apply_biome_tint()
+	var vp := get_viewport_rect().size
+	var target_w := float(VIEW_PX.x)
+	var target_h := float(VIEW_PX.y)
+	if view_mode == 0:
+		target_h = float(VIEW_PX.y) * tilt
+	elif view_mode == 1:
+		# The rendered window is VIEW_PX, not VIEW_TILES*TILE. A rotated
+		# rectangle is (w+h)/sqrt(2) wide, then tilt-squashed vertically.
+		target_w = float(VIEW_PX.x + VIEW_PX.y) * 0.70710678
+		target_h = target_w * tilt
+	# Fit both axes so fullscreen and unusual window aspect ratios keep the
+	# same number of visible tiles instead of cropping the board vertically.
+	map_scale = min(vp.x / target_w, vp.y / target_h) * zoom
+
+	display.size = vp
+	display.position = Vector2.ZERO
+	if space_rect != null:
+		space_rect.size = vp
+		space_rect.position = Vector2.ZERO
+	shader_mat.set_shader_parameter("view_mode", view_mode)
+	shader_mat.set_shader_parameter("map_scale", map_scale)
+	shader_mat.set_shader_parameter("tilt", tilt)
+	shader_mat.set_shader_parameter("screen_size", vp)
+	shader_mat.set_shader_parameter("map_size", VIEW_PX)
+	shader_mat.set_shader_parameter("map_tiles", Vector2(VIEW_W, VIEW_H))
+	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
+	shader_mat.set_shader_parameter("show_grid", 1 if show_grid else 0)
+	_rebuild_structure_sprites()
+	_rebuild_actors()
+
+
+func _draw_minimap() -> void:
+	if minimap == null:
+		return
+	var sz := minimap.size
+	var bg := Rect2(Vector2.ZERO, sz)
+	minimap.draw_rect(bg, Color(0.025, 0.035, 0.050, 0.90))
+	var b: Dictionary = BIOMES[biome_index]
+	var water := str(b.get("water", ""))
+	var shore := str(b.get("shore", ""))
+	var radius := 14
+	var step: float = minf(sz.x, sz.y) / float(radius * 2 + 1)
+	var center: Vector2 = sz * 0.5
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var gx := player_cell.x + dx
+			var gy := player_cell.y + dy
+			var raw := _render_terrain_world(gx, gy)
+			if raw == "":
+				continue
+			var col := Color(0.22, 0.31, 0.22, 0.96)
+			if water != "" and raw == water:
+				col = Color(0.07, 0.24, 0.32, 0.96)
+			elif shore != "" and raw == shore:
+				col = Color(0.55, 0.47, 0.30, 0.96)
+			var p := center + Vector2(float(dx), float(dy)) * step - Vector2(step, step) * 0.5
+			minimap.draw_rect(Rect2(p, Vector2(step, step)), col)
+
+	if hazard_kind != "" and hazard_cell.x != -999:
+		for oy in range(-1, 2):
+			for ox in range(-1, 2):
+				var d := Vector2(float(hazard_cell.x + ox - player_cell.x), float(hazard_cell.y + oy - player_cell.y))
+				if absf(d.x) > radius or absf(d.y) > radius:
+					continue
+				var hp := center + d * step - Vector2(step, step) * 0.5
+				minimap.draw_rect(Rect2(hp, Vector2(step, step)), Color(0.95, 0.25, 0.15, 0.35))
+
+	for coord in chunks:
+		var data: Dictionary = chunks[coord]
+		for s in data.get("structures", []):
+			var sx := int(s["gx"]) - player_cell.x
+			var sy := int(s["gy"]) - player_cell.y
+			if absi(sx) > radius or absi(sy) > radius:
+				continue
+			var sp := center + Vector2(float(sx), float(sy)) * step - Vector2(step, step) * 0.5
+			minimap.draw_rect(Rect2(sp, Vector2(float(s["w"]), float(s["h"])) * step), Color(0.45, 0.50, 0.55, 0.95))
+
+	for i in range(objectives.size()):
+		if collected[i]:
+			continue
+		var od := objectives[i] - player_cell
+		if absi(od.x) > radius or absi(od.y) > radius:
+			continue
+		var op := center + Vector2(float(od.x), float(od.y)) * step
+		minimap.draw_rect(Rect2(op - Vector2(step, step), Vector2(step, step) * 2.0), Color(1.0, 0.82, 0.30, 0.95))
+
+	minimap.draw_rect(Rect2(center - Vector2(step, step) * 0.75, Vector2(step, step) * 1.5), Color(0.30, 0.95, 0.90, 1.0))
+	minimap.draw_rect(bg.grow(-0.5), Color(0.32, 0.45, 0.48, 0.75), false, 1.0)
+
+
+func _refresh_status() -> void:
+	if info_label == null or status_label == null:
+		return
+	var b: Dictionary = BIOMES[biome_index]
+	var life := str(b.get("life", "lifeless"))
+	if life == "rare biosphere":
+		life = "rare life"
+	info_label.text = "%s\n%s  •  %s" % [planet_name, b["name"], life]
+	status_label.text = "Turns %d   Data %d/%d   Hull %d" % [
+		turns_left, data_collected, objectives.size(), hull
+	]
+	if hazard_kind != "":
+		hazard_label.text = "Incoming: %s" % hazard_kind
+		hazard_label.add_theme_color_override("font_color", hazard_color)
+	else:
+		hazard_label.text = ""
+	if nav_label != null:
+		nav_label.text = _nearest_objective_text()
+	var names := ["3/4 tilt", "Isometric", "Top-down"]
+	view_label.text = "seed %d • %s\n%s • %d chunks" % [
+		seed_value, names[view_mode], archetype_name, chunks.size()
+	]
+	if message_label != null:
+		message_label.visible = game_over
+		message_label.text = message_text
+	if debug_visible:
+		_refresh_debug()
+	if minimap != null:
+		minimap.queue_redraw()
+
+
+func _nearest_objective_text() -> String:
+	var best := Vector2i.ZERO
+	var best_dist := 1 << 30
+	for i in range(objectives.size()):
+		if collected[i]:
+			continue
+		var d := objectives[i] - player_cell
+		var dist := d.x * d.x + d.y * d.y
+		if dist < best_dist:
+			best_dist = dist
+			best = d
+	if best_dist == 1 << 30:
+		return "All data collected"
+	var sx := float(best.x)
+	var sy := float(best.y)
+	# Convert board delta to the direction the player actually sees. Arrow keys
+	# are screen-relative, so the compass is too.
+	if view_mode == 0:
+		sy *= tilt
+	elif view_mode == 1:
+		var u := sx - sy
+		var v := (sx + sy) * tilt
+		sx = u
+		sy = v
+	var angle := atan2(sy, sx)
+	var idx := posmod(int(round(angle / (PI / 4.0))), 8)
+	var dirs := ["E", "SE", "S", "SW", "W", "NW", "N", "NE"]
+	return "Nearest data %d tiles %s" % [int(round(sqrt(float(best_dist)))), dirs[idx]]
+
+
+func _refresh_debug() -> void:
+	if debug_label == null:
+		return
+	var c := _world_to_chunk(player_cell)
+	var structure_count := 0
+	var prop_count := 0
+	for coord in chunks:
+		var data: Dictionary = chunks[coord]
+		structure_count += data["structures"].size()
+		prop_count += data.get("props", []).size()
+	debug_label.text = (
+		"seed %d   fps %d\ncell %d,%d   chunk %d,%d\norigin %d,%d   chunks %d\nstructures %d   props %d\nF4 mtn %s  F5 out %s  F6 sight %s  F7 props %s"
+		% [
+			seed_value, Engine.get_frames_per_second(),
+			player_cell.x, player_cell.y, c.x, c.y,
+			view_origin.x, view_origin.y, chunks.size(),
+			structure_count, prop_count,
+			"on" if bool(feature_toggles["mountains"]) else "off",
+			"on" if bool(feature_toggles["outposts"]) else "off",
+			"on" if bool(feature_toggles["occlusion"]) else "off",
+			"on" if bool(feature_toggles["props"]) else "off",
+		]
+	)
+
+
+func _on_new_pressed() -> void:
+	_new_seed()
+
+
+func _on_biome_pressed() -> void:
+	biome_index = (biome_index + 1) % BIOMES.size()
+	_generate()
+
+
+func _on_view_pressed() -> void:
+	view_mode = (view_mode + 1) % 3
+	_update_view()
+	_refresh_status()
+
+
+func _on_grid_pressed() -> void:
+	show_grid = not show_grid
+	_update_view()
+	_refresh_status()
+
+
+func _on_same_pressed() -> void:
+	_generate()
+
+
+func _on_copy_seed() -> void:
+	DisplayServer.clipboard_set(str(seed_value))
+	view_label.text = "seed %d copied" % seed_value
+
+
+func _on_dpad(dir: Vector2i) -> void:
+	_try_move(_screen_to_grid(dir))
+
+
+func _screen_to_grid(dir: Vector2i) -> Vector2i:
+	"""Map a viewer-relative arrow to a board step.
+
+	In the dimetric view the board is rotated 45 degrees, so screen-right is
+	the grid diagonal (+1, -1) and screen-down is (+1, +1). This keeps the
+	lander moving left/right/up/down relative to the player, not diagonally.
+	"""
+	if view_mode == 1:
+		return Vector2i(dir.x + dir.y, -dir.x + dir.y)
+	return dir
+
+
+func _on_viewport_resized() -> void:
+	# The viewport size settles one frame after a fullscreen/window change.
+	_update_view.call_deferred()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	var key := event as InputEventKey
+	if not key.pressed or key.echo:
+		return
+	match key.keycode:
+		KEY_R:
+			_new_seed()
+		KEY_B:
+			biome_index = (biome_index + 1) % BIOMES.size()
+			_generate()
+		KEY_T:
+			_generate()
+		KEY_V:
+			view_mode = (view_mode + 1) % 3
+			_update_view()
+			_refresh_status()
+		KEY_G:
+			show_grid = not show_grid
+			_update_view()
+			_refresh_status()
+		KEY_C:
+			_on_copy_seed()
+		KEY_F3:
+			debug_visible = not debug_visible
+			if debug_label != null:
+				debug_label.visible = debug_visible
+			if debug_visible:
+				_refresh_debug()
+		KEY_H:
+			ui_layer.visible = not ui_layer.visible
+		KEY_F4:
+			feature_toggles["mountains"] = not bool(feature_toggles["mountains"])
+			_refresh_world()
+		KEY_F5:
+			feature_toggles["outposts"] = not bool(feature_toggles["outposts"])
+			_refresh_world()
+		KEY_F6:
+			feature_toggles["occlusion"] = not bool(feature_toggles["occlusion"])
+			_rebuild_structure_sprites()
+			_refresh_status()
+		KEY_F7:
+			feature_toggles["props"] = not bool(feature_toggles["props"])
+			_refresh_world()
+		KEY_F10:
+			_save_capture(CAPTURE_PATH)
+		KEY_F11:
+			if not OS.has_feature("web"):
+				var mode := DisplayServer.window_get_mode()
+				if mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+				else:
+					DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+				_on_viewport_resized()
+		KEY_UP, KEY_W:
+			_try_move(_screen_to_grid(Vector2i(0, -1)))
+		KEY_DOWN, KEY_S:
+			_try_move(_screen_to_grid(Vector2i(0, 1)))
+		KEY_LEFT, KEY_A:
+			_try_move(_screen_to_grid(Vector2i(-1, 0)))
+		KEY_RIGHT, KEY_D:
+			_try_move(_screen_to_grid(Vector2i(1, 0)))
+		KEY_1:
+			biome_index = 0
+			_generate()
+		KEY_2:
+			biome_index = 1
+			_generate()
+		KEY_3:
+			biome_index = 2
+			_generate()
+		KEY_4:
+			biome_index = 3
+			_generate()
+		KEY_5:
+			biome_index = 4
+			_generate()
+		KEY_6:
+			biome_index = 5
+			_generate()
+		KEY_7:
+			biome_index = 6
+			_generate()
+		KEY_8:
+			biome_index = 7
+			_generate()
+		KEY_9:
+			biome_index = 8
+			_generate()
+		KEY_0:
+			biome_index = 9
+			_generate()
+		KEY_BRACKETLEFT:
+			biome_index = 10
+			_generate()
+		KEY_BRACKETRIGHT:
+			biome_index = 11
+			_generate()
+		KEY_BACKSLASH:
+			biome_index = 12
+			_generate()
