@@ -72,6 +72,9 @@ var _toast_tween: Tween
 var fx_layer: Node2D
 var vfx_layer: Node2D
 var pad_beacon: VFX.RingNode
+var _ending_turn := false
+var _world_timer := 2.4
+var _star_timer := 5.0
 var fx_root: Control
 var _state_overlay: ColorRect
 var _state_mat: ShaderMaterial
@@ -412,6 +415,27 @@ func _build_hud() -> void:
 		tc.add_child(pip)
 		power_pips.append(pip)
 
+	# Hover dossiers: the HUD keeps numbers only; the rules live behind the
+	# cursor, Balatro-style, when a judge wants the exact mechanic.
+	_hover_cell(tc, Rect2(168, 2, 52, 36), "INTEGRITY",
+		"Hull hits left. At 0 the sector fails.\nBlockable hazards spend shield power; unblockable ones always land.",
+		UIKit.RED)
+	_hover_cell(tc, Rect2(224, 2, 50, 36), "DELTA-V",
+		"Fuel left. Each path tile costs 1 ΔV.\nAt 0 the sector fails; return to the lander to extract.",
+		UIKit.CYAN)
+	_hover_cell(tc, Rect2(276, 2, 44, 36), "SOLS",
+		"Mission window. One sol per move or HOLD.\nAt 0 the sector fails.",
+		UIKit.AMBER)
+	_hover_cell(tc, Rect2(324, 2, 70, 36), "DATA",
+		"Nodes delivered / quota.\nMeet the quota, return to the lander, then EXTRACT.",
+		UIKit.GREEN)
+	_hover_cell(tc, Rect2(400, 2, 100, 36), "THERMAL LOAD",
+		"Heat rises every move. At 100: overload, -1 hull.\nHOLD vents 8 + thermal resistance and burns one sol.",
+		UIKit.AMBER)
+	_hover_cell(tc, Rect2(508, 2, 114, 36), "POWER",
+		"Shield energy for blockable hazards.\nRecharges at end of turn; HOLD adds reactor vent power.",
+		UIKit.CYAN)
+
 	# ----- bottom-left status
 	var bottom := UIKit.panel(Color(0.035, 0.055, 0.085, 0.92), Color("#2b4058"))
 	bottom.position = Vector2(10, 314)
@@ -465,6 +489,16 @@ func _build_hud() -> void:
 	extract_btn.add_theme_font_size_override("font_size", 8)
 	extract_btn.pressed.connect(_extract)
 	root.add_child(extract_btn)
+
+
+func _hover_cell(parent: Control, rect: Rect2, title: String, body: String,
+	accent: Color = UIKit.CYAN) -> void:
+	var zone := Control.new()
+	zone.position = rect.position
+	zone.size = rect.size
+	zone.mouse_filter = Control.MOUSE_FILTER_STOP
+	parent.add_child(zone)
+	UIKit.hover_info(zone, title, body, accent)
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
@@ -1082,7 +1116,7 @@ func _check_overheat() -> void:
 
 
 func _execute_path() -> void:
-	if done or moved:
+	if done or moved or _ending_turn:
 		return
 	if path_cells.is_empty() or not path_valid:
 		message_text = "SELECT A DESTINATION"
@@ -1156,16 +1190,27 @@ func _camera_world_layers() -> Array:
 
 
 func _end_turn() -> void:
-	if done:
+	if done or _ending_turn:
 		return
-	# The telegraphed hazard resolves at the end of the turn, not when you
-	# step into it. The path preview marks the tiles so the player can dodge.
-	if _in_hazard(player_cell):
-		_resolve_hazard()
+	_ending_turn = true
+	# Every live front resolves at end of turn, hit or miss. A front that lands
+	# on empty ground still gets a visible strike: the world reacts even when
+	# the player dodged it.
+	var struck := _resolve_hazard()
+	if struck:
 		_check_overheat()
 	if int(sec["integrity"]) <= 0:
+		_ending_turn = false
 		_end(false, "HULL BREACH")
 		return
+	# Beat before the board advances: the strike, banner and shake need a
+	# moment to read. Without this the new telegraph appears in the same frame
+	# as the damage and the player never registers what happened.
+	if struck and not done:
+		await get_tree().create_timer(0.62).timeout
+		if done:
+			_ending_turn = false
+			return
 	sec["power"] = mini(int(sec["power_max"]),
 		int(sec["power"]) + int(sec["power_regen"]))
 	turn += 1
@@ -1177,9 +1222,11 @@ func _end_turn() -> void:
 	path_heat = 0
 	path_nodes = 0
 	if int(sec["sols"]) <= 0:
+		_ending_turn = false
 		_end(false, "MISSION WINDOW CLOSED")
 		return
 	if int(sec["delta_v"]) <= 0:
+		_ending_turn = false
 		_end(false, "DELTA-V EXHAUSTED")
 		return
 	_advance_hazards()
@@ -1189,6 +1236,7 @@ func _end_turn() -> void:
 	_render_window()
 	_refresh_status()
 	_draw_move_preview()
+	_ending_turn = false
 
 
 func _alpha(c: Color, a: float) -> Color:
@@ -1470,15 +1518,127 @@ func _hold() -> void:
 	_end_turn()
 
 
-func _resolve_hazard() -> void:
-	if hazards.is_empty():
+func _hazard_distance(h: Dictionary) -> int:
+	var best := 99
+	for c in h["cells"]:
+		var d := maxi(absi(c.x - player_cell.x), absi(c.y - player_cell.y))
+		if d < best:
+			best = d
+	return best
+
+
+func _strike_visuals(h: Dictionary, dist: int, hit: bool) -> void:
+	## A front landing on the world. `_impact()` owns the player-hit FX, so this
+	## covers the footprint itself and the dodged/remote case, which used to be
+	## completely silent.
+	if vfx_layer == null:
 		return
-	var hits: Array[Dictionary] = []
+	var info: Dictionary = h["info"]
+	var color: Color = info["color"]
+	var cells: Array = h["cells"]
+	var at := _cell_center(Vector2i(h["origin"]))
+	var major := not hit and dist <= 6
+	if major:
+		VFX.flare_burst(vfx_layer, at, color, 0.85, 9)
+		VFX.shockwave(vfx_layer, at, color, 30.0, 8)
+		VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 1.0), 10, 55.0, 90.0, 9)
+		VFX.sheet_burst(vfx_layer, at, "debris", color, 0.8, 9)
+		VFX.beam(vfx_layer, at, Color(color.r, color.g, color.b, 0.5), 30.0, 0.42, 10)
+		VFX.embers(vfx_layer, at, color, 6)
+	elif not hit:
+		# Remote strike: still visible on the board, but no full-screen event.
+		VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 0.85), 5, 34.0, 70.0, 8)
+		VFX.dust(vfx_layer, at, Color(color.r, color.g, color.b, 0.35), 4, 16.0)
+	# Dust and ash across every affected tile (capped so a 13-cell diamond
+	# does not become a particle storm).
+	var step := maxi(1, int(cells.size() / 7))
+	for i in range(0, cells.size(), step):
+		var c: Vector2i = cells[i]
+		if not _in_view(c.x, c.y):
+			continue
+		VFX.dust(vfx_layer, _cell_center(c),
+			Color(color.r * 0.8, color.g * 0.72, color.b * 0.66, 0.42), 3, 12.0)
+	# Scarred ground for the tiles near the player, so a near miss leaves a
+	# readable burn field instead of vanishing without a trace.
+	for c in cells:
+		var d := maxi(absi(c.x - player_cell.x), absi(c.y - player_cell.y))
+		if d <= 6 and scars.size() < 26:
+			_add_scar(c, color, 3)
+
+
+func _disaster_banner(h: Dictionary, subtitle: String, hit: bool) -> void:
+	if fx_root == null:
+		return
+	var info: Dictionary = h["info"]
+	var color: Color = info["color"]
+	var name := str(info["name"]).to_upper()
+	var title := ("!! %s STRIKE" % name) if hit else ("!! %s SURGE" % name)
+	var p := UIKit.panel(Color(0.055, 0.040, 0.055, 0.94), color)
+	p.size = Vector2(360, 40)
+	p.position = Vector2(140, 46)
+	p.pivot_offset = p.size * 0.5
+	p.scale = Vector2(0.82, 0.30)
+	p.modulate.a = 0.0
+	fx_root.add_child(p)
+	var bar := ColorRect.new()
+	bar.color = Color(color.r, color.g, color.b, 0.9)
+	bar.position = Vector2(1, 1)
+	bar.size = Vector2(2, 38)
+	p.add_child(bar)
+	var title_label := UIKit.label(title, 11, color, true, HORIZONTAL_ALIGNMENT_CENTER)
+	title_label.position = Vector2(10, 3)
+	title_label.size = Vector2(340, 15)
+	p.add_child(title_label)
+	var sub_label := UIKit.label(subtitle, 7, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_CENTER)
+	sub_label.position = Vector2(10, 20)
+	sub_label.size = Vector2(340, 12)
+	p.add_child(sub_label)
+	var sweep := ColorRect.new()
+	sweep.color = Color(color.r, color.g, color.b, 0.35)
+	sweep.position = Vector2(1, 37)
+	sweep.size = Vector2(0, 2)
+	p.add_child(sweep)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(p, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(p, "modulate:a", 1.0, 0.10)
+	tw.tween_property(sweep, "size:x", 358.0, 0.34).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_interval(0.78)
+	tw.chain().tween_property(p, "modulate:a", 0.0, 0.24)
+	tw.chain().tween_callback(p.queue_free)
+
+
+func _disaster_edge(color: Color) -> void:
+	if _state_mat == null:
+		return
+	_state_mat.set_shader_parameter("flash_color", color)
+	var tw := create_tween()
+	tw.tween_method(
+		func(v: float): _state_mat.set_shader_parameter("flash", v),
+		1.0, 0.0, 0.55
+	).set_ease(Tween.EASE_OUT)
+
+
+func _shake(amp: float) -> void:
+	var base := position
+	var tw := create_tween()
+	for i in range(5):
+		tw.tween_property(self, "position",
+			base + Vector2(rng.randf_range(-amp, amp), rng.randf_range(-amp, amp)), 0.035)
+	tw.tween_property(self, "position", base, 0.07)
+
+
+func _resolve_hazard() -> bool:
+	var strikes: Array[Dictionary] = []
 	for h in hazards:
-		if int(h.get("age", 1)) >= 1 and h["cells"].has(player_cell):
+		if int(h.get("age", 1)) >= 1:
+			strikes.append(h)
+	if strikes.is_empty():
+		return false
+	var hits: Array[Dictionary] = []
+	for h in strikes:
+		if h["cells"].has(player_cell):
 			hits.append(h)
-	if hits.is_empty():
-		return
 	var shield_cost := int(sec["shield_cost"])
 	var shield_used := false
 	var total_i := 0
@@ -1505,42 +1665,69 @@ func _resolve_hazard() -> void:
 	sec["thermal"] = clampi(int(sec["thermal"]) + total_t, 0, 100)
 	sec["delta_v"] = maxi(0, int(sec["delta_v"]) - total_dv)
 	sec["power"] = clampi(int(sec["power"]) - total_p, 0, int(sec["power_max"]))
-	if total_i != 0 or total_t != 0 or total_dv != 0 or total_p != 0:
-		var bits: Array[String] = []
-		if total_i > 0:
-			bits.append("-%d INT" % total_i)
-		if total_t > 0:
-			bits.append("+%d HEAT" % total_t)
-		elif total_t < 0:
-			bits.append("%d HEAT" % total_t)
-		if total_dv > 0:
-			bits.append("-%d DV" % total_dv)
-		if total_p > 0:
-			bits.append("-%d PWR" % total_p)
-		elif total_p < 0:
-			bits.append("+%d PWR" % -total_p)
-		message_text = "%s HIT  %s" % [str(hits[0]["info"]["name"]), " · ".join(bits)]
-		if hits.size() > 1:
-			message_text = "%d HAZARDS HIT  %s" % [hits.size(), " · ".join(bits)]
-		message_color = hits[0]["info"]["color"]
+	var bits: Array[String] = []
+	if total_i > 0:
+		bits.append("-%d INT" % total_i)
+	if total_t > 0:
+		bits.append("+%d HEAT" % total_t)
+	elif total_t < 0:
+		bits.append("%d HEAT" % total_t)
+	if total_dv > 0:
+		bits.append("-%d DV" % total_dv)
+	if total_p > 0:
+		bits.append("-%d PWR" % total_p)
+	elif total_p < 0:
+		bits.append("+%d PWR" % -total_p)
+
+	# Every front gets world feedback, including the ones the player dodged.
+	var closest := 99
+	var primary: Dictionary = hits[0] if not hits.is_empty() else strikes[0]
+	for h in strikes:
+		var d := _hazard_distance(h)
+		if d < closest:
+			closest = d
+			if hits.is_empty():
+				primary = h
+		_strike_visuals(h, d, hits.has(h))
+
+	if not hits.is_empty():
+		if total_i != 0 or total_t != 0 or total_dv != 0 or total_p != 0:
+			message_text = "%s HIT  %s" % [str(primary["info"]["name"]), " · ".join(bits)]
+			if hits.size() > 1:
+				message_text = "%d HAZARDS HIT  %s" % [hits.size(), " · ".join(bits)]
+			message_color = primary["info"]["color"]
+			_show_toast(message_text, message_color)
+			_impact(player_cell, primary["info"]["color"], total_i, total_t)
+			GameState.sfx("hazard")
+			_disaster_banner(primary, " · ".join(bits), true)
+			_disaster_edge(primary["info"]["color"])
+		elif blocked > 0:
+			message_text = "SHIELD ABSORBED  %s" % str(primary["info"]["name"])
+			message_color = UIKit.CYAN
+			_show_toast(message_text, message_color)
+			GameState.sfx("click")
+			_impact(player_cell, UIKit.CYAN, 0, 0)
+			_disaster_banner(primary, "SHIELD ABSORBED · NO DAMAGE", false)
+	elif closest <= 5:
+		# Near miss: the player sees and feels the disaster land next to them.
+		message_text = "%s SURGE  ·  NO CONTACT" % str(primary["info"]["name"]).to_upper()
+		message_color = primary["info"]["color"]
 		_show_toast(message_text, message_color)
-		_impact(player_cell, hits[0]["info"]["color"], total_i, total_t)
-		GameState.sfx("hazard")
-	elif blocked > 0:
-		message_text = "SHIELD ABSORBED  %s" % str(hits[0]["info"]["name"])
-		message_color = UIKit.CYAN
-		_show_toast(message_text, message_color)
-		GameState.sfx("click")
-		_impact(player_cell, UIKit.CYAN, 0, 0)
+		_disaster_banner(primary, "NO CONTACT · GROUND SCARRED", false)
+		_disaster_edge(primary["info"]["color"])
+		_shake(2.2)
+		if closest <= 3:
+			GameState.sfx("hazard")
+	return true
 
 
-func _add_scar(cell: Vector2i, color: Color) -> void:
+func _add_scar(cell: Vector2i, color: Color, life := 4) -> void:
 	for s in scars:
 		if s["cell"] == cell:
-			s["life"] = 4
+			s["life"] = maxi(int(s["life"]), life)
 			s["color"] = color
 			return
-	scars.append({"cell": cell, "color": color, "life": 4})
+	scars.append({"cell": cell, "color": color, "life": life})
 
 
 func _advance_scars() -> void:

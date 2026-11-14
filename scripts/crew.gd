@@ -92,11 +92,15 @@ func _build_left() -> void:
 	for i in range(3):
 		var id: String = ["cadet", "standard", "director"][i]
 		var d: Dictionary = CrewDirector.DIFFICULTIES[id]
+		var dull := Color(str(d["color"]))
 		var card := UIKit.option_card(
-			c, Rect2(10, 132 + i * 42, 170, 40),
-			str(d["name"]), str(d["short"]), Color(str(d["color"])), 9, 7
+			c, Rect2(10, 134 + i * 36, 170, 32),
+			str(d["name"]), "", dull, 9, 7,
+			"x%.2f" % float(d["score"]), false
 		)
 		card["button"].pressed.connect(_set_difficulty.bind(id))
+		UIKit.hover_info(card["button"], str(d["name"]),
+			"%s\n\n%s" % [str(d["desc"]), str(d["mods"])], dull.lightened(0.15))
 		diff_cards[id] = card
 
 	var buffs := UIKit.mono("BUFFS ON  ·  GOALS +180", 6, UIKit.DIM)

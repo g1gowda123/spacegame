@@ -190,6 +190,9 @@ func _build_shop() -> void:
 	shop_root.size = Vector2(284, 216)
 	shop_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(shop_root)
+	var hover_hint := UIKit.mono("HOVER A REFIT FOR ITS EFFECT", 6, UIKit.DIM)
+	hover_hint.position = Vector2(12, 224)
+	c.add_child(hover_hint)
 	_refresh_shop()
 
 
@@ -209,7 +212,7 @@ func _refresh_shop() -> void:
 		return
 	for i in range(GameState.shop_offers.size()):
 		var up: Dictionary = GameState.shop_offers[i]
-		shop_root.add_child(_offer_card(up, i, i * 68.0))
+		shop_root.add_child(_offer_card(up, i, i * 64.0))
 
 
 func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
@@ -217,17 +220,18 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var afford := float(GameState.run.get("budget", 0)) >= cost
 	var card := Control.new()
 	card.position = Vector2(0, y)
-	card.size = Vector2(284, 64)
+	card.size = Vector2(284, 60)
 	var bg := UIKit.panel(Color("#0c1726"), Color("#263d55"))
 	bg.position = Vector2.ZERO
 	bg.size = card.size
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(bg)
 
 	# Every offer gets a physical module portrait, so the shop reads as a
 	# catalogue of hardware rather than three identical text rows.
 	var icon_frame := Panel.new()
-	icon_frame.position = Vector2(6, 10)
-	icon_frame.size = Vector2(44, 44)
+	icon_frame.position = Vector2(6, 7)
+	icon_frame.size = Vector2(46, 46)
 	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon_frame.add_theme_stylebox_override("panel", UIKit.style_panel(
 		Color("#08111c"), Color("#1d344a"), 2
@@ -238,37 +242,37 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 		var icon := TextureRect.new()
 		icon.texture = load(icon_path) as Texture2D
 		icon.position = Vector2(3, 3)
-		icon.size = Vector2(38, 38)
+		icon.size = Vector2(40, 40)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon_frame.add_child(icon)
 
-	var nm := UIKit.label(str(up["name"]), 8, UIKit.TEXT, true)
-	nm.position = Vector2(56, 5)
-	nm.size = Vector2(138, 11)
+	var nm := UIKit.label(str(up["name"]), 9, UIKit.TEXT, true)
+	nm.position = Vector2(58, 7)
+	nm.size = Vector2(136, 13)
 	card.add_child(nm)
 	var kind_text := "HARDWARE" if str(up["kind"]) == "MODULE" else "SOFTWARE"
 	var kind := UIKit.mono(kind_text, 6, UIKit.CYAN, HORIZONTAL_ALIGNMENT_RIGHT)
 	card.add_child(kind)
-	kind.position = Vector2(196, 7)
+	kind.position = Vector2(196, 8)
 	kind.size = Vector2(78, 11)
-	var desc := UIKit.label(str(up.get("plain", up["desc"])), 6, UIKit.MUTED, false)
-	desc.position = Vector2(56, 18)
-	card.add_child(desc)
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.size = Vector2(158, 30)
-	var pr := UIKit.label("$%dM" % int(cost), 8, UIKit.AMBER if afford else UIKit.RED, true)
-	pr.position = Vector2(56, 50)
-	pr.size = Vector2(70, 11)
+	var pr := UIKit.label("$%dM" % int(cost), 9, UIKit.AMBER if afford else UIKit.RED, true)
+	pr.position = Vector2(58, 32)
+	pr.size = Vector2(70, 12)
 	card.add_child(pr)
 
 	var buy := UIKit.button("BUY", Vector2(58, 20), afford)
-	buy.position = Vector2(220, 44)
+	buy.position = Vector2(218, 26)
+	buy.size = Vector2(58, 20)
 	buy.disabled = not afford
 	buy.pressed.connect(_on_buy.bind(idx))
 	card.add_child(buy)
+	UIKit.hover_info(card, str(up["name"]),
+		"%s\n\nCOST $%dM · %s" % [
+			str(up.get("plain", up["desc"])), int(cost), kind_text.to_upper()
+		], UIKit.AMBER if afford else UIKit.RED)
 	return card
 
 

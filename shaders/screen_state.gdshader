@@ -14,6 +14,8 @@ render_mode unshaded;
 uniform float low_hull = 0.0;
 uniform float heat = 0.0;
 uniform float alert = 0.0;
+uniform float flash = 0.0;
+uniform vec4 flash_color : source_color = vec4(1.0, 0.32, 0.22, 1.0);
 uniform vec2 screen_size = vec2(640.0, 360.0);
 
 void fragment() {
@@ -29,5 +31,8 @@ void fragment() {
 	float dim = alert * edge * 0.22;
 
 	vec3 col = mix(vec3(0.72, 0.08, 0.10), vec3(1.0, 0.46, 0.10), heat);
-	COLOR = vec4(col, clamp(low + hot + dim, 0.0, 0.78));
+	// Disaster edge flash: a hot rim that rolls around the screen on a strike.
+	float f = flash * edge;
+	col = col + flash_color.rgb * f * 0.55;
+	COLOR = vec4(col, clamp(low + hot + dim + f * 0.62, 0.0, 0.86));
 }

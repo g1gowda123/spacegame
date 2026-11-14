@@ -360,9 +360,9 @@ var map_scale: float = 0.92
 @export_group("Fog / Survey")
 @export var fog_enabled: bool = true
 @export_range(0, 6, 1) var fog_reveal_radius: int = 2
-@export_range(0.0, 1.0, 0.01) var fog_alpha_inner: float = 0.97
-@export_range(0.0, 1.0, 0.01) var fog_alpha_mid: float = 0.90
-@export_range(0.0, 1.0, 0.01) var fog_alpha_outer: float = 0.78
+@export_range(0.0, 1.0, 0.01) var fog_alpha_inner: float = 0.80
+@export_range(0.0, 1.0, 0.01) var fog_alpha_mid: float = 0.74
+@export_range(0.0, 1.0, 0.01) var fog_alpha_outer: float = 0.62
 
 @export_group("Decals")
 @export_range(0.0, 0.5, 0.01) var decal_density: float = 0.15
@@ -441,6 +441,7 @@ var objective_tiers: Array[int] = []
 var objective_values: Array[int] = []
 var revealed: Dictionary = {}
 var fog_layer: Node2D
+var fog_mat: ShaderMaterial
 var objective_mode := "survey"
 var turns_left: int = TURNS_START
 var hull: int = HULL_START
@@ -921,6 +922,8 @@ func _build_view() -> void:
 	fog_layer = Node2D.new()
 	fog_layer.z_index = 23
 	add_child(fog_layer)
+	fog_mat = ShaderMaterial.new()
+	fog_mat.shader = load("res://shaders/fog_veil.gdshader") as Shader
 
 	debug_layer = Node2D.new()
 	debug_layer.z_index = 30
@@ -2438,7 +2441,8 @@ func _draw_fog() -> void:
 				fog_alpha = fog_alpha_mid
 			var poly := Polygon2D.new()
 			poly.polygon = quad
-			poly.color = Color(0.015, 0.030, 0.055, fog_alpha)
+			poly.color = Color(1.0, 1.0, 1.0, fog_alpha)
+			poly.material = fog_mat
 			fog_layer.add_child(poly)
 
 
@@ -3133,27 +3137,14 @@ func _load_piece_sets() -> Dictionary:
 
 
 func _structure_visibility(cell: Vector2i, screen: Vector2) -> float:
-	"""Match structures to the terrain's fog / circular-edge grade.
+	"""Match structures to the terrain's circular/edge grade.
 
-	The map shader only owns the SubViewport terrain; structures and props live
-	on separate Node2D layers. Without this, a bright volcano/massif sits on a
-	fogged or edge-faded tile like a cut-out.
+	Fog itself is a screen-space veil above the structure layer; this handles
+	the shader-only circular focus and the rectangular sector edge fade. The
+	cell argument is kept for future per-cell fades.
 	"""
 	var vp := get_viewport_rect().size
 	var alpha := 1.0
-	if fog_enabled:
-		var near := 3
-		for ny in range(-2, 3):
-			for nx in range(-2, 3):
-				var d := absi(nx) + absi(ny)
-				if d < near and revealed.has(cell + Vector2i(nx, ny)):
-					near = d
-		var fog_a := fog_alpha_inner
-		if near == 1:
-			fog_a = fog_alpha_outer
-		elif near == 2:
-			fog_a = fog_alpha_mid
-		alpha *= 1.0 - fog_a * 0.55
 	if circle_view:
 		var disc := (screen / vp - Vector2(0.5, 0.5)) * Vector2(vp.x / vp.y, 1.0)
 		var dist := disc.length()

@@ -91,14 +91,6 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var star_type := str(p.get("star_type", "")).strip_edges()
 	if star_type == "" or star_type == "—":
 		star_type = "UNKNOWN TYPE"
-	var meta := UIKit.mono(
-		"%s  ·  %.1f ly" % [star_type, float(p["distance_ly"])],
-		7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER
-	)
-	meta.position = Vector2(4, 87)
-	meta.size = Vector2(188, 12)
-	c.add_child(meta)
-
 	var type_line := UIKit.mono(
 		"%s   ·   %d K   ·   %.2fg" % [
 			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"]),
@@ -106,7 +98,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		],
 		8, GameState.biome_color(str(p["biome"])).lightened(0.22), HORIZONTAL_ALIGNMENT_CENTER
 	)
-	type_line.position = Vector2(4, 100)
+	type_line.position = Vector2(4, 92)
 	type_line.size = Vector2(188, 11)
 	c.add_child(type_line)
 
@@ -126,23 +118,23 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		tag_color = UIKit.AMBER
 	var risk := UIKit.label("%s  ·  THREAT %d" % [tag, int(round(threat))], 6, tag_color, true,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	risk.position = Vector2(4, 120)
+	risk.position = Vector2(4, 110)
 	risk.size = Vector2(188, 12)
 	c.add_child(risk)
 
-	_stat(c, 134, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
+	_stat(c, 124, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
 		UIKit.RED if int(g["heat"]) > 60 else UIKit.AMBER)
-	_stat(c, 148, "RADIATION", "%d" % int(g["radiation"]), float(g["radiation"]) / 100.0,
+	_stat(c, 140, "RADIATION", "%d" % int(g["radiation"]), float(g["radiation"]) / 100.0,
 		UIKit.AMBER if int(g["radiation"]) > 40 else UIKit.TEXT)
-	_stat(c, 162, "GRAVITY", "%.2fg" % float(p["gravity_g"]), float(p["gravity_g"]) / 3.0,
+	_stat(c, 156, "GRAVITY", "%.2fg" % float(p["gravity_g"]), float(p["gravity_g"]) / 3.0,
 		UIKit.TEXT)
-	_stat(c, 176, "COMMS LOSS", "-%d%%" % int(g["comms_loss"]), 1.0 - float(g["comms_loss"]) / 30.0,
+	_stat(c, 172, "COMMS LOSS", "-%d%%" % int(g["comms_loss"]), 1.0 - float(g["comms_loss"]) / 30.0,
 		UIKit.TEXT if int(g["comms_loss"]) <= 10 else UIKit.AMBER)
-	_stat(c, 190, "SCIENCE", "%d" % int(g["science"]), float(g["science"]) / 120.0,
+	_stat(c, 188, "SCIENCE", "%d" % int(g["science"]), float(g["science"]) / 120.0,
 		UIKit.CYAN)
 
 	var mark := UIKit.mono("SELECT", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
-	mark.position = Vector2(10, 216)
+	mark.position = Vector2(10, 212)
 	mark.size = Vector2(176, 12)
 	c.add_child(mark)
 
@@ -160,6 +152,17 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	overlay.pressed.connect(_select.bind(str(p["id"])))
 	overlay.mouse_entered.connect(func(): _hover(root, panel, true))
 	overlay.mouse_exited.connect(func(): _hover(root, panel, false))
+	var read := "A forgiving survey. Good for a fresh hull."
+	if tag == "BALANCED":
+		read = "Real trade-offs. A generalist build travels best."
+	elif tag == "HARSH WORLD":
+		read = "High thermal and comms pressure. Specialise or expect losses."
+	UIKit.hover_info(overlay, str(p["name"]),
+		"STAR  %s\nDISTANCE  %.1f ly\nGRAVITY  %.2fg\nSURFACE  %d SOLS · ΔV %d · %d NODES\nTHREAT  %d — %s\n\n%s" % [
+			star_type, float(p["distance_ly"]), float(p["gravity_g"]),
+			int(g["sols"]), int(g["delta_v"]), int(GameState.objective().get("quota", 3)),
+			int(round(threat)), tag, read
+		], GameState.biome_color(str(p["biome"])).lightened(0.2))
 
 	var card := {
 		"id": str(p["id"]), "planet": p, "root": root, "panel": panel,

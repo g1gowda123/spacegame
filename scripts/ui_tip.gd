@@ -43,9 +43,9 @@ static func _open(host: Control, title: String, body: String, accent: Color) -> 
 	tip.visible = true
 	if tip._tween != null and tip._tween.is_valid():
 		tip._tween.kill()
-	tip.modulate.a = 0.0
+	tip._panel.modulate.a = 0.0
 	tip._tween = tip.create_tween()
-	tip._tween.tween_property(tip, "modulate:a", 1.0, 0.08)
+	tip._tween.tween_property(tip._panel, "modulate:a", 1.0, 0.08)
 
 
 static func _close(host: Control) -> void:
