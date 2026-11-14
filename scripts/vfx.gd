@@ -386,6 +386,50 @@ class DevilNode extends Node2D:
 			draw_rect(Rect2(grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.8), true)
 
 
+class GustNode extends Node2D:
+	## A wind front: four staggered streaks that travel across the board and
+	## fade. Much easier to read than a row of dust puffs at map scale.
+	var life := 1.5
+	var age := 0.0
+	var tint := Color(0.78, 0.72, 0.62, 0.50)
+	var length := 96.0
+	var speed := 170.0
+	var streak_count := 4
+
+	func _ready() -> void:
+		set_process(true)
+
+	func _process(delta: float) -> void:
+		age += delta
+		position.x += speed * delta
+		var k := clampf(age / life, 0.0, 1.0)
+		modulate.a = sin(k * PI)
+		queue_redraw()
+		if age >= life:
+			queue_free()
+
+	func _draw() -> void:
+		for i in range(streak_count):
+			var y := -float(i) * 4.0 + sin(age * 7.0 + float(i) * 1.7) * 2.0
+			var x := -float(i) * 11.0
+			var a := tint.a * (0.9 - float(i) / float(streak_count) * 0.6)
+			draw_line(Vector2(x, y), Vector2(x + length, y + 2.0),
+				Color(tint.r, tint.g, tint.b, a), 1.6, true)
+
+
+static func wind_gust(parent: Node, at: Vector2, color: Color, dir := 1.0, z := 7) -> void:
+	if parent == null:
+		return
+	var g := GustNode.new()
+	g.position = at
+	g.tint = Color(color.r, color.g, color.b, 0.45)
+	g.speed = 150.0 * dir
+	g.length = 70.0 + randf() * 40.0
+	g.z_index = z
+	g.z_as_relative = true
+	parent.add_child(g)
+
+
 static func dust_devil(parent: Node, at: Vector2, color: Color, z := 6) -> void:
 	if parent == null:
 		return

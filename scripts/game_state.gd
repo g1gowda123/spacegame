@@ -311,6 +311,14 @@ func _ready() -> void:
 	_load_best()
 	UIKit.pixel_font = pixel_font
 	UIKit.body_font = body_font
+	audio_muted = OS.has_feature("editor")
+	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		match str(raw):
+			"--mute":
+				audio_muted = true
+			"--unmute":
+				audio_muted = false
+	_apply_audio_mute()
 
 
 func _load_fonts() -> void:
@@ -1555,3 +1563,23 @@ func planet_headline(p: Dictionary) -> String:
 	if str(p.get("biome", "")) == "temperate":
 		return "Potentially habitable zone"
 	return "Stable survey target"
+
+
+## Local visual-review mute. Editor runs start silent so the machine can be
+## used for other audio; exported builds stay audible unless `--mute` is given.
+var audio_muted := false
+
+
+func _apply_audio_mute() -> void:
+	var bus := AudioServer.get_bus_index("Master")
+	if bus >= 0:
+		AudioServer.set_bus_mute(bus, audio_muted)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo and key.keycode == KEY_M:
+			audio_muted = not audio_muted
+			_apply_audio_mute()
+			get_viewport().set_input_as_handled()

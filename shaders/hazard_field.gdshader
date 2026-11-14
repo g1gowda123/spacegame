@@ -44,6 +44,9 @@ void fragment() {
 	// A per-cell random phase keeps a multi-cell footprint from pulsing as one
 	// flat rectangle; it is deterministic from the cell coordinate.
 	float phase = hash21(cell + seed) * 6.28318;
+	// Broad diagonal warning tape: breaks the fill into a readable hazard
+	// surface instead of a flat wash. Kept low-contrast so terrain survives.
+	float tape = step(0.56, fract((uv.x + uv.y) * 3.2 - t * 0.45));
 
 	if (mode == 2) {
 		// Scar: a dark burn with an ember rim. Drawn under the debris/decals.
@@ -62,9 +65,10 @@ void fragment() {
 		float outline = 1.0 - smoothstep(0.03, 0.075, border);
 		float scan_y = fract(t * 0.32 + hash21(cell + 4.1));
 		float scan = 1.0 - smoothstep(0.0, 0.045, abs(f.y - scan_y));
-		float fill = (0.035 + 0.05 * scan);
+		float fill = (0.035 + 0.05 * scan) + tape * 0.022;
 		a = (outline * 0.55 * dash + fill) * intensity;
 		col = mix(col, vec3(1.0), 0.15);
+		col = mix(col, col * 0.62, tape * 0.18);
 	} else {
 		// Armed: hazard-type signature + a pulsing warning border.
 		float pulse = 0.5 + 0.5 * sin(t * 4.2 + phase);
@@ -120,6 +124,11 @@ void fragment() {
 		// footprint still reads as a striped hazard rather than a flat wash.
 		float stripe = step(0.5, fract((uv.x + uv.y) * 2.5 - t * 0.55));
 		a = inner + border_glow * (0.34 + 0.22 * pulse) + stripe * 0.035;
+		// Alternate dark/light diagonal bands, not a uniform alpha wash. The
+		// tape is the thing that makes a hazard footprint read as a surface
+		// rather than a UI rectangle at map scale.
+		a += tape * 0.065;
+		col = mix(col, col * 0.55, tape * 0.20);
 		// Brighten the leading edge so a 5-cell line has a readable contour.
 		col = mix(col, vec3(1.0), border_glow * 0.22);
 	}

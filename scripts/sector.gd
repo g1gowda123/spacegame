@@ -74,10 +74,13 @@ var vfx_layer: Node2D
 var pad_beacon: Node2D
 var _ending_turn := false
 var _last_strike_near := false
+var _early_extract_armed := false
+var _early_extract_at := 0
 var _world_timer := 2.4
 var _star_timer := 5.0
 var _meteor_timer := 9.0
 var _scar_timer := 1.2
+var _gust_timer := 14.0
 var fx_root: Control
 var _state_overlay: ColorRect
 var _state_mat: ShaderMaterial
@@ -216,6 +219,12 @@ func _ready() -> void:
 			# exercise the real `_extract()` path, including its return check.
 			player_cell = extract_cell
 			sec["data"] = int(sec["quota"])
+			_extract()
+		elif arg == "--partial-extract-test":
+			# QA hook: confirm the two-step partial bailout path.
+			player_cell = extract_cell
+			sec["data"] = 1
+			_extract()
 			_extract()
 		elif arg == "--result=success":
 			sec["data"] = 4
@@ -1258,6 +1267,8 @@ func _run_fx_demo(kind: String) -> void:
 			}
 			hazards.append(m)
 			_resolve_hazard()
+		"gust":
+			_gust_event()
 		"meteor":
 			VFX.meteor_streak(vfx_layer, _cell_center(player_cell + Vector2i(3, 2)),
 				Color(1.0, 0.74, 0.42))
@@ -1326,6 +1337,7 @@ func _check_overheat() -> void:
 func _execute_path() -> void:
 	if done or moved or _ending_turn:
 		return
+	_early_extract_armed = false
 	if path_cells.is_empty() or not path_valid:
 		message_text = "SELECT A DESTINATION"
 		message_color = UIKit.MUTED
@@ -1400,6 +1412,7 @@ func _camera_world_layers() -> Array:
 func _end_turn() -> void:
 	if done or _ending_turn:
 		return
+	_early_extract_armed = false
 	_ending_turn = true
 	# Every live front resolves at end of turn, hit or miss. A front that lands
 	# on empty ground still gets a visible strike: the world reacts even when
@@ -1594,6 +1607,10 @@ func _process(delta: float) -> void:
 		if _scar_timer <= 0.0:
 			_scar_timer = rng.randf_range(0.9, 1.6)
 			_smoke_scars()
+		_gust_timer -= delta
+		if _gust_timer <= 0.0:
+			_gust_timer = rng.randf_range(11.0, 18.0)
+			_gust_event()
 
 
 func _visible_structures() -> Array[Dictionary]:
@@ -1674,6 +1691,41 @@ func _world_event() -> void:
 				VFX.dust_devil(vfx_layer, at, Color(0.72, 0.64, 0.52, 0.55))
 			_:
 				VFX.sparks(vfx_layer, at, Color(0.72, 0.96, 0.74, 0.55), 3, 10.0, -8.0)
+
+
+func _gust_event() -> void:
+	## A wind front crossing the visible board: three staggered streak groups
+	## at different rows, so the weather has direction instead of random sparkle.
+	if vfx_layer == null or done:
+		return
+	var tint := Color(0.78, 0.72, 0.60, 0.55)
+	match str(sec["planet"]["biome"]):
+		"cryo", "ammonia":
+			tint = Color(0.85, 0.94, 1.0, 0.55)
+		"ocean", "methane":
+			tint = Color(0.60, 0.90, 0.94, 0.48)
+		"volcanic", "sulfur", "obsidian":
+			tint = Color(0.62, 0.44, 0.32, 0.55)
+		"crystal":
+			tint = Color(0.80, 0.70, 1.0, 0.55)
+	var dir := 1.0 if rng.randf() < 0.5 else -1.0
+	var base_y := player_cell.y + rng.randi_range(-4, 4)
+	for row in range(3):
+		var c := Vector2i(
+			view_origin.x + (0 if dir > 0 else view_w - 1),
+			base_y + row * 4
+		)
+		if not _in_view(c.x, c.y):
+			continue
+		var at := _cell_center(c)
+		var delay := float(row) * 0.16
+		if delay <= 0.0:
+			VFX.wind_gust(vfx_layer, at, tint, dir)
+		else:
+			get_tree().create_timer(delay).timeout.connect(func():
+				if is_instance_valid(vfx_layer):
+					VFX.wind_gust(vfx_layer, at, tint, dir)
+			)
 
 
 func _smoke_scars() -> void:
@@ -2278,14 +2330,24 @@ func _extract() -> void:
 		_show_toast(message_text, message_color)
 		return
 	if int(sec["data"]) < int(sec["quota"]):
-		var need := int(sec["quota"]) - int(sec["data"])
-		message_text = "NEED %d MORE %s BEFORE EXTRACTION" % [
-			need, "RELAY" if _is_relay() else "DATA"
-		]
-		message_color = UIKit.AMBER
-		_show_toast(message_text, message_color)
-		return
+		if int(sec["data"]) <= 0:
+			message_text = "NO DATA ABOARD"
+			message_color = UIKit.AMBER
+			_show_toast(message_text, message_color)
+			return
+		var now := Time.get_ticks_msec()
+		if not _early_extract_armed or now - _early_extract_at > 4500:
+			_early_extract_armed = true
+			_early_extract_at = now
+			message_text = "PARTIAL EXTRACTION  %d/%d DATA  ·  -24 APPROVAL  ·  PRESS E AGAIN" % [
+				int(sec["data"]), int(sec["quota"])
+			]
+			message_color = UIKit.AMBER
+			_show_toast(message_text, message_color)
+			return
+		_early_extract_armed = false
 	sec["risk_bonus"] = _risk_bonus_nearby()
+	var partial := int(sec["data"]) < int(sec["quota"])
 	GameState.sfx("confirm")
 	if vfx_layer != null:
 		var at := _cell_center(extract_cell)
@@ -2295,7 +2357,7 @@ func _extract() -> void:
 		await get_tree().create_timer(0.45).timeout
 		if done:
 			return
-	_end(true, "EXTRACTION")
+	_end(true, "PARTIAL EXTRACTION" if partial else "EXTRACTION")
 
 
 func _end(extracted: bool, reason: String) -> void:

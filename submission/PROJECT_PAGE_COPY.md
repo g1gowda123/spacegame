@@ -142,7 +142,7 @@ Do not exceed seven slides.
 
 ## Final submission checklist
 
-- [ ] Demo is ≤30.0 s (current: **25.6 s**) or deck is ≤7 slides (current: **7**).
+- [ ] Demo is ≤30.0 s (current: **23.4 s**) or deck is ≤7 slides (current: **7**).
 - [ ] Project page has name, summary, demo link, final project link, detailed description, NASA data, SI use, references.
 - [ ] NASA data is named explicitly: Exoplanet Archive **PSCompPars** (`pscomppars`), with the Chen & Kipping (2017) mass–radius reference.
 - [ ] Build loads from a plain static host over HTTP(S); no server code, no install, no account.
