@@ -1012,6 +1012,8 @@ func _roll_hazard() -> Dictionary:
 			continue
 		if major:
 			_major_hazard_seen = true
+			if OS.get_cmdline_user_args().has("--major-hazard"):
+				print("MAJOR_HAZARD kind=", kind, " shape=", shape, " cells=", cells.size())
 		var life := 4 if sweep else 1
 		return {
 			"kind": kind, "info": info, "cells": cells,
