@@ -125,12 +125,16 @@ def measure(samples: np.ndarray, sr: int = SR) -> dict:
 
 
 def encode_ogg(samples: np.ndarray, out_path: Path, quality: int, sr: int = SR) -> None:
+    """Encode at `sr`. The buffer is always at the internal 48 kHz rate, so the
+    pipe declares SR and `-ar` *after* `-i` asks ffmpeg to resample on the way
+    out. Putting `-ar` before `-i` would reinterpret the buffer instead, which
+    plays the bed back at the wrong speed."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     raw = np.ascontiguousarray(samples, dtype="<f4").tobytes()
     proc = subprocess.run(
         [ffmpeg(), "-y", "-v", "error", "-nostdin",
-         "-f", "f32le", "-ar", str(sr), "-ac", "2", "-i", "pipe:0",
-         "-c:a", "libvorbis", "-q:a", str(quality), str(out_path)],
+         "-f", "f32le", "-ar", str(SR), "-ac", "2", "-i", "pipe:0",
+         "-c:a", "libvorbis", "-q:a", str(quality), "-ar", str(sr), str(out_path)],
         input=raw, capture_output=True,
     )
     if proc.returncode != 0:
@@ -365,7 +369,7 @@ def run(args: argparse.Namespace) -> int:
     y, info = master(src, args)
     problems, warnings = gate(info["seam"])
 
-    encode_ogg(y, out, args.quality)
+    encode_ogg(y, out, args.quality, args.rate)
     shipped = decode(out)
     shipped_report = seam_report(shipped, 0)
     info.update({
@@ -375,6 +379,7 @@ def run(args: argparse.Namespace) -> int:
         "bytes": out.stat().st_size,
         "kbps": round(out.stat().st_size * 8 / info["loop_seconds"] / 1000, 1),
         "quality": args.quality,
+        "encode_rate": args.rate,
         "seed": args.seed,
         "prompt": args.prompt,
         "encoded_seconds": round(len(shipped) / SR, 4),
@@ -483,7 +488,7 @@ def selftest() -> int:
         input=str(wav), out=str(tmp / "sector.ogg"), cue="sector", bpm=DEFAULT_BPM,
         bars=DEFAULT_BARS, beats=DEFAULT_BEATS, mode="equal-power",
         crossfade_bars=DEFAULT_CROSSFADE_BARS, fade_curve="auto",
-        declick_ms=DEFAULT_DECLICK_MS, start=0.0, quality=OGG_QUALITY,
+        declick_ms=DEFAULT_DECLICK_MS, start=0.0, quality=OGG_QUALITY, rate=SR,
         seed=0, prompt="selftest", force=True,
     )
     rc = run(ns)
@@ -565,6 +570,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="auto picks whichever curve keeps the head level flat")
     ap.add_argument("--declick-ms", type=float, default=DEFAULT_DECLICK_MS)
     ap.add_argument("--quality", type=int, default=OGG_QUALITY, help="vorbis -q:a")
+    ap.add_argument("--rate", type=int, default=SR,
+                    help="encoder sample rate (default 48000; 22050 is transparent "
+                         "for band-limited pads and halves the bitrate)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--prompt", default="", help="generation prompt, for the sidecar")
     ap.add_argument("--force", action="store_true",

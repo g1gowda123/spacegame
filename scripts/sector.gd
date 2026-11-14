@@ -141,7 +141,6 @@ var result_layer: Control
 
 
 func _ready() -> void:
-	MusicDirector.play("sector")
 	sec = GameState.current_sector
 	var args: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
 	if "--debug-transitions" in args:
@@ -165,6 +164,11 @@ func _ready() -> void:
 		var p: Dictionary = GameState.draft[0]
 		GameState.begin_sector(p)
 		sec = GameState.current_sector
+	# Ambient bed for this planet's *type*: 72 planets, nine biomes. The director
+	# hands over from the previous bed at the same playback position, so the
+	# mission does not restart the music.
+	var biome := str(sec.get("planet", {}).get("biome", ""))
+	MusicDirector.play("sector", biome)
 	RenderingServer.set_default_clear_color(Color("#070a11"))
 	zoom = 1.35
 	_build_tileset()

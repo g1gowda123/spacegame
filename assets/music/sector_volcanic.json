@@ -1,0 +1,70 @@
+{
+  "bpm": 84.0,
+  "bars": 24,
+  "beats_per_bar": 4,
+  "bar_seconds": 2.8571,
+  "loop_seconds": 68.5714,
+  "loop_samples": 3291429,
+  "sample_rate": 48000,
+  "mode": "equal-power",
+  "crossfade_bars": 2.0,
+  "crossfade_seconds": 5.7143,
+  "declick_ms": 0,
+  "fade_curve": "equal-power",
+  "fade_curve_requested": "auto",
+  "start_offset_seconds": 0.0,
+  "source_seconds": 74.286,
+  "lufs_before": -12.46,
+  "gain_db": -3.54,
+  "peak_limited": false,
+  "lufs": -16.0,
+  "true_peak": -4.85,
+  "seam": {
+    "wrap_delta": 0.0012592077255249023,
+    "wrap_delta_dbfs": -58.0,
+    "baseline_step": 0.010581343434751034,
+    "baseline_dbfs": -39.51,
+    "wrap_vs_baseline_db": -18.49,
+    "join_delta_dbfs": -52.65,
+    "rms_step_db": 7.18,
+    "fade_gain_db": -0.2,
+    "mono_delta_db": 0.05,
+    "peak_dbfs": -4.85
+  },
+  "cue": "sector_volcanic",
+  "source": "sector_volcanic.wav",
+  "output": "assets/music/sector_volcanic.ogg",
+  "bytes": 164413,
+  "kbps": 19.2,
+  "quality": 1,
+  "encode_rate": 22050,
+  "seed": 401,
+  "prompt": "ambient biome bed: volcanic - dark and heavy, minor, a crust thin enough to glow",
+  "encoded_seconds": 68.5715,
+  "encoded_seam": {
+    "wrap_delta": 0.00159483402967453,
+    "wrap_delta_dbfs": -55.95,
+    "baseline_step": 0.010590351186692715,
+    "baseline_dbfs": -39.5,
+    "wrap_vs_baseline_db": -16.44,
+    "join_delta_dbfs": -120.0,
+    "rms_step_db": 7.57,
+    "fade_gain_db": 0.0,
+    "mono_delta_db": 0.06,
+    "peak_dbfs": -4.99
+  },
+  "gate": {
+    "passed": true,
+    "problems": [],
+    "warnings": [
+      "level steps 7.2 dB across the loop point - check the downbeat is not landing on a gap"
+    ],
+    "limits": {
+      "seam_vs_baseline_db": 6.0,
+      "rms_step_advisory_db": 6.0,
+      "fade_gain_advisory_db": 1.5,
+      "mono_loss_db": 6.0
+    }
+  },
+  "mastered_at": "2026-11-15T01:08:19"
+}

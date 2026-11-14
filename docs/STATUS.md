@@ -4,7 +4,7 @@
 "Five-minute showcase". This file is the working picture: what is in the tree,
 what is in the package, who owns what, and what is still missing.
 
-Last updated: 2026-11-14 19:30 (ECHO).
+Last updated: 2026-11-15 02:05 (ECHO).
 
 ## Build vs source
 
@@ -30,7 +30,7 @@ Do not demo the ZIP until it is re-exported; demo native (`godot --path .`) or r
 | Fog of war + signal-tier nodes | **Prototype, default on** | `docs/MAP_GAMEPLAY.md` (M1/M4), `--no-fog` |
 | W6 hero/support outcrops | **Art landed, wiring in progress** | `assets/tilesets/outcrops/` |
 | UI identity pass (folders/cards/stamps) | **Kit delivered, integration open** | `docs/UI_REDESIGN.md`, `assets/ui/skin/` |
-| Music bed (3 reactive loops) | **Spec ready, not started** | `docs/AUDIO.md` |
+| Music bed (3 context loops + 9 biome beds) | **Done, in tree** | `assets/music/`, `scripts/music_director.gd`, `docs/AUDIO.md` §5.2 |
 
 ## Who is doing what
 
@@ -44,14 +44,14 @@ Do not demo the ZIP until it is re-exported; demo native (`godot --path .`) or r
 | **c / d** | build and QA | one-command export, browser test loop |
 | **e** | data and words | NASA numbers, README, deck, project page |
 | **f** | feel | sound effects, HUD polish, overlay readability |
-| **ECHO** | music | soundtrack spec and loops (not shipped yet) |
+| **ECHO** | music | 3 context loops + 9 per-biome beds shipped; phase-locked handover |
 
 ## What needs to happen next
 
 **P0 — before the next review:**
 
 1. **Re-export and re-QA the web build.** `tools/release.sh`, then the browser loop title → report with zero console errors. Without this the fog/VFX work is invisible in the ZIP.
-2. **Music bed.** Three 76.8 s loops at 100 BPM, A minor (title / sector / debrief), −16 LUFS, ≤2.8 MB. Spec and prompts in `docs/AUDIO.md`. Blocked on approval for a 3.46 GB model download.
+2. **Music bed.** Shipped: three 68.6 s context loops (title / sector / debrief) plus nine per-biome sector beds, all −16 LUFS, 2.75 MiB total, handover phase-locked (drift ≤0.05 s). Remaining: re-master `title`/`debrief` to −16.0 LUFS to remove the last 0.9 dB step; re-encode `sector.ogg` (−0.60 dBTP, over the ceiling). Details in `docs/AUDIO.md` §5.1–5.3.
 3. **Volcano silhouette.** Each 4×4 volcano still occupies a narrow tower inside its ash square, so the corners read empty. Art-shape rework, not a wiring bug.
 
 **P1 — the visible quality gap:**

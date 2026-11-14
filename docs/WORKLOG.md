@@ -1072,3 +1072,52 @@ to the lane owner.
 - `draft.gd` starts a threaded load of `res://scenes/sector.tscn` when the player commits, plays the ship transfer, waits until the ship reaches the target, then instantiates the sector while the transit card still covers the screen. The fixed post-animation wait is gone; the cut lands on a finished board.
 - The transit ship holds at the target (`hold_seconds = 8.0`) instead of looping back to Earth if generation takes a moment.
 - QA: `--screen=draft --auto-commit --capture-delay=2.2` shows the sector at 2.2 s; `...=1.8` still shows the transit. `--screen=flowtest` 5361/S.
+
+## 2026-11-15 02:05 — Per-biome sector music, phase-locked (ECHO)
+
+Brief: different ambient music per exoplanet *type*, not 72 tracks, and the change
+must not sound like an mp3 starting.
+
+- **Nine beds, keyed to biome, not planet.** `data/exoplanets.json` has 72 planets
+  and nine biome values (`temperate` 25, `barren` 14, `arid`/`volcanic`/`crystal` 7,
+  `cryo`/`iron` 4, `sulfur` 3, `ammonia` 1). New `tools/make_biome_music.py`
+  (numpy additive synth, no samples, no model download) renders
+  `assets/music/sector_<biome>.ogg` + `.json` sidecars. 1.96 MiB for nine beds.
+- **The transition is a morph because of three constraints, not a crossfade trick:**
+  same clock (24 bars @ 84 BPM = 68.5714 s on A), same spine (A1+E2 drone, pulse on
+  beats 1 and 3, noise floor are identical in all nine), no intro/outro (2 bars
+  rendered past the loop and folded into the head by `make_music_loop.py`).
+- **`MusicDirector.play(context, biome)` now starts the incoming bed at the outgoing
+  bed's playback position** (`get_playback_position()` + time-since-mix − output
+  latency, wrapped to the loop) instead of 0.0. That is what removes the "track
+  starting" artefact; a restart would show the elapsed time as drift.
+- **Fade curve measured, then chosen: linear, not equal-power.** The beds are
+  correlated, so equal-power sums coherently: +2.74 dB (cryo→volcanic), +3.48 dB
+  (temperate→crystal), +3.29 dB (bed→itself) at the midpoint. Linear: +0.87/+1.62/
+  +0.88 dB max, mid-fade −0.90/+0.03/−0.07 dB. Fade is 4.0 s (1.4 bars).
+- **Two real bugs found and fixed:** (1) `--rate` first landed on ffmpeg's input side,
+  so the beds were reinterpreted at 22.05 kHz and played half-speed at 55 kbps — a
+  spectral probe caught it; `encode_ogg` now declares `SR` on the pipe and puts `-ar`
+  after `-i`. (2) Volcanic's 41 Hz drone ate the pads' headroom and left a 0.7 % mid
+  band; moved to A2 with a lighter amplitude.
+- **Measured:** all nine at −16.00/−16.01 LUFS, peaks −3.0…−5.0 dBTP, seam wrap
+  3–29 dB below each file's own transient baseline, mono fold-down ≤ +0.07 dB, all
+  gates PASS. Centroids 212 Hz (volcanic) to 912 Hz (crystal), each bed ≥26 % energy
+  below 200 Hz so the shared floor survives a fade.
+- **Verification:** `godot --headless --path . --script tools/audit_music.gd` PASS
+  (12 beds, 68.571 s ±0.0 ms, every planet biome has a bed); `godot --path .
+  --script tools/music_probe.gd -- --music-log` PASS (four handovers, drift
+  −0.03…−0.05 s, rapid A→B→A leaves combined gain 0.78 — no stacked decks);
+  `--screen=sector --music-log` in the real game prints
+  `MUSIC bed=barren context=sector biome=barren phase=0.37s fade=4.0s`; headless
+  smoke clean.
+- **Pulled upstream first:** `b628795` (`fbbf097 audio: unmute by default` — audio is
+  no longer muted in editor builds, so the beds are audible by default) and the
+  sector hazard/sector-UI rework; music changes re-applied on top, `sector.gd`
+  merged by hand.
+- **Decision:** `title`/`debrief`/`report` keep the three existing beds; only the
+  sector is biome-keyed. Unknown/future biome → neutral `sector` bed, so new data
+  cannot silence a mission. Docs: `docs/AUDIO.md` §5.2–5.3, §6 rewritten.
+- **Size:** music total 2.75 MiB (0.79 context + 1.96 biome), still inside the
+  ≤3 MB line.
+- Not pushed — ORION owns `git push`.

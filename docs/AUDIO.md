@@ -222,21 +222,101 @@ nothing:
 Nothing above is fixed by me: the beds are the audio owner's files, and a
 re-encode is a content change. The numbers are here so the decision is theirs.
 
+### 5.2 One bed per exoplanet *type* (nine beds, 2026-11-15)
+
+The brief was "different ambient music for different exoplanet types, but not
+72 tracks, and the change must not sound like an mp3 starting". So the beds are
+keyed to the **biome**, which is the only type axis the planet data has:
+
+```
+temperate 25 · barren 14 · arid 7 · volcanic 7 · crystal 7 · cryo 4 · iron 4 · sulfur 3 · ammonia 1
+```
+
+Nine beds for 72 planets. `data/exoplanets.json` is the source of truth;
+`tools/audit_music.gd` fails if a biome used by a planet has no bed.
+
+**Why the handover is a morph, not a cut.** Three constraints, all enforced by
+the generator (`tools/make_biome_music.py`):
+
+1. **Same clock.** Every bed is 24 bars at 84 BPM = 68.5714 s on A. The director
+   starts the incoming bed at the outgoing bed's *playback position*, not 0.0, so
+   bar, beat and root line up across the fade. A restart at 0.0 is exactly the
+   "new mp3" artefact the brief ruled out.
+2. **Same spine.** A1+E2 drone, a soft pulse on beats 1 and 3, and the noise
+   floor are byte-identical in all nine beds. Only pad colour, partials, filter,
+   shimmer and bells differ, so a fade moves timbre and nothing else.
+3. **No intro, no drop, no fade-out.** Two bars are rendered past the loop point
+   and folded into the head by `tools/make_music_loop.py` (§5), so the loop is
+   sample-continuous and there is no "start" to hear.
+
+Measured (`--check`-style read of the shipped OGGs, all nine PASS):
+
+| bed | centroid | LUFS | true peak | seam wrap vs baseline | mono | size |
+|---|---|---|---|---|---|---|
+| `temperate` | 499 Hz | −16.00 | −4.02 dBTP | −9.9 dB | +0.07 dB | 198 KiB |
+| `arid` | 399 Hz | −16.00 | −4.97 dBTP | −28.7 dB | +0.05 dB | 200 KiB |
+| `cryo` | 794 Hz | −16.01 | −4.08 dBTP | −25.9 dB | +0.05 dB | 265 KiB |
+| `volcanic` | 212 Hz | −16.00 | −4.85 dBTP | −18.5 dB | +0.05 dB | 161 KiB |
+| `barren` | 504 Hz | −16.00 | −4.98 dBTP | −22.4 dB | +0.04 dB | 220 KiB |
+| `iron` | 569 Hz | −16.00 | −4.47 dBTP | −3.0 dB | +0.05 dB | 224 KiB |
+| `sulfur` | 508 Hz | −16.00 | −4.18 dBTP | −12.4 dB | +0.05 dB | 220 KiB |
+| `ammonia` | 669 Hz | −16.00 | −4.12 dBTP | −10.8 dB | +0.05 dB | 241 KiB |
+| `crystal` | 912 Hz | −16.00 | −4.81 dBTP | −13.4 dB | +0.04 dB | 281 KiB |
+
+- **Distinct, not random.** Centroids span 212–912 Hz in a deliberate order:
+  volcanic is a 212 Hz rumble, crystal is 912 Hz glass. Every bed keeps ≥26 % of
+  its energy below 200 Hz, so the nine still share a low end and a crossfade
+  never loses the floor.
+- **All nine at −16.00 LUFS.** This is the one thing the older three cues miss
+  (they sit at −15.74 / −16.90 / −16.91, §5.1): a title→sector handover currently
+  steps ~1 dB. The new beds remove that step inside the sector.
+- **Seams are 3–29 dB below the file's own transient baseline** — the `iron`
+  bed is the tightest at −3.0 dB and still under the gate, because its struck
+  metal partials are the loudest transients in the set. No bed clicks.
+- **1.96 MiB for nine beds**, 19–34 kbps, all 22.05 kHz (§5.3).
+
+### 5.3 Why 22.05 kHz (`make_music_loop.py --rate`)
+
+The beds are band-limited pads: measured energy above 9 kHz is 0–0.5 %. Encoding
+at 48 kHz was spending ~35 % of the bitrate on empty spectrum. At 22.05 kHz,
+q1, the same bed is 265 KiB instead of 591 KiB and measures identical below
+9 kHz. `--rate` is applied **after `-i`** in the ffmpeg call: putting `-ar`
+before the input reinterprets the 48 kHz buffer instead of resampling it, which
+silently plays every bed at half speed (this bug shipped for one build and was
+caught by a spectral probe — the beds read 55 kbps and a 794 Hz centroid at
+"48 kHz" that was really 24 kHz of content). `--rate` is recorded in the sidecar
+as `encode_rate` so a re-encode cannot drift back.
+
 ---
 
 ## 6. Runtime contract (for whoever wires it)
 
 - New autoload `MusicDirector` (`scripts/music_director.gd`), loaded after `GameState`.
-  API: `play(context: String)`, `duck(on: bool)`, `stop()`.
-- One `AudioStreamPlayer` per active cue (two max during a crossfade), bus `Music`.
-  `AudioStreamOggVorbis.loop = true`, `loop_offset = 0.0`.
-- 2 s equal-power crossfade on `play()`; 0.25 s ramp for duck/unduck.
+  API: `play(context: String, biome: String = "")`, `set_duck(on: bool)`, `stop()`.
+- One `AudioStreamPlayer` per active cue (two max during a crossfade), bus `Master`
+  (there is no separate `Music` bus in `project.godot`; ducking is done in gain,
+  not by a bus). `AudioStreamOggVorbis.loop = true`, `loop_offset = 0.0`.
+- **Phase-locked handover**: `play()` reads the outgoing player's position
+  (`get_playback_position()` + `AudioServer.get_time_since_last_mix()` −
+  `AudioServer.get_output_latency()`, wrapped to the loop) and starts the
+  incoming bed at that position. Measured drift −0.03…−0.05 s over four
+  handovers (`tools/music_probe.gd`), i.e. the position is preserved; a restart
+  would show the full elapsed time as drift.
+- **Linear crossfade, 4.0 s** (1.4 bars at 84 BPM). Not equal-power: the beds are
+  *correlated* (shared drone/pulse/root), so equal-power sums coherently and
+  measures **+2.7…+3.5 dB** at the fade midpoint. Linear measures **+0.9…+1.6 dB
+  worst case, mid-fade within 0.1 dB**. Same conclusion as the loop seam in §5.
+- Duck is a gain multiplier on both decks (`set_duck`, −6 dB, 0.35 s), so a
+  telegraph arriving mid-handover does not fight the fade.
+- Sector bed is chosen by `sec["planet"]["biome"]`; unknown biomes fall back to
+  the neutral `sector` bed, so new planet data cannot silence a mission.
 - Headless guard: if `DisplayServer.get_name() == "headless"` do nothing
   (the export/smoke tests must stay clean and silent).
 - `_exit_tree()` stops players and clears streams — the 02:56 leak fix must not regress.
 - Context map lives with the director, not in each scene: `title`/`design`/`draft` →
-  `title`, `sector` → `sector`, `debrief`/`report` → `debrief`.
-- Web budget: total `assets/audio/music/` ≤ 3 MB; the ZIP grows by that much only.
+  `title`, `sector` → per-biome bed, `debrief`/`report` → `debrief`.
+- Web budget: music total is **2.75 MiB** (788 KiB context cues + 1.96 MiB biome
+  beds); the ZIP grows by that much only. The old ≤3 MB line still holds.
 
 ---
 
@@ -261,6 +341,7 @@ the art queue shares this GPU.
 - [x] Generate and master 3 cues — landed in `assets/music/` (24 bars @ 84 BPM, 788 KiB total); measured in §5.1 (wrap seams clean 14–18 dB below baseline; 2 minor gain/peak adjustments noted).
 - [x] `MusicDirector` autoload (`scripts/music_director.gd`) + duck hook on the hazard telegraph in `sector.gd`.
 - [x] Size budget verified: 788 KiB total (well under the ≤3 MB budget).
+- [x] Per-biome sector beds (2026-11-15): nine beds for the nine planet biomes, 1.96 MiB, all −16.00 LUFS, phase-locked handover (§5.2–5.3); audited by `tools/audit_music.gd` and `tools/music_probe.gd`.
 - [ ] Web re-export: package latest tree into `build/web` via `tools/release.sh`.
 - [ ] Optional: User approval for SA3 Small-Music download (3.46 GB) if external model stem replacements are desired later.
 - [ ] Phase 2 (optional): intensity variants for reactive layers. Currently reactive layer uses volume ducking (−6 dB on hazard telegraph).

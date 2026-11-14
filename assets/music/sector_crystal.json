@@ -1,0 +1,70 @@
+{
+  "bpm": 84.0,
+  "bars": 24,
+  "beats_per_bar": 4,
+  "bar_seconds": 2.8571,
+  "loop_seconds": 68.5714,
+  "loop_samples": 3291429,
+  "sample_rate": 48000,
+  "mode": "equal-power",
+  "crossfade_bars": 2.0,
+  "crossfade_seconds": 5.7143,
+  "declick_ms": 0,
+  "fade_curve": "equal-power",
+  "fade_curve_requested": "auto",
+  "start_offset_seconds": 0.0,
+  "source_seconds": 74.286,
+  "lufs_before": -12.49,
+  "gain_db": -3.51,
+  "peak_limited": false,
+  "lufs": -16.0,
+  "true_peak": -4.81,
+  "seam": {
+    "wrap_delta": 0.005420662462711334,
+    "wrap_delta_dbfs": -45.32,
+    "baseline_step": 0.025373809039592743,
+    "baseline_dbfs": -31.91,
+    "wrap_vs_baseline_db": -13.41,
+    "join_delta_dbfs": -43.58,
+    "rms_step_db": 6.04,
+    "fade_gain_db": -1.46,
+    "mono_delta_db": 0.04,
+    "peak_dbfs": -4.81
+  },
+  "cue": "sector_crystal",
+  "source": "sector_crystal.wav",
+  "output": "assets/music/sector_crystal.ogg",
+  "bytes": 287984,
+  "kbps": 33.6,
+  "quality": 1,
+  "encode_rate": 22050,
+  "seed": 907,
+  "prompt": "ambient biome bed: crystal - long glass bells over almost no pad, Lydian",
+  "encoded_seconds": 68.5715,
+  "encoded_seam": {
+    "wrap_delta": 0.006254525855183601,
+    "wrap_delta_dbfs": -44.08,
+    "baseline_step": 0.025822751224040985,
+    "baseline_dbfs": -31.76,
+    "wrap_vs_baseline_db": -12.32,
+    "join_delta_dbfs": -120.0,
+    "rms_step_db": 5.9,
+    "fade_gain_db": 0.0,
+    "mono_delta_db": 0.05,
+    "peak_dbfs": -4.89
+  },
+  "gate": {
+    "passed": true,
+    "problems": [],
+    "warnings": [
+      "level steps 6.0 dB across the loop point - check the downbeat is not landing on a gap"
+    ],
+    "limits": {
+      "seam_vs_baseline_db": 6.0,
+      "rms_step_advisory_db": 6.0,
+      "fade_gain_advisory_db": 1.5,
+      "mono_loss_db": 6.0
+    }
+  },
+  "mastered_at": "2026-11-15T01:04:31"
+}
