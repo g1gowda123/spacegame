@@ -2491,6 +2491,7 @@ func _render_window() -> void:
 	_rebuild_cliffs()
 	_rebuild_decals()
 	_rebuild_actors()
+	_draw_fog()
 	if debug_transitions:
 		_draw_transition_debug()
 
