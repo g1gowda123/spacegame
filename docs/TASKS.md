@@ -167,10 +167,25 @@ Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.
 
 | Task | Status | Notes |
 |---|---|---|
-| Music bed — Balatro-style reactive loop | **OPEN — unclaimed** (suggest **g** sourcing / **f** wiring) | 3 seamless 60–90 s OGG loops on a shared tempo (title / sector / debrief, report reuses debrief), 2 s crossfade on screen change, duck ~6 dB while a hazard telegraph is live. One `MusicDirector` autoload, headless early-return, ≤3 MB total. Acceptance and rationale on BOARD 12:48. Not started; f is not adding music files while the juice lane is open. |
+| Music bed — Balatro-style reactive loop | **CLAIMED — ECHO** (15:00) | 3 seamless OGG loops on a shared tempo (title / sector / debrief, report reuses debrief), 2 s crossfade on screen change, duck ~6 dB while a hazard telegraph is live. One `MusicDirector` autoload, headless early-return, ≤3 MB total. Spec, model choice, prompts and seam/LUFS acceptance in `docs/AUDIO.md`. Blocked on user approval for the 3.46 GB Stable Audio 3 Small-Music download; nothing generated yet. |
 
 | Shareable **full design** code (loadout import) | **DONE** | `OO-01156-S2-PAVMOLOA-SPTH` round-trips to seed 4438 / Standard / 2 players / Pathfinder / Vector M / Low / Characterize Atmosphere / Spectrometer + Thermal; short `OO-xxxxx-S1` codes still work |
 | Design-screen header overlap fix | **DONE** | `MISSION DESIGN // 01 · STEP 1 OF 3` is now one line; the old step label was being covered by the panels (`qa_director3.png`) |
+
+## ECHO — music lane (claimed 15:00)
+
+`docs/AUDIO.md` is the lane doc: research verdict, engine matrix, prompt recipes,
+loop-mastering contract, runtime contract, hardware reality.
+
+| Task | Status | Notes |
+|---|---|---|
+| ComfyUI soundtrack research | **DONE 15:00** | Verdict: yes for source material, no for finished loops. SA3 wins instrumental quality + tempo/key adherence (61% / 64% vs ACE at chance); ACE wins songs/vocals/MIT. Numbers and sources in `docs/AUDIO.md` §1–2. |
+| Engine choice (SA3 Small-Music primary) | **DONE 15:00** | 3.46 GB total, 100 BPM / A minor / 32-bar loops (76.8 s), −16 LUFS, OGG q3 ≤ 2.8 MB. Decision rationale in §2. |
+| SA3 Small-Music download | **BLOCKED — needs user OK** | 2.27 GB checkpoint + 1.19 GB t5gemma; disk fine (124 GB), RAM tight (~1.3 GB available). Do not start without approval. |
+| `tools/make_music_loop.py` | **TODO** | Bar-aligned trim, wrap-around crossfade, two-pass loudnorm, numeric seam check, OGG q3 + JSON sidecar. Contract §5. |
+| Generate + master 3 cues | **TODO** | Prompt recipes §4. Post seam delta / LUFS / true peak for each. |
+| `MusicDirector` autoload | **TODO** | §6 contract; headless safe; owns the duck hook. |
+| Web export + size check | **TODO** | ≤3 MB music growth in `build/web` and the submission ZIP. |
 
 ## Structure scale & grandeur pass (NOVA request, 13:38)
 
