@@ -8,6 +8,7 @@ var share_line: Label
 
 
 func _ready() -> void:
+	MusicDirector.play("report")
 	score = GameState.calculate_score()
 	share_code = str(score.get("share_code", CrewDirector.code_for_run()))
 	CrewDirector.note_report_score(int(score.get("total", 0)))

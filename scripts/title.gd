@@ -5,6 +5,7 @@ var ranks_layer: Control
 
 
 func _ready() -> void:
+	MusicDirector.play("title")
 	var bg := SpaceBackdrop.new()
 	add_child(bg)
 	bg.configure({

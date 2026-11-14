@@ -7,6 +7,7 @@ Writes 44.1 kHz mono 16-bit WAVs to assets/audio/:
 
   move.wav     ~0.13 s  tiny servo + latch tick, played once per committed path
   hazard.wav   ~0.26 s  low impact thud + noise burst, hazard hit / overheat
+  deny.wav     ~0.10 s  muted two-step buzz, blocked move (rock, water, edge)
 
 The point is reproducibility: one command rebuilds the files, and the recipe is
 here rather than buried in a DAW project. Keep both cues short and quiet; the
@@ -98,7 +99,25 @@ def make_hazard():
     return _write("hazard.wav", _edge_fade(_normalize(out, 0.74)))
 
 
+def make_deny():
+    """Two short descending blips: reads as "not that way", not as damage."""
+    dur = 0.10
+    n = int(dur * SR)
+    rng = random.Random(6611)
+    out = []
+    for i in range(n):
+        t = i / SR
+        f = 208.0 - 46.0 * (t / dur)
+        body = math.sin(TWO_PI * f * t)
+        body += 0.28 * math.sin(TWO_PI * f * 2.0 * t)
+        gate = 0.55 + 0.45 * math.cos(TWO_PI * 17.0 * t)
+        grit = rng.uniform(-1.0, 1.0) * 0.10
+        out.append((body * gate + grit) * math.exp(-t / 0.055))
+    return _write("deny.wav", _edge_fade(_normalize(out, 0.34), release=0.02))
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     make_move()
     make_hazard()
+    make_deny()

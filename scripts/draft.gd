@@ -10,6 +10,7 @@ var review_layer: CanvasLayer
 
 
 func _ready() -> void:
+	MusicDirector.play("draft")
 	if GameState.draft.is_empty():
 		GameState.roll_draft()
 	var bg := SpaceBackdrop.new()

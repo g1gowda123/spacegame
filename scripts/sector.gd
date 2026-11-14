@@ -112,6 +112,7 @@ var result_layer: Control
 
 
 func _ready() -> void:
+	MusicDirector.play("sector")
 	sec = GameState.current_sector
 	var args: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
 	if "--debug-transitions" in args:
@@ -545,6 +546,10 @@ func _refresh_status() -> void:
 		pip.visible = not beyond
 		pip.color = UIKit.CYAN if on else Color("#22344a")
 
+	# The bed drops ~6 dB while a telegraph is on screen so the alarm/thud cues
+	# sit above it; it comes back up as soon as the sector is clear or closed.
+	MusicDirector.set_duck(not done and not hazards.is_empty())
+
 	if done:
 		threat_label.text = "SECTOR CLOSED  ·  DEBRIEF READY"
 		threat_label.add_theme_color_override("font_color", UIKit.CYAN if game_over else UIKit.MUTED)
@@ -827,6 +832,7 @@ func _try_move(dir: Vector2i) -> void:
 		return
 	var target := player_cell + dir
 	if not _is_walkable_world(target):
+		GameState.sfx("deny")
 		return
 	_select_cell(target)
 	if path_valid and not path_cells.is_empty():

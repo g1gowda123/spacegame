@@ -32,6 +32,7 @@ var vehicle_requirement: Label
 
 
 func _ready() -> void:
+	MusicDirector.play("design")
 	# Start with a valid, conservative mission so the screen reads as a
 	# spacecraft immediately; QUICK LOADOUT remains a one-click reset and the
 	# player can change every card.

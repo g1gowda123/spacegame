@@ -294,6 +294,7 @@ var audio_confirm: AudioStream
 var audio_alarm: AudioStream
 var audio_move: AudioStream
 var audio_hazard: AudioStream
+var audio_deny: AudioStream
 # A small round-robin pool: a single player cuts the previous cue when two land
 # in the same frame (multi-node pickup, hazard + overheat).
 const AUDIO_VOICES := 4
@@ -340,6 +341,7 @@ func _load_audio() -> void:
 	audio_alarm = _load_ogg("res://assets/audio/alarm.wav")
 	audio_move = _load_ogg("res://assets/audio/move.wav")
 	audio_hazard = _load_ogg("res://assets/audio/hazard.wav")
+	audio_deny = _load_ogg("res://assets/audio/deny.wav")
 	for _i in range(AUDIO_VOICES):
 		var player := AudioStreamPlayer.new()
 		player.bus = "Master"
@@ -363,6 +365,7 @@ func _exit_tree() -> void:
 	audio_alarm = null
 	audio_move = null
 	audio_hazard = null
+	audio_deny = null
 
 
 func sfx(which: String) -> void:
@@ -376,6 +379,9 @@ func sfx(which: String) -> void:
 			stream = audio_move
 			volume_db = -4.0
 		"hazard": stream = audio_hazard
+		"deny":
+			stream = audio_deny
+			volume_db = -5.0
 	if stream != null and not audio_players.is_empty():
 		var player := audio_players[audio_voice % audio_players.size()]
 		audio_voice += 1

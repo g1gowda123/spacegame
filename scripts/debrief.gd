@@ -19,6 +19,7 @@ var _toast_tween: Tween
 
 
 func _ready() -> void:
+	MusicDirector.play("debrief")
 	if GameState.last_result.is_empty():
 		# Safe fallback when opened directly from the editor.
 		GameState.new_run()

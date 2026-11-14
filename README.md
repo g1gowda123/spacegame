@@ -673,7 +673,8 @@ The parts that made it work: a single append-only work log, a task board agents 
 │   ├── sprites/           # Ships, planets, UI art
 │   ├── props/             # Small environmental accents
 │   ├── backgrounds/       # Space plates
-│   ├── audio/             # UI and alert sounds
+│   ├── audio/             # UI, movement, hazard and deny cues
+│   ├── music/             # Three 68.6 s screen loops (OGG, generated)
 │   ├── ui/                # Fonts (SIL OFL) and UI art
 │   └── raw/               # 1024 px generation sources (local only)
 ├── data/
