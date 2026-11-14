@@ -205,6 +205,10 @@ var STRUCTURES: Dictionary = {
 		"path": "res://assets/tilesets/structures/mesa.png",
 		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.40,
 	},
+	"mesa_b": {
+		"path": "res://assets/tilesets/structures/mesa_b.png",
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.34,
+	},
 	"iceberg": {
 		"path": "res://assets/tilesets/structures/iceberg.png",
 		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.30,
@@ -1024,7 +1028,7 @@ func _place_start_landmark() -> void:
 		"volcanic":
 			key = "geyser"
 		"arid":
-			key = "mesa"
+			key = "mesa" if randf() < 0.55 else "mesa_b"
 		"cryo":
 			key = "iceberg"
 		"ocean":
@@ -1034,7 +1038,7 @@ func _place_start_landmark() -> void:
 		"methane":
 			key = "iceberg"
 		"iron":
-			key = "mesa"
+			key = "mesa" if randf() < 0.55 else "mesa_b"
 		"sulfur":
 			key = "geyser"
 		"crystal":
@@ -2601,7 +2605,7 @@ func _rebuild_actors() -> void:
 	)
 	player_shadow.color = Color(0.0, 0.0, 0.0, 0.42)
 	player_shadow.position = player_screen
-	player_shadow.z_index = int(player_screen.y) - 1
+	player_shadow.z_index = 949
 	actor_layer.add_child(player_shadow)
 
 	if player_tex != null:
@@ -2618,7 +2622,7 @@ func _rebuild_actors() -> void:
 			(pb.position.y + pb.size.y) * ps
 		)
 		player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		player_sprite.z_index = int(player_screen.y)
+		player_sprite.z_index = 950
 		actor_layer.add_child(player_sprite)
 
 	# Objective pickups: cyan data nodes, amber relay beacons.

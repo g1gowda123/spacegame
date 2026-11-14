@@ -1,0 +1,54 @@
+{
+  "character": "Chief Engineer's deputy director (mission control briefing)",
+  "files": {
+    "neutral": "res://assets/sprites/crew/director_neutral.png",
+    "smile": "res://assets/sprites/crew/director_smile.png",
+    "stern": "res://assets/sprites/crew/director_stern.png"
+  },
+  "icon": "res://assets/sprites/crew/director_icon.png",
+  "size": [
+    160,
+    240
+  ],
+  "expressions": [
+    "neutral",
+    "smile",
+    "stern"
+  ],
+  "palette": {
+    "ink": "#1b1a17",
+    "navy": "#101826",
+    "orange": "#e4572e",
+    "paper": "#e8dfc8",
+    "teal": "#5f8f8a",
+    "skin": [
+      "#eec8ac",
+      "#d6a888",
+      "#b07e64",
+      "#845846"
+    ],
+    "hair": [
+      "#2e2628",
+      "#463a3a",
+      "#625450"
+    ]
+  },
+  "generation": {
+    "workflow": "tools/gen_asset.py (SDXL base 1.0 + pixel-art-xl 0.45), --no-pixelize",
+    "seed": 4001,
+    "gen_size": [
+      768,
+      1152
+    ],
+    "samples": 24,
+    "cfg": 7.0,
+    "prompt_face": "female space agency deputy director, age 40, short practical dark hair, professional flight jacket with mission patch and headset, three-quarter view",
+    "expression_prompts": {
+      "neutral": "serious competent expression",
+      "smile": "gentle confident smile",
+      "stern": "stern serious frown, concerned"
+    },
+    "raws": "assets/raw/crew/raw_<expression>_4001.png"
+  },
+  "postprocess": "edge flood-fill key (magenta bg also sits in the jacket), magenta->navy uniform retune, blur 0.6, palette lock, hard alpha at 110, 1 px ink contour"
+}

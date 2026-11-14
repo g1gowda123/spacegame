@@ -313,7 +313,7 @@ func _show_mission_review() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	review_layer.add_child(root)
 	var shade := ColorRect.new()
-	shade.color = Color(0.01, 0.02, 0.04, 0.86)
+	shade.color = Color(0.01, 0.02, 0.04, 1.0)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(shade)
 

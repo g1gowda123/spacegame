@@ -29,6 +29,14 @@
       "temperate/water_lake"
     ],
     [
+      "temperate/beach",
+      "temperate/water_lake_deep"
+    ],
+    [
+      "temperate/beach",
+      "temperate/water_lake_shallow"
+    ],
+    [
       "arid/sand",
       "arid/cracked_earth"
     ],

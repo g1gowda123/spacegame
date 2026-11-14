@@ -258,6 +258,7 @@ var owned: Array = []
 var shop_offers: Array = []
 var event_card: Dictionary = {}
 var best_score: int = 0
+var briefing_seen: bool = false
 
 var rng := RandomNumberGenerator.new()
 
@@ -362,6 +363,7 @@ func _load_best() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load("user://orbit_save.cfg") == OK:
 		best_score = int(cfg.get_value("score", "best", 0))
+		briefing_seen = bool(cfg.get_value("briefing", "seen", false))
 
 
 func _save_best(score: int) -> void:
@@ -369,6 +371,17 @@ func _save_best(score: int) -> void:
 		return
 	best_score = score
 	var cfg := ConfigFile.new()
+	cfg.load("user://orbit_save.cfg")
+	cfg.set_value("score", "best", best_score)
+	cfg.set_value("briefing", "seen", briefing_seen)
+	cfg.save("user://orbit_save.cfg")
+
+
+func mark_briefing_seen() -> void:
+	briefing_seen = true
+	var cfg := ConfigFile.new()
+	cfg.load("user://orbit_save.cfg")
+	cfg.set_value("briefing", "seen", true)
 	cfg.set_value("score", "best", best_score)
 	cfg.save("user://orbit_save.cfg")
 
