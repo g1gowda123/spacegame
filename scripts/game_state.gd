@@ -1044,6 +1044,11 @@ func begin_sector(planet: Dictionary) -> void:
 	var base_dv := int(planet["game"]["delta_v"])
 	var dv := int(round(base_dv * (float(s["delta_v"]) / 30.0))) + int(run.get("next_dv", 0)) + int(run.get("crew_dv", 0))
 	var sector_no := int(run.get("sector", 1))
+	# Gentle quadratic run curve: 1.00 / 1.18 / 1.72. Not literal n² (1/4/9
+	# would erase the refit power curve); the square is normalised to the
+	# three-sector campaign. Balatro/Soul Knight both ramp in discrete steps,
+	# so the extra hazard budget at sector 3 is the visible rule change.
+	var threat := 1.0 + 0.18 * pow(float(sector_no - 1), 2.0)
 	var sols := int(planet["game"]["sols"]) - (sector_no - 1) * 2
 	sols = max(18, sols + int(run.get("next_sol", 0)))
 	var integrity := maxi(1, int(s["integrity"]) + int(run.get("next_integrity", 0)) + int(run.get("crew_integrity", 0)) + _buff_int("sector_integrity"))
@@ -1060,6 +1065,7 @@ func begin_sector(planet: Dictionary) -> void:
 	var heat_gain := int(round(float(heat) * 0.11)) - int(s["thermal_res"])
 	heat_gain = int(round(float(heat_gain) * heat_mult))
 	heat_gain += int(run.get("heat_mod", 0))
+	heat_gain = int(round(float(heat_gain) * threat))
 	heat_gain = clampi(heat_gain, 1, 18)
 
 	var power_max := 4 + int(float(s["power_gen"]) / 40.0)
@@ -1100,6 +1106,7 @@ func begin_sector(planet: Dictionary) -> void:
 		"data": _buff_int("start_data"),
 		"thermal_res": int(s["thermal_res"]),
 		"hazard_mod": int(run.get("hazard_mod", 0)),
+		"threat": threat,
 		"status": "active",
 	}
 	# Repair kits bought in the debrief add integrity to the *next* sector. The

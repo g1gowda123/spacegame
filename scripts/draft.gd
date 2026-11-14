@@ -384,6 +384,9 @@ func _show_mission_review() -> void:
 	var flyer := TransferShip.new()
 	flyer.points = pts
 	flyer.accent = Color(1.0, 0.78, 0.30)
+	var hull_path := "res://assets/sprites/ships/%s.png" % str(GameState.hull().get("id", "pathfinder"))
+	if ResourceLoader.exists(hull_path):
+		flyer.ship_texture = load(hull_path) as Texture2D
 	flyer.size = traj.size
 	flyer.position = Vector2.ZERO
 	traj.add_child(flyer)

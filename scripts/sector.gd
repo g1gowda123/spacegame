@@ -644,6 +644,9 @@ func _refresh_status() -> void:
 		return
 	var quota := int(sec["quota"])
 	var base := "TURN %d · RANGE %d" % [turn, _current_range()]
+	var threat := float(sec.get("threat", 1.0))
+	if threat > 1.01:
+		base += " · THREAT %.1fx" % threat
 	if cursor_cell != player_cell:
 		if path_valid:
 			route_label.text = "%s · PATH %d · %d dv · HEAT +%d%s%s" % [
@@ -712,6 +715,8 @@ func _hazard_budget() -> int:
 	if int(sec.get("sector", 1)) >= 2 and turn >= 4:
 		b += 1
 	b += int(sec.get("hazard_mod", 0))
+	# Quadratic tier bonus: sector 3 gets one extra front, sectors 1–2 do not.
+	b += int(floor(pow(float(int(sec.get("sector", 1)) - 1), 2.0) * 0.25))
 	return clampi(b, 1, 4)
 
 

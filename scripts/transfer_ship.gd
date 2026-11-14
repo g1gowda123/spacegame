@@ -102,18 +102,30 @@ func _draw() -> void:
 		var a := 0.18 + 0.30 * float(d.z)
 		draw_rect(Rect2(p, Vector2(1, 1)), Color(0.75, 0.92, 1.0, a), true)
 
-	# Ship: a small delta with a bright outline and a cyan engine flare.
+	# Ship: the authored hull silhouette when available, otherwise a delta.
 	var p := _at(u)
 	var s := 3.9
-	var tri := PackedVector2Array([
-		p + tangent * s * 1.7,
-		p - tangent * s - normal * s * 0.75,
-		p - tangent * s + normal * s * 0.75,
-	])
-	draw_colored_polygon(tri, accent)
-	draw_polyline(tri + PackedVector2Array([tri[0]]),
-		accent.lightened(0.42), 0.9, true)
 	var engine := p - tangent * s * 1.9
+	if ship_texture != null:
+		var target_w := 25.0
+		var k := target_w / maxf(float(ship_texture.get_width()), 1.0)
+		var th := float(ship_texture.get_height()) * k
+		draw_set_transform(p, tangent.angle(), Vector2(k, k))
+		draw_texture_rect(ship_texture, Rect2(
+			-ship_texture.get_width() * 0.5, -ship_texture.get_height() * 0.5,
+			ship_texture.get_width(), ship_texture.get_height()
+		), false)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		engine = p - tangent * (target_w * 0.42)
+	else:
+		var tri := PackedVector2Array([
+			p + tangent * s * 1.7,
+			p - tangent * s - normal * s * 0.75,
+			p - tangent * s + normal * s * 0.75,
+		])
+		draw_colored_polygon(tri, accent)
+		draw_polyline(tri + PackedVector2Array([tri[0]]),
+			accent.lightened(0.42), 0.9, true)
 	var flick := 0.7 + 0.30 * sin(_time * 21.0) + 0.12 * sin(_time * 47.0)
 	draw_circle(engine, 1.6 + 0.9 * flick, Color(0.48, 0.95, 1.0, 0.55))
 	draw_circle(engine, 0.8, Color(1.0, 1.0, 1.0, 0.85))

@@ -85,17 +85,17 @@ func _build_left() -> void:
 		card["button"].pressed.connect(_set_players.bind(n))
 		size_cards[n] = card
 	mode_note = UIKit.mono("2-4 players share one console. 1 is solo.", 7, UIKit.DIM)
-	mode_note.position = Vector2(10, 96)
+	mode_note.position = Vector2(10, 240)
 	mode_note.size = Vector2(174, 14)
 	c.add_child(mode_note)
 
-	c.add_child(_label_at("DIFFICULTY", Vector2(10, 108), 8, UIKit.MUTED))
+	c.add_child(_label_at("DIFFICULTY", Vector2(10, 100), 8, UIKit.MUTED))
 	for i in range(3):
 		var id: String = ["cadet", "standard", "director"][i]
 		var d: Dictionary = CrewDirector.DIFFICULTIES[id]
 		var dull := Color(str(d["color"]))
 		var card := UIKit.option_card(
-			c, Rect2(10, 134 + i * 36, 170, 32),
+			c, Rect2(10, 122 + i * 34, 170, 30),
 			str(d["name"]), "", dull, 9, 7,
 			"x%.2f" % float(d["score"]), false
 		)
@@ -180,6 +180,7 @@ func _label_at(text: String, pos: Vector2, size: int, color: Color) -> Label:
 	var l := UIKit.mono(text, size, color)
 	l.position = pos
 	l.size = Vector2(400, 20)
+	return l
 
 
 func _set_mode(id: String) -> void:
