@@ -9,8 +9,8 @@ extends Node2D
 
 const TILE := 64
 const CHUNK := 16
-const VIEW_W := 24
-const VIEW_H := 18
+const VIEW_W := 18
+const VIEW_H := 40
 const VIEW_PX := Vector2(VIEW_W * TILE, VIEW_H * TILE)
 const VIEW_TILES := 10.0
 const TURNS_START := 36
@@ -677,7 +677,7 @@ func _register_outcrops() -> void:
 			var key := "%s_%s" % [biome, kind]
 			if STRUCTURES.has(key):
 				continue
-			var hero := kind.begins_with("hero")
+			var hero: bool = str(kind).begins_with("hero")
 			STRUCTURES[key] = {
 				"path": "res://assets/tilesets/outcrops/%s.png" % key,
 				"w": 2 if hero else 1,

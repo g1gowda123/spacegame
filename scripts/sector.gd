@@ -287,9 +287,9 @@ func _play_landing() -> void:
 	if done:
 		return
 	var at := _cell_center(player_cell)
-	VFX.beam(vfx_layer, at, Color(0.55, 1.0, 0.92, 0.85), 46.0, 0.5, 9)
+	VFX.beam(vfx_layer, at, Color(0.45, 0.95, 0.88, 0.55), 26.0, 0.34, 9)
 	VFX.dust(vfx_layer, at, Color(0.58, 0.64, 0.56, 0.55), 10, 30.0)
-	VFX.ring(vfx_layer, at, UIKit.CYAN, 30.0, 0.42, 2.0, 8)
+	VFX.ring(vfx_layer, at, UIKit.CYAN, 22.0, 0.38, 1.6, 8)
 
 
 func _spawn_pad_beacon() -> void:
@@ -755,11 +755,18 @@ func _advance_hazards() -> void:
 			h["life"] = int(h["life"]) - 1
 			if int(h["speed"]) > 0:
 				var d: Vector2i = h["dir"]
+				var old_origin: Vector2i = h["origin"]
 				var moved: Array[Vector2i] = []
 				for c in h["cells"]:
 					moved.append(c + d)
 				h["cells"] = moved
 				h["origin"] = Vector2i(h["origin"]) + d
+				if vfx_layer != null:
+					# Trail behind the advancing front so a sweep reads as a
+					# moving threat, not a rectangle that teleported.
+					var col: Color = h["info"]["color"]
+					VFX.dust(vfx_layer, _cell_center(old_origin),
+						Color(col.r, col.g, col.b, 0.45), 5, 16.0)
 		h["age"] = age + 1
 		if int(h["life"]) > 0 and not h["cells"].is_empty():
 			var visible := false
