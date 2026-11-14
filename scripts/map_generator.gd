@@ -2427,11 +2427,11 @@ func _draw_fog() -> void:
 					var d := absi(nx) + absi(ny)
 					if d < near and revealed.has(c + Vector2i(nx, ny)):
 						near = d
-			var fog_alpha := 0.62
+			var fog_alpha := 0.88
 			if near == 1:
-				fog_alpha = 0.38
+				fog_alpha = 0.62
 			elif near == 2:
-				fog_alpha = 0.50
+				fog_alpha = 0.76
 			var poly := Polygon2D.new()
 			poly.polygon = quad
 			poly.color = Color(0.008, 0.014, 0.024, fog_alpha)

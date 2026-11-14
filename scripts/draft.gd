@@ -408,7 +408,7 @@ func _show_mission_review() -> void:
 		+ "SURFACE WINDOW  %d SOLS   ·   DOWNLINK LOSS  -%d%%   ·   %s" % [
 			int(g["sols"]), int(g["comms_loss"]),
 			"3 RELAY BEACONS" if relay else "%d DATA NODES" % int(obj.get("quota", 3))
-		], 6, UIKit.MUTED, false)
+		], 7, UIKit.MUTED)
 	timeline.position = Vector2(12, 162)
 	timeline.size = Vector2(270, 42)
 	timeline.add_theme_constant_override("line_spacing", 1)
@@ -445,14 +445,6 @@ func _show_mission_review() -> void:
 	cml.position = Vector2(seg_x, 158)
 	cml.size = Vector2(288, 12)
 	c.add_child(cml)
-	var note := UIKit.label(
-		"NASA 4-segment model · orbit %s %dkm · %dmin · %d%% eclipse · c-fraction abstracted" % [
-			str(orbit["label"]), int(orbit["alt_km"]), int(orbit["period_min"]), int(orbit["eclipse"])
-		], 6, UIKit.DIM)
-	note.position = Vector2(seg_x, 174)
-	note.size = Vector2(288, 44)
-	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	c.add_child(note)
 
 	var back := UIKit.button("< BACK TO DRAFT", Vector2(112, 24))
 	back.position = Vector2(298, 260)
