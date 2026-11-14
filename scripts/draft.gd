@@ -289,7 +289,6 @@ func _refresh() -> void:
 
 
 func _confirm() -> void:
-	print("DBG confirm sel=%s review=%s" % [str(selected_planet.get("name","-")), str(review_layer != null)])
 	if selected_planet.is_empty() or review_layer != null:
 		return
 	_show_mission_review()
@@ -470,15 +469,11 @@ func _show_mission_review() -> void:
 
 
 func _commit_route() -> void:
-	print("DBG commit enter %s" % str(selected_planet.get("name", "<empty>")))
 	if selected_planet.is_empty():
-		print("DBG commit empty planet")
 		return
 	GameState.begin_sector(selected_planet)
-	print("DBG began sector %s" % str(GameState.current_sector != null))
 	GameState.sfx("confirm")
-	var err := get_tree().change_scene_to_file("res://scenes/sector.tscn")
-	print("DBG change err=%d" % err)
+	get_tree().change_scene_to_file("res://scenes/sector.tscn")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -500,7 +495,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey: print("DBG in key=%d pressed=%s review=%s sel=%s" % [event.keycode, str(event.pressed), str(review_layer != null), str(selected_planet.get("name","-"))])
 	# While the review is open it owns the keyboard. Handled in _input rather
 	# than _unhandled_input so a focused button cannot swallow the key first.
 	if review_layer == null or not (event is InputEventKey) or not event.pressed:
