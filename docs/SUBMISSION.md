@@ -121,7 +121,7 @@ Recorded at 1280×720 as one continuous, deterministic run — not stitched stil
 | 29.4–33.6 → cut to 4.0 s | Debrief: MISSION SUCCESS, grant, approval, shop offers | "Earn grants. Refit. Stack synergies." |
 | → 4.2 s | Final Report: grade A, 4953, three-sector ledger | "Three sectors. One agency. Can you keep the lights on?" |
 
-The shipped cut is **28.47 s** (854 frames at 30 fps). Re-record with `python tools/record_demo.py --godot <godot 4.7.2>`; it captures with Movie Maker (`--fixed-fps 30 --write-movie`), burns the caption bar from `demo/capture/markers.json`, and deletes the intermediate AVI. Voice-over optional; burn in English subtitles if used. If the platform rejects the length, submit the 7-slide deck instead.
+The shipped cut is **25.6 s** (768 frames at 30 fps, H.264, 2.66 MB). It was re-recorded against the `b198202` gate and cut to the live Web flow; the deck is exactly 7 slides. If the platform rejects the length, submit the 7-slide deck instead.
 
 ## 7-slide deck — outline
 
@@ -137,15 +137,15 @@ Do not exceed seven slides.
 
 ## Links to fill on submission day
 
-- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 28.47 s, 2.13 MB.
-- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 22,434,185 B (`index.pck` 14,834,324 B, `index.wasm` 39,514,754 B).
+- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 25.6 s, 2.66 MB.
+- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 31,741,919 B (`index.pck` 24,631,896 B, `index.wasm` 39,514,754 B).
 - **Local run:** `cd build/web && python3 -m http.server 8060`, then open `http://localhost:8060`.
-- **Build state:** the Web build is from `88a7d77` (post-gate art + audit pass), rebuilt 16:19. Rebuild with one command — `tools/release.sh` on the Linux release box or `python tools/release.py` on Windows, both do import → export → zip → sha256 → HTTP smoke → `build/RELEASE.txt` — then verify the flow with `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`. A fresh clone with new art **must** run the import pass (`godot --headless --path . --import`, or just let either release script do it) or the sector tileset ships with missing textures. The demo video is one build behind: it was captured on `6516a23`, so re-record before shipping if the art in the video matters.
-- **Hosting note:** the ZIP is 22.0 MB. GitHub Pages and itch.io are fine; a host with a 20 MB upload cap needs the 14.3 MB PCK trimmed first.
+- **Build state:** `submission/orbit_outplay_web.zip` was repacked at 19:35 from the 19:26 `build/web` (PCK md5 `5532950`); `build/RELEASE.txt` records its hashes. Rebuild with one command — `tools/release.sh` on the Linux release box or `python tools/release.py` on Windows, both do import → export → zip → sha256 → HTTP smoke → `build/RELEASE.txt` — then verify the flow with `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`. A fresh clone with new art **must** run the import pass (`godot --headless --path . --import`, or just let either release script do it) or the sector tileset ships with missing textures. Source has advanced past this PCK (precursor ruins/art variants), so take one final gate export before upload if those changes are meant to ship.
+- **Hosting note:** the ZIP is 31.7 MB. GitHub Pages and itch.io are fine; a host with a 20 MB upload cap needs the PCK trimmed or a different host.
 
 ## Final submission checklist
 
-- [ ] Demo is ≤30.0 s (current: **28.47 s**, 854 frames) or deck is ≤7 slides (current: **7**).
+- [ ] Demo is ≤30.0 s (current: **25.6 s**, 768 frames) or deck is ≤7 slides (current: **7**).
 - [ ] Project page has name, summary, demo link, final project link, detailed description, NASA data, SI use, references.
 - [ ] NASA data is named explicitly: Exoplanet Archive **PSCompPars** (`pscomppars`), with the Chen & Kipping (2017) mass–radius reference.
 - [ ] Build loads from a plain static host over HTTP(S); no server code, no install, no account.

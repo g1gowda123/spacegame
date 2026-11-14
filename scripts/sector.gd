@@ -1071,7 +1071,7 @@ func _run_fx_demo(kind: String) -> void:
 			# Deterministic hazard strike on the player for reviewing the
 			# disaster beat (banner + edge flash + pause + aftermath).
 			var h := {
-				"kind": "thermal", "info": HAZARDS["thermal"],
+				"kind": "quake", "info": HAZARDS["quake"],
 				"cells": [player_cell, player_cell + Vector2i(1, 0),
 					player_cell + Vector2i(0, 1), player_cell + Vector2i(1, 1)],
 				"origin": player_cell, "shape": "block", "dir": Vector2i.ZERO,

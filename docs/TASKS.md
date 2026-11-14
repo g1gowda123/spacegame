@@ -475,4 +475,4 @@ only. Nothing here was runtime- or visually verified.
 
 | Difficulty curve: normalized quadratic across sectors (1.00 / 1.18 / 1.72), heat scale + sector-3 extra front | **DONE 19:35** | NOVA | `scripts/game_state.gd` `threat`, `scripts/sector.gd` `_hazard_budget`; evidence `--screen=flowtest` 4945/A |
 
-| Precursor ruins: rare alien landmark (1/sector max), flat/ground variant preferred, no industrial forms | **APPROVED 19:40** | ATLAS wire / VEGA art | VEGA assets `structures/precursor_*` + manifest ready; do not spawn as outposts |
+| Precursor/alien ruins | **CANCELLED 19:42** | — | Boss: remove alien sectors. Assets stay unused/quarantined; do not wire into normal runs. |
