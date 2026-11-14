@@ -435,6 +435,7 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color("#0f0e14"))
 	ui_rng.randomize()
 	_parse_cli()
+	_register_outcrops()
 	capture_requested = (
 		"--capture" in OS.get_cmdline_args()
 		or "--capture" in OS.get_cmdline_user_args()
@@ -488,12 +489,14 @@ func _parse_cli() -> void:
 			cli_hide_ui = true
 		elif arg == "--debug-transitions":
 			debug_transitions = true
+		elif arg == "--smooth-edges":
+			edge_mode = 2
 		elif arg == "--no-soft-edges":
-			soft_edges_enabled = false
+			edge_mode = 0
 		elif arg == "--rect" or arg == "--no-circle":
 			circle_view = false
-		elif arg == "--no-relief":
-			relief_enabled = false
+		elif arg == "--relief":
+			relief_enabled = true
 		elif arg == "--legacy-water":
 			# Agent b: leaves the 1-cell halo and the old 3x3-only smoothing,
 			# i.e. the pre-coalescing shoreline, for side-by-side evidence.
@@ -663,6 +666,25 @@ func _save_capture(path: String) -> void:
 		return
 	var err := img.save_png(path)
 	print("capture: ", ProjectSettings.globalize_path(path), " (err=", err, ")")
+
+
+func _register_outcrops() -> void:
+	# W6 art is one hero + two supporting silhouettes per biome key. Register
+	# them as normal structure defs so culling, contact shadows and y-sorting
+	# come from the same path as every other landmark.
+	for biome in ["temperate", "arid", "cryo", "volcanic", "ocean", "barren"]:
+		for kind in ["hero", "hero_b", "sup_a", "sup_b"]:
+			var key := "%s_%s" % [biome, kind]
+			if STRUCTURES.has(key):
+				continue
+			var hero := kind.begins_with("hero")
+			STRUCTURES[key] = {
+				"path": "res://assets/tilesets/outcrops/%s.png" % key,
+				"w": 2 if hero else 1,
+				"h": 2 if hero else 1,
+				"occludes": hero,
+				"sprite_scale": 0.92 if hero else 1.0,
+			}
 
 
 func _build_tileset() -> void:
@@ -2195,6 +2217,12 @@ func _generate_chunk_structures(coord: Vector2i, arr: Array, b: Dictionary) -> A
 	):
 		_place_outpost(out, occupied, arr, allowed, coord, crng)
 
+	# W6: one hero silhouette (plus two supporting pieces) in the start chunk.
+	# Keeping it to the opening chunk makes it a place, not wallpaper repeated
+	# in every 16×16 cell.
+	if coord == _world_to_chunk(player_cell):
+		_place_outcrop_cluster(coord, arr, out, occupied, allowed, biome_id, crng)
+
 	# One additional natural feature keeps chunks from having a single motif.
 	# Barren is deliberately sparser: impact_crater is the hero, and mesas are
 	# punctuation, not a field of stamps.
@@ -2210,6 +2238,29 @@ func _generate_chunk_structures(coord: Vector2i, arr: Array, b: Dictionary) -> A
 			if _append_structure(out, occupied, arr, allowed, coord, key, lx, ly):
 				break
 	return out
+
+
+func _place_outcrop_cluster(
+	coord: Vector2i, arr: Array, out: Array, occupied: Array,
+	allowed: Array, biome_id: String, rng: RandomNumberGenerator
+) -> void:
+	var key := _decal_biome()
+	if key == "" or not STRUCTURES.has(key + "_hero"):
+		return
+	var pieces := [key + "_hero", key + "_sup_a", key + "_sup_b"]
+	for piece in pieces:
+		var info: Dictionary = STRUCTURES[piece]
+		var w: int = int(info["w"])
+		var h: int = int(info["h"])
+		for attempt in range(28):
+			var lx := rng.randi_range(2, maxi(2, CHUNK - w - 2))
+			var ly := rng.randi_range(2, maxi(2, CHUNK - h - 2))
+			var gx := coord.x * CHUNK + lx
+			var gy := coord.y * CHUNK + ly
+			if gx <= player_cell.x + 2 and gx + w >= player_cell.x - 2 and gy <= player_cell.y + 2 and gy + h >= player_cell.y - 2:
+				continue
+			if _append_structure(out, occupied, arr, allowed, coord, str(piece), lx, ly):
+				break
 
 
 func _chunk_seed(coord: Vector2i) -> int:
@@ -3562,7 +3613,7 @@ func _apply_biome_tint() -> void:
 	shader_mat.set_shader_parameter("biome_tint", c)
 	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
 	shader_mat.set_shader_parameter("exposure", float(b.get("exposure", 1.0)))
-	shader_mat.set_shader_parameter("soft_edges", soft_edges_enabled)
+	shader_mat.set_shader_parameter("edge_mode", edge_mode)
 	shader_mat.set_shader_parameter("relief", relief_enabled)
 
 

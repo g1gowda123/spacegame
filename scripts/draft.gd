@@ -387,7 +387,7 @@ func _show_mission_review() -> void:
 	moving.color = Color(1.0, 0.78, 0.30, 0.95)
 	traj.add_child(moving)
 	var e1 := UIKit.label("EARTH", 5, UIKit.DIM, true)
-	e1.position = Vector2(8, 99)
+	e1.position = Vector2(8, 96)
 	e1.size = Vector2(46, 8)
 	traj.add_child(e1)
 	var e2 := UIKit.label(str(p["name"]).to_upper(), 5, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -416,10 +416,10 @@ func _show_mission_review() -> void:
 	# ---- four mission segments (Design and Develop Science Missions)
 	var seg_x := 298.0
 	var segs := [
-		["LAUNCH", "%s · %dKG CAP" % [str(veh.get("name", "—")).to_upper(), int(veh.get("capacity", 0))], UIKit.CYAN],
-		["SPACE", "%s · %d INSTR · %dW" % [str(GameState.hull().get("name", "—")).to_upper(), GameState.run.get("instruments", []).size(), int(ship.get("power_gen", 0))], UIKit.GREEN],
-		["GROUND", "-%d%% DOWNLINK · %d PASSES/DAY" % [int(g["comms_loss"]), int(orbit["passes"])], UIKit.AMBER],
-		["USER", "%s%s" % [str(obj.get("name", "—")).to_upper(), " · FIT +10%" if bool(ship.get("science_fit", false)) else ""], UIKit.PURPLE],
+		["LAUNCH", "%s · %dKG CAP" % [str(veh.get("name", "—")).to_upper(), int(veh.get("capacity", 0))], UIKit.TEXT],
+		["SPACE", "%s · %d INSTR · %dW" % [str(GameState.hull().get("name", "—")).to_upper(), GameState.run.get("instruments", []).size(), int(ship.get("power_gen", 0))], UIKit.TEXT],
+		["GROUND", "-%d%% DOWNLINK · %d PASSES/DAY" % [int(g["comms_loss"]), int(orbit["passes"])], UIKit.TEXT],
+		["USER", "%s%s" % [str(obj.get("name", "—")).to_upper(), " · FIT +10%" if bool(ship.get("science_fit", false)) else ""], UIKit.TEXT],
 	]
 	for i in range(segs.size()):
 		var y := 44.0 + i * 27.0
@@ -447,7 +447,7 @@ func _show_mission_review() -> void:
 	var note := UIKit.label(
 		"NASA 4-segment model · orbit %s %dkm · %dmin · %d%% eclipse · c-fraction abstracted" % [
 			str(orbit["label"]), int(orbit["alt_km"]), int(orbit["period_min"]), int(orbit["eclipse"])
-		], 5, UIKit.DIM, false)
+		], 6, UIKit.DIM)
 	note.position = Vector2(seg_x, 174)
 	note.size = Vector2(288, 44)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

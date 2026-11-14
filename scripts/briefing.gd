@@ -247,9 +247,9 @@ func _build() -> void:
 	body.add_theme_constant_override("line_spacing", 1)
 	dialogue.add_child(body)
 
-	var hint := UIKit.label("SPACE / CLICK TO CONTINUE", 5, TEAL, true)
-	hint.position = Vector2(12, 74)
-	hint.size = Vector2(220, 10)
+	var hint := UIKit.mono("SPACE / CLICK TO CONTINUE", 7, TEAL)
+	hint.position = Vector2(12, 72)
+	hint.size = Vector2(220, 14)
 	dialogue.add_child(hint)
 
 	next_btn = _paper_button("NEXT  >", Vector2(78, 20), true)
@@ -336,13 +336,14 @@ func _build_name_prompt() -> void:
 	submit.pressed.connect(_submit_name)
 	sheet.add_child(submit)
 
-	var hint := UIKit.label("THIS NAME GOES ON THE MISSION RECORD AND THE HONOURS BOARD.", 5, TEAL, true)
-	hint.position = Vector2(18, 148)
-	hint.size = Vector2(384, 8)
+	var hint := UIKit.mono("THIS NAME GOES ON THE MISSION RECORD AND THE HONOURS BOARD.",
+		6, Color("#4a4438"))
+	hint.position = Vector2(18, 146)
+	hint.size = Vector2(384, 9)
 	sheet.add_child(hint)
-	var key_hint := UIKit.label("ENTER TO FILE  ·  ESC TO USE 'CHIEF'", 5, UIKit.DIM, true)
-	key_hint.position = Vector2(18, 164)
-	key_hint.size = Vector2(384, 8)
+	var key_hint := UIKit.mono("ENTER TO FILE  ·  ESC TO USE 'CHIEF'", 6, Color("#6b5f4c"))
+	key_hint.position = Vector2(18, 160)
+	key_hint.size = Vector2(384, 9)
 	sheet.add_child(key_hint)
 
 	name_edit.call_deferred("grab_focus")

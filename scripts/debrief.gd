@@ -438,7 +438,7 @@ func _show_event() -> void:
 		btn.pressed.connect(_on_event_choice.bind(i))
 		rc.add_child(btn)
 
-	var hint := UIKit.label("This choice carries into the next sector.", 6, UIKit.DIM, true,
+	var hint := UIKit.mono("This choice carries into the next sector.", 7, UIKit.DIM,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	hint.position = Vector2(14, 244)
 	hint.size = Vector2(420, 12)

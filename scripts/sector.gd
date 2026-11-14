@@ -73,6 +73,8 @@ var fx_layer: Node2D
 var vfx_layer: Node2D
 var pad_beacon: VFX.RingNode
 var fx_root: Control
+var _state_overlay: ColorRect
+var _state_mat: ShaderMaterial
 var _impact_flash: ColorRect
 
 var name_label: Label
@@ -150,6 +152,16 @@ func _ready() -> void:
 	fx_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fx_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fx_canvas.add_child(fx_root)
+	# Persistent state overlay (low hull / heat) sits below the one-shot hit
+	# flash so a hit still whites out the screen.
+	_state_overlay = ColorRect.new()
+	_state_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_state_overlay.color = Color(1, 1, 1, 0)
+	_state_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_state_mat = ShaderMaterial.new()
+	_state_mat.shader = load("res://shaders/screen_state.gdshader") as Shader
+	_state_overlay.material = _state_mat
+	fx_root.add_child(_state_overlay)
 	_impact_flash = ColorRect.new()
 	_impact_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_impact_flash.color = Color(1, 0.2, 0.15, 0)
@@ -265,6 +277,19 @@ func _start_sector() -> void:
 	_refresh_all()
 	_draw_move_preview()
 	_spawn_pad_beacon()
+	_play_landing()
+
+
+func _play_landing() -> void:
+	if vfx_layer == null:
+		return
+	await get_tree().create_timer(0.06).timeout
+	if done:
+		return
+	var at := _cell_center(player_cell)
+	VFX.beam(vfx_layer, at, Color(0.55, 1.0, 0.92, 0.85), 46.0, 0.5, 9)
+	VFX.dust(vfx_layer, at, Color(0.58, 0.64, 0.56, 0.55), 10, 30.0)
+	VFX.ring(vfx_layer, at, UIKit.CYAN, 30.0, 0.42, 2.0, 8)
 
 
 func _spawn_pad_beacon() -> void:
@@ -500,6 +525,18 @@ func _refresh_status() -> void:
 		hc = UIKit.AMBER
 	UIKit.set_bar_color(heat_bar, hc)
 	heat_val.add_theme_color_override("font_color", hc)
+
+	if _state_mat != null:
+		var hull_now := int(sec["integrity"])
+		var low := 0.0
+		if hull_now <= 1:
+			low = 1.0
+		elif hull_now == 2:
+			low = 0.45
+		_state_mat.set_shader_parameter("screen_size", get_viewport_rect().size)
+		_state_mat.set_shader_parameter("low_hull", low)
+		_state_mat.set_shader_parameter("heat", clampf((float(sec["thermal"]) - 68.0) / 32.0, 0.0, 1.0))
+		_state_mat.set_shader_parameter("alert", 1.0 if done else 0.0)
 
 	for i in range(power_pips.size()):
 		var pip: ColorRect = power_pips[i]
