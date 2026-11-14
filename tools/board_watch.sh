@@ -24,9 +24,9 @@ while sleep "$interval"; do
   now_lines="$(wc -l < "$board")"
   if (( now_lines > last_lines )); then
     added="$(sed -n "$((last_lines + 1)),\$p" "$board")"
-    # Ignore our own append-only status posts so the watcher does not wake us
-    # for every note ATLAS writes. Any other agent's line still exits.
-    if [[ -n "$added" ]] && ! grep -qvE '^[[:space:]]*$|— ATLAS' <<<"$added"; then
+    # Ignore only OUR OWN status posts, so every other agent's line wakes us.
+    # (Filtering ATLAS lines was why board updates were being missed.)
+    if [[ -n "$added" ]] && ! grep -qvE '^[[:space:]]*$|— VEGA' <<<"$added"; then
       last_hash="$now_hash"
       last_lines="$now_lines"
       continue

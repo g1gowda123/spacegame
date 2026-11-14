@@ -282,13 +282,40 @@ func _on_buy(idx: int) -> void:
 		return
 	var up: Dictionary = GameState.shop_offers[idx]
 	if GameState.buy_offer(idx):
-		_show_toast("INSTALLED  %s  ·  SHIP UPDATED" % str(up["name"]), UIKit.GREEN)
+		var info := GameState.consume_last_upgrade()
+		var delta := str(info.get("text", ""))
+		var line := "INSTALLED  %s" % str(up["name"])
+		if not delta.is_empty():
+			line += "  ·  " + delta
+		_show_toast(line, UIKit.GREEN)
 		_refresh_shop()
 		_refresh_ship()
 		if ship_diagram != null:
 			ship_diagram.flash_build()
+		_show_upgrade_pop(delta)
 	else:
 		_show_toast("INSUFFICIENT GRANTS", UIKit.RED)
+
+
+func _show_upgrade_pop(text: String) -> void:
+	## A short rising stat tag on the ship card: the purchase should read as a
+	## change to the craft, not only a line of toast at the bottom.
+	if text.is_empty() or build_label == null:
+		return
+	var parent := build_label.get_parent()
+	if parent == null:
+		return
+	var pop := UIKit.label(text, 8, UIKit.GREEN, true)
+	pop.position = build_label.position + Vector2(0, -12)
+	pop.size = Vector2(280, 14)
+	parent.add_child(pop)
+	pop.move_to_front()
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(pop, "position:y", pop.position.y - 10, 0.75) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(pop, "modulate:a", 0.0, 0.55).set_delay(0.35)
+	tw.chain().tween_callback(pop.queue_free)
 
 
 func _refresh_ship() -> void:

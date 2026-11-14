@@ -278,6 +278,7 @@ var last_result: Dictionary = {}
 var history: Array = []
 var owned: Array = []
 var shop_offers: Array = []
+var last_upgrade: Dictionary = {}
 var event_card: Dictionary = {}
 var best_score: int = 0
 var briefing_seen: bool = false
@@ -534,6 +535,7 @@ func new_run() -> void:
 	history = []
 	owned = []
 	shop_offers = []
+	last_upgrade = {}
 	roll_draft()
 	changed.emit()
 
@@ -1358,14 +1360,99 @@ func buy_offer(index: int) -> bool:
 	if float(run["budget"]) < cost:
 		sfx("alarm")
 		return false
+	var before := ship()
 	run["budget"] = float(run["budget"]) - cost
 	owned.append(str(up["id"]))
 	if up.has("repair"):
 		run["next_integrity"] = int(run.get("next_integrity", 0)) + int(up["repair"])
+	var after := ship()
+	var deltas := _upgrade_deltas(before, after, up)
+	last_upgrade = {
+		"id": str(up["id"]), "name": str(up["name"]),
+		"deltas": deltas, "text": " · ".join(deltas),
+	}
 	shop_offers.remove_at(index)
 	sfx("confirm")
 	changed.emit()
 	return true
+
+
+func consume_last_upgrade() -> Dictionary:
+	var u := last_upgrade
+	last_upgrade = {}
+	return u
+
+
+func _upgrade_deltas(before: Dictionary, after: Dictionary, up: Dictionary) -> Array:
+	## Turn a purchase into the exact stat change the player just bought.
+	var out: Array = []
+	var pairs := [
+		["power_regen", "POWER", 1.0],
+		["thermal_res", "HEAT RES", 1.0],
+		["delta_v", "ΔV", 1.0],
+		["integrity", "HULL", 1.0],
+		["data_cap", "DATA", 1.0],
+		["comms_bonus", "COMMS", 1.0],
+		["science_mult", "SCIENCE", 100.0],
+		["grant_mult", "GRANT", 100.0],
+		["move_range", "RANGE", 1.0],
+	]
+	for p in pairs:
+		var key := str(p[0])
+		var d := float(after.get(key, 0.0)) - float(before.get(key, 0.0))
+		var n := int(round(d * float(p[2])))
+		if n != 0:
+			out.append(("+%d " if n > 0 else "%d ") % n + str(p[1]))
+	var repair := int(up.get("repair", 0))
+	if repair != 0:
+		out.append("+%d HULL NEXT" % repair)
+	var vent := int(up.get("vent_power", 0))
+	if vent != 0:
+		out.append("+%d VENT" % vent)
+	return out
+
+
+func rig_summary(max_lines: int = 3) -> Dictionary:
+	## Aggregate the installed refit modules into short, human-readable bonuses.
+	## Used at sector start so upgrades are felt again after the shop closes.
+	var totals := {}
+	for uid in owned:
+		var up := _upgrade_by_id(str(uid))
+		if up.is_empty():
+			continue
+		for key in ["power_regen", "thermal_res", "dv", "integrity",
+				"data_cap", "comms_bonus", "science", "grant", "move_range",
+				"repair", "vent_power"]:
+			if up.has(key):
+				totals[key] = float(totals.get(key, 0.0)) + float(up[key])
+	var lines: Array = []
+	var keys: Array = []
+	if int(totals.get("dv", 0)) != 0:
+		lines.append("+%d ΔV" % int(totals["dv"])); keys.append("delta_v")
+	if int(totals.get("power_regen", 0)) != 0:
+		lines.append("+%d POWER" % int(totals["power_regen"])); keys.append("power_regen")
+	if int(totals.get("thermal_res", 0)) != 0:
+		lines.append("+%d HEAT RES" % int(totals["thermal_res"])); keys.append("thermal_res")
+	if int(totals.get("integrity", 0)) != 0:
+		lines.append("+%d HULL" % int(totals["integrity"])); keys.append("integrity")
+	if int(totals.get("data_cap", 0)) != 0:
+		lines.append("+%d DATA" % int(totals["data_cap"])); keys.append("data_cap")
+	if int(totals.get("comms_bonus", 0)) != 0:
+		lines.append("+%d COMMS" % int(totals["comms_bonus"])); keys.append("comms_bonus")
+	if float(totals.get("science", 0.0)) != 0.0:
+		lines.append("+%d%% SCIENCE" % int(round(float(totals["science"]) * 100.0))); keys.append("science")
+	if float(totals.get("grant", 0.0)) != 0.0:
+		lines.append("+%d%% GRANT" % int(round(float(totals["grant"]) * 100.0))); keys.append("grant")
+	if int(totals.get("move_range", 0)) != 0:
+		lines.append("+%d RANGE" % int(totals["move_range"])); keys.append("move_range")
+	if int(totals.get("repair", 0)) != 0:
+		lines.append("+%d HULL NEXT" % int(totals["repair"])); keys.append("repair")
+	if int(totals.get("vent_power", 0)) != 0:
+		lines.append("+%d VENT" % int(totals["vent_power"])); keys.append("vent_power")
+	if lines.size() > max_lines:
+		lines.resize(max_lines)
+		keys.resize(max_lines)
+	return {"lines": lines, "keys": keys}
 
 
 # ------------------------------------------------------------------ score

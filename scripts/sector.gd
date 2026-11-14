@@ -102,9 +102,13 @@ var move_btn: Button
 var lz_flag: Polygon2D
 var lz_mast: Line2D
 var lz_beam: Line2D
+var extract_beam: Line2D
+var extract_flag: Polygon2D
+var extract_pad: Node2D
 
 var turn := 1
 var start_cell := Vector2i.ZERO
+var extract_cell := Vector2i.ZERO
 var moved := false
 var move_range := 3
 var cursor_cell := Vector2i.ZERO
@@ -203,6 +207,12 @@ func _ready() -> void:
 			if parts.size() == 2:
 				_select_cell(player_cell + Vector2i(int(parts[0]), int(parts[1])))
 				_execute_path()
+		elif arg == "--extract-test":
+			# QA hook: stand on the chosen extraction pad with a full hold and
+			# exercise the real `_extract()` path, including its return check.
+			player_cell = extract_cell
+			sec["data"] = int(sec["quota"])
+			_extract()
 		elif arg == "--result=success":
 			sec["data"] = 4
 			_end(true, "SURVEY COMPLETE")
@@ -284,14 +294,37 @@ func _start_sector() -> void:
 	revealed.clear()
 	_reveal_around(player_cell, 5)
 	_spawn_hazard()
+	_choose_extract_cell()
 	_update_chunks()
 	_render_window()
 	_refresh_all()
 	_draw_move_preview()
 	_spawn_pad_beacon()
 	_play_landing()
+	_show_rig_feedback()
 	if bool(sec.get("shakedown", false)):
-		_show_toast("SHAKEDOWN // +2 HULL · RANGE %d" % move_range, UIKit.CYAN)
+		_show_toast("SHAKEDOWN // +2 HULL · RANGE %d · CYAN PAD = EXTRACT" % move_range, UIKit.CYAN)
+	elif extract_cell != start_cell:
+		_show_toast("EXTRACTION PAD MARKED · CYAN", UIKit.CYAN)
+
+
+func _show_rig_feedback() -> void:
+	## Re-state the refit bonuses at the start of every sector so paid upgrades
+	## do not disappear into the debrief screen.
+	var rig := GameState.rig_summary(3)
+	var lines: Array = rig["lines"]
+	if lines.is_empty():
+		return
+	_float_text("RIG ONLINE  " + " · ".join(lines), player_cell, UIKit.GREEN)
+	if "--debug-rig" in OS.get_cmdline_user_args():
+		print("RIGFEED ", " · ".join(lines))
+	var keys: Array = rig["keys"]
+	if keys.has("delta_v"):
+		_pulse(dv_label, UIKit.GREEN)
+	if keys.has("integrity"):
+		_pulse(int_label, UIKit.GREEN)
+	if keys.has("thermal_res"):
+		_pulse(heat_val, UIKit.GREEN)
 
 
 func _play_landing() -> void:
@@ -309,26 +342,22 @@ func _play_landing() -> void:
 func _spawn_pad_beacon() -> void:
 	if vfx_layer == null:
 		return
-	if pad_beacon != null and is_instance_valid(pad_beacon):
-		pad_beacon.queue_free()
-	if lz_flag != null and is_instance_valid(lz_flag):
-		lz_flag.queue_free()
-	var mast := Line2D.new()
-	mast.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -28)])
-	mast.width = 2.0
-	mast.default_color = Color(0.33, 0.90, 0.82, 0.62)
-	mast.position = _cell_center(start_cell)
-	vfx_layer.add_child(mast)
-	var beam := Line2D.new()
-	beam.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -58)])
-	beam.width = 3.0
-	beam.default_color = Color(1.0, 0.69, 0.0, 0.38)
-	beam.position = _cell_center(start_cell)
-	vfx_layer.add_child(beam)
+	for n in [pad_beacon, lz_flag, lz_mast, lz_beam, extract_pad, extract_flag, extract_beam]:
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+	lz_mast = Line2D.new()
+	lz_mast.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -28)])
+	lz_mast.width = 2.0
+	lz_mast.default_color = Color(0.33, 0.90, 0.82, 0.62)
+	vfx_layer.add_child(lz_mast)
+	lz_beam = Line2D.new()
+	lz_beam.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -58)])
+	lz_beam.width = 3.0
+	lz_beam.default_color = Color(1.0, 0.69, 0.0, 0.38)
+	vfx_layer.add_child(lz_beam)
 	lz_flag = Polygon2D.new()
 	lz_flag.polygon = PackedVector2Array([Vector2(0, 0), Vector2(18, -7), Vector2(0, -14)])
 	lz_flag.color = Color(1.0, 0.69, 0.0, 0.95)
-	lz_flag.position = _cell_center(start_cell) + Vector2(0, -44)
 	vfx_layer.add_child(lz_flag)
 	var ring_tex := load("res://assets/tilesets/fx/lz_ring.png") as Texture2D
 	if ring_tex != null:
@@ -340,11 +369,14 @@ func _spawn_pad_beacon() -> void:
 		pad.position = _cell_center(start_cell)
 		pad.z_index = 2
 		pad.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		pad.modulate = Color(1.0, 1.0, 1.0, 0.72)
+		# Keep the pad readable as ground paint, not a second glowing target
+		# competing with the lander silhouette.
+		pad.scale = Vector2(0.84, 0.84)
+		pad.modulate = Color(1.0, 1.0, 1.0, 0.46)
 		vfx_layer.add_child(pad)
 		pad_beacon = pad
 		var tw := pad.create_tween().set_loops()
-		tw.tween_property(pad, "modulate:a", 0.92, 1.4).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_property(pad, "modulate:a", 0.62, 1.4).set_ease(Tween.EASE_IN_OUT)
 		tw.tween_property(pad, "modulate:a", 0.66, 1.4).set_ease(Tween.EASE_IN_OUT)
 	else:
 		var ring := VFX.RingNode.new()
@@ -362,6 +394,97 @@ func _spawn_pad_beacon() -> void:
 		tw.parallel().tween_property(ring, "ring_color:a", 0.10, 1.1)
 		tw.tween_property(ring, "radius", 17.0, 1.1).set_ease(Tween.EASE_IN_OUT)
 		tw.parallel().tween_property(ring, "ring_color:a", 0.55, 1.1)
+
+	# Extraction pad: picked once near the landing site, cyan so it cannot be
+	# confused with the amber LZ flag. It is the only place the mission ends.
+	if extract_cell != start_cell:
+		extract_beam = Line2D.new()
+		extract_beam.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -48)])
+		extract_beam.width = 2.0
+		extract_beam.default_color = Color(0.28, 1.0, 0.90, 0.34)
+		vfx_layer.add_child(extract_beam)
+		extract_flag = Polygon2D.new()
+		extract_flag.polygon = PackedVector2Array([
+			Vector2(0, 0), Vector2(16, -5), Vector2(16, -13), Vector2(0, -18),
+		])
+		extract_flag.color = Color(0.28, 1.0, 0.90, 0.95)
+		vfx_layer.add_child(extract_flag)
+		if ring_tex != null:
+			var ep := Sprite2D.new()
+			ep.texture = ring_tex
+			ep.centered = true
+			ep.z_index = 2
+			ep.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			ep.modulate = Color(0.45, 1.0, 0.92, 0.78)
+			vfx_layer.add_child(ep)
+			extract_pad = ep
+		else:
+			var er := VFX.RingNode.new()
+			er.z_index = 2
+			er.z_as_relative = true
+			er.radius = 15.0
+			er.width = 1.4
+			er.ring_color = Color(0.28, 1.0, 0.90, 0.62)
+			vfx_layer.add_child(er)
+			extract_pad = er
+	_reposition_pad_beacon()
+
+
+func _reposition_pad_beacon() -> void:
+	# `_render_window()` re-centres the world before `_pan_camera()` slides the
+	# layers. Re-project both fixed pads here so they stay welded to their cells
+	# instead of drifting one cell toward the player on every move.
+	if vfx_layer == null:
+		return
+	var a := _cell_center(start_cell)
+	if lz_mast != null and is_instance_valid(lz_mast):
+		lz_mast.position = a
+	if lz_beam != null and is_instance_valid(lz_beam):
+		lz_beam.position = a
+	if lz_flag != null and is_instance_valid(lz_flag):
+		lz_flag.position = a + Vector2(0, -44)
+	if pad_beacon != null and is_instance_valid(pad_beacon):
+		pad_beacon.position = a
+	var e := _cell_center(extract_cell)
+	if extract_beam != null and is_instance_valid(extract_beam):
+		extract_beam.position = e
+	if extract_flag != null and is_instance_valid(extract_flag):
+		extract_flag.position = e + Vector2(0, -36)
+	if extract_pad != null and is_instance_valid(extract_pad):
+		extract_pad.position = e
+
+
+func _cell_in_hazard(c: Vector2i) -> bool:
+	for h in hazards:
+		if c in h["cells"]:
+			return true
+	return false
+
+
+func _choose_extract_cell() -> void:
+	# Chosen once per sector, near the lander but never on it: the run becomes
+	# a loop out to the samples and back to a marked pad, not a return to the
+	# exact spawn pixel. Deterministic from the world seed.
+	extract_cell = start_cell
+	var reach := _reachable_world_cells()
+	var erng := RandomNumberGenerator.new()
+	erng.seed = seed_value + 991
+	var pool: Array[Vector2i] = []
+	for radius in range(2, 7):
+		for dx in range(-radius, radius + 1):
+			for dy in range(-radius, radius + 1):
+				if maxi(absi(dx), absi(dy)) != radius:
+					continue
+				var c := start_cell + Vector2i(dx, dy)
+				if not reach.has(c) or not _is_walkable_world(c):
+					continue
+				if objectives.has(c) or _cell_in_hazard(c):
+					continue
+				pool.append(c)
+		if not pool.is_empty():
+			break
+	if not pool.is_empty():
+		extract_cell = pool[erng.randi_range(0, pool.size() - 1)]
 
 
 func _build_hud() -> void:
@@ -442,13 +565,13 @@ func _build_hud() -> void:
 		"Hull hits left. At 0 the sector fails.\nBlockable hazards spend shield power; unblockable ones always land.",
 		UIKit.RED)
 	_hover_cell(tc, Rect2(224, 2, 50, 36), "DELTA-V",
-		"Fuel left. Each path tile costs 1 ΔV.\nAt 0 the sector fails; return to the lander to extract.",
+		"Fuel left. Each path tile costs 1 ΔV.\nAt 0 the sector fails; return to the cyan extraction pad to extract.",
 		UIKit.CYAN)
 	_hover_cell(tc, Rect2(276, 2, 44, 36), "SOLS",
 		"Mission window. One sol per move or HOLD.\nAt 0 the sector fails.",
 		UIKit.AMBER)
 	_hover_cell(tc, Rect2(324, 2, 70, 36), "DATA",
-		"Nodes delivered / quota.\nMeet the quota, return to the lander, then EXTRACT.",
+		"Nodes delivered / quota.\nMeet the quota, return to the cyan extraction pad, then EXTRACT.",
 		UIKit.GREEN)
 	_hover_cell(tc, Rect2(400, 2, 100, 36), "THERMAL LOAD",
 		"Heat rises every move. At 100: overload, -1 hull.\nHOLD vents 8 + thermal resistance and burns one sol.",
@@ -1206,7 +1329,7 @@ func _execute_path() -> void:
 		if int(sec["data"]) >= _objective_cap():
 			# All samples are aboard, but the mission is not over: the lander
 			# has to get back to the landing zone before it can extract.
-			message_text = "ALL DATA ABOARD  ·  CARGO HEAVY  ·  RANGE %d" % _current_range()
+			message_text = "ALL DATA ABOARD  ·  RETURN TO CYAN PAD  ·  RANGE %d" % _current_range()
 			message_color = UIKit.GREEN
 			_show_toast(message_text, message_color)
 		# Render each cell and pan one step, so committing a 2-3 tile route
@@ -1450,6 +1573,7 @@ func _visible_structures() -> Array[Dictionary]:
 
 
 func _world_event() -> void:
+	print("WORLD_EVENT ", vfx_layer, " ", done)
 	if vfx_layer == null or done:
 		return
 	# Prefer an authored structure with a readable signature (erupting volcano,
@@ -1460,6 +1584,7 @@ func _world_event() -> void:
 	for s in _visible_structures():
 		if str(s["key"]) in special:
 			pool.append(s)
+	print("POOL ", pool.size())
 	if not pool.is_empty() and rng.randf() < 0.72:
 		var s: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
 		var c := Vector2i(
@@ -1490,6 +1615,7 @@ func _world_event() -> void:
 		return
 	var at := _cell_center(cell)
 	var terrain := _render_terrain_world(cell.x, cell.y)
+	print("CELL ", cell, " at ", at, " terrain ", terrain)
 	if "lava" in terrain:
 		VFX.embers(vfx_layer, at, Color(1.0, 0.55, 0.20, 0.85), 4)
 	elif "water" in terrain:
@@ -1513,6 +1639,7 @@ func _world_event() -> void:
 
 
 func _meteor_event() -> void:
+	print("METEOR_EVENT")
 	if vfx_layer == null or done:
 		return
 	var cell := Vector2i(
@@ -1581,6 +1708,7 @@ func _render_window() -> void:
 	super._render_window()
 	_draw_hazards()
 	_draw_fog()
+	_reposition_pad_beacon()
 
 
 func _hazard_quad(cell: Vector2i) -> PackedVector2Array:
@@ -1661,7 +1789,7 @@ func _draw_hazards() -> void:
 			fill.uv = _hazard_uvs(c)
 			fill.material = mat
 			fx_layer.add_child(fill)
-		_draw_hazard_edges(cells, armed, h.get("dir", Vector2i.ZERO))
+		_draw_hazard_edges(cells, armed, h.get("dir", Vector2i.ZERO), col)
 		if int(h["speed"]) > 0:
 			var origin: Vector2i = h["origin"]
 			var d: Vector2i = h["dir"]
@@ -1694,7 +1822,7 @@ const HAZARD_EDGE_SIDES := [
 ]
 
 
-func _draw_hazard_edges(cells: Array[Vector2i], armed: bool, dir: Vector2i) -> void:
+func _draw_hazard_edges(cells: Array[Vector2i], armed: bool, dir: Vector2i, color: Color) -> void:
 	# The fill says "dangerous cell"; the broken leading edge says "front".
 	# Only the face in the direction of travel is drawn for a sweep, so the
 	# band gets a readable lip instead of a second flat outline all around.
@@ -1712,7 +1840,11 @@ func _draw_hazard_edges(cells: Array[Vector2i], armed: bool, dir: Vector2i) -> v
 				continue
 			if set.has(c + n):
 				continue
-			var tex := load("res://assets/tilesets/fx/%s.png" % str(side[1])) as Texture2D
+			var edge_path := "res://assets/tilesets/fx/%s.png" % str(side[1])
+			var tint_path := edge_path.replace(".png", "_tint.png")
+			if ResourceLoader.exists(tint_path):
+				edge_path = tint_path
+			var tex := load(edge_path) as Texture2D
 			if tex == null:
 				continue
 			var a: Vector2i
@@ -1751,7 +1883,7 @@ func _draw_hazard_edges(cells: Array[Vector2i], armed: bool, dir: Vector2i) -> v
 			edge.uv = uv
 			edge.texture = tex
 			edge.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			edge.modulate = Color(1, 1, 1, 0.82 if armed else 0.30)
+			edge.modulate = Color(color.r, color.g, color.b, 0.82 if armed else 0.30)
 			fx_layer.add_child(edge)
 
 
@@ -2082,8 +2214,8 @@ func _risk_bonus_nearby() -> int:
 func _extract() -> void:
 	if done:
 		return
-	if player_cell != start_cell:
-		message_text = "RETURN TO THE LANDING ZONE TO EXTRACT"
+	if player_cell != extract_cell:
+		message_text = "RETURN TO THE EXTRACTION PAD TO EXTRACT"
 		message_color = UIKit.AMBER
 		_show_toast(message_text, message_color)
 		return
@@ -2098,7 +2230,7 @@ func _extract() -> void:
 	sec["risk_bonus"] = _risk_bonus_nearby()
 	GameState.sfx("confirm")
 	if vfx_layer != null:
-		var at := _cell_center(start_cell)
+		var at := _cell_center(extract_cell)
 		VFX.beam(vfx_layer, at, Color(0.55, 1.0, 0.92, 0.9), 62.0, 0.85, 9)
 		VFX.ring(vfx_layer, at, Color(0.55, 1.0, 0.92, 0.95), 40.0, 0.55, 2.4, 8)
 		VFX.sparks(vfx_layer, at, UIKit.CYAN, 14, 55.0, -40.0, 10)

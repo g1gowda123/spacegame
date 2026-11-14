@@ -986,3 +986,5 @@ to the lane owner.
 - **Buff:** the keyboard hint merged into the milestone line (`1 / 2 / 3 + ENTER`), removing the floating hint that disappeared into the planet; status lines get a dark shadow; `CHOOSE` got a 4 px margin.
 - **Report:** `BEST` no longer reaches the sheet border, `NEXT` is 7 px and clear of the footer, score columns end inside the panel.
 - **Verification:** headless `--quit-after 8` 0 script/parse errors; `--screen=flowtest` `total=5107 grade=A`; clean 640-first captures in `/tmp/opencode/ui_final/ui_*.png` (title, design, draft, crew, buff, report, debrief, sector). Hover verified by emitting `mouse_entered` on the real hosts because `Input.warp_mouse` is unreliable here. The apparent title “strikethrough” was a display/alias artifact — native pixel crops are clean, so no title code changed. `tools/qa/native_screens.py` still flags only the known `title.ogg` exit leak.
+
+- **22:08 — Hazard tint set.** Edge loader prefers `hazard_edge_*_tint.png` (white RGB) and falls back to lavender; live hazard colour now multiplies cleanly. Evidence `hazard_tint.png`.

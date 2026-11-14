@@ -359,7 +359,7 @@ static func option_card(
 	t.clip_text = true
 	t.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	p.add_child(t)
-	t.position = Vector2(8, 1 if subtitle != "" else maxf(1.0, (rect.size.y - 13.0) * 0.5))
+	t.position = Vector2(8, 2 if subtitle != "" else maxf(2.0, (rect.size.y - 13.0) * 0.5))
 	t.size = Vector2(rect.size.x - (78.0 if meta != "" else 14.0), 13)
 	if meta != "":
 		var m := label(meta, 7, DIM, false, HORIZONTAL_ALIGNMENT_RIGHT)

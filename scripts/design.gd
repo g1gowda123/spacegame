@@ -84,6 +84,7 @@ func _column(x: float, w: float, title: String) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
+	v.add_child(UIKit.vspace(4))
 	var head := UIKit.mono(title, 8, UIKit.MUTED)
 	v.add_child(head)
 	UIKit.hairline(v, 0, 0, w - 16, UIKit.LINE)
@@ -92,7 +93,7 @@ func _column(x: float, w: float, title: String) -> VBoxContainer:
 
 
 func _subhead(v: VBoxContainer, text: String) -> void:
-	v.add_child(UIKit.vspace(0))
+	v.add_child(UIKit.vspace(8))
 	v.add_child(UIKit.mono(text, 7, UIKit.DIM))
 
 
@@ -113,7 +114,7 @@ func _build_left() -> void:
 			], Color(str(h["color"])).lightened(0.2))
 		hull_cards[str(h["id"])] = card
 
-	v.add_child(UIKit.vspace(2))
+	v.add_child(UIKit.vspace(5))
 	var vehicle_head := HBoxContainer.new()
 	vehicle_head.custom_minimum_size = Vector2(0, 12)
 	vehicle_head.add_theme_constant_override("separation", 4)
@@ -123,6 +124,7 @@ func _build_left() -> void:
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)
 	vehicle_head.add_child(vehicle_requirement)
 	v.add_child(vehicle_head)
+	UIKit.hairline(v, 0, 0, 184, UIKit.LINE)
 	for veh in GameState.VEHICLES:
 		var card := UIKit.option_card(
 			v, Rect2(0, 0, 184, 20), str(veh["name"]), "",
@@ -384,7 +386,7 @@ func _refresh() -> void:
 		vehicle_requirement.text = "OVER CAPACITY"
 		vehicle_requirement.add_theme_color_override("font_color", UIKit.RED)
 	else:
-		vehicle_requirement.text = "%dkg / %dkg CAP" % [
+		vehicle_requirement.text = "%d / %d KG" % [
 			int(s.get("mass", 0)), int(capacity)
 		]
 		vehicle_requirement.add_theme_color_override("font_color", UIKit.DIM)

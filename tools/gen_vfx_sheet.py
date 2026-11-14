@@ -87,13 +87,15 @@ def _get(path: str) -> dict:
         return json.loads(r.read())
 
 
-def build_api_workflow(kind: str, seed: int, steps: int = 25, cfg: float = 5.0) -> dict:
+def build_api_workflow(kind: str, seed: int, steps: int = 25, cfg: float = 5.0,
+                       lora_strength: float = 1.0) -> dict:
     return {
         "1": {"class_type": "CheckpointLoaderSimple",
               "inputs": {"ckpt_name": CHECKPOINT}},
         "2": {"class_type": "LoraLoader",
               "inputs": {"model": ["1", 0], "clip": ["1", 1],
-                         "lora_name": LORA, "strength_model": 1.0, "strength_clip": 1.0}},
+                         "lora_name": LORA, "strength_model": lora_strength,
+                         "strength_clip": lora_strength}},
         "3": {"class_type": "CLIPTextEncode",
               "inputs": {"text": PROMPTS[kind], "clip": ["2", 1]}},
         "4": {"class_type": "CLIPTextEncode",
@@ -113,8 +115,9 @@ def build_api_workflow(kind: str, seed: int, steps: int = 25, cfg: float = 5.0) 
     }
 
 
-def generate(kind: str, seed: int, timeout_s: int = 600) -> Path:
-    wf = build_api_workflow(kind, seed)
+def generate(kind: str, seed: int, timeout_s: int = 600,
+             lora_strength: float = 1.0) -> Path:
+    wf = build_api_workflow(kind, seed, lora_strength=lora_strength)
     prompt_id = _post("/prompt", {"prompt": wf, "client_id": str(uuid.uuid4())})["prompt_id"]
     started = time.time()
     while time.time() - started < timeout_s:
@@ -240,6 +243,40 @@ def _paste_scaled(canvas: Image.Image, src: Image.Image, scale: float,
     canvas.alpha_composite(im, (int(cx - im.width * 0.5), int(cy - im.height * 0.5)))
 
 
+def strip_flare_haze(im: Image.Image) -> Image.Image:
+    """Drop the low-saturation grey wash SDXL puts behind an explosion.
+
+    The sprite is played additively, so grey reads as a dull cloud; the impact
+    needs the white core and the warm spark wedges only.
+    """
+    out = im.copy()
+    px = out.load()
+    cx = out.width * 0.5
+    cy = out.height * 0.5
+    core_r = max(6.0, out.width * 0.16)
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            mx = max(r, g, b)
+            mn = min(r, g, b)
+            sat = 0.0 if mx == 0 else (mx - mn) / float(mx)
+            dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if dist > core_r and sat < 0.35:
+                # White/grey specks away from the core are the model's cloud,
+                # not sparks. Warm wedges (high saturation) survive.
+                px[x, y] = (r, g, b, 0)
+            elif mx < 240 and sat > 0.25:
+                # Palette-lock the shards to the game's impact orange. SDXL
+                # returns brown/olive debris; additive blending needs a warm,
+                # bright spark so the burst does not read as dirt.
+                px[x, y] = (255, 152, 58, a)
+            elif sat < 0.55 and mx < 236:
+                px[x, y] = (r, g, b, int(a * 0.55))
+    return out
+
+
 def make_flare(src: Image.Image) -> list[Image.Image]:
     size = SIZES["flare"]
     frames = []
@@ -258,7 +295,7 @@ def make_flare(src: Image.Image) -> list[Image.Image]:
                       fill=(255, 250, 226, int(255 * (1.0 - t))))
             r2 = core_r * 0.55
             d.ellipse((c - r2, c - r2, c + r2, c + r2), fill=(255, 255, 255, 255))
-        frames.append(quantized(canvas))
+        frames.append(strip_flare_haze(quantized(canvas)))
     return frames
 
 
@@ -319,13 +356,14 @@ def main() -> None:
     ap.add_argument("--source", type=Path, help="use an existing raw PNG instead of ComfyUI")
     ap.add_argument("--steps", type=int, default=25)
     ap.add_argument("--cfg", type=float, default=5.0)
+    ap.add_argument("--lora", type=float, default=1.0, help="pixel-art LoRA strength (0 disables)")
     args = ap.parse_args()
 
     if args.source:
         raw = args.source
     else:
         print(f"generating {args.kind} seed {args.seed} from {COMFY} ...")
-        raw = generate(args.kind, args.seed, timeout_s=900)
+        raw = generate(args.kind, args.seed, timeout_s=900, lora_strength=args.lora)
     print("raw:", raw)
 
     keyed = crop_square(key_background(Image.open(raw)))
