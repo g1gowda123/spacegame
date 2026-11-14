@@ -101,7 +101,7 @@ d owns QA per `docs/BOARD.md` (browser loops, claim-vs-evidence checks, bug list
 
 ## Map visual debt (lead-maintained, 03:30 — the surface renderer is NOT "done" until these land)
 
-The surface renderer is functionally complete: 13 biomes, palette-locked 64 px tiles, 100 transition pairs, corner matching, props, structures, minimap, telegraphed hazards. Remaining visual debt — more than one item; the submission must not overclaim:
+The surface renderer is functionally complete: 13 biomes, palette-locked 64 px tiles, 125 transition pairs, corner matching, props, structures, minimap, telegraphed hazards. Remaining visual debt — more than one item; the submission must not overclaim:
 
 | # | Item | Notes |
 |---|---|---|
@@ -449,3 +449,18 @@ Scope: all shaders, in-game animation, effect art. Static tiles/sprites stay VEG
 | V5 | Animation-art pipeline: procedural sheets + ComfyUI VFX workflows + motion deriver | **DONE 18:20** | `tools/make_vfx_art.py`, `tools/gen_vfx_sheet.py`, `tools/comfy_workflows/vfx_*.json`, `assets/vfx/` |
 | V6 | Scene transitions (fade/paper slide) and HUD gauge animation | **OPEN** | needs `change_scene_to_file` call sites and the UI gauge refactor; coordinate with UI owner |
 | V7 | Volcanic heat-haze refraction | **OPEN** | needs a screen-copy or extra texture; evaluate after W1 mask lands |
+## Static truth pass (18:10, this pass)
+
+No Godot binary on this machine, so everything below is source/Python-tool work
+only. Nothing here was runtime- or visually verified.
+
+| Task | Status | Notes |
+|---|---|---|
+| Transition-pair count drift (audit FAIL) | **DONE 18:10** | `docs/TASKS.md` + `README.md` said 100 pairs; `tools/transitions.json` has 125 (ORION added 25 for retuned tile keys). Both corrected. `audit_project.py --check` back to **28 pass / 0 fail / 3 warn, exit 0**; `audit_data.py` **49 checks, 0 failed**. |
+| `MAP_GENERATOR.md` accuracy | **DONE 18:10** | Controls section now matches the real handlers: `F4`-`F8` feature bar, `F9` transition debug, `F10`/`H` (map scene only), `F11` fullscreen. Documented `--debug-transitions` (accepted by `sector.gd` too), per-biome `PROP_DENSITY`, the dev-scene vs sector input difference, and the actual gameplay keys in `sector.gd`. |
+| `EVENTS.md` §6 mismatch table | **DONE 18:10** | Added §6.1 status re-check: mismatches 1, 2, 3, 5, 7, 10, 11, 12 **CLOSED** with file evidence; 4 **OPEN by design** (H/F10 are not forwarded in-sector); 6 and 9 **PARTIAL**; 8 **QUARANTINED** (the shipped pool is inline in GDScript, `data/events.json` is a prototype). |
+| ORION's 17:45 transition-debug ask | **ALREADY SHIPPED** | `map_generator.gd` already has `debug_transitions`, `_draw_transition_debug()` (tints straight/outer/inner/stripe/diag/other, prints `TRANSDEBUG {counts}`), the `F9` handler and `--debug-transitions`. ORION only needs one capture on a **barren/iron** board. |
+| `NEXT +N TO GRADE X` clipped (`report.gd:124`) | **FIXED (unverified) 18:10** | Label rect height 8 -> 12 at `Vector2(14, 228)`; font-6 line was taller than the rect. c reported glyph bottoms cut. **Needs one visual confirmation on a Godot machine.** |
+| Sector button label overflow (`MOVE  (ENTER)` etc.) | **OPEN - documented, not changed** | Measured ~108 px of label in a 100 px button at x=444-544; the D-pad starts at x=554 and the bottom-left panel ends at x=440, so there is no free 8 px to steal without re-laying out the footer. Left for the UI owner with a working Godot. |
+| `SET COURSE >` overflow in draft | **OPEN - documented, not changed** | ~130 px text at x=482 inside a 620 px panel; cosmetic, needs a live check. |
+| Re-export / browser loop / demo | **BLOCKED here** | No Godot, no `build/web`, no `submission/` in this clone; `build/` and `submission/` are gitignored. Must run on a machine with export templates (`tools/release.sh`). |

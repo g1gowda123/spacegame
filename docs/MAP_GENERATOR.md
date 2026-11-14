@@ -25,9 +25,15 @@
 | `G` | Toggle tile grid |
 | `C` | Copy the current seed to the clipboard |
 | `F3` | Toggle the debug overlay (seed, FPS, cell, chunk, chunk count, props/structures) |
+| `F4`–`F8` | Toggle mountains / outposts / occlusion / props / sky (feature bar) |
+| `F9` | Toggle the transition-debug overlay (tints every boundary cell by the variant it received) |
+| `F10` | Save a viewport capture to `user://map_capture.png` |
+| `F11` | Toggle windowed / fullscreen (desktop) |
 | `H` | Hide/show the UI |
 
 The on-screen panel has the same actions, plus a D-pad in the bottom-right. The nav line reports the nearest uncollected data node in screen-relative compass terms.
+
+> **Dev scene vs sector.** In this dev scene WASD moves the lander exactly one tile. The shipped sector (`scripts/sector.gd`) overrides input: WASD/arrows move a path cursor, ENTER/MOVE commits one move of up to `move_range` tiles, and `V`/`G` still cycle the view and grid. `H` and `F10` are not forwarded to this handler from the sector.
 
 ### CLI (headless/debug)
 
@@ -43,6 +49,7 @@ godot --path . -- --capture --seed=16936 --biome=temperate --view=iso
 | `--grid` | Start with the tile grid on |
 | `--debug` | Start with the debug overlay on |
 | `--no-ui` | Hide the gameplay/UI layer for clean map captures |
+| `--debug-transitions` | Start with the transition-debug overlay on (also accepted by `scripts/sector.gd`) |
 | `--legacy-water` | Skip water-body shaping (pre-coalescing shoreline), for A/B evidence |
 | `--water=<r>,<p>,<wet>,<dry>` | Override the shaper knobs (default `1,1,0.60,0.40`) for same-seed comparisons |
 | `--capture` | Render one frame to `user://map_capture.png`, then quit |
@@ -81,7 +88,7 @@ Thirteen biome definitions drive terrain, structures, props, tint and life statu
 - Water bodies go through `scripts/water_shaper.gd` between sampling and smoothing (see “Water shaping” below). Only `shore_ring` biomes are shaped; volcanic lava stays authored.
 - Structures are placed fully inside a chunk; chance is `0.60` per chunk. Selection is biome-specific (sulfur volcano/geyser, iron mesa/crater, methane iceberg/crystal/crater, etc.); ocean structures only appear on reef, barren structures only on regolith.
 - `_in_view()` culls structures, props, hazard cells, and data nodes outside the 20×16 render window, so nothing is drawn on the black board surround.
-- Props are wired at chunk generation time (6% of walkable cells). `_prop_is_usable()` rejects PNGs with less than 8% transparent pixels as a safety net; the art agent rebuilt the six props with `tools/make_prop.py` and 48–80% transparency, so they should now render.
+- Props are wired at chunk generation time. Density is per biome (`PROP_DENSITY`: temperate 4.5 %, cryo 3.2 %, ocean 1.5 %, 3 % default), and each biome has its own prop list (`PROPS`), including the generated ground accents (`accent_<biome>_<shape>.png`). `_prop_is_usable()` rejects PNGs with less than 8 % transparent pixels as a safety net.
 
 ### Rendering and streaming
 
@@ -118,11 +125,15 @@ Cost: the raw halo grows from 1 to 2 cells (`pad` 18 → 20 per chunk, +23 % noi
 
 ### Gameplay
 
+This dev scene carries a **simplified** loop that exists to exercise terrain, not the shipped rules:
+
 - Player: lander sprite from `assets/tilesets/structures/lander.png`.
 - Start: 36 turns, 3 hull, 4 data objectives within 6–14 tiles.
 - Each move consumes a turn, checks walkability (water/lava and structure footprints block), collects objectives, resolves the telegraphed 3×3 hazard, then spawns the next hazard.
 - Hazard kinds: Solar flare, Dust storm, Radiation surge, Seismic shock.
 - Game over: hull 0, all data collected, or turns exhausted.
+
+The shipped sector is `scripts/sector.gd` (extends this generator) and owns the real rules: one committed move per turn of up to `move_range` tiles, per-tile Δv/sol/heat cost, nine hazards that resolve at end of turn, relay-beacon sectors, quota + landing-zone EXTRACT. See `README.md` "Surface operations".
 
 ### Mobile budget
 
@@ -158,16 +169,16 @@ Cost: the raw halo grows from 1 to 2 cells (`pad` 18 → 20 per chunk, +23 % noi
 ## Known issues / next work
 
 - Visual validation now uses the in-game capture path; recapture after each meaningful change. Black/gray frames are failed captures.
-- **Props**: the art agent rebuilt all six with transparent borders; verify they appear at the intended 6% density and tune per biome (the temperate map can look shrub-heavy).
-- **Exotic art is placeholder**: methane/iron/sulfur/crystal/obsidian/ammonia/carbon reuse existing tile keys plus tint. Dedicated tiles are art-agent work.
-- **Transitions**: straight, corner and 45-degree split tiles exist. Three-way junctions are still unsolved, and a pair without a diagonal set falls back to the right-angle corner tile. Methane/carbon shore edges use the shared `cryo_glacier_ocean_water_deep` / `barren_rock_ocean_water_deep` splits.
-- **Structure grounding**: `impact_crater` now uses the `"ground": true` center anchor + tilt squash; audit the upright structures and keep shadows touching the cell base.
-- **World aliveness**: structure chance is `0.60` and props are 6%; assess whether that is too dense or too sparse, and add rare 2–3-tile sites. Art/tiles remain owned by another agent.
-- **Board read**: the 12px bevel is subtle; the board still reads flat. Stronger sidewalls and a tighter ITB-style frame are next.
-- **UI**: 232px panel is still large at 640×360; compact it. Fullscreen target is 1920×1200.
+- **Props**: density is per biome (`PROP_DENSITY`), so tune a biome by its own entry; the temperate map is intentionally the busiest.
+- **Exotic art is partly inert**: dedicated methane/iron/sulfur/crystal/obsidian/ammonia/carbon tiles exist under `assets/tilesets/<biome>/`, but `BIOMES` still reuses existing tile keys plus tint for most of them. `tools/qa/audit_project.py` lists every unwired file.
+- **Transitions**: 125 pairs, straight + corner + 45-degree split tiles. Three-way junctions are still unsolved, and a pair without a diagonal set falls back to the right-angle corner tile. Press `F9` (or pass `--debug-transitions`, also accepted by the sector) to tint every boundary cell by the variant it received — `TRANSDEBUG` prints the per-kind counts so "selection vs art" is measurable.
+- **Structure grounding**: `impact_crater` uses the `"ground": true` center anchor + tilt squash; upright structures bottom-anchor by visible alpha and the renderer owns an irregular contact rim.
+- **World aliveness**: structure chance is `0.60` per chunk, props are per-biome density, and the structure z-order is clamped below the lander (950) and the occlusion haze (1000).
+- **Dropped**: the 60 top-down `cliff_<height>_<dir>` tiles do not sit on an isometric rim (they read as planks). The face strips (`assets/tilesets/cliffs/face_<biome>.png`) are the live route.
+- **Board read**: the board now renders inside a circular survey disc with a dim outer skirt (edge fog) and a 12 px bevel. Rectangular patch silhouettes on **barren/iron** are the remaining top visual defect; the `F9` overlay is the tool for diagnosing them.
 - **Modularize**: split `TerrainGenerator`, `ChunkWorld`, `MapUI`, `TileCatalog`; remove gameplay-only systems from the generator path if they impede map work.
-- **Web export**: add `export_presets.cfg`; install Web export templates; browser test.
-- **Debug**: seed copy is done; add a seed input field, minimap, and chunk-border overlay.
+- **Web export**: `export_presets.cfg` and a threadless WebGL 2 build are in the tree; re-export with `tools/release.sh` / `tools/release.py` after source or art changes.
+- **Debug**: seed copy, minimap, feature toggles (`F4`–`F8`) and the transition overlay (`F9`) are done; a seed input field and a chunk-border overlay are not.
 - **Terrain art**: noisy grass and bright patchwork are art-agent issues; do not regenerate tiles in this scope.
 
 ## Tuning from the editor

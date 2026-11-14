@@ -16,7 +16,7 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | map tile keys resolve at 64x64 | 43 keys |
 | PASS | structure files + footprints | 14 structures |
 | PASS | biome props resolve (32-64 px) | 13 biomes |
-| PASS | transition sets complete | 100 pairs x 4 edge tiles |
+| PASS | transition sets complete | 125 pairs x 4 edge tiles |
 | PASS | diagonal split sets complete | 17 pairs |
 | WARN | art wiring (code references) | INERT: river autotile (art), ridge_wide, sandstone_arch, glacier_wall, crystal_spire, canyon_bridge, ash_mound, crystal_nub, shell_spiral, arid/dunes_ripple, crystal/shard_field, barren/ejecta, sulfur/acid_pool, ammonia/slush, obsidian/glass_plate, ocean/reef_chain, cryo/ice_plate, water_foam, lava_crust, lava_glow,... |
 | WARN | props on disk but not placed | accent_arid_ice_teeth, accent_arid_shell, accent_arid_vent, accent_barren_ice_teeth, accent_barren_shell, accent_barren_tuft, accent_barren_vent, accent_cryo_bones, accent_cryo_shell, accent_cryo_tuft, accent_cryo_vent, accent_temperate_ice_teeth, accent_temperate_shell, accent_temperate_vent, accent_volcanic_bones,... |
@@ -37,8 +37,8 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | README hazard table matches code | 9 hazards |
 | PASS | README run constants match code |  |
 | PASS | MAP_GENERATOR.md main-scene claim |  |
-| WARN | build artifacts referenced by docs exist in this clone | 6 path(s) absent (build/ and submission/ are gitignored): docs/PROJECT.md: build/web/index.html; docs/SUBMISSION.md: submission/orbit_outplay_demo.mp4; docs/SUBMISSION.md: submission/orbit_outplay_web.zip; docs/TASKS.md: build/web/index.pck; docs/TASKS.md: submission/orbit_outplay_web.zip; docs/TASKS.md: submission/... |
-| PASS | TASKS transition-pair count matches transitions.json | 100 |
+| WARN | build artifacts referenced by docs exist in this clone | 2 path(s) absent (build/ and submission/ are gitignored): docs/SUBMISSION.md: submission/orbit_outplay_demo.mp4; docs/TASKS.md: submission/project_page.md |
+| PASS | TASKS transition-pair count matches transitions.json | 125 |
 
 ## How to re-run
 
@@ -157,3 +157,28 @@ first real run must also confirm the two overlay click points derived from
 `sector.gd` / `debrief.gd`. `tools/release.sh` (C2) can now produce `build/web`
 in one command on a machine with templates installed - that is the fastest path
 to unblocking the loop.
+
+### 18:10 - static truth pass (no Godot on this box)
+
+Re-ran the audit on the current tree. The one FAIL was documentation drift, not
+code: `docs/TASKS.md` and `README.md` still said **100** transition pairs while
+`tools/transitions.json` has **125** (ORION generated 25 more for the retuned
+tile keys). Both now say 125, and the audit is back to **28 pass / 0 fail / 3
+warn, exit 0**; `python tools/audit_data.py` is still **49 checks, 0 failed**.
+
+Also in this pass (static only - this machine has no Godot binary, so nothing
+here was runtime-verified):
+
+- `docs/MAP_GENERATOR.md` controls/CLI/known-issues refreshed: the `F4`-`F8`
+  feature bar, `F9` transition-debug overlay and `F11` fullscreen are real
+  handlers in `map_generator.gd`; `--debug-transitions` is also accepted by
+  `sector.gd`; prop density is per biome (`PROP_DENSITY`), not a flat 6 %.
+- `docs/EVENTS.md` §6.1 records which of the twelve copy/code mismatches are
+  closed (1, 2, 3, 5, 7, 10, 11, 12) and which are still live (4, 6, 8, 9).
+- `scripts/report.gd`: the `NEXT +N TO GRADE X` label's rect was 8 px tall
+  against a font-6 line, which c measured as clipped glyph bottoms. Height is
+  now 12 px (same y). **Needs one visual confirmation on a machine with Godot.**
+
+**Open to the QA owner:** the three WARNs are unchanged and honest - inert art
+families, props on disk that are not in a `PROPS` list, and gitignored
+`build/`/`submission/` paths. The browser loop (Q3/Q4) is still blocked here.

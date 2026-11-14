@@ -170,6 +170,25 @@ player-visible impact.
 | 11 | `scripts/draft.gd:283` | The dossier detail line uses `>` as a separator: `Teq 167 K > heat 39   ·   1.02g > dv ...`. A judge can read it as "greater than". | Use `→` or `·` between the measurement and the derived value. |
 | 12 | `scripts/sector.gd:1453` + `title.gd:134` | README:176 says "Reaching all four nodes auto-completes the survey"; relay sectors use 3 beacons and the title row says "3 of 4". The HUD itself is correct (`RELAYS n/3`). | Keep the README sentence scoped to survey sectors, and fix the title row (item 3). |
 
+### 6.1 Status re-check (2026-11-14 — static, no Godot on this box)
+
+Rows 1, 2, 3, 5, 7, 10, 11 and 12 are **closed** in the tree; only 4, 6, 8 and 9 still describe live behaviour. Checked by reading the source, not by re-running an old report:
+
+| # | Status | Evidence |
+|---|---|---|
+| 1 | **CLOSED** | `sector.gd` eclipse info is `"power": -2`; the resolver does `clampi(power - total_p)` and the toast prints `+2 PWR` when `total_p < 0`. README's "restores 2 power" is now true. |
+| 2 | **CLOSED** | `debrief.gd` no longer prints an orbit line at all; the header is `PLANET · BIOME · SURFACE OPERATIONS REPORT`. `report.gd` still prints the flown orbit. |
+| 3 | **CLOSED** | `title.gd` How-to-Play now says "Collect the required data nodes, then return to the lander and press EXTRACT before sols or delta-v run out." |
+| 4 | **OPEN (by design)** | `sector.gd:_unhandled_input()` still does not forward unhandled keys, so `H` (hide UI) and `F10` (capture) do nothing in-sector. README scopes F10 to map-generation screens; `docs/MAP_GENERATOR.md` now says the same. Wiring them is a two-branch change if a later pass wants it. |
+| 5 | **CLOSED** | `game_state.gd` radiator is `"thermal_res": 3` with "Heat gain -3 per move."; `tools/qa/audit_project.py` asserts the pair. |
+| 6 | **PARTIAL** | Deep Data Buffer's `comms_bonus: 4` now applies in `ship()`, but `finish_sector()` still caps delivered data at `4 if survey else quota`, so the `+4 data buffer` half is still design-screen-only. Copy says "4% less data lost on downlink" first, so the player-facing promise is met. |
+| 7 | **CLOSED** | The kit banks `next_integrity`, consumed in `begin_sector()` (`integrity = hull + next_integrity + crew + buffs`). `pending_repair` is gone; a comment records why. |
+| 8 | **QUARANTINED** | The inline pool in `game_state.gd` is the shipped source; `data/events.json` is kept as a validated prototype and both `this doc` and `audit_data.py` say so. |
+| 9 | **PARTIAL** | Risk has its own report row; the narrative `DECISIONS` line is still not shipped, and `report.gd` does not claim it. |
+| 10 | **CLOSED** | `draft.gd` prints `TRANSFER ARC · %.1f LY · %.1f YR @0.85c` and divides by 0.85 — no faster-than-light number. |
+| 11 | **CLOSED** | The dossier detail line separates values with `·` (no `>` as a separator). |
+| 12 | **CLOSED** | The title wording is generic ("the required data nodes"); README scopes the 4/4 sweep to survey sectors. |
+
 Second pass notes (still true):
 
 - README now says Δv **and** sols are spent per tile moved, and marks F10 as

@@ -773,3 +773,47 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
 - Current tree also carries ATLAS's fog/decals/inspector work; the sector now opens fogged with a rectangular focus rather than the old circle mask. My effects are independent of that setting (`--circle` / `--no-fog` still work).
 - Verification: `--screen=sector --collect` capture clean; no script/shader errors. Full native screen pass is blocked only by the documented engine-side Ogg shutdown warning (WORKLOG 443): sector 4/4 pass, non-music screens print 4 ObjectDB/2 resource lines at exit, which `tools/qa/native_screens.py` counts as failure.
 - **18:52 — ECHO: screenshots added to the gameplay-loop section.** Captured nine fresh frames from the current build with `godot --path . --resolution 1280x720 -- --screen=<name> --capture --capture-name=<name>` (window 948×533, matching the existing `screenshots/` set) into new `screenshots/loop/`: title, design, draft, sector (survey fog default), sector with a live path preview (`--biome=temperate --no-fog --select=1,0`), debrief, report, plus briefing, crew, buff and relay. Verified each frame non-blank (ImageStat mean 19–64, std 24–75) and eyeballed title/design/draft/sector/debrief/report. README: renamed the diagram section to `### The gameplay loop, as a flowchart`, numbered the six loop nodes ①–⑥, and added `### The loop on screen` with a 2-column image table mapped to those numbers plus a full-width fog frame. No game code touched; no export.
+## 18:10 — e (docs truth pass: audit FAIL cleared, docs re-aligned to code)
+
+Static-only pass. This machine has no Godot binary and no `build/` or
+`submission/`, so nothing below was runtime- or visually verified; every claim
+comes from reading the source or from the two Python tools.
+
+- **Files touched:** `README.md`, `docs/TASKS.md` (transition count 100 -> 125),
+  `docs/MAP_GENERATOR.md` (controls/CLI/gameplay/known-issues refresh),
+  `docs/EVENTS.md` (new §6.1 status re-check), `docs/QA_REPORT.md` (regenerated,
+  not hand-edited, so the tool's table and my findings block stay consistent),
+  `scripts/report.gd` (one rect height), `docs/BOARD.md`, this entry.
+- **Commands run:** `python tools/qa/audit_project.py --check` -> **28 pass / 0
+  fail / 3 warn, exit 0** (was 27/1/3: the FAIL was the 100-pair claim);
+  `python tools/audit_data.py` -> **49 checks, 0 failed**.
+- **Why the count drifted:** ORION generated 25 extra pairs at 17:40 for the
+  retuned tile keys (`volcanic/ash_rim`, the nine crystal pairs, cryo
+  cloud/flat, `arid/cracked_earth` + `arid/sand` -> `barren/rock`, ocean beach
+  <- temperate beach), so `tools/transitions.json` grew 100 -> 125 while the
+  README line was never updated. The audit regex reads the JSON, not the code,
+  which is why only the docs failed.
+- **ORION's F9 request was already satisfied.** `map_generator.gd` ships
+  `debug_transitions`, `_draw_transition_debug()` (~line 2563, tints each
+  boundary cell straight/outer/inner/stripe/diag/other and prints
+  `TRANSDEBUG {counts}`), the `F9` handler, and `--debug-transitions`;
+  `sector.gd` also accepts the flag. The remaining work is one capture on a
+  barren/iron board, which is ORION's call, not a code task.
+- **`MAP_GENERATOR.md` was documenting handlers that do not exist** in the way
+  it implied (`H` and `F10` are `map_generator.gd` only; `sector.gd`'s
+  `_unhandled_input` forwards neither), and it described prop density as a flat
+  6 % when the generator uses a per-biome `PROP_DENSITY` table. Both corrected,
+  plus `F11` fullscreen, the `F4`-`F8` feature bar, and the real sector bindings.
+- **`report.gd` fix (unverified):** `next.size = Vector2(238, 8)` was shorter
+  than a font-6 line, which c measured as clipped glyph bottoms in
+  `demo/capture/web/16_report.png`. Now height 12 at the same `y = 228`. One
+  screenshot on a Godot machine confirms or reverts it.
+- **Deliberately skipped:** the sector footer label overflow (`MOVE  (ENTER)`
+  ~108 px in a 100 px button at x=444; D-pad at x=554, bottom-left panel ends at
+  x=440, so there is no free gutter) and the draft `SET COURSE >` overflow.
+  Both need a live frame; guessing at them risks a worse layout. Recorded in
+  `TASKS.md` instead of half-fixed.
+- **Handoff:** if you have Godot, the next useful command is
+  `godot --headless --path . --quit-after 8` (parse/smoke) followed by one
+  report-screen capture for the `report.gd` change, then
+  `tools/release.sh` to refresh `build/web` and the demo.
