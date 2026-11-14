@@ -122,10 +122,10 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var tag_color := UIKit.GREEN
 	if threat >= 68.0:
 		tag = "HARSH WORLD"
-		tag_color = UIKit.SIGNAL
+		tag_color = UIKit.SIGNAL.lightened(0.18)
 	elif threat >= 36.0:
 		tag = "BALANCED"
-		tag_color = UIKit.ORANGE_DARK
+		tag_color = UIKit.CAUTION
 	var risk := UIKit.label("%s  ·  THREAT %d" % [tag, int(round(threat))], 6, tag_color, true,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	risk.position = Vector2(4, 110)

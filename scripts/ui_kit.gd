@@ -134,6 +134,13 @@ static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> Pa
 	shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(shadow)
 
+	var fill := ColorRect.new()
+	fill.color = Color(HULL.r, HULL.g, HULL.b, 0.94)
+	fill.position = Vector2(x, y)
+	fill.size = Vector2(w, h)
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(fill)
+
 	var grid := TextureRect.new()
 	grid.texture = load("res://assets/ui/skin_ops/grid.png")
 	grid.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

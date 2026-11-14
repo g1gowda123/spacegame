@@ -40,7 +40,7 @@ func _build_ui() -> void:
 	plot.position = Vector2(300, 78)
 	plot.size = Vector2(150, 78)
 	add_child(plot)
-	var plot_label := UIKit.mono("TRANSFER PLOT  //  18.6 LY", 5, UIKit.INK_FAINT)
+	var plot_label := UIKit.mono("TRANSFER PLOT  //  18.6 LY", 6, UIKit.INK_SOFT)
 	plot_label.position = Vector2(300, 156)
 	add_child(plot_label)
 
@@ -212,26 +212,27 @@ func _build_ranks() -> void:
 	ranks_layer.add_child(shade)
 
 	var sheet := UIKit.sheet(ranks_layer, 92, 44, 456, 272)
+	var content := UIKit.fill(sheet)
 
 	var kicker := UIKit.label("AGENCY HONOURS BOARD  //  LOCAL RECORDS", 7, UIKit.ORANGE, true)
 	kicker.position = Vector2(18, 16)
 	kicker.size = Vector2(420, 10)
-	sheet.add_child(kicker)
+	content.add_child(kicker)
 	var title := UIKit.label("WHO SAVED THE AGENCY?", 12, UIKit.INK, true)
 	title.position = Vector2(18, 32)
 	title.size = Vector2(420, 14)
-	sheet.add_child(title)
+	content.add_child(title)
 	var note := UIKit.label("BEST RUN PER CALLSIGN  ·  STORED ON THIS TERMINAL", 5, UIKit.MUTED, true)
 	note.position = Vector2(18, 48)
 	note.size = Vector2(420, 10)
-	sheet.add_child(note)
+	content.add_child(note)
 
 	var rows := GameState.leaderboard_top(5)
 	if rows.is_empty():
 		var empty := UIKit.label("NO FLIGHTS FILED YET. BE THE FIRST.", 8, UIKit.MUTED, true)
 		empty.position = Vector2(18, 92)
 		empty.size = Vector2(420, 14)
-		sheet.add_child(empty)
+		content.add_child(empty)
 	else:
 		for i in range(rows.size()):
 			var row: Dictionary = rows[i]
@@ -239,33 +240,33 @@ func _build_ranks() -> void:
 			var rank := UIKit.label("%02d" % (i + 1), 9, UIKit.ORANGE, true)
 			rank.position = Vector2(18, y)
 			rank.size = Vector2(28, 12)
-			sheet.add_child(rank)
+			content.add_child(rank)
 			var who := UIKit.label(str(row.get("name", "CHIEF")), 9, UIKit.INK, true)
 			who.position = Vector2(50, y)
 			who.size = Vector2(120, 12)
-			sheet.add_child(who)
+			content.add_child(who)
 			var score := UIKit.label("%d" % int(row.get("score", 0)), 9, UIKit.INK, true, HORIZONTAL_ALIGNMENT_RIGHT)
 			score.position = Vector2(170, y)
 			score.size = Vector2(64, 12)
-			sheet.add_child(score)
+			content.add_child(score)
 			var grade := UIKit.label(str(row.get("grade", "C")), 9, UIKit.SIGNAL, true)
 			grade.position = Vector2(242, y)
 			grade.size = Vector2(20, 12)
-			sheet.add_child(grade)
+			content.add_child(grade)
 			var meta := UIKit.label("%s  ·  %s" % [str(row.get("date", "")), str(row.get("difficulty", "standard")).to_upper()], 5, UIKit.MUTED, true)
 			meta.position = Vector2(270, y + 2)
 			meta.size = Vector2(168, 10)
-			sheet.add_child(meta)
+			content.add_child(meta)
 			var rule := ColorRect.new()
 			rule.color = UIKit.STEEL
 			rule.position = Vector2(18, y + 22)
 			rule.size = Vector2(420, 1)
-			sheet.add_child(rule)
+			content.add_child(rule)
 
 	var close := UIKit.button("CLOSE", Vector2(88, 22))
 	close.position = Vector2(350, 244)
 	close.pressed.connect(func(): ranks_layer.visible = false)
-	sheet.add_child(close)
+	content.add_child(close)
 
 
 func _dev_screen() -> bool:
