@@ -765,3 +765,10 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
 - Note: `map_generator.gd` is being edited concurrently (fog/decals/inspector export vars); `circle_view` is now off unless `--circle`, so board captures are rectangular. Shader work does not depend on that.
 
 - **18:36 — Engine-exposed map tuning.** Replaced hidden view constants with exported `view_w`/`view_h`, added inspector groups for seed/biome, camera/circle, fog, decals and shader edge/relief; documented in `docs/TUNING.md`; headless clean.
+
+## 18:58 — VFX lane: HUD value pulses, sweep march, minimap radar
+- `sector.gd::_pulse()`: a 0.26 s scale/colour pop on the HUD value that just changed. Wired to data collected (`data_label`), integrity/heat damage (`int_label` / `heat_val`) and shield/impact colour. Cubic ease, not elastic (per the UI brief).
+- Sweep arrow now marches: the arrow Line2D loops modulate 1.0 ↔ 0.35 over 0.7 s so a SWEEP front reads as motion before it advances.
+- `sector.gd::_draw_minimap()` override adds a rotating 4-line radar trail when the sector is live (`_process` queues the redraw). Harmless if the minimap is hidden by a UI pass, and it activates again if the widget returns.
+- Current tree also carries ATLAS's fog/decals/inspector work; the sector now opens fogged with a rectangular focus rather than the old circle mask. My effects are independent of that setting (`--circle` / `--no-fog` still work).
+- Verification: `--screen=sector --collect` capture clean; no script/shader errors. Full native screen pass is blocked only by the documented engine-side Ogg shutdown warning (WORKLOG 443): sector 4/4 pass, non-music screens print 4 ObjectDB/2 resource lines at exit, which `tools/qa/native_screens.py` counts as failure.
