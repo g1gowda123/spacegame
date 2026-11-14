@@ -9,6 +9,8 @@ Every destination is a real planet. Every hazard is derived from that planet's m
 - **Target:** desktop and browser (WebGL 2, threadless export)
 - **Run length:** 3 sectors, roughly 10–15 minutes
 
+**Status:** playable end to end in native Godot — title → mission design → target draft → three surface sectors → debrief → final report. The source, data, and art are in this repository; the web build is produced locally with the Godot 4.7.2 export templates.
+
 ---
 
 ## Contents
@@ -151,7 +153,9 @@ That single rule is what makes the sector a route-planning problem rather than a
 
 ### Hazards
 
-Hazards are drawn from the planet's physics and are biased toward uncollected data nodes, so the greedy grab is always the risky one. Blockable hazards can be absorbed with power; unblockable ones must be routed around or eaten.
+Hazards are drawn from the planet's physics and are biased toward uncollected data nodes, so the greedy grab is always the risky one. Blockable hazards can be absorbed with power; unblockable ones must be routed around or eaten. Hazards resolve at the **end** of the turn, not when you step on them.
+
+The hazard set **ramps with the mission**: one threat at turn 1, a second from turn 3, a third from turn 6 (or from turn 4 in sectors 2–3). Footprints vary between 3×3 blocks, crosses, diamonds, and five-tile lines. A line marked **SWEEP** moves one tile per turn for four turns, with an arrow showing where it will be next; it can chase you across the map. Damaged ground leaves a visible scar for four turns.
 
 | Hazard | Blockable | Integrity | Thermal | Δv | Other |
 |---|---|---|---|---|---|
@@ -162,6 +166,8 @@ Hazards are drawn from the planet's physics and are biased toward uncollected da
 | **Radiation Belt** | yes | −1 | +5 | — | — |
 | **Eclipse Shadow** | no | — | −16 | — | Restores 2 power |
 | **Cryo Quake** | no | −1 | — | −1 | — |
+| **Solar Wind Front** | yes | — | +15 | −1 | Sweeps in a line |
+| **Meteor Shower** | no | −2 | +4 | — | Heavy impact |
 
 The **Radar Sounder** makes blocking free, the **Thermal Imager** cuts heat gain, and the **Magnetometer** speeds power regeneration — the three direct counters to the three ways a sector kills you.
 
@@ -286,6 +292,8 @@ The browser build is fully playable with mouse or touch. Landscape is recommende
 ### Native
 
 ```bash
+git clone https://github.com/g1gowda123/spacegame.git
+cd spacegame
 godot --path .
 ```
 
