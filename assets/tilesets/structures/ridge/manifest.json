@@ -1,0 +1,162 @@
+{
+  "grid": "64 px",
+  "anchor": "bottom-centre",
+  "shadow": "none \u2014 renderer draws it",
+  "pieces": {
+    "ridge_mid": {
+      "temperate": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_mid_temperate.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "arid": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_mid_arid.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "cryo": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_mid_cryo.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "volcanic": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_mid_volcanic.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "barren": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_mid_barren.png",
+        "size": [
+          192,
+          128
+        ]
+      }
+    },
+    "ridge_cap_l": {
+      "temperate": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_l_temperate.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "arid": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_l_arid.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "cryo": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_l_cryo.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "volcanic": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_l_volcanic.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "barren": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_l_barren.png",
+        "size": [
+          192,
+          128
+        ]
+      }
+    },
+    "ridge_cap_r": {
+      "temperate": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_r_temperate.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "arid": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_r_arid.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "cryo": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_r_cryo.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "volcanic": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_r_volcanic.png",
+        "size": [
+          192,
+          128
+        ]
+      },
+      "barren": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_cap_r_barren.png",
+        "size": [
+          192,
+          128
+        ]
+      }
+    },
+    "ridge_corner": {
+      "temperate": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_corner_temperate.png",
+        "size": [
+          192,
+          192
+        ]
+      },
+      "arid": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_corner_arid.png",
+        "size": [
+          192,
+          192
+        ]
+      },
+      "cryo": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_corner_cryo.png",
+        "size": [
+          192,
+          192
+        ]
+      },
+      "volcanic": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_corner_volcanic.png",
+        "size": [
+          192,
+          192
+        ]
+      },
+      "barren": {
+        "file": "res://assets/tilesets/structures/ridge/ridge_corner_barren.png",
+        "size": [
+          192,
+          192
+        ]
+      }
+    }
+  },
+  "palettes": [
+    "temperate",
+    "arid",
+    "cryo",
+    "volcanic",
+    "barren"
+  ]
+}
