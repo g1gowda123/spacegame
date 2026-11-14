@@ -1,4 +1,5 @@
 extends Control
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## Between-sector debrief and field refit shop.
 
 var r: Dictionary = {}
@@ -10,6 +11,9 @@ var footer_title: Label
 var footer_sub: Label
 var next_btn: Button
 var event_layer: CanvasLayer
+var ship_diagram: ShipDiagram
+var build_label: Label
+var build_line: Label
 
 var _toast_tween: Tween
 
@@ -32,6 +36,16 @@ func _ready() -> void:
 		if str(raw) == "--capture-event":
 			_capture_event()
 			break
+		if str(raw).begins_with("--buy="):
+			call_deferred("_dev_buy", int(str(raw).substr(6)))
+
+
+func _dev_buy(idx: int) -> void:
+	if idx < 0 or idx >= GameState.shop_offers.size():
+		return
+	var name := str(GameState.shop_offers[idx].get("name", "?"))
+	_on_buy(idx)
+	print("DEVBUY ", name, " owned=", GameState.owned.size())
 
 
 func _capture_event() -> void:
@@ -132,20 +146,24 @@ func _build_summary() -> void:
 		y += 14.0
 
 	c.add_child(_hr(10, 140, 286))
-	var lock := GameState.hull()
-	var vehicle := GameState.vehicle()
-	var obj := GameState.objective()
-	var info := UIKit.label(
-		"OBJECTIVE  %s\nHULL  %s\nLAUNCH  %s\nORBIT  LOW INSERTION\nPAYLOAD  %d INSTRUMENTS" % [
-			str(obj.get("name", "—")).to_upper(),
-			str(lock.get("name", "—")).to_upper(),
-			str(vehicle.get("name", "—")).to_upper(),
-			GameState.run.get("instruments", []).size(),
-		], 7, UIKit.MUTED, false)
-	info.position = Vector2(10, 148)
-	info.size = Vector2(286, 90)
-	info.add_theme_constant_override("line_spacing", 1)
-	c.add_child(info)
+	var build_head := UIKit.label("SHIP BUILD  //  LIVE REFIT", 6, UIKit.CYAN, true)
+	build_head.position = Vector2(10, 142)
+	build_head.size = Vector2(286, 10)
+	c.add_child(build_head)
+	build_label = UIKit.label("", 6, UIKit.DIM, true, HORIZONTAL_ALIGNMENT_RIGHT)
+	build_label.position = Vector2(140, 142)
+	build_label.size = Vector2(156, 10)
+	c.add_child(build_label)
+	ship_diagram = ShipDiagram.new()
+	ship_diagram.position = Vector2(58, 152)
+	ship_diagram.size = Vector2(190, 70)
+	c.add_child(ship_diagram)
+	build_line = UIKit.label("", 6, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
+	build_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	build_line.position = Vector2(10, 223)
+	build_line.size = Vector2(286, 18)
+	c.add_child(build_line)
+	_refresh_ship()
 
 
 func _build_shop() -> void:
@@ -235,10 +253,28 @@ func _on_buy(idx: int) -> void:
 		return
 	var up: Dictionary = GameState.shop_offers[idx]
 	if GameState.buy_offer(idx):
-		_show_toast("INSTALLED  %s" % str(up["name"]), UIKit.GREEN)
+		_show_toast("INSTALLED  %s  ·  SHIP UPDATED" % str(up["name"]), UIKit.GREEN)
 		_refresh_shop()
+		_refresh_ship()
+		if ship_diagram != null:
+			ship_diagram.flash_build()
 	else:
 		_show_toast("INSUFFICIENT GRANTS", UIKit.RED)
+
+
+func _refresh_ship() -> void:
+	if ship_diagram == null:
+		return
+	ship_diagram.set_build(
+		str(GameState.run.get("hull", "")),
+		GameState.run.get("instruments", []),
+		GameState.owned
+	)
+	var tier: Dictionary = ship_diagram.tier()
+	build_label.text = "%s  ·  %d MODULES" % [str(tier["name"]), ship_diagram.module_count()]
+	build_label.add_theme_color_override("font_color", tier["color"])
+	build_line.text = ship_diagram.module_line()
+	build_line.add_theme_color_override("font_color", tier["color"])
 
 
 func _build_footer() -> void:

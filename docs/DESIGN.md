@@ -125,6 +125,33 @@ underlying archive values.
   crew bonuses are separate lines, so a player can point at the exact decision
   that cost the grade.
 
+## Dynamic ship build (visual layer)
+
+The ship is not a static portrait any more. `scripts/ship_build.gd` reads the
+two chosen instruments and the refit modules in `GameState.owned` and returns a
+slot list for `scripts/ship_diagram.gd`:
+
+- **Payload slots:** camera (nose), spectrometer (top front), radar (top mid),
+  thermal imager (nose low), magnetometer (rear boom), drill (belly).
+- **Refit slots:** RTG, radiator, reaction wheel, ablative armour, deep data
+  buffer, high-gain antenna, science package, salvage claw, repair kit, coolant
+  loop and ion thruster.
+- **Tiers:** STOCK → FIELD-READY (1–2 refits) → SURVEY-RIGGED (3–4) →
+  DEEP-SPACE (5–6) → FLAGSHIP (7+). The tier name and module count are shown in
+  the debrief and the final report.
+
+The design screen updates the portrait when the player changes payload; the
+debrief updates it the instant a refit is bought (`_on_buy` → `_refresh_ship`
+→ `flash_build`), and the final report prints the completed build. The visual
+layer never re-implements a rule: `GameState.ship()` and `begin_sector()` still
+own the stats, so the picture and the numbers cannot disagree.
+
+QA: `--screen=flowtest` runs three sectors, buys an ion thruster, starts the
+next planet and verifies movement range 3 → 4, then scores the run
+(`SHIPFLOW report total=4963 grade=A successes=3`). Screens:
+`qa_ship_debrief6.png`, `qa_ship_buy2.png`, `qa_ship_allmods2.png`,
+`qa_ship_report.png`.
+
 ## Challenge-brief traceability
 
 | Brief line | Where it is now |

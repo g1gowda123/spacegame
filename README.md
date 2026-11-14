@@ -253,7 +253,7 @@ The **Daily Run** uses a date-derived seed, so everyone gets the same three exop
 
 ## Debrief and refit
 
-After every sector you get a result screen and a **three-offer refit shop**. Modules stack, so a run becomes a build.
+After every sector you get a result screen and a **three-offer refit shop**. Modules stack, so a run becomes a build — and the ship portrait in the debrief changes **immediately** as each module is bolted on. Payload instruments and refit hardware share one slot map, so the silhouette tells the run's story at a glance. The build tier climbs STOCK → FIELD-READY → SURVEY-RIGGED → DEEP-SPACE → FLAGSHIP, and the final report prints the completed ship. The visual layer is cosmetic on purpose: every stat still comes from `GameState.ship()` and `begin_sector()`, so the picture cannot lie about the numbers.
 
 | Module | Cost | Kind | Effect |
 |---|---|---|---|
@@ -261,7 +261,7 @@ After every sector you get a result screen and a **three-offer refit shop**. Mod
 | **Deployable Radiator** | $65M | Module | Heat gain −3 per move |
 | **Reaction Wheel** | $55M | Module | +4 Δv every sector |
 | **Ablative Armor** | $60M | Module | +2 maximum integrity |
-| **Deep Data Buffer** | $50M | Module | +4 data buffer, less loss on long links |
+| **Deep Data Buffer** | $50M | Module | +4 data buffer, comms loss −4% |
 | **High-Gain Antenna** | $80M | Module | Comms loss −10% |
 | **Science Package** | $75M | Firmware | +15% science value |
 | **Salvage Protocol** | $70M | Firmware | +30% grant from every sector |

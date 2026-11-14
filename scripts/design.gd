@@ -1,10 +1,12 @@
 extends Control
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 
 var hull_cards: Dictionary = {}
 var vehicle_cards: Dictionary = {}
 var objective_cards: Dictionary = {}
 var instrument_cards: Dictionary = {}
 var diagram: ShipDiagram
+var build_label: Label
 var mass_bar: ProgressBar
 var power_bar: ProgressBar
 var dv_bar: ProgressBar
@@ -115,6 +117,10 @@ func _build_center() -> void:
 	diagram.custom_minimum_size = Vector2(190, 70)
 	diagram.size = Vector2(190, 70)
 	v.add_child(diagram)
+
+	build_label = UIKit.label("", 6, UIKit.DIM, true)
+	build_label.custom_minimum_size = Vector2(190, 10)
+	v.add_child(build_label)
 
 	mass_bar = _stat_row(v, "MASS", "kg")
 	power_bar = _stat_row(v, "POWER", "W")
@@ -288,6 +294,9 @@ func _refresh() -> void:
 		instrument_cards[id]["enabled"] = not locked
 
 	diagram.set_ship(str(GameState.run.get("hull", "")), chosen)
+	var tier: Dictionary = diagram.tier()
+	build_label.text = "BUILD  %s  ·  %d PAYLOAD" % [str(tier["name"]), diagram.module_count()]
+	build_label.add_theme_color_override("font_color", tier["color"])
 	var cap := maxf(1.0, float(s.get("capacity", 1.0)))
 	mass_val.text = "%d/%d" % [int(s.get("mass", 0)), int(cap)]
 	UIKit.set_bar(mass_bar, float(s.get("mass", 0)), cap)

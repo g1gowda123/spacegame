@@ -139,7 +139,7 @@ const UPGRADES := [
 	{"id": "armor", "name": "ABLATIVE ARMOR", "cost": 60.0, "kind": "MODULE",
 	 "desc": "+2 maximum integrity.", "integrity": 2},
 	{"id": "buffer", "name": "DEEP DATA BUFFER", "cost": 50.0, "kind": "MODULE",
-	 "desc": "+4 data buffer. Less loss on long links.", "data_cap": 4},
+	 "desc": "+4 data buffer. Comms loss -4%.", "data_cap": 4, "comms_bonus": 4},
 	{"id": "antenna", "name": "HIGH-GAIN ANTENNA", "cost": 80.0, "kind": "MODULE",
 	 "desc": "Comms loss -10%.", "comms_bonus": 10},
 	{"id": "science_pack", "name": "SCIENCE PACKAGE", "cost": 75.0, "kind": "FIRMWARE",
@@ -639,6 +639,7 @@ func ship() -> Dictionary:
 				integrity += int(up.get("integrity", 0))
 			"buffer":
 				data_cap += int(up.get("data_cap", 0))
+				comms += int(up.get("comms_bonus", 0))
 			"antenna":
 				comms += int(up.get("comms_bonus", 0))
 			"science_pack":

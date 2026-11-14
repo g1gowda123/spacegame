@@ -181,10 +181,25 @@ Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.
 
 | Task | Status | Notes |
 |---|---|---|
-| Music bed — Balatro-style reactive loop | **OPEN — unclaimed** (suggest **g** sourcing / **f** wiring) | 3 seamless 60–90 s OGG loops on a shared tempo (title / sector / debrief, report reuses debrief), 2 s crossfade on screen change, duck ~6 dB while a hazard telegraph is live. One `MusicDirector` autoload, headless early-return, ≤3 MB total. Acceptance and rationale on BOARD 12:48. Not started; f is not adding music files while the juice lane is open. |
+| Music bed — Balatro-style reactive loop | **CLAIMED — ECHO** (15:00) | 3 seamless OGG loops on a shared tempo (title / sector / debrief, report reuses debrief), 2 s crossfade on screen change, duck ~6 dB while a hazard telegraph is live. One `MusicDirector` autoload, headless early-return, ≤3 MB total. Spec, model choice, prompts and seam/LUFS acceptance in `docs/AUDIO.md`. Blocked on user approval for the 3.46 GB Stable Audio 3 Small-Music download; nothing generated yet. |
 
 | Shareable **full design** code (loadout import) | **DONE** | `OO-01156-S2-PAVMOLOA-SPTH` round-trips to seed 4438 / Standard / 2 players / Pathfinder / Vector M / Low / Characterize Atmosphere / Spectrometer + Thermal; short `OO-xxxxx-S1` codes still work |
 | Design-screen header overlap fix | **DONE** | `MISSION DESIGN // 01 · STEP 1 OF 3` is now one line; the old step label was being covered by the panels (`qa_director3.png`) |
+
+## ECHO — music lane (claimed 15:00)
+
+`docs/AUDIO.md` is the lane doc: research verdict, engine matrix, prompt recipes,
+loop-mastering contract, runtime contract, hardware reality.
+
+| Task | Status | Notes |
+|---|---|---|
+| ComfyUI soundtrack research | **DONE 15:00** | Verdict: yes for source material, no for finished loops. SA3 wins instrumental quality + tempo/key adherence (61% / 64% vs ACE at chance); ACE wins songs/vocals/MIT. Numbers and sources in `docs/AUDIO.md` §1–2. |
+| Engine choice (SA3 Small-Music primary) | **DONE 15:00** | 3.46 GB total, 100 BPM / A minor / 32-bar loops (76.8 s), −16 LUFS, OGG q3 ≤ 2.8 MB. Decision rationale in §2. |
+| SA3 Small-Music download | **BLOCKED — needs user OK** | 2.27 GB checkpoint + 1.19 GB t5gemma; disk fine (124 GB), RAM tight (~1.3 GB available). Do not start without approval. |
+| `tools/make_music_loop.py` | **TODO** | Bar-aligned trim, wrap-around crossfade, two-pass loudnorm, numeric seam check, OGG q3 + JSON sidecar. Contract §5. |
+| Generate + master 3 cues | **TODO** | Prompt recipes §4. Post seam delta / LUFS / true peak for each. |
+| `MusicDirector` autoload | **TODO** | §6 contract; headless safe; owns the duck hook. |
+| Web export + size check | **TODO** | ≤3 MB music growth in `build/web` and the submission ZIP. |
 
 ## Structure scale & grandeur pass (NOVA request, 13:38)
 
@@ -200,3 +215,43 @@ Boss: "big mountains are almost the same size as the craft… make the world fee
 | Connectivity guarantee after structure placement (flood fill to objectives/extract, carve a pass) | **REQUESTED** | b / ATLAS | Must hold over 100 seeds per biome |
 | Optional parallax ridge silhouettes behind the diamond | **REQUESTED** | VEGA | 640×120 transparent, dark, low contrast |
 | Acceptance review: lander ≤1 tile, mountain ≥4× craft, no walkable cell under a solid peak | **PENDING** | NOVA | Full frames per biome + headless smoke |
+
+## Dynamic ship build (NOVA, 15:03)
+
+Boss: the ship should update automatically from the upgrades received after a planet.
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| `ShipBuild` slot model from instruments + `GameState.owned` | **DONE 15:02** | NOVA | `scripts/ship_build.gd`; payload/refit slots, tiers, short names |
+| Live `ShipDiagram` module drawing + buy flash | **DONE 15:03** | NOVA | `scripts/ship_diagram.gd`; integer-aligned pixel blocks, per-hull accent, clipped to the portrait |
+| Design-screen portrait reflects payload changes | **DONE 15:03** | NOVA | `design.gd` passes the selected instruments; build line under portrait |
+| Debrief portrait + label updates immediately after INSTALL | **DONE 15:03** | NOVA | `debrief.gd` `_refresh_ship`/`flash_build`; hardware two-line legend |
+| Final report prints completed build and tier | **DONE 15:03** | NOVA | `report.gd` SHIP row |
+| Full-flow proof: 3 sectors, buy, next planet, stats + report | **DONE 15:03** | NOVA | `--screen=flowtest`: range 3→4, total 4963, grade A, 3 successes |
+| Deep Data Buffer actually applies its comms promise | **DONE 15:04** | NOVA | `comms_bonus: 4` + `ship()` buffer branch; previously only a design-screen stat |
+
+## VEGA — grounded structure pass (ATLAS request, 15:12)
+
+**Problem (from user, m07249/m07307/m07316):** large structures read as sprites pasted on the ground. The worst offenders are the volcano's brown circular plinth and the cyan geyser/methane vents, which sit on perfect round discs. The 4×4 footprint also leaves grassy empty corners because the art only fills a circle.
+
+**Direction:** real terrain never has a perfect circular platform. Replace every built-in plinth with an asymmetric, partially buried apron that spills into the footprint corners. The volcano should be designed as a **square 4×4 tile composition**, not a round icon on a square tile.
+
+### 1. Volcano 4×4 — priority
+- Output: `assets/tilesets/structures/assembled_volcano_4x4.png` and `assets/tilesets/structures/pieces/volcano_r*c*.png`.
+- Keep the existing 4×4 / 16-piece / 64 px contract (`assets/tilesets/structures/pieces/manifest.json`), so `map_generator._add_piece_sprites()` needs no change.
+- Remove the brown circular disc completely. Build the base from 4–8 irregular cooled-basalt lobes, ash/talus fans, and one or two lava channels that reach toward the tile edges. The contact line must be broken and asymmetric, with rubble partially covering it.
+- Use the empty 4×4 corners: low caldera rim, ash drifts, broken crust, or lava seams. Do not leave transparent/grassy holes inside the footprint, and do not add a hard square border either.
+- Keep the vent/summit off-center; visible crater; no text/UI; nearest-filter pixel art; derive colors from `volcanic/ash_rim`, `volcanic/basalt_shelf`, `volcanic/lava_core`, `volcanic/lava_glow`.
+- No baked ground shadow (the renderer owns the contact ellipse), but bake a little ambient occlusion where the rock meets the soil.
+
+### 2. Rounded-base audit — same pass
+Rebuild the base silhouette, not just the shadow, for:
+- `geyser.png`, `geyser_field.png`, `methane_vent.png` — remove the brown/stone circular pad under the cyan cone; replace with a fractured sinter terrace / mineral crust that merges into the ground.
+- `basalt_columns.png`, `mesa.png`, `mesa_b.png`, `iceberg.png`, `islet.png`, `coral_spire.png`, `crystal_outcrop.png`, `impact_crater.png`, `mountain_range.png` — check for disc plinths and replace with talus, eroded feet, or broken shelves. `impact_crater` should read as a depression, not a platform.
+- Small props keep their contact ellipse; do not add flat oval pedestals.
+
+### 3. Acceptance
+- 3×3 contact sheet on volcanic, temperate and cryo ground at native map scale; no visible circle, no floating edge, no hard square frame.
+- `assembled_volcano_4x4.png` is 256×256 (or the existing piece grid), pieces align at 64 px, and the bottom-row z-order is unchanged.
+- Save previews/evidence under `/tmp/opencode/vega_grounded_*`; update the manifest only if the footprint changes.
+- Do not re-export or touch `map_generator.gd`; ATLAS will wire/test after d's 14:58 gate QA.
