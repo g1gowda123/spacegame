@@ -41,8 +41,10 @@ const HAZARDS := {
 		"integrity": 1, "thermal": 5, "dv": 0, "power": 0,
 	},
 	"eclipse": {
+		# Signed deltas: thermal < 0 cools, power < 0 restores. `_resolve_hazard`
+		# subtracts these values, so a positive `power` would drain the pips.
 		"name": "ECLIPSE SHADOW", "color": Color("#7cc8ff"), "block": false,
-		"integrity": 0, "thermal": -16, "dv": 0, "power": 2,
+		"integrity": 0, "thermal": -16, "dv": 0, "power": -2,
 	},
 	"cryo": {
 		"name": "CRYO QUAKE", "color": Color("#9fd9ff"), "block": false,
@@ -179,7 +181,6 @@ func _configure_map() -> void:
 	var p: Dictionary = sec["planet"]
 	var h: int = absi(int(hash(str(p["id"])))) % 90000 + 1000
 	seed_value = h + int(sec["sector"]) * 7919
-	biome_index = GameState.planet_biome_index(str(p["biome"]))
 	planet_name = str(p["name"])
 	# Resolve the terrain index by name, not by a shared ordinal: the playable
 	# planet list omits ocean, so an ordinal lookup would silently shift every
@@ -298,7 +299,7 @@ func _build_hud() -> void:
 	pwr_l.position = Vector2(492, 4)
 	pwr_l.size = Vector2(78, 10)
 	tc.add_child(pwr_l)
-	for i in range(8):
+	for i in range(12):
 		var pip := ColorRect.new()
 		pip.color = UIKit.CYAN
 		pip.position = Vector2(492 + i * 9, 19)
@@ -436,7 +437,7 @@ func _refresh_status() -> void:
 	sol_label.add_theme_color_override("font_color",
 		UIKit.RED if int(sec["sols"]) <= 5 else UIKit.AMBER)
 	data_caption.text = "RELAYS" if _is_relay() else "DATA"
-	data_label.text = "%d/%d" % [int(sec["data"]), _objective_cap()]
+	data_label.text = "%d/%d" % [int(sec["data"]), int(sec["quota"])]
 	quota_label.text = "QUOTA %d" % int(sec["quota"])
 
 	UIKit.set_bar(heat_bar, float(sec["thermal"]), 100.0)
@@ -475,7 +476,7 @@ func _refresh_status() -> void:
 		var tag := names[0] if names.size() == 1 else "%s +%d" % [names[0], names.size() - 1]
 		var tail := "SWEEP" if sweep else ("SHIELD %d PWR OR -%d INT" % [shield, int(first["integrity"])] if bool(first["block"]) else "UNBLOCKABLE")
 		if forming:
-			tail = "ARMS NEXT TURN"
+			tail = ("SWEEP · " if sweep else "") + "ARMS NEXT TURN"
 		threat_label.text = "%s: %s  ·  %s" % ["FORMING" if forming else "INCOMING", tag, tail]
 		threat_label.add_theme_color_override("font_color", first["color"])
 	else:
@@ -489,10 +490,7 @@ func _refresh_status() -> void:
 		return
 	var quota := int(sec["quota"])
 	var base := "TURN %d · RANGE %d" % [turn, move_range]
-	if int(sec["data"]) >= quota:
-		route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
-		route_label.add_theme_color_override("font_color", UIKit.GREEN)
-	elif cursor_cell != player_cell:
+	if cursor_cell != player_cell:
 		if path_valid:
 			route_label.text = "%s · PATH %d · %d dv · HEAT +%d%s%s" % [
 				base, path_cost, path_cost, path_heat,
@@ -503,6 +501,9 @@ func _refresh_status() -> void:
 		else:
 			route_label.text = "%s · NO PATH / OUT OF RANGE" % base
 			route_label.add_theme_color_override("font_color", UIKit.RED)
+	elif int(sec["data"]) >= quota:
+		route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
+		route_label.add_theme_color_override("font_color", UIKit.GREEN)
 	else:
 		var need := quota - int(sec["data"])
 		var noun := "relay" if need == 1 else "relays"
@@ -576,6 +577,10 @@ func _roll_hazard() -> Dictionary:
 		sweep = forced_sweep or rng.randf() < 0.45 + 0.12 * float(sector_no) + 0.03 * float(turn)
 	for attempt in range(10):
 		var anchor := _hazard_anchor()
+		# The visual anchor is the *centre* of the footprint, so a sweep arrow
+		# can start at the middle of its line. `cells[0]` is physically one end
+		# of the front, which put the arrow two cells off the line.
+		var origin_cell := anchor
 		var cells: Array[Vector2i] = []
 		match shape:
 			"line":
@@ -583,6 +588,7 @@ func _roll_hazard() -> Dictionary:
 				var start_cell := anchor
 				if sweep:
 					start_cell = player_cell - dir * 3
+				origin_cell = start_cell
 				for i in range(-2, 3):
 					cells.append(start_cell + perp * i)
 			"cross":
@@ -604,7 +610,7 @@ func _roll_hazard() -> Dictionary:
 		var life := 4 if sweep else 1
 		return {
 			"kind": kind, "info": info, "cells": cells,
-			"origin": cells[0], "shape": shape, "dir": dir,
+			"origin": origin_cell, "shape": shape, "dir": dir,
 			"speed": 1 if sweep else 0, "life": life,
 			# A front forms for one turn (faint, not yet dangerous) before it
 			# arms. That extra read is the planning window, not extra damage.
@@ -630,10 +636,16 @@ func _hazard_anchor() -> Vector2i:
 func _hazard_cells_valid(cells: Array[Vector2i]) -> bool:
 	if cells.is_empty():
 		return false
+	var walkable := 0
 	for c in cells:
 		if not _in_view(c.x, c.y):
 			return false
-	return true
+		if _is_walkable_world(c):
+			walkable += 1
+	# A footprint that lands entirely on mountains, structures, water or lava
+	# can never touch the player, yet it still consumes a hazard budget slot.
+	# Require at least one reachable tile so every front is a real threat.
+	return walkable > 0
 
 
 func _hazard_overlaps(h: Dictionary) -> bool:
@@ -710,67 +722,18 @@ func _hazard_pool() -> Array:
 
 
 func _try_move(dir: Vector2i) -> void:
+	# Development hook (`--moves=`). Route it through the shipped turn model so
+	# QA captures match real play: the old copy resolved the hazard on entry,
+	# ignored move range and never advanced the turn.
 	if done:
 		return
 	var target := player_cell + dir
 	if not _is_walkable_world(target):
 		return
-	if int(sec["delta_v"]) <= 0 or int(sec["sols"]) <= 0:
-		# No resources left before extraction: the data is lost even if the
-		# quota was met. The HUD warns the player to extract while they can.
-		_end(false, "OUT OF RESOURCES")
-		return
+	_select_cell(target)
+	if path_valid and not path_cells.is_empty():
+		_execute_path()
 
-	player_cell = target
-	sec["delta_v"] = int(sec["delta_v"]) - 1
-	sec["sols"] = int(sec["sols"]) - 1
-	sec["thermal"] = int(sec["thermal"]) + int(sec["heat_gain"])
-	sec["power"] = mini(int(sec["power_max"]),
-		int(sec["power"]) + int(sec["power_regen"]))
-
-	for i in range(objectives.size()):
-		if objectives[i] == player_cell and not collected[i]:
-			collected[i] = true
-			var gain := 1
-			var rock := str(sec["planet"]["biome"]) in ["arid", "barren", "volcanic", "iron", "crystal", "sulfur"]
-			if rock and int(sec["bonus_data"]) > 0:
-				gain += int(sec["bonus_data"])
-			sec["data"] = mini(_objective_cap(), int(sec["data"]) + gain)
-			data_collected = int(sec["data"])
-			GameState.sfx("confirm")
-			message_text = ("RELAY BEACON PLANTED  +%d" if _is_relay() else "DATA NODE SECURED  +%d") % gain
-			message_color = UIKit.AMBER if _is_relay() else UIKit.CYAN
-			_show_toast(message_text, message_color)
-			_pickup_flash()
-
-	if _in_hazard(player_cell):
-		_resolve_hazard()
-
-	if int(sec["thermal"]) >= 100:
-		sec["thermal"] = 62
-		sec["integrity"] = int(sec["integrity"]) - 1
-		GameState.sfx("hazard")
-		message_text = "THERMAL OVERLOAD  -1 INTEGRITY"
-		message_color = UIKit.RED
-		_show_toast(message_text, message_color)
-
-	if int(sec["integrity"]) <= 0:
-		_end(false, "HULL BREACH")
-		return
-	if int(sec["data"]) >= _objective_cap():
-		_end(true, "SURVEY COMPLETE")
-		return
-	if int(sec["sols"]) <= 0:
-		_end(false, "MISSION WINDOW CLOSED")
-		return
-	if int(sec["delta_v"]) <= 0:
-		_end(false, "DELTA-V EXHAUSTED")
-		return
-
-	_spawn_hazard()
-	_update_chunks()
-	_render_window()
-	_refresh_status()
 
 
 # ---------------------------------------------------------------------------
@@ -784,7 +747,12 @@ func _select_cell(cell: Vector2i) -> void:
 	if not _in_view(cell.x, cell.y):
 		return
 	cursor_cell = cell
-	path_cells = _find_path(player_cell, cell, move_range)
+	# Every path tile spends 1 delta-v and 1 sol, so the reachable radius is the
+	# smallest of the ship's range and the resources actually left. Without
+	# this cap the preview would accept a 3-tile path with 1 dv left and
+	# `_execute_path` would strand the lander and fail the sector.
+	var resource_cap := mini(int(sec["delta_v"]), int(sec["sols"]))
+	path_cells = _find_path(player_cell, cell, mini(move_range, maxi(0, resource_cap)))
 	path_valid = cell == player_cell or not path_cells.is_empty()
 	path_cost = path_cells.size()
 	path_heat = path_cost * int(sec.get("heat_gain", 1))
@@ -882,10 +850,14 @@ func _collect_node_at(cell: Vector2i) -> void:
 			var rock := str(sec["planet"]["biome"]) in ["arid", "barren", "volcanic", "iron", "crystal", "sulfur"]
 			if rock and int(sec["bonus_data"]) > 0:
 				gain += int(sec["bonus_data"])
-			sec["data"] = mini(_objective_cap(), int(sec["data"]) + gain)
+			# Report what was actually credited, not the raw roll: at the cap the
+			# counter can rise by less than `gain`, and the toast used to lie.
+			var before := int(sec["data"])
+			sec["data"] = mini(_objective_cap(), before + gain)
+			var credited := int(sec["data"]) - before
 			data_collected = int(sec["data"])
 			GameState.sfx("confirm")
-			message_text = ("RELAY BEACON PLANTED  +%d" if _is_relay() else "DATA NODE SECURED  +%d") % gain
+			message_text = ("RELAY BEACON PLANTED  +%d" if _is_relay() else "DATA NODE SECURED  +%d") % credited
 			message_color = UIKit.AMBER if _is_relay() else UIKit.CYAN
 			_show_toast(message_text, message_color)
 			_pickup_flash()
@@ -895,7 +867,7 @@ func _collect_node_at(cell: Vector2i) -> void:
 func _check_overheat() -> void:
 	if int(sec["thermal"]) >= 100:
 		sec["thermal"] = 62
-		sec["integrity"] = int(sec["integrity"]) - 1
+		sec["integrity"] = maxi(0, int(sec["integrity"]) - 1)
 		GameState.sfx("hazard")
 		message_text = "THERMAL OVERLOAD  -1 INTEGRITY"
 		message_color = UIKit.RED
@@ -1220,20 +1192,24 @@ func _resolve_hazard() -> void:
 		total_dv += int(info["dv"])
 		total_p += int(info["power"])
 		_add_scar(player_cell, info["color"])
-	sec["integrity"] = int(sec["integrity"]) - total_i
+	sec["integrity"] = maxi(0, int(sec["integrity"]) - total_i)
 	sec["thermal"] = clampi(int(sec["thermal"]) + total_t, 0, 100)
 	sec["delta_v"] = maxi(0, int(sec["delta_v"]) - total_dv)
-	sec["power"] = maxi(0, int(sec["power"]) - total_p)
-	if total_i + total_t + total_dv + total_p > 0:
+	sec["power"] = clampi(int(sec["power"]) - total_p, 0, int(sec["power_max"]))
+	if total_i != 0 or total_t != 0 or total_dv != 0 or total_p != 0:
 		var bits: Array[String] = []
 		if total_i > 0:
 			bits.append("-%d INT" % total_i)
 		if total_t > 0:
 			bits.append("+%d HEAT" % total_t)
+		elif total_t < 0:
+			bits.append("%d HEAT" % total_t)
 		if total_dv > 0:
 			bits.append("-%d DV" % total_dv)
 		if total_p > 0:
 			bits.append("-%d PWR" % total_p)
+		elif total_p < 0:
+			bits.append("+%d PWR" % -total_p)
 		message_text = "%s HIT  %s" % [str(hits[0]["info"]["name"]), " · ".join(bits)]
 		if hits.size() > 1:
 			message_text = "%d HAZARDS HIT  %s" % [hits.size(), " · ".join(bits)]

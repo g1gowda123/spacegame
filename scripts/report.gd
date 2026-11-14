@@ -93,6 +93,8 @@ func _build_grade() -> void:
 		["FUNDS", "+%d" % int(score.get("budget", 0)), UIKit.TEXT],
 		["COMPLETION/SWEEP", "+%d" % (int(score.get("completion", 0)) + (400 if int(score.get("successes", 0)) >= GameState.SECTORS_PER_RUN else 0)), UIKit.TEXT],
 	]
+	if int(score.get("risk", 0)) > 0:
+		rows.append(["RISK BONUS", "+%d" % int(score.get("risk", 0)), UIKit.AMBER])
 	if int(score.get("crew_bonus", 0)) > 0 or int(GameState.run.get("players", 1)) > 1:
 		rows.append([
 			"CREW GOALS %d/%d" % [CrewDirector.achieved_goals(), CrewDirector.total_goals()],
@@ -118,7 +120,7 @@ func _build_grade() -> void:
 	if next_grade != "MAX":
 		next_text = "NEXT  +%d TO GRADE %s" % [next_gap, next_grade]
 	var next := UIKit.label(next_text, 6, UIKit.CYAN if next_grade == "MAX" else UIKit.DIM, true)
-	next.position = Vector2(14, 210)
+	next.position = Vector2(14, 228)
 	next.size = Vector2(238, 8)
 	c.add_child(next)
 
@@ -219,8 +221,9 @@ func _build_ledger() -> void:
 	var orbit_line := "ORBIT  LOW · 400 KM · 109 MIN · 34% ECLIPSE"
 	if not last_planet.is_empty():
 		var st := GameState.orbit_stats(last_planet)
-		orbit_line = "ORBIT  %s · %d KM · %d MIN · %d%% ECLIPSE" % [
-			str(st["label"]), int(st["alt_km"]), int(st["period_min"]), int(st["eclipse"])
+		orbit_line = "ORBIT  %s · %d KM · %d MIN · %d%% ECLIPSE · %d PASSES/DAY" % [
+			str(st["label"]), int(st["alt_km"]), int(st["period_min"]), int(st["eclipse"]),
+			int(st["passes"])
 		]
 	var notes := UIKit.label(
 		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nANALOG  %s\nTEQ drives thermal load · gravity drives delta-v." % [orbit_line, GameState.objective_analog().to_upper()],

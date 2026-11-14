@@ -33,10 +33,22 @@ const CORNER_DIRS: Array[Vector2i] = [
 ]
 const CORNER_NAMES: Array[String] = ["nw", "ne", "se", "sw"]
 
+# Every impassable surface material. This must include the depth-band tiles
+# that `_render_terrain_world()` swaps in for a water cell: the raw field stores
+# `temperate/water_lake`, but the renderer draws `water_lake_shallow` /
+# `water_lake_deep`, and ocean similarly draws `water_shelf`. Testing the
+# rendered tile against a list that only names the raw key made shallow/deep
+# water walkable. `_is_walkable_world()` therefore tests `_raw_terrain_world()`,
+# where these band names never appear; they are still listed here because the
+# prop filter and the water-priority pass operate on rendered/material keys.
 var BLOCKED: Array[String] = [
 	"temperate/water_lake",
+	"temperate/water_lake_shallow",
+	"temperate/water_lake_deep",
 	"volcanic/lava",
+	"volcanic/lava_core",
 	"ocean/water_shallow",
+	"ocean/water_shelf",
 	"ocean/water_deep",
 ]
 
@@ -1846,7 +1858,11 @@ func _render_terrain_world(x: int, y: int) -> String:
 
 
 func _is_walkable_world(cell: Vector2i) -> bool:
-	var t := _render_terrain_world(cell.x, cell.y)
+	# Test the raw field, not the rendered material: `_render_terrain_world()`
+	# replaces water with depth bands (`*_shallow`/`*_deep`/`water_shelf`) whose
+	# names are not the raw blocked keys. The raw cell is always the canonical
+	# water/lava key, so this cannot drift when banding changes.
+	var t := _raw_terrain_world(cell.x, cell.y)
 	if t in BLOCKED:
 		return false
 	var data := _get_chunk(_world_to_chunk(cell))

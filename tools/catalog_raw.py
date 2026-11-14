@@ -9,13 +9,14 @@ sources; only the files listed under assets/tilesets/ are game-ready.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "assets" / "raw"
-COMFY_OUT = Path("/home/g1/ComfyUI/output")
+COMFY_OUT = Path(os.environ.get("COMFY_OUT", Path.home() / "ComfyUI" / "output"))
 CATALOG = RAW_DIR / "catalog.json"
 SHEET = RAW_DIR / "contact_sheet.png"
 
@@ -131,8 +132,8 @@ def main() -> None:
         "Promote a candidate:",
         "",
         "```bash",
-        "cd /home/g1/godot/nasa",
-        "/home/g1/ComfyUI/.venv/bin/python tools/pixelize.py \\",
+        "cd path/to/spacegame",
+        "python tools/pixelize.py \\",
         "  assets/raw/NAME.png assets/tilesets/BIOME/NAME.png \\",
         "  --size 64 --colors 16 --tile --seamless --seam-band 1 \\",
         "  --palette \"$(python -c 'import json;print(\",\".join(json.load(open(\"tools/palettes.json\"))[\"BIOME\"]))')\"",

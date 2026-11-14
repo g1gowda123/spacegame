@@ -13,7 +13,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PY="${PY:-/home/g1/ComfyUI/.venv/bin/python}"
+PY="${PY:-${HOME}/ComfyUI/.venv/bin/python}"
 OUT_SHIPS="assets/sprites/ships"
 OUT_PLANETS="assets/sprites/planets"
 OUT_MARKERS="assets/sprites/markers"

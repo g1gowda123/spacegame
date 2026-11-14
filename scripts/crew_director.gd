@@ -67,7 +67,7 @@ const DIFFICULTIES := {
 		"name": "CADET", "color": "#7fe08a",
 		"desc": "Learn the trade. Extra budget and approval; fewer fronts.",
 		"mods": "+$100M  ·  +10 approval  ·  -1 hazard front  ·  heat -1  ·  score x0.90",
-		"short": "+$100M  ·  +10 appr  ·  -1 hazard  ·  x0.90",
+		"short": "+$100M  ·  +10 appr  ·  -1 hazard  ·  heat -1  ·  x0.90",
 		"budget": 100.0, "approval": 10, "hazard": -1, "heat": -1, "score": 0.90,
 	},
 	"standard": {
@@ -81,7 +81,7 @@ const DIFFICULTIES := {
 		"name": "DIRECTOR", "color": "#ff6d5e",
 		"desc": "Tight budget, hostile fronts. For players who know the loop.",
 		"mods": "-$75M  ·  -10 approval  ·  +1 hazard front  ·  heat +1  ·  score x1.25",
-		"short": "-$75M  ·  -10 appr  ·  +1 hazard  ·  x1.25",
+		"short": "-$75M  ·  -10 appr  ·  +1 hazard  ·  heat +1  ·  x1.25",
 		"budget": -75.0, "approval": -10, "hazard": 1, "heat": 1, "score": 1.25,
 	},
 }

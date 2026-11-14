@@ -161,9 +161,11 @@ func _route() -> void:
 		get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 		return
 	for i in range(2):
-		if GameState.draft.is_empty():
-			GameState.roll_draft()
-		var p2: Dictionary = GameState.draft[i % GameState.draft.size()]
+		# Re-roll before every simulated sector: the draft must advance with
+		# history, or the fixture flies the same planet twice and the ledger
+		# looks like a duplicate-target bug.
+		GameState.roll_draft()
+		var p2: Dictionary = GameState.draft[0]
 		GameState.begin_sector(p2)
 		GameState.finish_sector(true, 3, GameState.current_sector)
 		GameState.make_shop()

@@ -120,8 +120,8 @@ func _build_right() -> void:
 	code_edit = LineEdit.new()
 	code_edit.position = Vector2(10, 218)
 	code_edit.size = Vector2(240, 20)
-	code_edit.placeholder_text = "OO-0A3F2-S2"
-	code_edit.max_length = 16
+	code_edit.placeholder_text = "OO-0F7A5-S1-PAVMOLOA-SPTH"
+	code_edit.max_length = 32
 	code_edit.add_theme_font_size_override("font_size", 8)
 	code_edit.add_theme_color_override("font_color", UIKit.TEXT)
 	code_edit.add_theme_color_override("font_placeholder_color", UIKit.DIM)

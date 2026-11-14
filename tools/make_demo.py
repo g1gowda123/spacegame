@@ -19,7 +19,10 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-SHOTS = Path("/home/g1/.local/share/godot/app_userdata/Orbit & Outplay — Exoplanet Survey")
+SHOTS = Path(os.environ.get(
+    "GODOT_USERDATA",
+    Path.home() / ".local/share/godot/app_userdata" / "Orbit & Outplay — Exoplanet Survey",
+))
 OUT = ROOT / "demo"
 OUT.mkdir(exist_ok=True)
 

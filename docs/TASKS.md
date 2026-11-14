@@ -306,3 +306,14 @@ Boss: a Soul Knight-style free upgrade draft, separate from the shop, after fixe
 | Trigger after planet 1 and 2; `debrief` routes event → commission → draft | **DONE 15:26** | `pending_buff`/`buff_choices`; footer shows NEXT: FIELD COMMISSION |
 | Flow proof: buff pending, pick harden, integrity 4→6, report still scores | **DONE 15:29** | `--screen=flowtest` → `buff_pending=true buff_ok=true buffs=["harden"] integrity=4->6` |
 | Screen evidence | **DONE 15:35** | `qa_buff2.png`, `qa_debrief_buff2.png`; README gallery + `screenshots/buff.png`; UI skin pass will restyle it |
+## b — full audit pass (claimed 10:10, done 10:10)
+
+| Item | State | Notes |
+|---|---|---|
+| Walkability / water + lava | done | `BLOCKED` includes all depth bands; `_is_walkable_world()` tests the raw field |
+| Sector turn + HUD correctness | done | Eclipse sign, sweep origin, Δv/sol path cap, clamps, 12 pips, forming tag, credited-data toast, route cost |
+| Economy + report | done | Radiator −3, repair kit → next-sector integrity, shop refresh, RISK row, passes/day |
+| Campaign code + difficulty cards | done | Paste field 32 chars; heat modifier on all short strings |
+| Tool portability | done | `/home/g1/...` defaults replaced with env/HOME |
+| Doc drift record | done | `docs/AUDIT_FIXES.md` (existing docs intentionally not edited) |
+| Evidence | done | `--quit-after 8` exit 0; `--screen=flowtest` `total=5034 grade=A` |

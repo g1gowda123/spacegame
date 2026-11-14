@@ -133,7 +133,7 @@ const UPGRADES := [
 	{"id": "rtg", "name": "RTG AUXILIARY", "cost": 70.0, "kind": "MODULE",
 	 "desc": "+1 power regeneration.", "power_regen": 1},
 	{"id": "radiator", "name": "DEPLOYABLE RADIATOR", "cost": 65.0, "kind": "MODULE",
-	 "desc": "Heat gain -3 per move.", "thermal_res": 6},
+	 "desc": "Heat gain -3 per move.", "thermal_res": 3},
 	{"id": "wheel", "name": "REACTION WHEEL", "cost": 55.0, "kind": "MODULE",
 	 "desc": "+4 delta-v in every sector.", "dv": 4},
 	{"id": "armor", "name": "ABLATIVE ARMOR", "cost": 60.0, "kind": "MODULE",
@@ -147,7 +147,7 @@ const UPGRADES := [
 	{"id": "salvage", "name": "SALVAGE PROTOCOL", "cost": 70.0, "kind": "FIRMWARE",
 	 "desc": "+30% grant from every sector.", "grant": 0.30},
 	{"id": "repair", "name": "FIELD REPAIR KIT", "cost": 40.0, "kind": "MODULE",
-	 "desc": "Restore 2 integrity now.", "repair": 2, "repeatable": true},
+	 "desc": "Restore 2 integrity next sector.", "repair": 2, "repeatable": true},
 	{"id": "coolant", "name": "CRYO COOLANT LOOP", "cost": 55.0, "kind": "FIRMWARE",
 	 "desc": "Venting heat also restores 1 extra power.", "vent_power": 1},
 	{"id": "ion", "name": "ION THRUSTER", "cost": 60.0, "kind": "MODULE",
@@ -693,8 +693,6 @@ func ship() -> Dictionary:
 		data_cap += 0
 		dv += int(o.get("dv", 0))
 		integrity += int(o.get("integrity", 0))
-		if str(o["id"]) == "atmosphere":
-			pass
 	# upgrades
 	for uid in owned:
 		var up := _upgrade_by_id(str(uid))
@@ -913,7 +911,7 @@ func choose_event(choice_index: int) -> bool:
 	run["next_data"] = int(run.get("next_data", 0)) + int(effect.get("next_data", 0))
 	run["bonus_science"] = int(run.get("bonus_science", 0)) + int(effect.get("bonus_science", 0))
 	if effect.has("repair"):
-		run["pending_repair"] = int(run.get("pending_repair", 0)) + int(effect["repair"])
+		run["next_integrity"] = int(run.get("next_integrity", 0)) + int(effect["repair"])
 	var seen: Array = run.get("events_seen", [])
 	seen.append(str(card.get("id", "")))
 	run["events_seen"] = seen
@@ -983,14 +981,9 @@ func begin_sector(planet: Dictionary) -> void:
 		"hazard_mod": int(run.get("hazard_mod", 0)),
 		"status": "active",
 	}
-	# Repair-kit upgrades that heal between sectors.
-	var repair := int(run.get("pending_repair", 0))
-	if repair > 0 and int(current_sector["integrity"]) < int(current_sector["integrity_max"]):
-		current_sector["integrity"] = mini(
-			int(current_sector["integrity_max"]),
-			int(current_sector["integrity"]) + repair
-		)
-		run["pending_repair"] = 0
+	# Repair kits bought in the debrief add integrity to the *next* sector. The
+	# old `pending_repair` heal compared against `integrity_max` after integrity
+	# had already been set to that max, so it could never fire.
 	for key in ["next_heat", "next_dv", "next_power", "next_sol", "next_integrity", "next_data"]:
 		run[key] = 0
 	sfx("confirm")
@@ -1178,6 +1171,9 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	history.append(result)
 	var finished_sector := int(sec["sector"])
 	run["sector"] = finished_sector + 1
+	# Each debrief gets a fresh set of three cards. Offers persist within the
+	# one debrief, but must not leak into the next sector in a shorter form.
+	shop_offers.clear()
 	last_result["run_over"] = int(run["approval"]) <= 0
 	if int(run["sector"]) <= SECTORS_PER_RUN and int(run["approval"]) > 0:
 		roll_event()
@@ -1217,7 +1213,7 @@ func buy_offer(index: int) -> bool:
 	run["budget"] = float(run["budget"]) - cost
 	owned.append(str(up["id"]))
 	if up.has("repair"):
-		run["pending_repair"] = int(up["repair"])
+		run["next_integrity"] = int(run.get("next_integrity", 0)) + int(up["repair"])
 	shop_offers.remove_at(index)
 	sfx("confirm")
 	changed.emit()
