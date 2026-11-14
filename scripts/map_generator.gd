@@ -1163,7 +1163,7 @@ func _place_start_landmark() -> void:
 
 	for attempt in range(240):
 		var ang := rng.randf() * TAU
-		var dist := rng.randf_range(4.0, 8.0)
+		var dist := rng.randf_range(4.0, 6.5)
 		var gx := int(round(player_cell.x + cos(ang) * dist)) - (w >> 1)
 		var gy := int(round(player_cell.y + sin(ang) * dist)) - (h >> 1)
 		var c := _world_to_chunk(Vector2i(gx, gy))

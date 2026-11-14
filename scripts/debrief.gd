@@ -261,9 +261,9 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	card.add_child(kind)
 	var desc := UIKit.label(str(up.get("plain", up["desc"])), 6, UIKit.MUTED, false)
 	desc.position = Vector2(56, 18)
-	desc.size = Vector2(160, 30)
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	card.add_child(desc)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.size = Vector2(158, 30)
 	var pr := UIKit.label("$%dM" % int(cost), 8, UIKit.AMBER if afford else UIKit.RED, true)
 	pr.position = Vector2(56, 50)
 	pr.size = Vector2(70, 11)

@@ -77,7 +77,7 @@ def to_sprite(img: Image.Image) -> Image.Image:
     img = img.crop(bbox)
     # head + shoulders: the raw is a half-body render, so keep the upper 68 %
     # and let the 16 px fade take the chest out of frame
-    img = img.crop((0, 0, img.size[0], int(img.size[1] * 0.68)))
+    img = img.crop((0, 0, img.size[0], int(img.size[1] * 0.56)))
     # fit the bust into 160x240 keeping the head at the top
     scale = min(W / img.size[0], H / img.size[1])
     nw, nh = max(1, int(img.size[0] * scale)), max(1, int(img.size[1] * scale))
@@ -85,7 +85,8 @@ def to_sprite(img: Image.Image) -> Image.Image:
     canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     canvas.alpha_composite(img, ((W - nw) // 2, 0))
 
-    # gentle prefilter then hard palette lock
+    # gentle prefilter then a region-aware palette lock: skin/hair colours only
+    # above the neck, uniform colours only below, so shadows never turn navy
     canvas = canvas.filter(ImageFilter.GaussianBlur(0.6))
     # normalise exposure: aim the 95th percentile at 212 so highlights do not
     # blow out to paper-white after the palette lock
@@ -98,9 +99,15 @@ def to_sprite(img: Image.Image) -> Image.Image:
     canvas = Image.fromarray(arr.astype(np.uint8), "RGBA")
     a = np.asarray(canvas).astype(np.float32)
     rgb = a[..., :3]
-    d = ((rgb[:, :, None, :] - PALETTE[None, None, :, :]) ** 2).sum(-1)
-    idx = d.argmin(-1)
-    locked = PALETTE[idx].astype(np.uint8)
+    head_pal = np.array([INK, *SKIN, *HAIR], np.float32)
+    body_pal = np.array([INK, *UNIFORM, *SKIN[:2], ORANGE, TEAL], np.float32)
+    locked = np.zeros_like(rgb)
+    split = int(canvas.size[1] * 0.62)
+    for (y0, y1), pal in (((0, split), head_pal), ((split, canvas.size[1]), body_pal)):
+        band = rgb[y0:y1]
+        d = ((band[:, :, None, :] - pal[None, None, :, :]) ** 2).sum(-1)
+        locked[y0:y1] = pal[d.argmin(-1)]
+    locked = locked.astype(np.uint8)
     alpha = (a[..., 3] > 110).astype(np.uint8) * 255
     # soft bottom fade: the bust must not end on a hard rectangular cut
     fade = np.clip((H - 1 - np.arange(H)) / 16.0, 0, 1)[:, None]
