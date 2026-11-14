@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bm16dqo268m7h"
+
+[deps]
+
+files=["res://data/pscomppars_raw.hostname.translation", "res://data/pscomppars_raw.disc.translation", "res://data/pscomppars_raw.discoverymethod.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.sy.translation", "res://data/pscomppars_raw.sy.translation", "res://data/pscomppars_raw.sy.translation"]
+
+source_file="res://data/pscomppars_raw.csv"
+dest_files=["res://data/pscomppars_raw.hostname.translation", "res://data/pscomppars_raw.disc.translation", "res://data/pscomppars_raw.discoverymethod.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.pl.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.st.translation", "res://data/pscomppars_raw.sy.translation", "res://data/pscomppars_raw.sy.translation", "res://data/pscomppars_raw.sy.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
