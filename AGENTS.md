@@ -17,6 +17,7 @@ code. This file describes the coordination rules, not who generated the art.
 6. `docs/ART_PIPELINE.md` — tile generation rules.
 7. `docs/ART_HANDOFF.md` — exact ComfyUI asset paths, sizes and prompts.
 8. `docs/AUDIO.md` — music lane: ComfyUI audio models, loop spec, `MusicDirector` contract (ECHO).
+9. `docs/STATUS.md` — internal build state, owners, ranked next steps (the public story is `README.md`).
 
 ## Communication protocol
 

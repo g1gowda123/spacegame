@@ -202,6 +202,11 @@ func _set_players(n: int) -> void:
 	_refresh()
 
 
+func _dev_tip() -> void:
+	if diff_cards.has("standard"):
+		diff_cards["standard"]["button"].mouse_entered.emit()
+
+
 func _set_difficulty(id: String) -> void:
 	if mode == "daily":
 		return

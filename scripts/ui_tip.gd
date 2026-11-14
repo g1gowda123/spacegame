@@ -109,6 +109,10 @@ func _place(host: Control) -> void:
 		x = r.position.x - width - 8.0
 	x = clampf(x, 8.0, 632.0 - width)
 	var y := r.position.y
+	# Top-bar dossiers drop below the bar instead of covering the stat the
+	# cursor is asking about.
+	if y < 50.0:
+		y = r.end.y + 4.0
 	if y + height > 352.0:
 		y = 352.0 - height
 	y = clampf(y, 8.0, 352.0 - height)

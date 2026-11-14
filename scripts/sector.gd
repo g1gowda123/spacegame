@@ -1210,7 +1210,8 @@ func _end_turn() -> void:
 	# the player dodged it.
 	var struck := _resolve_hazard()
 	if struck:
-		_check_overheat()	if int(sec["integrity"]) <= 0:
+		_check_overheat()
+		if int(sec["integrity"]) <= 0:
 		_ending_turn = false
 		_end(false, "HULL BREACH")
 		return
@@ -1812,6 +1813,7 @@ func _resolve_hazard() -> bool:
 			if hits.is_empty():
 				primary = h
 		_strike_visuals(h, d, hits.has(h))
+	_last_strike_near = not hits.is_empty() or closest <= 5
 
 	if not hits.is_empty():
 		if total_i != 0 or total_t != 0 or total_dv != 0 or total_p != 0:

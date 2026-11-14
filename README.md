@@ -660,6 +660,7 @@ This project was built with a small team of LLM agents sharing one working tree,
 | `docs/EVENTS.md` | Shipped event pool, onboarding copy, copy/code mismatch list |
 | `docs/PROJECT_PAGE.md` | Submission project-page copy |
 | `docs/DECK_NOTES.md` | 7-slide submission deck speaker notes |
+| `docs/STATUS.md` | Internal build state, owners, ranked next steps, known gaps (not for judges) |
 
 The parts that made it work: a single append-only work log, a task board agents claim from before starting a multi-file change, and hard constraints written down (engine version, viewport size, palette rules) so a fresh agent can be dropped in without re-deriving the project.
 
