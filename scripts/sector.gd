@@ -343,7 +343,7 @@ func _build_hud() -> void:
 	tc.add_child(name_label)
 	biome_label = UIKit.mono("—", 7, UIKit.MUTED)
 	biome_label.position = Vector2(10, 19)
-	biome_label.size = Vector2(150, 10)
+	biome_label.size = Vector2(150, 12)
 	tc.add_child(biome_label)
 
 	for sx in [166.0, 222.0, 274.0, 322.0, 398.0, 506.0]:
@@ -359,7 +359,7 @@ func _build_hud() -> void:
 	sol_label = _top_stat(tc, 280, "SOLS", UIKit.AMBER, 40)
 	data_caption = UIKit.mono("DATA", 6, UIKit.DIM)
 	data_caption.position = Vector2(328, 4)
-	data_caption.size = Vector2(60, 9)
+	data_caption.size = Vector2(60, 11)
 	tc.add_child(data_caption)
 	data_label = UIKit.head("—", 10, UIKit.GREEN)
 	data_label.position = Vector2(328, 15)
@@ -368,7 +368,7 @@ func _build_hud() -> void:
 
 	var heat_l := UIKit.mono("THERMAL", 6, UIKit.DIM)
 	heat_l.position = Vector2(404, 4)
-	heat_l.size = Vector2(60, 9)
+	heat_l.size = Vector2(60, 11)
 	tc.add_child(heat_l)
 	heat_val = UIKit.mono("0", 8, UIKit.AMBER, HORIZONTAL_ALIGNMENT_RIGHT)
 	heat_val.position = Vector2(464, 3)
@@ -380,7 +380,7 @@ func _build_hud() -> void:
 
 	var pwr_l := UIKit.mono("POWER", 6, UIKit.DIM)
 	pwr_l.position = Vector2(512, 4)
-	pwr_l.size = Vector2(64, 9)
+	pwr_l.size = Vector2(64, 11)
 	tc.add_child(pwr_l)
 	for i in range(12):
 		var pip := ColorRect.new()
@@ -448,7 +448,7 @@ func _build_hud() -> void:
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
 	var l := UIKit.mono(name, 6, UIKit.DIM)
 	l.position = Vector2(x, 4)
-	l.size = Vector2(w, 9)
+	l.size = Vector2(w, 11)
 	parent.add_child(l)
 	var v := UIKit.head("—", 10, color)
 	v.position = Vector2(x, 14)

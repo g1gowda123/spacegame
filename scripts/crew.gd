@@ -85,7 +85,7 @@ func _build_left() -> void:
 		size_cards[n] = card
 	mode_note = UIKit.mono("2-4 players share one console. 1 is solo.", 7, UIKit.DIM)
 	mode_note.position = Vector2(10, 96)
-	mode_note.size = Vector2(174, 10)
+	mode_note.size = Vector2(174, 12)
 	c.add_child(mode_note)
 
 	c.add_child(_label_at("DIFFICULTY", Vector2(10, 114), 8, UIKit.MUTED))
@@ -141,7 +141,7 @@ func _build_right() -> void:
 	c.add_child(apply)
 	code_status = UIKit.mono("PASTE A CODE TO FLY SOMEONE ELSE'S WORLDS.", 6, UIKit.DIM)
 	code_status.position = Vector2(12, 250)
-	code_status.size = Vector2(398, 10)
+	code_status.size = Vector2(398, 12)
 	c.add_child(code_status)
 
 
@@ -315,7 +315,7 @@ func _add_row(idx: int, row: Dictionary, cols: int = 1) -> void:
 	if row.has("shorts"):
 		var sh := UIKit.mono(str(row["shorts"]), 7, color, HORIZONTAL_ALIGNMENT_RIGHT)
 		sh.position = Vector2(130, 5)
-		sh.size = Vector2(cell_w - 140, 10)
+		sh.size = Vector2(cell_w - 140, 12)
 		bg.add_child(sh)
 	var line := UIKit.mono(str(row["line"]), 7, UIKit.MUTED)
 	line.position = Vector2(10, 20)

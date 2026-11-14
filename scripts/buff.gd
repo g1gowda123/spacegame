@@ -51,7 +51,7 @@ func _build() -> void:
 	var kicker := UIKit.mono("AGENCY REVIEW  //  FIELD COMMISSION", 7, UIKit.AMBER,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	kicker.position = Vector2(0, 16)
-	kicker.size = Vector2(640, 10)
+	kicker.size = Vector2(640, 12)
 	add_child(kicker)
 
 	var title := UIKit.head("SELECT FIELD COMMISSION", 16, UIKit.TEXT,
@@ -67,7 +67,7 @@ func _build() -> void:
 			GameState.BUFF_MILESTONES.size(),
 		], 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	sub.position = Vector2(0, 50)
-	sub.size = Vector2(640, 10)
+	sub.size = Vector2(640, 12)
 	add_child(sub)
 
 	var total_w := CARD_W * 3.0 + CARD_GAP * 2.0
@@ -119,7 +119,7 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 
 	var tag := UIKit.mono(rarity.to_upper(), 6, color, HORIZONTAL_ALIGNMENT_CENTER)
 	tag.position = Vector2(4, 26)
-	tag.size = Vector2(CARD_W - 8, 9)
+	tag.size = Vector2(CARD_W - 8, 11)
 	card.add_child(tag)
 
 	var icon_panel := Control.new()
@@ -159,11 +159,11 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 
 	var num := UIKit.mono(str(index + 1), 7, UIKit.DIM)
 	num.position = Vector2(10, 192)
-	num.size = Vector2(20, 10)
+	num.size = Vector2(20, 12)
 	card.add_child(num)
 	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
 	pick_hint.position = Vector2(CARD_W - 64, 192)
-	pick_hint.size = Vector2(54, 10)
+	pick_hint.size = Vector2(54, 12)
 	card.add_child(pick_hint)
 
 

@@ -95,7 +95,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	meta.position = Vector2(4, 87)
-	meta.size = Vector2(188, 10)
+	meta.size = Vector2(188, 12)
 	c.add_child(meta)
 
 	var type_line := UIKit.mono(
@@ -126,7 +126,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var risk := UIKit.label("%s  ·  THREAT %d" % [tag, int(round(threat))], 6, tag_color, true,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	risk.position = Vector2(4, 120)
-	risk.size = Vector2(188, 10)
+	risk.size = Vector2(188, 12)
 	c.add_child(risk)
 
 	_stat(c, 134, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
@@ -142,7 +142,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var mark := UIKit.mono("SELECT", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	mark.position = Vector2(10, 216)
-	mark.size = Vector2(176, 10)
+	mark.size = Vector2(176, 12)
 	c.add_child(mark)
 
 	var overlay := Button.new()
@@ -388,17 +388,17 @@ func _show_mission_review() -> void:
 	traj.add_child(moving)
 	var e1 := UIKit.label("EARTH", 5, UIKit.DIM, true)
 	e1.position = Vector2(8, 96)
-	e1.size = Vector2(46, 8)
+	e1.size = Vector2(46, 10)
 	traj.add_child(e1)
 	var e2 := UIKit.label(str(p["name"]).to_upper(), 5, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_RIGHT)
 	e2.position = Vector2(160, 55)
-	e2.size = Vector2(102, 8)
+	e2.size = Vector2(102, 10)
 	traj.add_child(e2)
 	var t1 := UIKit.label("TRANSFER ARC  ·  %.1f LY  ·  %.1f YR @0.85c" % [
 		float(p["distance_ly"]), maxf(0.4, float(p["distance_ly"]) / 0.85)
 	], 5, UIKit.CYAN, true)
 	t1.position = Vector2(56, 88)
-	t1.size = Vector2(206, 10)
+	t1.size = Vector2(206, 12)
 	traj.add_child(t1)
 
 	var timeline := UIKit.label(
@@ -425,7 +425,7 @@ func _show_mission_review() -> void:
 		var y := 44.0 + i * 27.0
 		var lab := UIKit.label(str(segs[i][0]), 6, UIKit.DIM, true)
 		lab.position = Vector2(seg_x, y)
-		lab.size = Vector2(38, 10)
+		lab.size = Vector2(38, 12)
 		c.add_child(lab)
 		var val := UIKit.label(str(segs[i][1]), 7, segs[i][2], true)
 		val.position = Vector2(seg_x + 42, y - 1)

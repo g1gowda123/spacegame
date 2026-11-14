@@ -111,7 +111,7 @@ func _build_ui() -> void:
 	var proto := UIKit.mono("PROTOTYPE 1.0  ·  WEB BUILD", 6, UIKit.DIM,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	proto.position = Vector2(410, 314)
-	proto.size = Vector2(180, 10)
+	proto.size = Vector2(180, 12)
 	add_child(proto)
 
 	var sig := UIKit.mono("●  SIGNAL LOCKED", 6, UIKit.GREEN)
@@ -202,7 +202,7 @@ func _build_ranks() -> void:
 	sheet.add_child(title)
 	var note := UIKit.label("BEST RUN PER CALLSIGN  ·  STORED ON THIS TERMINAL", 5, Color("#4a4438"), true)
 	note.position = Vector2(18, 48)
-	note.size = Vector2(420, 8)
+	note.size = Vector2(420, 10)
 	sheet.add_child(note)
 
 	var rows := GameState.leaderboard_top(5)
@@ -233,7 +233,7 @@ func _build_ranks() -> void:
 			sheet.add_child(grade)
 			var meta := UIKit.label("%s  ·  %s" % [str(row.get("date", "")), str(row.get("difficulty", "standard")).to_upper()], 5, Color("#4a4438"), true)
 			meta.position = Vector2(270, y + 2)
-			meta.size = Vector2(168, 8)
+			meta.size = Vector2(168, 10)
 			sheet.add_child(meta)
 			var rule := ColorRect.new()
 			rule.color = Color(0.11, 0.10, 0.09, 0.18)

@@ -9,10 +9,17 @@ extends Node2D
 
 const TILE := 64
 const CHUNK := 16
-const VIEW_W := 18
-const VIEW_H := 40
-const VIEW_PX := Vector2(VIEW_W * TILE, VIEW_H * TILE)
 const VIEW_TILES := 10.0
+
+@export_group("Render Window")
+## Tiles rendered around the player. Larger = more survey visible, more
+## SubViewport work; defaults are tuned for mobile/WebGL.
+@export_range(8, 48, 1) var view_w: int = 18
+@export_range(8, 64, 1) var view_h: int = 40
+
+
+func _view_px() -> Vector2:
+	return Vector2(float(view_w * TILE), float(view_h * TILE))
 const TURNS_START := 36
 const OBJECTIVE_COUNT := 4
 const HULL_START := 3
@@ -846,7 +853,7 @@ func _build_view() -> void:
 		space_layer.add_child(parallax_ridge)
 
 	sub_viewport = SubViewport.new()
-	sub_viewport.size = Vector2i(VIEW_PX)
+	sub_viewport.size = Vector2i(_view_px())
 	sub_viewport.transparent_bg = true
 	sub_viewport.disable_3d = true
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -2395,13 +2402,13 @@ func _reveal_around(cell: Vector2i, radius: int) -> void:
 func _draw_fog() -> void:
 	if fog_layer == null:
 		return
-	print("FOGDEBUG enabled=", fog_enabled, " revealed=", revealed.size(), " view=", VIEW_W, "x", VIEW_H, " origin=", view_origin, " children=", fog_layer.get_child_count())
+	print("FOGDEBUG enabled=", fog_enabled, " revealed=", revealed.size(), " view=", view_w, "x", view_h, " origin=", view_origin, " children=", fog_layer.get_child_count())
 	for child in fog_layer.get_children():
 		child.free()
 	if not fog_enabled:
 		return
-	for ly in VIEW_H:
-		for lx in VIEW_W:
+	for ly in view_h:
+		for lx in view_w:
 			var c := Vector2i(view_origin.x + lx, view_origin.y + ly)
 			if revealed.has(c):
 				continue
@@ -2428,12 +2435,12 @@ func _draw_fog() -> void:
 				fog_alpha = 0.50
 			var poly := Polygon2D.new()
 			poly.polygon = quad
-			poly.color = Color(0.008, 0.014, 0.024, fog_alpha)
+			poly.color = Color(1, 0, 0, 1.0)
 			fog_layer.add_child(poly)
 
 
 func _render_window() -> void:
-	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
+	view_origin = player_cell - Vector2i(view_w / 2, view_h / 2)
 	_reveal_around(player_cell, fog_reveal_radius if fog_enabled else 0)
 	if debug_layer != null and not debug_transitions:
 		for child in debug_layer.get_children():
@@ -2449,8 +2456,8 @@ func _render_window() -> void:
 	var base_key := str(b["base"])
 	var prio := _priority_map(b)
 
-	for ly in VIEW_H:
-		for lx in VIEW_W:
+	for ly in view_h:
+		for lx in view_w:
 			var wx := view_origin.x + lx
 			var wy := view_origin.y + ly
 			if source_ids.has(base_key):
@@ -2517,7 +2524,7 @@ func _build_terrain_mask() -> void:
 	# The shader uses the colour discontinuity to soften the seam between two
 	# tile materials; the transition tiles still own the larger silhouette.
 	var sub := 4
-	var msize := Vector2i(VIEW_W * sub, VIEW_H * sub)
+	var msize := Vector2i(view_w * sub, view_h * sub)
 	if terrain_mask_img == null or terrain_mask_size != msize:
 		terrain_mask_img = Image.create(msize.x, msize.y, false, Image.FORMAT_RGB8)
 		terrain_mask_size = msize
@@ -2527,8 +2534,8 @@ func _build_terrain_mask() -> void:
 		height_mask_size = msize
 		height_mask_tex = ImageTexture.create_from_image(height_mask_img)
 	var b: Dictionary = BIOMES[biome_index]
-	for ly in VIEW_H:
-		for lx in VIEW_W:
+	for ly in view_h:
+		for lx in view_w:
 			var wx := view_origin.x + lx
 			var wy := view_origin.y + ly
 			var t := _render_terrain_world(wx, wy)
@@ -2549,7 +2556,7 @@ func _build_terrain_mask() -> void:
 		shader_mat.set_shader_parameter("terrain_mask", terrain_mask_tex)
 		shader_mat.set_shader_parameter("terrain_mask_size", Vector2(msize))
 		shader_mat.set_shader_parameter("terrain_mask_origin", Vector2(view_origin * TILE))
-		shader_mat.set_shader_parameter("terrain_mask_span", float(VIEW_W * TILE))
+		shader_mat.set_shader_parameter("terrain_mask_span", float(view_w * TILE))
 		shader_mat.set_shader_parameter("height_mask", height_mask_tex)
 		shader_mat.set_shader_parameter("height_mask_size", Vector2(msize))
 
@@ -2576,8 +2583,8 @@ func _rebuild_cliffs() -> void:
 	var rock := str(b.get("rock", ""))
 	if rock == "" or not bool(feature_toggles.get("mountains", true)):
 		return
-	for ly in VIEW_H:
-		for lx in VIEW_W:
+	for ly in view_h:
+		for lx in view_w:
 			var wx := view_origin.x + lx
 			var wy := view_origin.y + ly
 			if _render_terrain_world(wx, wy) != rock:
@@ -2868,8 +2875,8 @@ func _in_view(gx: int, gy: int, w: int = 1, h: int = 1) -> bool:
 	return (
 		gx >= view_origin.x
 		and gy >= view_origin.y
-		and gx + w <= view_origin.x + VIEW_W
-		and gy + h <= view_origin.y + VIEW_H
+		and gx + w <= view_origin.x + view_w
+		and gy + h <= view_origin.y + view_h
 	)
 
 
@@ -2904,8 +2911,8 @@ func _draw_transition_debug() -> void:
 		"other": Color(1.0, 1.0, 1.0, 0.65),
 	}
 	var counts := {}
-	for ly in VIEW_H:
-		for lx in VIEW_W:
+	for ly in view_h:
+		for lx in view_w:
 			var wx := view_origin.x + lx
 			var wy := view_origin.y + ly
 			var t := _render_terrain_world(wx, wy)
@@ -3620,7 +3627,7 @@ func _pan_camera(from_cell: Vector2i) -> void:
 func _project(world: Vector2) -> Vector2:
 	var vp := get_viewport_rect().size
 	var local := world - Vector2(float(view_origin.x), float(view_origin.y)) * TILE
-	var p := local - VIEW_PX * 0.5
+	var p := local - _view_px() * 0.5
 	var screen := vp * 0.5
 	match view_mode:
 		0:
@@ -3633,6 +3640,20 @@ func _project(world: Vector2) -> Vector2:
 			return screen + p * map_scale
 
 
+func _auto_exposure() -> float:
+	# Tile luminance varies 66-179 across the atlas, so one hand-tuned exposure
+	# per biome cannot keep every board readable (crystal field was the worst:
+	# 0.62 exposure multiplied already-dark glass_ground by darkness).
+	# Normalise the base tile toward a 0.62 mid-tone, then let the per-biome
+	# constant act only as a restrained +-10% artistic trim.
+	var b: Dictionary = BIOMES[biome_index]
+	var base_key := str(b.get("base", ""))
+	var luma := _tile_avg(base_key).get_luminance()
+	var trim := clampf(float(b.get("exposure", 1.0)), 0.90, 1.10)
+	var auto := clampf(0.62 / maxf(luma, 0.05), 0.75, 2.20)
+	return auto * trim
+
+
 func _apply_biome_tint() -> void:
 	if shader_mat == null:
 		return
@@ -3640,7 +3661,7 @@ func _apply_biome_tint() -> void:
 	var c := Color(str(b.get("tint", "#ffffff")))
 	shader_mat.set_shader_parameter("biome_tint", c)
 	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
-	shader_mat.set_shader_parameter("exposure", float(b.get("exposure", 1.0)))
+	shader_mat.set_shader_parameter("exposure", _auto_exposure())
 	# Gamma lift for the boards whose source tiles are genuinely dark (ash,
 	# basalt, obsidian). It opens the shadows without flattening the highlight.
 	var lift := 1.0
@@ -3659,14 +3680,14 @@ func _update_view() -> void:
 		return
 	_apply_biome_tint()
 	var vp := get_viewport_rect().size
-	var target_w := float(VIEW_PX.x)
-	var target_h := float(VIEW_PX.y)
+	var target_w := float(_view_px().x)
+	var target_h := float(_view_px().y)
 	if view_mode == 0:
-		target_h = float(VIEW_PX.y) * tilt
+		target_h = float(_view_px().y) * tilt
 	elif view_mode == 1:
-		# The rendered window is VIEW_PX, not VIEW_TILES*TILE. A rotated
+		# The rendered window is _view_px(), not VIEW_TILES*TILE. A rotated
 		# rectangle is (w+h)/sqrt(2) wide, then tilt-squashed vertically.
-		target_w = float(VIEW_PX.x + VIEW_PX.y) * 0.70710678
+		target_w = float(_view_px().x + _view_px().y) * 0.70710678
 		target_h = target_w * tilt
 	# Fit both axes so fullscreen and unusual window aspect ratios keep the
 	# same number of visible tiles instead of cropping the board vertically.
@@ -3683,9 +3704,9 @@ func _update_view() -> void:
 	shader_mat.set_shader_parameter("map_scale", map_scale)
 	shader_mat.set_shader_parameter("tilt", tilt)
 	shader_mat.set_shader_parameter("screen_size", vp)
-	shader_mat.set_shader_parameter("map_size", VIEW_PX)
-	shader_mat.set_shader_parameter("map_tiles", Vector2(VIEW_W, VIEW_H))
-	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
+	shader_mat.set_shader_parameter("map_size", _view_px())
+	shader_mat.set_shader_parameter("map_tiles", Vector2(view_w, view_h))
+	shader_mat.set_shader_parameter("camera_center", _view_px() * 0.5)
 	shader_mat.set_shader_parameter("camera_offset", Vector2.ZERO)
 	shader_mat.set_shader_parameter("circle_view", 1 if circle_view else 0)
 	shader_mat.set_shader_parameter("circle_radius", circle_radius)

@@ -115,7 +115,7 @@ func _build_grade() -> void:
 		next_text = "NEXT  +%d TO GRADE %s" % [next_gap, next_grade]
 	var next := UIKit.label(next_text, 6, UIKit.CYAN if next_grade == "MAX" else UIKit.DIM, true)
 	next.position = Vector2(14, 232)
-	next.size = Vector2(238, 8)
+	next.size = Vector2(238, 12)
 	c.add_child(next)
 
 
@@ -129,7 +129,7 @@ func _build_ledger() -> void:
 	c.add_child(h)
 	var best := UIKit.mono("BEST %d" % int(GameState.best_score), 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
 	best.position = Vector2(210, 8)
-	best.size = Vector2(122, 10)
+	best.size = Vector2(122, 12)
 	c.add_child(best)
 
 	var y := 28.0
