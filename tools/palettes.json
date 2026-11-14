@@ -1,0 +1,172 @@
+{
+  "temperate": {
+    "label": "Temperate / mossy",
+    "colors": [
+      "#10141a", "#263e1a", "#2c511c", "#35631d", "#3e6e21",
+      "#477325", "#497c23", "#538c23", "#609d25", "#3a2c1f",
+      "#5a4530", "#7d6242", "#a08355", "#c2a86e", "#3b3f42",
+      "#5c6165", "#7c8286", "#1f3d4d", "#2f5d70", "#4a8496",
+      "#a9c9c4"
+    ]
+  },
+  "arid": {
+    "label": "Arid / desert",
+    "colors": [
+      "#17120e", "#2e2118", "#43301f", "#5a4229", "#715434",
+      "#8a6a42", "#a3824f", "#bd9b5f", "#d6b573", "#6b4f3a",
+      "#8a4f2f", "#a8643c", "#c07d4a", "#b08c6a", "#e3cf9e",
+      "#7a6648"
+    ]
+  },
+  "cryo": {
+    "label": "Cryo / ice",
+    "colors": [
+      "#0e141c", "#1a2632", "#263746", "#334b5c", "#41607a",
+      "#527a94", "#6b96ad", "#8db4c4", "#b8d6de", "#d8e9ec",
+      "#f2fbfb", "#3c4a52", "#56666e", "#74868c", "#3a5d6e",
+      "#6fa0ad"
+    ]
+  },
+  "volcanic": {
+    "label": "Volcanic / lava",
+    "colors": [
+      "#0d0a0c", "#1a1214", "#2a1c1c", "#3d2724", "#52332b",
+      "#6b4438", "#2c3033", "#44484a", "#5e6264", "#7a2d12",
+      "#a33b12", "#c94f0e", "#e86a10", "#ff8a1a", "#ffb238",
+      "#ffe07a", "#8c3a24", "#f4d7a0"
+    ]
+  },
+  "ocean": {
+    "label": "Ocean / hycean",
+    "colors": [
+      "#081218", "#0c2230", "#103446", "#15485d", "#1c6075",
+      "#277a8d", "#3696a4", "#52b3ba", "#7fd0ce", "#b8e6dc",
+      "#e8f7ef", "#3d5a4a", "#5c7a5e", "#86a374", "#b9a06a",
+      "#d8c088"
+    ]
+  },
+  "barren": {
+    "label": "Barren / regolith",
+    "colors": [
+      "#101012", "#1b1b1f", "#28282d", "#38383e", "#4a4a50",
+      "#5d5d63", "#727278", "#8a8a90", "#a2a2a6", "#3a302a",
+      "#55463c", "#6f5c4e", "#2a2e33", "#3f464e", "#59616a",
+      "#c4c4c6"
+    ]
+  },
+  "hardware": {
+    "label": "Shared hardware / structures",
+    "colors": [
+      "#0d1117", "#1b222b", "#2a333e", "#3d4854", "#55616e",
+      "#79858f", "#b8c0c4", "#e2e6e4", "#1c3f4a", "#2b6570",
+      "#4d97a0", "#8fd0cf", "#b8461f", "#e06a22", "#ffa63d",
+      "#1e3a5c", "#2f5a8c", "#4d82b8", "#6b4a2f", "#a06a3f"
+    ]
+  },
+  "water_fresh": {
+    "label": "Fresh water subset",
+    "colors": [
+      "#0f1a1c", "#1f3d4d", "#2f5d70", "#3f7086", "#4a8496",
+      "#6fa9b5", "#a9c9c4", "#d8e8e2"
+    ]
+  },
+  "water_deep": {
+    "label": "Deep water subset",
+    "colors": [
+      "#070f18", "#0c2230", "#103446", "#15485d", "#1c6075",
+      "#277a8d", "#3696a4", "#52b3ba"
+    ]
+  },
+  "beach": {
+    "label": "Sand + shallow water subset",
+    "colors": [
+      "#10141a", "#1f3d4d", "#2f5d70", "#4a8496", "#a9c9c4",
+      "#7d6242", "#a08355", "#c2a86e", "#d8c08a"
+    ]
+  },
+  "rock": {
+    "label": "Shared rock / mountain",
+    "colors": [
+      "#101014", "#24262a", "#34373c", "#464a50", "#5b6066",
+      "#72777d", "#8e9399", "#a9aeb3", "#3a302a", "#55463c",
+      "#6f5c4e"
+    ]
+  },
+  "snow": {
+    "label": "Snow subset (soft shadows)",
+    "colors": [
+      "#263746", "#334b5c", "#41607a", "#527a94", "#6b96ad",
+      "#8db4c4", "#b8d6de", "#d8e9ec", "#f2fbfb"
+    ]
+  },
+  "salt": {
+    "label": "Salt flat / pale crust",
+    "colors": [
+      "#1f1d18", "#353228", "#4d483a", "#66604f", "#7f7866",
+      "#9a927d", "#b5ad97", "#c9c2ae", "#d9d4c4", "#e8e4d6"
+    ]
+  },
+  "sulfur": {
+    "label": "Sulfur / mineral yellow",
+    "colors": [
+      "#2a2410", "#4a3d14", "#6b5718", "#8a6f1e", "#a98a28",
+      "#c9a93a", "#e0c85a", "#f2e08a", "#3a2a18", "#241a10"
+    ]
+  },
+  "ocean_coral": {
+    "label": "Ocean coral / reef on turquoise water (water-dominant)",
+    "colors": [
+      "#081218", "#0c2230", "#103446", "#15485d", "#1c6075",
+      "#277a8d", "#3696a4", "#52b3ba", "#6e2f38", "#8a3a3e",
+      "#b8544a", "#d97a5a", "#e8a06a", "#f2c48a", "#b9a06a",
+      "#d8c088"
+    ]
+  },
+  "ocean_kelp": {
+    "label": "Ocean kelp / submerged fronds on blue water (water-dominant)",
+    "colors": [
+      "#081218", "#0c2230", "#103446", "#15485d", "#1c6075",
+      "#277a8d", "#3696a4", "#52b3ba", "#0f2418", "#17331f",
+      "#224528", "#2f5a33", "#3f703f", "#58884a", "#7d8a5c",
+      "#a8a06a"
+    ]
+  },
+  "barren_dust": {
+    "label": "Barren dust / tan ochre drifts with gray pebbles",
+    "colors": [
+      "#1b1712", "#2a2118", "#3d3122", "#4f3f2b", "#634f34",
+      "#7a623f", "#91784c", "#a8905c", "#bfa86e", "#d6c184",
+      "#e8dcc0", "#2a2e33", "#3a3a3e", "#55555b", "#727278",
+      "#8a8a90"
+    ]
+  },
+  "coral": {
+    "label": "Coral / reef accents",
+    "colors": [
+      "#1a1014", "#3a1a22", "#5e2630", "#8a3a3e", "#b8544a",
+      "#d97a5a", "#e8a06a", "#f2c48a", "#4a8a8a", "#6fb3a8",
+      "#2f5d70", "#a9c9c4"
+    ]
+  },
+  "kelp": {
+    "label": "Kelp / underwater green",
+    "colors": [
+      "#0a1410", "#12261a", "#1b3a24", "#26502e", "#346a3a",
+      "#4a8548", "#6aa05a", "#8fbf72", "#1f3d4d", "#2f5d70"
+    ]
+  },
+  "boreal": {
+    "label": "Boreal / frosted scrub",
+    "colors": [
+      "#10161a", "#1c2a24", "#2b3f30", "#3e5a3a", "#587a46",
+      "#7a9a58", "#9eb07a", "#b8c9b0", "#d8e4d8", "#e8f0e8"
+    ]
+  },
+  "obsidian": {
+    "label": "Obsidian / glassy black",
+    "colors": [
+      "#07060a", "#0d0b12", "#13101a", "#1b1624", "#26202f",
+      "#342a40", "#463852", "#5c4a68", "#7a6286", "#a088ac"
+    ]
+  }
+}
