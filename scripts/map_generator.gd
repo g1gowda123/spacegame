@@ -306,6 +306,12 @@ var water_shape_keys: Dictionary = {}
 var water_shape_pad: int = 2
 
 var chunks: Dictionary = {}
+# Persistent survey snapshots. Loaded chunks unload around the player, but the
+# minimap should keep showing every chunk the run has already revealed.
+var mapped_chunks: Dictionary = {}
+var mapped_lo := Vector2i.ZERO
+var mapped_hi := Vector2i.ZERO
+var has_mapped_bounds := false
 var elevation := FastNoiseLite.new()
 var detail := FastNoiseLite.new()
 var variant_noise := FastNoiseLite.new()
@@ -958,6 +964,8 @@ func _generate() -> void:
 	rng.seed = seed_value
 	planet_name = "KOI-%04d b" % (seed_value % 9999)
 	chunks.clear()
+	mapped_chunks.clear()
+	has_mapped_bounds = false
 	game_over = false
 	message_text = ""
 	turns_left = TURNS_START
@@ -987,6 +995,8 @@ func _generate() -> void:
 func _refresh_world() -> void:
 	"""Regenerate loaded chunks after a feature toggle, keeping the player."""
 	chunks.clear()
+	mapped_chunks.clear()
+	has_mapped_bounds = false
 	_update_chunks()
 	_render_window()
 	_refresh_status()
@@ -1317,7 +1327,27 @@ func _get_chunk(coord: Vector2i) -> Dictionary:
 		return chunks[coord]
 	var data := _generate_chunk(coord)
 	chunks[coord] = data
+	_record_mapped_chunk(coord, data)
 	return data
+
+
+func _record_mapped_chunk(coord: Vector2i, data: Dictionary) -> void:
+	if not mapped_chunks.has(coord):
+		mapped_chunks[coord] = {
+			"terrain": data["terrain"],
+			"structures": data["structures"],
+		}
+	var x0 := coord.x * CHUNK
+	var y0 := coord.y * CHUNK
+	if not has_mapped_bounds:
+		mapped_lo = Vector2i(x0, y0)
+		mapped_hi = Vector2i(x0 + CHUNK, y0 + CHUNK)
+		has_mapped_bounds = true
+	else:
+		mapped_lo.x = mini(mapped_lo.x, x0)
+		mapped_lo.y = mini(mapped_lo.y, y0)
+		mapped_hi.x = maxi(mapped_hi.x, x0 + CHUNK)
+		mapped_hi.y = maxi(mapped_hi.y, y0 + CHUNK)
 
 
 func _generate_chunk(coord: Vector2i) -> Dictionary:
@@ -2966,7 +2996,8 @@ func _update_view() -> void:
 	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
 	shader_mat.set_shader_parameter("camera_offset", Vector2.ZERO)
 	shader_mat.set_shader_parameter("circle_view", 1 if circle_view else 0)
-	shader_mat.set_shader_parameter("circle_radius", 0.47)
+	shader_mat.set_shader_parameter("circle_radius", 0.44)
+	shader_mat.set_shader_parameter("circle_outer", 0.58)
 	shader_mat.set_shader_parameter("show_grid", 1 if show_grid else 0)
 	_rebuild_structure_sprites()
 	_rebuild_actors()
@@ -2976,59 +3007,107 @@ func _draw_minimap() -> void:
 	if minimap == null:
 		return
 	var sz := minimap.size
-	var bg := Rect2(Vector2.ZERO, sz)
-	minimap.draw_rect(bg, Color(0.025, 0.035, 0.050, 0.90))
+	var center := sz * 0.5
+	var radius_px := minf(sz.x, sz.y) * 0.47
+	minimap.draw_circle(center, radius_px, Color(0.025, 0.035, 0.050, 0.94))
+	if mapped_chunks.is_empty():
+		minimap.draw_arc(center, radius_px, 0.0, TAU, 64,
+			Color(0.32, 0.45, 0.48, 0.75), 1.0, true)
+		return
+
+	var lo := mapped_lo
+	var hi := mapped_hi
+	lo.x = mini(lo.x, player_cell.x - 2)
+	lo.y = mini(lo.y, player_cell.y - 2)
+	hi.x = maxi(hi.x, player_cell.x + 2)
+	hi.y = maxi(hi.y, player_cell.y + 2)
+	var span := maxi(hi.x - lo.x, hi.y - lo.y)
+	var world_center := Vector2(float(lo.x + hi.x) * 0.5, float(lo.y + hi.y) * 0.5)
+	var step := (radius_px * 1.90) / float(maxi(span, 1))
 	var b: Dictionary = BIOMES[biome_index]
 	var water := str(b.get("water", ""))
 	var shore := str(b.get("shore", ""))
-	var radius := 14
-	var step: float = minf(sz.x, sz.y) / float(radius * 2 + 1)
-	var center: Vector2 = sz * 0.5
-	for dy in range(-radius, radius + 1):
-		for dx in range(-radius, radius + 1):
-			var gx := player_cell.x + dx
-			var gy := player_cell.y + dy
-			var raw := _render_terrain_world(gx, gy)
-			if raw == "":
+	var rock := str(b.get("rock", ""))
+	var land := Color(0.24, 0.34, 0.22, 0.96)
+	match str(b.get("id", "")):
+		"arid", "barren", "iron": land = Color(0.48, 0.40, 0.27, 0.96)
+		"volcanic", "sulfur", "obsidian": land = Color(0.36, 0.24, 0.19, 0.96)
+		"cryo", "ammonia": land = Color(0.56, 0.68, 0.73, 0.96)
+		"crystal": land = Color(0.42, 0.34, 0.55, 0.96)
+		"ocean": land = Color(0.33, 0.48, 0.35, 0.96)
+
+	for coord in mapped_chunks:
+		var data: Dictionary = mapped_chunks[coord]
+		var arr: Array = data["terrain"]
+		var ox: int = int(coord.x) * CHUNK
+		var oy: int = int(coord.y) * CHUNK
+		for ly in CHUNK:
+			for lx in CHUNK:
+				var gx := ox + lx
+				var gy := oy + ly
+				var rel := (Vector2(float(gx), float(gy)) - world_center) * step
+				if rel.length() > radius_px - maxf(step, 1.0):
+					continue
+				var raw := str(arr[ly * CHUNK + lx])
+				var col := land
+				if water != "" and (raw == water or raw.begins_with(water + "_")):
+					col = Color(0.07, 0.24, 0.32, 0.96)
+				elif shore != "" and raw == shore:
+					col = Color(0.55, 0.47, 0.30, 0.96)
+				elif rock != "" and raw == rock:
+					col = Color(0.40, 0.43, 0.46, 0.96)
+				var p := center + rel - Vector2(step, step) * 0.5
+				minimap.draw_rect(Rect2(p, Vector2(step, step)), col)
+
+	for coord in mapped_chunks:
+		var data: Dictionary = mapped_chunks[coord]
+		for s in data["structures"]:
+			var sx := int(s["gx"]) + int(s["w"]) * 0.5
+			var sy := int(s["gy"]) + int(s["h"]) * 0.5
+			var rel := (Vector2(float(sx), float(sy)) - world_center) * step
+			if rel.length() > radius_px - 2.0:
 				continue
-			var col := Color(0.22, 0.31, 0.22, 0.96)
-			if water != "" and raw == water:
-				col = Color(0.07, 0.24, 0.32, 0.96)
-			elif shore != "" and raw == shore:
-				col = Color(0.55, 0.47, 0.30, 0.96)
-			var p := center + Vector2(float(dx), float(dy)) * step - Vector2(step, step) * 0.5
-			minimap.draw_rect(Rect2(p, Vector2(step, step)), col)
+			var sp := center + rel - Vector2(float(s["w"]), float(s["h"])) * step * 0.5
+			minimap.draw_rect(
+				Rect2(sp, Vector2(float(s["w"]), float(s["h"])) * step),
+				Color(0.45, 0.50, 0.55, 0.90)
+			)
 
 	if hazard_kind != "" and hazard_cell.x != -999:
 		for oy in range(-1, 2):
 			for ox in range(-1, 2):
-				var d := Vector2(float(hazard_cell.x + ox - player_cell.x), float(hazard_cell.y + oy - player_cell.y))
-				if absf(d.x) > radius or absf(d.y) > radius:
+				var rel := (Vector2(float(hazard_cell.x + ox), float(hazard_cell.y + oy)) - world_center) * step
+				if rel.length() > radius_px - step:
 					continue
-				var hp := center + d * step - Vector2(step, step) * 0.5
-				minimap.draw_rect(Rect2(hp, Vector2(step, step)), Color(0.95, 0.25, 0.15, 0.35))
+				minimap.draw_rect(
+					Rect2(center + rel - Vector2(step, step) * 0.5, Vector2(step, step)),
+					Color(0.95, 0.25, 0.15, 0.32)
+				)
 
-	for coord in chunks:
-		var data: Dictionary = chunks[coord]
-		for s in data.get("structures", []):
-			var sx := int(s["gx"]) - player_cell.x
-			var sy := int(s["gy"]) - player_cell.y
-			if absi(sx) > radius or absi(sy) > radius:
-				continue
-			var sp := center + Vector2(float(sx), float(sy)) * step - Vector2(step, step) * 0.5
-			minimap.draw_rect(Rect2(sp, Vector2(float(s["w"]), float(s["h"])) * step), Color(0.45, 0.50, 0.55, 0.95))
-
+	# Objectives are not clipped away: if an unscanned node lies beyond the
+	# mapped bounds, pin it to the rim so the player always knows it exists.
 	for i in range(objectives.size()):
 		if collected[i]:
 			continue
-		var od := objectives[i] - player_cell
-		if absi(od.x) > radius or absi(od.y) > radius:
-			continue
-		var op := center + Vector2(float(od.x), float(od.y)) * step
-		minimap.draw_rect(Rect2(op - Vector2(step, step), Vector2(step, step) * 2.0), Color(1.0, 0.82, 0.30, 0.95))
+		var rel := (Vector2(objectives[i]) - world_center) * step
+		var max_r := radius_px - 4.0
+		if rel.length() > max_r:
+			rel = rel.normalized() * max_r
+		var op := center + rel
+		var mark := PackedVector2Array([
+			op + Vector2(0, -3), op + Vector2(3, 0),
+			op + Vector2(0, 3), op + Vector2(-3, 0),
+		])
+		minimap.draw_colored_polygon(mark, Color(1.0, 0.82, 0.30, 0.98))
 
-	minimap.draw_rect(Rect2(center - Vector2(step, step) * 0.75, Vector2(step, step) * 1.5), Color(0.30, 0.95, 0.90, 1.0))
-	minimap.draw_rect(bg.grow(-0.5), Color(0.32, 0.45, 0.48, 0.75), false, 1.0)
+	var prel := (Vector2(player_cell) - world_center) * step
+	var max_pr := radius_px - 3.0
+	if prel.length() > max_pr:
+		prel = prel.normalized() * max_pr
+	var pp := center + prel
+	minimap.draw_circle(pp, 2.4, Color(0.30, 0.95, 0.90, 1.0))
+	minimap.draw_arc(center, radius_px, 0.0, TAU, 64,
+		Color(0.32, 0.45, 0.48, 0.78), 1.0, true)
 
 
 func _refresh_status() -> void:
