@@ -2224,6 +2224,12 @@ func _place_ridge(
 		return
 
 	var key := _ridge_key(biome_id)
+	# Volcanoes are landmarks: at most one per 16×16 chunk, otherwise the
+	# 20×16 camera window shows four identical cones at once.
+	if key == "volcano":
+		for s in out:
+			if str(s["key"]) == "volcano":
+				return
 	if key == "ridge":
 		_place_ridge_chain(out, occupied, arr, allowed, coord, biome_id, rng)
 		return
@@ -2239,6 +2245,10 @@ func _place_ridge(
 	if key == "ridge_wide":
 		count = rng.randi_range(2, 4)
 	if key == "mountain_massif":
+		count = rng.randi_range(1, 2)
+	# A volcanic cone is a landmark, not a mountain chain. Four or five
+	# identical cones in one view read as a stamp, so cap the chain at two.
+	if key == "volcano":
 		count = rng.randi_range(1, 2)
 
 	# A chain that starts at the chunk edge and walks out is truncated to one
@@ -2363,6 +2373,12 @@ func _generate_chunk_structures(coord: Vector2i, arr: Array, b: Dictionary) -> A
 	var feature_chance := 0.24 if biome_id == "barren" else 0.44
 	if crng.randf() < feature_chance:
 		var key := _feature_key(biome_id, crng.randf())
+		# Never add a second identical cone/geyser to this chunk; the ridge
+		# pass already placed the hero volcano.
+		if key in ["volcano", "geyser", "impact_crater"]:
+			for s in out:
+				if str(s["key"]) == key:
+					return out
 		var info: Dictionary = STRUCTURES[key]
 		var w: int = info["w"]
 		var h: int = info["h"]
