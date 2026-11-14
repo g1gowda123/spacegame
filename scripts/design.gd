@@ -1,4 +1,5 @@
 extends Control
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 
 var hull_cards: Dictionary = {}
 var vehicle_cards: Dictionary = {}

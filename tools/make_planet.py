@@ -152,8 +152,11 @@ def sphere(surf: np.ndarray, out_size: int, light: tuple[float, float, float],
     rx = nx * ca - ny * sa
     ry = nx * sa + ny * ca
     cb, sb = np.cos(tilt), np.sin(tilt)
-    u = (rx * 0.94 + ry * 0.12) * 0.5 + 0.5
-    v = (ry * 0.94 * cb - rx * 0.12 * cb + sb * 0.35) * 0.5 + 0.5
+    # Map the disc into 0.04..0.96 of the surface, never across the wrap edge:
+    # sampling u=0..1 puts the surface seam on the limb, which shows as a
+    # straight colour break on the title-screen planet.
+    u = np.clip((rx * 0.94 + ry * 0.12) * 0.46 + 0.5, 0.001, 0.999)
+    v = np.clip((ry * 0.94 * cb - rx * 0.12 * cb + sb * 0.35) * 0.46 + 0.5, 0.001, 0.999)
     sx = np.clip((u * size).astype(int), 0, size - 1)
     sy = np.clip((v * size).astype(int), 0, size - 1)
     col = surf[sy, sx].astype(np.float32)

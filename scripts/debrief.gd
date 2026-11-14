@@ -1,4 +1,5 @@
 extends Control
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## Between-sector debrief and field refit shop.
 
 var r: Dictionary = {}

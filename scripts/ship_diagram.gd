@@ -1,4 +1,5 @@
 class_name ShipDiagram
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 extends Control
 ## Generated spacecraft portrait. The PNG is produced by ComfyUI through
 ## tools/gen_asset.py + tools/pixelize_sprite.py; this control never draws a

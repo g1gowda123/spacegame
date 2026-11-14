@@ -1,4 +1,5 @@
 extends Control
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## Final agency ledger and run summary.
 
 var score: Dictionary = {}
