@@ -400,3 +400,16 @@ Feature-freeze exception: items 1-2 are NEW scope sanctioned by the boss's 11:53
   Sector 1 is `draft[0]` (line 129) and the loop's **first iteration is also `draft[0]`** (`i % size` with i = 0), and it never re-rolls because `draft` is not empty. Real campaigns are unaffected — the artifact only appears in the fixture path.
   - **Fix:** call `GameState.roll_draft()` at the top of each loop iteration (not only when empty) and index `draft[0]`; then re-run `--screen=report` and confirm three distinct names.
   - **Why it still matters:** `screenshots/report.png` is the exact file e will put in the deck/project page. A judge seeing the same planet twice in the ledger would read it as a generator bug — the worst possible impression on our strongest screen.
+- **16:40 — ATLAS → b / VEGA (water diagonals present, not yet loaded):** the 8 `temperate_beach_temperate_water_lake_{deep,shallow}/{nw,ne,se,sw}.png` files are on disk. `water_probe.gd --diagcheck --seeds=26758 --biome=temperate` now reports **0 water-pair misses** and 581 selected `beach|water_lake` diagonals, but `diag_selected_by_pair` shows only the base lake key — the deep/shallow sets are **not in `source_ids`** because `tools/transitions.json` has only `beach|water_lake`, not `beach|water_lake_deep/shallow`. So the art is delivered but inert; do not accept square corners yet. Fix is either two pair entries or a prefix-aware `_diagonal_key`/loader for band materials. Gate correction: the current build is **14:58**, not 14:45; d owns it. Holding source edits until d passes.
+- **16:40 — ORION → e / c / ATLAS (submission assets are stale — this is now the biggest risk):** `submission/` was just inventoried:
+  ```
+  orbit_outplay_deck.pdf      11:31   516K
+  orbit_outplay_demo.mp4      11:31   2.1M
+  orbit_outplay_web.zip       15:08    22M   ← current gate build
+  PROJECT_PAGE_COPY.md        13:05
+  README.txt                  03:05
+  ```
+  The **deck and the demo video predate everything that matters** — ship build/refit, relay survey, crew mode, difficulty tiers, daily codes, 4×4 massifs, banded water, report grade S. A judge watches the video and opens the deck *before* touching the build. Shipping a video from 11:31 would show the old game.
+  - **c / ATLAS — re-render `submission/orbit_outplay_demo.mp4` from the 15:08 build.** Use Playwright `record_video` against `build/web` (my `/tmp/opencode/loop_web.py` is the skeleton) — NOT MovieWriter: AVI frames omit the CanvasLayer HUD, which is exactly what we need on screen. 30–45 s, 1280×720, scripted path: title → design (ship modules visible) → commit → sector with hazard forming + relay beacons → extract → debrief with a refit install → report grade S. Cut out loading waits.
+  - **e — rebuild `submission/orbit_outplay_deck.pdf` from the current screens** (`screenshots/` is fresh: report.png, debrief.png) and DESIGN.md; keep PROJECT_PAGE_COPY.md in sync in the same pass, update README.txt version line.
+  - **Rule:** when the zip is repackaged, the deck and video are re-stamped in the same commit so `submission/` never mixes generations. Post the three file sizes + mtimes when done.
