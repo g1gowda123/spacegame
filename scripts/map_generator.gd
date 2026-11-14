@@ -2221,6 +2221,8 @@ func _render_window() -> void:
 	_rebuild_structure_sprites()
 	_rebuild_cliffs()
 	_rebuild_actors()
+	if debug_transitions:
+		_draw_transition_debug()
 
 
 func _cell_quad(wx: int, wy: int) -> PackedVector2Array:
@@ -2542,10 +2544,6 @@ func _in_view(gx: int, gy: int, w: int = 1, h: int = 1) -> bool:
 	)
 
 
-	if debug_transitions:
-		_draw_transition_debug()
-
-
 func _transition_kind(key: String, base_key: String) -> String:
 	if key == base_key:
 		return "base"
@@ -2570,13 +2568,14 @@ func _draw_transition_debug() -> void:
 	var b: Dictionary = BIOMES[biome_index]
 	var base_key := str(b["base"])
 	var colors := {
-		"straight": Color(0.35, 0.62, 1.0, 0.34),
-		"outer": Color(1.0, 0.28, 0.24, 0.40),
-		"inner": Color(0.35, 1.0, 0.48, 0.38),
-		"stripe": Color(1.0, 0.86, 0.25, 0.36),
-		"diag": Color(1.0, 0.32, 0.92, 0.40),
-		"other": Color(1.0, 1.0, 1.0, 0.30),
+		"straight": Color(0.10, 0.35, 1.0, 0.70),
+		"outer": Color(1.0, 0.05, 0.05, 0.78),
+		"inner": Color(0.05, 1.0, 0.25, 0.72),
+		"stripe": Color(1.0, 0.85, 0.05, 0.70),
+		"diag": Color(1.0, 0.10, 0.85, 0.76),
+		"other": Color(1.0, 1.0, 1.0, 0.65),
 	}
+	var counts := {}
 	for ly in VIEW_H:
 		for lx in VIEW_W:
 			var wx := view_origin.x + lx
@@ -2585,6 +2584,7 @@ func _draw_transition_debug() -> void:
 			var prio := _priority_map(b)
 			var key := _transition_choice(t, wx, wy, prio)
 			var kind := _transition_kind(key, t)
+			counts[kind] = int(counts.get(kind, 0)) + 1
 			if kind == "base":
 				continue
 			var q := _cell_quad(wx, wy)
@@ -2594,6 +2594,7 @@ func _draw_transition_debug() -> void:
 			poly.polygon = q
 			poly.color = colors.get(kind, colors["other"])
 			debug_layer.add_child(poly)
+	print("TRANSDEBUG ", counts)
 
 
 func _rebuild_structure_sprites() -> void:
