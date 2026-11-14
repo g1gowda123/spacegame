@@ -14,8 +14,8 @@ const VIEW_TILES := 10.0
 @export_group("Render Window")
 ## Tiles rendered around the player. Larger = more survey visible, more
 ## SubViewport work; defaults are tuned for mobile/WebGL.
-@export_range(8, 48, 1) var view_w: int = 18
-@export_range(8, 64, 1) var view_h: int = 40
+@export_range(8, 48, 1) var view_w: int = 32
+@export_range(8, 64, 1) var view_h: int = 32
 
 
 func _view_px() -> Vector2:
@@ -2402,7 +2402,6 @@ func _reveal_around(cell: Vector2i, radius: int) -> void:
 func _draw_fog() -> void:
 	if fog_layer == null:
 		return
-	print("FOGDEBUG enabled=", fog_enabled, " revealed=", revealed.size(), " view=", view_w, "x", view_h, " origin=", view_origin, " children=", fog_layer.get_child_count())
 	for child in fog_layer.get_children():
 		child.free()
 	if not fog_enabled:
@@ -2435,7 +2434,7 @@ func _draw_fog() -> void:
 				fog_alpha = 0.50
 			var poly := Polygon2D.new()
 			poly.polygon = quad
-			poly.color = Color(1, 0, 0, 1.0)
+			poly.color = Color(0.008, 0.014, 0.024, fog_alpha)
 			fog_layer.add_child(poly)
 
 

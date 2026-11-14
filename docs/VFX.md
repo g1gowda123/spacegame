@@ -99,6 +99,7 @@ generation never breaks the game.
 |---|---|---|
 | `saturation`, `brightness`, `tint` | `map_view.gdshader` uniforms | shared grade |
 | `exposure` | `BIOMES[*].exposure` in `map_generator.gd` | per-biome mid-tone normalisation |
+| `lift` | `_apply_biome_tint()` | gamma < 1 opens dark ash/basalt without clipping lava (volcanic/sulfur/obsidian 0.72, barren/iron/carbon 0.88) |
 | `biome_tint`, `biome_tint_strength` | `BIOMES` | hue-only tint (luma preserving) |
 | hazard `intensity`, `kind`, `mode` | `sector.gd::_hazard_material` | per-front look |
 | ambient colour/amount/speed | `_ambient_profile()` in `map_generator.gd` | biome atmosphere |

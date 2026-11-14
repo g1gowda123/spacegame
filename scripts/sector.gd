@@ -120,10 +120,6 @@ func _ready() -> void:
 		fog_enabled = true
 	if "--no-fog" in args:
 		fog_enabled = false
-	# Isometric foreshortens the north-south axis; without the circular mask the
-	# full rectangular fog window is visible on every edge.
-	if "--circle" not in args:
-		circle_view = false
 	var force_relay := "--relay" in args
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.
@@ -136,7 +132,7 @@ func _ready() -> void:
 		GameState.begin_sector(p)
 		sec = GameState.current_sector
 	RenderingServer.set_default_clear_color(Color("#070a11"))
-	zoom = 0.82
+	zoom = 1.35
 	_build_tileset()
 	_build_view()
 	move_layer = Node2D.new()
@@ -621,7 +617,7 @@ func _spawn_hazard() -> void:
 	if done:
 		return
 	# Spawn against the window the player will actually see after this move.
-	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
+	view_origin = player_cell - Vector2i(view_w / 2, view_h / 2)
 	var budget := _hazard_budget()
 	var guard := 0
 	while hazards.size() < budget and guard < 20:
@@ -723,8 +719,8 @@ func _hazard_anchor() -> Vector2i:
 	if not open_nodes.is_empty() and rng.randf() < 0.55:
 		base = open_nodes[rng.randi_range(0, open_nodes.size() - 1)]
 	var cell := base + Vector2i(rng.randi_range(-4, 4), rng.randi_range(-4, 4))
-	cell.x = clampi(cell.x, player_cell.x - VIEW_W / 2 + 3, player_cell.x + VIEW_W / 2 - 3)
-	cell.y = clampi(cell.y, player_cell.y - VIEW_H / 2 + 3, player_cell.y + VIEW_H / 2 - 3)
+	cell.x = clampi(cell.x, player_cell.x - view_w / 2 + 3, player_cell.x + view_w / 2 - 3)
+	cell.y = clampi(cell.y, player_cell.y - view_h / 2 + 3, player_cell.y + view_h / 2 - 3)
 	return cell
 
 
@@ -1676,7 +1672,7 @@ func _cell_at_screen(pos: Vector2) -> Vector2i:
 			p = Vector2((u + v) * 0.70710678, (v - u) * 0.70710678)
 		_:
 			p = q / map_scale
-	var world := p + VIEW_PX * 0.5 + Vector2(view_origin.x, view_origin.y) * TILE
+	var world := p + _view_px() * 0.5 + Vector2(view_origin.x, view_origin.y) * TILE
 	return Vector2i(
 		int(floor(world.x / float(TILE))),
 		int(floor(world.y / float(TILE)))
