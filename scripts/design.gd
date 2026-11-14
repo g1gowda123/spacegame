@@ -83,7 +83,7 @@ func _column(x: float, w: float, title: String) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
-	var head := UIKit.head(title, 8, UIKit.MUTED)
+	var head := UIKit.mono(title, 8, UIKit.MUTED)
 	v.add_child(head)
 	UIKit.hairline(v, 0, 0, w - 16, UIKit.LINE)
 	v.add_child(UIKit.vspace(3))
@@ -91,7 +91,7 @@ func _column(x: float, w: float, title: String) -> VBoxContainer:
 
 
 func _subhead(v: VBoxContainer, text: String) -> void:
-	v.add_child(UIKit.vspace(5))
+	v.add_child(UIKit.vspace(2))
 	v.add_child(UIKit.mono(text, 7, UIKit.DIM))
 
 
@@ -99,7 +99,7 @@ func _build_left() -> void:
 	var v := _column(10, 198, "HULL BUS")
 	for h in GameState.HULLS:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 184, 36), str(h["name"]),
+			v, Rect2(0, 0, 184, 34), str(h["name"]),
 			"%s  ·  %dkg  ·  $%dM\n%s" % [
 				str(h["class"]), int(h["mass"]), int(h["cost"]), str(h["perk"])
 			],
@@ -127,14 +127,14 @@ func _build_left() -> void:
 func _build_center() -> void:
 	var p := UIKit.sheet(self, 216, 39, 204, 278)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 3)
+	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
-	v.add_child(UIKit.head("SPACECRAFT", 8, UIKit.MUTED))
+	v.add_child(UIKit.mono("SPACECRAFT", 8, UIKit.MUTED))
 	UIKit.hairline(v, 0, 0, 190, UIKit.LINE)
 
 	diagram = ShipDiagram.new()
-	diagram.custom_minimum_size = Vector2(190, 68)
-	diagram.size = Vector2(190, 68)
+	diagram.custom_minimum_size = Vector2(190, 60)
+	diagram.size = Vector2(190, 60)
 	v.add_child(diagram)
 
 	build_label = UIKit.mono("", 7, UIKit.DIM)
@@ -156,7 +156,7 @@ func _build_center() -> void:
 
 	warning_label = UIKit.mono("Select hull, vehicle, objective and two instruments.", 7, UIKit.AMBER)
 	warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	warning_label.custom_minimum_size = Vector2(188, 26)
+	warning_label.custom_minimum_size = Vector2(188, 24)
 	warning_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	v.add_child(warning_label)
 
@@ -177,7 +177,7 @@ func _build_center() -> void:
 	var conops := UIKit.mono(
 		"CONOPS  LAUNCH · CRUISE · INSERTION\nSURFACE · DOWNLINK · END",
 		6, UIKit.DIM)
-	conops.custom_minimum_size = Vector2(190, 16)
+	conops.custom_minimum_size = Vector2(190, 14)
 	conops.add_theme_constant_override("line_spacing", 0)
 	v.add_child(conops)
 
@@ -185,7 +185,7 @@ func _build_center() -> void:
 func _stat_row(v: VBoxContainer, name: String, unit: String) -> UIGauge:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 5)
-	h.custom_minimum_size = Vector2(190, 14)
+	h.custom_minimum_size = Vector2(190, 13)
 	v.add_child(h)
 	var l := UIKit.mono(name, 7, UIKit.MUTED)
 	l.custom_minimum_size = Vector2(50, 12)
@@ -209,7 +209,7 @@ func _build_right() -> void:
 	var v := _column(428, 202, "MISSION OBJECTIVE")
 	for o in GameState.OBJECTIVES:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 188, 26), str(o["name"]), str(o["perk"]),
+			v, Rect2(0, 0, 188, 24), str(o["name"]), str(o["perk"]),
 			UIKit.CYAN, 8, 7
 		)
 		card["button"].pressed.connect(_pick_objective.bind(str(o["id"])))
@@ -230,7 +230,7 @@ func _build_right() -> void:
 			float(inst["mass"]), float(inst["cost"])
 		]
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 188, 18), title, "", UIKit.CYAN, 8, 7
+			v, Rect2(0, 0, 188, 17), title, "", UIKit.CYAN, 8, 7
 		)
 		card["button"].pressed.connect(_toggle_instrument.bind(str(inst["id"])))
 		card["button"].tooltip_text = str(inst["perk"])

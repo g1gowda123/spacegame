@@ -231,6 +231,88 @@ static func _fade_ramp(color: Color) -> Gradient:
 	return g
 
 
+static func frames_for(sheet: String) -> SpriteFrames:
+	## Build a SpriteFrames from `assets/vfx/<sheet>/frame_NN.png`. Returns null
+	## when the sheet has not been generated, so callers can fall back to a
+	## pure-shape effect.
+	var key := "frames_" + sheet
+	if _tex_cache.has(key):
+		return _tex_cache[key]
+	var dir_path := FX_DIR + sheet
+	var dir := DirAccess.open(dir_path)
+	if dir == null:
+		_tex_cache[key] = null
+		return null
+	var names: Array[String] = []
+	for f in dir.get_files():
+		if f.begins_with("frame_") and f.ends_with(".png"):
+			names.append(f)
+	if names.is_empty():
+		_tex_cache[key] = null
+		return null
+	names.sort()
+	var sf := SpriteFrames.new()
+	sf.remove_animation("default")
+	sf.add_animation("play")
+	sf.set_animation_loop("play", false)
+	sf.set_animation_speed("play", 20.0)
+	for f in names:
+		var tex := load(dir_path + "/" + f) as Texture2D
+		if tex != null:
+			sf.add_frame("play", tex)
+	_tex_cache[key] = sf
+	return sf
+
+
+static func flare_burst(parent: Node, at: Vector2, color: Color,
+		pixel_scale := 1.0, z := 8) -> void:
+	if parent == null:
+		return
+	var sf := frames_for("flare")
+	if sf == null:
+		shockwave(parent, at, color, 28.0, z)
+		return
+	var s := AnimatedSprite2D.new()
+	s.sprite_frames = sf
+	s.animation = "play"
+	s.centered = true
+	s.position = at
+	s.z_index = z
+	s.z_as_relative = true
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	s.scale = Vector2(pixel_scale, pixel_scale)
+	s.modulate = color
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	s.material = mat
+	parent.add_child(s)
+	s.play("play")
+	s.animation_finished.connect(s.queue_free)
+
+
+static func sheet_burst(parent: Node, at: Vector2, sheet: String, color: Color,
+		pixel_scale := 1.0, z := 8) -> void:
+	if parent == null:
+		return
+	var sf := frames_for(sheet)
+	if sf == null:
+		shockwave(parent, at, color, 24.0, z)
+		return
+	var s := AnimatedSprite2D.new()
+	s.sprite_frames = sf
+	s.animation = "play"
+	s.centered = true
+	s.position = at
+	s.z_index = z
+	s.z_as_relative = true
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	s.scale = Vector2(pixel_scale, pixel_scale)
+	s.modulate = color
+	parent.add_child(s)
+	s.play("play")
+	s.animation_finished.connect(s.queue_free)
+
+
 static func _free_later(parent: Node, node: Node, seconds: float) -> void:
 	if parent == null or not parent.is_inside_tree():
 		node.queue_free()

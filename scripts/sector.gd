@@ -944,6 +944,7 @@ func _execute_path() -> void:
 func _camera_world_layers() -> Array:
 	var out: Array = super._camera_world_layers()
 	out.append(fx_layer)
+	out.append(vfx_layer)
 	out.append(move_layer)
 	return out
 
@@ -1123,49 +1124,75 @@ func _hazard_quad(cell: Vector2i) -> PackedVector2Array:
 	])
 
 
+const HAZARD_KIND := {
+	"flare": 1, "thermal": 2, "dust": 3, "quake": 4, "radiation": 5,
+	"eclipse": 6, "cryo": 7, "wind": 8, "meteor": 9,
+}
+
+var _hazard_shader: Shader
+
+
+func _hazard_material(kind: int, mode: int, color: Color, seed_value: float,
+		intensity: float) -> ShaderMaterial:
+	if _hazard_shader == null:
+		_hazard_shader = load("res://shaders/hazard_field.gdshader") as Shader
+	var m := ShaderMaterial.new()
+	m.shader = _hazard_shader
+	m.set_shader_parameter("hazard_color", color)
+	m.set_shader_parameter("kind", kind)
+	m.set_shader_parameter("mode", mode)
+	m.set_shader_parameter("seed", seed_value)
+	m.set_shader_parameter("intensity", intensity)
+	return m
+
+
+func _hazard_uvs(cell: Vector2i) -> PackedVector2Array:
+	# World tile coordinates, so the pattern is continuous across cells.
+	var x := float(cell.x)
+	var y := float(cell.y)
+	return PackedVector2Array([
+		Vector2(x, y), Vector2(x + 1.0, y),
+		Vector2(x + 1.0, y + 1.0), Vector2(x, y + 1.0),
+	])
+
+
 func _draw_hazards() -> void:
 	if fx_layer == null:
 		return
 	for child in fx_layer.get_children():
 		child.free()
-	# Scarred ground: where a hazard actually landed.
+	# Scarred ground: where a hazard actually landed. The shader draws the burn
+	# and ember rim; intensity tracks the four-turn scar lifetime.
 	for s in scars:
 		var sc: Vector2i = s["cell"]
 		if not _in_view(sc.x, sc.y):
 			continue
 		var life := float(s["life"]) / 4.0
 		var col: Color = s["color"]
-		var q := _hazard_quad(sc)
 		var fill := Polygon2D.new()
-		fill.polygon = q
-		fill.color = Color(0.05, 0.03, 0.03, 0.25 + 0.25 * life)
+		fill.polygon = _hazard_quad(sc)
+		fill.uv = _hazard_uvs(sc)
+		fill.material = _hazard_material(0, 2, col, float(sc.x * 17 + sc.y), 0.35 + 0.65 * life)
 		fx_layer.add_child(fill)
-		var edge := Line2D.new()
-		edge.points = q
-		edge.closed = true
-		edge.width = 1.0
-		edge.default_color = Color(col.r, col.g, col.b, 0.18 + 0.25 * life)
-		fx_layer.add_child(edge)
 	# Every active hazard footprint.
 	for h in hazards:
 		var info: Dictionary = h["info"]
 		var col: Color = info["color"]
 		var cells: Array[Vector2i] = h["cells"]
 		var armed := int(h.get("age", 1)) >= 1
+		var kind := int(HAZARD_KIND.get(str(h.get("kind", "")), 0))
+		var mat := _hazard_material(
+			kind, 0 if armed else 1, col,
+			float(int(hash(str(h.get("kind", "")))) % 997) * 0.37, 1.0
+		)
 		for c in cells:
 			if not _in_view(c.x, c.y):
 				continue
-			var quad := _hazard_quad(c)
 			var fill := Polygon2D.new()
-			fill.polygon = quad
-			fill.color = Color(col.r, col.g, col.b, 0.28 if armed else 0.10)
+			fill.polygon = _hazard_quad(c)
+			fill.uv = _hazard_uvs(c)
+			fill.material = mat
 			fx_layer.add_child(fill)
-			var line := Line2D.new()
-			line.points = quad
-			line.closed = true
-			line.width = 1.8 if armed else 0.8
-			line.default_color = Color(col.r, col.g, col.b, 0.95 if armed else 0.38)
-			fx_layer.add_child(line)
 		if int(h["speed"]) > 0:
 			var origin: Vector2i = h["origin"]
 			var d: Vector2i = h["dir"]

@@ -330,7 +330,8 @@ static func row_style(selected: bool, hovered: bool = false,
 
 static func option_card(
 	parent: Control, rect: Rect2, title: String, subtitle: String,
-	accent: Color = CYAN, title_size: int = 8, sub_size: int = 7
+	accent: Color = CYAN, title_size: int = 8, sub_size: int = 7,
+	meta: String = ""
 ) -> Dictionary:
 	var root := Control.new()
 	root.position = rect.position
