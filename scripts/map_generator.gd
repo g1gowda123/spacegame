@@ -363,6 +363,7 @@ var map_scale: float = 0.92
 @export_range(0.0, 1.0, 0.01) var fog_alpha_inner: float = 0.80
 @export_range(0.0, 1.0, 0.01) var fog_alpha_mid: float = 0.74
 @export_range(0.0, 1.0, 0.01) var fog_alpha_outer: float = 0.62
+@export_range(0.0, 1.0, 0.01) var fog_desat: float = 0.35
 
 @export_group("Decals")
 @export_range(0.0, 0.5, 0.01) var decal_density: float = 0.15
@@ -2413,6 +2414,8 @@ func _draw_fog() -> void:
 		child.free()
 	if not fog_enabled:
 		return
+	if fog_mat != null:
+		fog_mat.set_shader_parameter("desat", fog_desat)
 	for ly in view_h:
 		for lx in view_w:
 			var c := Vector2i(view_origin.x + lx, view_origin.y + ly)

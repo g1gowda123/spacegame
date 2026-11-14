@@ -73,6 +73,7 @@ var fx_layer: Node2D
 var vfx_layer: Node2D
 var pad_beacon: VFX.RingNode
 var _ending_turn := false
+var _last_strike_near := false
 var _world_timer := 2.4
 var _star_timer := 5.0
 var fx_root: Control
@@ -88,6 +89,7 @@ var sol_label: Label
 var data_label: Label
 var data_caption: Label
 var heat_bar: UIGauge
+var _first_tip_zone: Control
 var heat_val: Label
 var data_bar: ProgressBar
 var power_pips: Array = []
@@ -176,6 +178,9 @@ func _ready() -> void:
 	_impact_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fx_root.add_child(_impact_flash)
 	_build_hud()
+	for raw in OS.get_cmdline_user_args():
+		if str(raw) == "--tiptest" and _first_tip_zone != null:
+			call_deferred("_dev_tip")
 	_start_sector()
 	GameState.sfx("confirm")
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
@@ -499,6 +504,13 @@ func _hover_cell(parent: Control, rect: Rect2, title: String, body: String,
 	zone.mouse_filter = Control.MOUSE_FILTER_STOP
 	parent.add_child(zone)
 	UIKit.hover_info(zone, title, body, accent)
+	if _first_tip_zone == null:
+		_first_tip_zone = zone
+
+
+func _dev_tip() -> void:
+	if _first_tip_zone != null:
+		_first_tip_zone.mouse_entered.emit()
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
@@ -1198,15 +1210,14 @@ func _end_turn() -> void:
 	# the player dodged it.
 	var struck := _resolve_hazard()
 	if struck:
-		_check_overheat()
-	if int(sec["integrity"]) <= 0:
+		_check_overheat()	if int(sec["integrity"]) <= 0:
 		_ending_turn = false
 		_end(false, "HULL BREACH")
 		return
 	# Beat before the board advances: the strike, banner and shake need a
 	# moment to read. Without this the new telegraph appears in the same frame
 	# as the damage and the player never registers what happened.
-	if struck and not done:
+	if struck and _last_strike_near and not done:
 		await get_tree().create_timer(0.62).timeout
 		if done:
 			_ending_turn = false
@@ -1368,6 +1379,118 @@ func _process(delta: float) -> void:
 	# Live minimap: the radar sweep needs a redraw even when nothing changed.
 	if minimap != null and not done:
 		minimap.queue_redraw()
+	# World aliveness: biome events on the board and meteors in the sky.
+	if not done:
+		_world_timer -= delta
+		if _world_timer <= 0.0:
+			_world_timer = rng.randf_range(2.2, 4.4)
+			_world_event()
+		_star_timer -= delta
+		if _star_timer <= 0.0:
+			_star_timer = rng.randf_range(6.0, 12.0)
+			_shooting_star()
+
+
+func _visible_structures() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for coord in chunks:
+		var data: Dictionary = chunks[coord]
+		for s in data.get("structures", []):
+			if _in_view(int(s["gx"]), int(s["gy"]), int(s["w"]), int(s["h"])):
+				out.append(s)
+	return out
+
+
+func _world_event() -> void:
+	if vfx_layer == null or done:
+		return
+	# Prefer an authored structure with a readable signature (erupting volcano,
+	# venting geyser, prism glint) over generic dust; that is what makes the
+	# board feel inhabited rather than decorated.
+	var special := ["volcano", "geyser", "crystal_outcrop", "iceberg", "coral_spire"]
+	var pool: Array[Dictionary] = []
+	for s in _visible_structures():
+		if str(s["key"]) in special:
+			pool.append(s)
+	if not pool.is_empty() and rng.randf() < 0.72:
+		var s: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
+		var c := Vector2i(
+			int(s["gx"]) + maxi(1, int(s["w"])) / 2,
+			int(s["gy"]) + maxi(1, int(s["h"])) / 2
+		)
+		var at := _cell_center(c) - Vector2(0.0, float(s["h"]) * TILE * map_scale * 0.30)
+		match str(s["key"]):
+			"volcano":
+				VFX.dust(vfx_layer, at, Color(0.30, 0.26, 0.24, 0.50), 5, 12.0)
+				VFX.embers(vfx_layer, at, Color(1.0, 0.55, 0.22, 0.85), 5)
+			"geyser":
+				VFX.beam(vfx_layer, at, Color(0.78, 0.94, 1.0, 0.40), 24.0, 0.55, 6)
+				VFX.dust(vfx_layer, at, Color(0.85, 0.92, 0.95, 0.38), 4, 16.0)
+			"crystal_outcrop":
+				VFX.sparks(vfx_layer, at, Color(0.82, 0.70, 1.0, 0.85), 5, 24.0, -16.0)
+			"iceberg", "coral_spire":
+				VFX.sparks(vfx_layer, at, Color(0.75, 0.95, 1.0, 0.65), 4, 18.0, -10.0)
+			_:
+				VFX.dust(vfx_layer, at, Color(0.55, 0.50, 0.45, 0.30), 3, 10.0)
+		return
+	# Generic biome life on a random visible tile.
+	var cell := Vector2i(
+		view_origin.x + rng.randi_range(1, view_w - 2),
+		view_origin.y + rng.randi_range(1, view_h - 2)
+	)
+	if not _in_view(cell.x, cell.y):
+		return
+	var at := _cell_center(cell)
+	var terrain := _render_terrain_world(cell.x, cell.y)
+	if "lava" in terrain:
+		VFX.embers(vfx_layer, at, Color(1.0, 0.55, 0.20, 0.85), 4)
+	elif "water" in terrain:
+		VFX.ring(vfx_layer, at, Color(0.55, 0.90, 0.95, 0.45), 11.0, 0.75, 1.0, 4)
+	elif "ice" in terrain or "snow" in terrain:
+		VFX.sparks(vfx_layer, at, Color(0.80, 0.95, 1.0, 0.75), 3, 10.0, -6.0, 5)
+	else:
+		match str(sec["planet"]["biome"]):
+			"volcanic", "sulfur", "obsidian":
+				VFX.embers(vfx_layer, at, Color(1.0, 0.58, 0.22, 0.80), 3)
+			"cryo", "ammonia":
+				VFX.dust(vfx_layer, at, Color(0.82, 0.92, 1.0, 0.28), 3, 10.0)
+			"ocean", "methane":
+				VFX.dust(vfx_layer, at, Color(0.55, 0.88, 0.90, 0.25), 2, 8.0)
+			"crystal":
+				VFX.sparks(vfx_layer, at, Color(0.80, 0.68, 1.0, 0.80), 3, 14.0, -8.0)
+			"arid", "barren", "iron", "carbon":
+				# Dust devil: three offset puffs that read as a moving column.
+				VFX.dust(vfx_layer, at, Color(0.72, 0.64, 0.52, 0.35), 3, 12.0)
+				VFX.dust(vfx_layer, at + Vector2(9, -4), Color(0.70, 0.62, 0.50, 0.26), 2, 10.0)
+				VFX.dust(vfx_layer, at + Vector2(18, -8), Color(0.68, 0.60, 0.48, 0.18), 2, 8.0)
+			_:
+				VFX.sparks(vfx_layer, at, Color(0.72, 0.96, 0.74, 0.55), 3, 10.0, -8.0)
+
+
+func _shooting_star() -> void:
+	if fx_root == null or done:
+		return
+	var start := Vector2(
+		rng.randf_range(0.08, 0.72) * 640.0,
+		rng.randf_range(0.05, 0.28) * 360.0
+	)
+	var dir := Vector2(1.0, 0.42).normalized()
+	var length := rng.randf_range(12.0, 24.0)
+	var line := Line2D.new()
+	line.points = PackedVector2Array([Vector2.ZERO, -dir * length])
+	line.width = 1.0
+	line.default_color = Color(0.85, 0.95, 1.0, 0.0)
+	line.position = start
+	line.z_index = 44
+	fx_root.add_child(line)
+	var travel := rng.randf_range(80.0, 140.0)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(line, "position", start + dir * travel, 0.60) \
+		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(line, "modulate:a", 1.0, 0.16)
+	tw.chain().tween_property(line, "modulate:a", 0.0, 0.32)
+	tw.chain().tween_callback(line.queue_free)
 
 
 func _draw_minimap() -> void:

@@ -13,93 +13,145 @@ Every destination is a real planet. Every hazard is generated from its measured 
 
 ---
 
-## Status & roadmap — mentor check (2026-11-14)
+## Contents
 
-### Where the build stands
+1. [Five-minute showcase](#five-minute-showcase)
+2. [What it looks like](#what-it-looks-like)
+3. [What you actually do](#what-you-actually-do)
+4. [A run, step by step](#a-run-step-by-step)
+5. [Mission design](#mission-design)
+6. [Surface operations](#surface-operations)
+7. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
+8. [Debrief and refit](#debrief-and-refit)
+9. [Scoring](#scoring)
+10. [Where the science comes from](#where-the-science-comes-from)
+11. [Controls](#controls)
+12. [Running the project](#running-the-project)
+13. [How the code is organised](#how-the-code-is-organised)
+14. [The surface generator](#the-surface-generator)
+15. [Art pipeline](#art-pipeline)
+16. [Working with agents](#working-with-agents)
+17. [Repository layout](#repository-layout)
+18. [Credits](#credits)
 
-| | |
-|---|---|
-| **Playable** | full run, native Godot: title → control → design → draft → 3 sectors → debrief → report |
-| **Packaged web build** | `build/web/` — 54 MB, threadless WebGL 2; ZIP `submission/orbit_outplay_web.zip` 24 MB |
-| **Verification** | `godot --headless --path . --quit-after 8` exits 0, no parser/runtime errors |
-| **Content** | 72 real exoplanets, 13 biomes, 125 transition pairs, 24 outcrop pieces, 5 SFX, full VFX layer |
-| **Engine** | Godot 4.7.2, GDScript, GL Compatibility, 640×360 logical viewport |
-| **Not shipped yet** | UI identity pass, fog-of-war/signal-tier pass and VFX are **in the tree but not in the last package** — one re-export closes that gap. The music bed is in the tree too (`assets/music/`, 3 loops, 788 KiB) and ships with the same re-export |
+---
 
-The honest split is **source vs package**. The tree is ahead of `build/web`: fog of war, signal-tier nodes, animated hazard shaders, the W6 outcrop set and the V5 effect library all landed after the last export. Re-exporting is a one-command step (`tools/release.sh`), not development work.
+## Five-minute showcase
 
-### Newest look — what changed in this pass
+**For the mentor check:** problem → product → live demo → brief match → NASA data → submission compliance.
 
-<img src="screenshots/latest_sector.png" width="920" alt="Current surface sector with hero outcrops, hazard telegraph and the new HUD">
+### 1. The problem (30 seconds)
 
-Captured from the current build (survey fog switched off here so the whole board is visible). What is new in this frame:
+Designing a space mission is a chain of coupled trade-offs: mass against capability, power against instruments, thermal control against schedule, data volume against distance. A form or a lecture teaches the vocabulary but not the tension — a student can memorise "delta-v" and still never feel it run out.
 
-- **Hazard telegraphs are now animated fields**, not flat squares — this one reads `INCOMING: DUST · SHIELD 1 PWR OR −1 INT`, so the player can price the hit before moving.
-- **W6 hero outcrops**: one large landmark plus two or three smaller supporting rocks per board, with scale and tint jitter, instead of a repeated stamp.
-- **New console HUD**: one top telemetry strip (integrity, Δv, sols, data, thermal, power) and a physical-looking move/HOLD/EXTRACT cluster.
-- **Lighting grade**: per-biome exposure, hue-only tint and a soft highlight rolloff, so volcanic and sulfur worlds stop clipping while temperate stays readable.
-- **Reachable cells** are outlined as one shape, not a grid of boxes.
+**Who it helps:** classrooms, museums and outreach programmes that need a real mission-design lesson in one sitting. Free, browser-only, no account.
 
-The same board with the default **survey fog** on is further down in [The loop on screen](#the-loop-on-screen).
+### 2. What we built (45 seconds)
 
-### In plain words
+**Orbit & Outplay** is a turn-based **mission-design roguelite**. Under a fixed $500M budget you:
 
-You get **$500M**, build a survey spacecraft, and pick one of **three real planets**. Then you cross that planet's surface one move at a time, dodge hazards its own physics creates, collect data, and get home. Three planets later, you get a grade.
+1. **Design a spacecraft** — hull, launch vehicle, orbit, science objective, exactly two instruments, validated against budget and fairing mass.
+2. **Draft one of three real exoplanets** — each card shows the measured archive values next to the mission bars they generate.
+3. **Fly its surface** — one committed move per turn, telegraphed hazards, limited hull, heat, fuel, power and time.
+4. **Refit and repeat** — three planets, then a graded agency ledger.
 
-We are not putting a game on top of a simulator. **The trade-offs are the game.** A hot world makes every step cost heat. A heavy world burns fuel. A distant world loses data on the way home. A student feels that in one turn instead of reading it in a table.
+Browser, 640×360 pixel art, **10–15 minutes**, 1–4 players local hot-seat, no install.
 
-It is browser-only, 640×360 pixel art, one run in **10–15 minutes**, and no install — so it can be shown in a classroom, at a booth, or on a laptop.
+**The design promise in one line:** every number is a decision, and every loss is explainable.
 
-### How it meets the five judging criteria
+### 3. The 5-minute demo path
 
-The 2026 Space Apps rubric scores **Impact, Creativity, Validity, Relevance, Presentation**.
+Newest code: `godot --path /home/g1/godot/nasa`. Packaged build: `cd build/web && python3 -m http.server 8060`, then open `http://localhost:8060`.
 
-| Criterion | What judges ask | Our answer | Where to see it |
+| Time | Screen | What you show | What you say |
 |---|---|---|---|
-| **Impact** | Who does this help, and how much? | Teaches mission design by play. A teacher can run a whole class through a mission in one lesson; a student can replay the same planets with a shared campaign code. | playable build, 10–15 min run, 72 planets, free static web page |
-| **Creativity** | Is the idea new? | The planet's real physics *is* the level design. Temperature sets heat per move, gravity sets fuel cost, distance sets data loss, and the hazards are drawn from that world and telegraphed one turn early. | draft cards, hazard table, sector screen |
-| **Validity** | Is the science right and could it work? | Every target is a real `pscomppars` row. Every derived number has a written formula, and the game labels its abstractions as abstractions. The raw CSV, the builder and the formula table ship in the repo, so anyone can re-run them. | `data/exoplanets.json`, `tools/build_exoplanets.py`, [derived rules](#derived-rules) |
-| **Relevance** | Does it answer the chosen challenge? | It is the *Space Mission Design Game* brief end to end — objective, spacecraft, launcher, orbit, budget, mass, power, thermal, comms, data, lifetime, simulation, scoring, feedback, and 1–4 players. | [challenge trace in `docs/SUBMISSION.md`](docs/SUBMISSION.md), 15 requirements mapped |
-| **Presentation** | Can the team tell the story? | A 30-second video, a 7-slide deck, a written project page, and an in-game final report that reads like a real mission ledger. | `demo/`, `docs/DECK_NOTES.md`, [Final report screenshot](screenshots/report.png) |
+| 0:00 | Title | press **Begin Mission** | "One run, three real planets, about twelve minutes." |
+| 0:20 | Mission design | swap a hull, watch the six bars reprice, pick an illegal loadout | "The budget is a hard wall — the launch button locks." |
+| 1:00 | Target draft | read `Teq`, gravity and distance off a card; take the harsh world | "These are archive measurements; the hazard bars are our published formulas." |
+| 1:40 | Architecture review | transfer arc, four segments, CML, ConOps | "This is the NASA mission-design framework, made playable." |
+| 2:10 | Surface | hover a tile, commit, watch the telegraph resolve, collect, `HOLD`, `EXTRACT` | "One move per turn; the hazard is shown before it lands." |
+| 3:40 | Debrief | science, grant, approval, buy one module | "The consequence of this route is the next mission's budget." |
+| 4:10 | Report | grade, ledger, campaign code | "One screen where the science and the score are the same thing." |
+| 4:40 | Close | back to title | "Next: classroom mode and a codex linking every number to its archive row." |
 
-The single strongest artefact for a judge is the **final report screen**: grade, score breakdown, sector ledger, CML design level, orbit profile, launch/space/ground/user segments, and the campaign code — one frame that proves the science and the game are the same thing.
+Backup if the demo machine is slow: `demo/orbit_outplay_demo.mp4` (29.6 s) and `demo/orbit_outplay_deck.pdf` (exactly 7 slides).
 
-### NASA data and resources — what we use, and where
+### 4. How it matches the challenge brief
+
+The 2026 brief: *"Create a game where players design, run and simulate a full space mission, trading off objectives, instruments, launch vehicle, budget, power, mass and communications."*
+
+| Brief requirement | Where it lives in the game |
+|---|---|
+| Design a mission objective and requirements | Four objectives set the data quota and the instrument fit |
+| Design a spacecraft | Four hulls, six instruments (pick exactly two), live mass/power/thermal/data bars |
+| Select launch vehicle and orbit | Three launchers with fairing capacity; LOW/POLAR/HIGH profiles with period, eclipse and passes/day |
+| Manage budget, mass, power, communications, data, lifetime | Hard $500M and mass checks; per-move Δv, heat and power; downlink loss by distance; sols as the clock |
+| Run and simulate a complete mission | Design → launch → transfer → surface ops → downlink → end of mission, gated by the architecture review |
+| Evaluate how choices shape mission success | Three-sector campaign, refit economy, approval track, final C–S grade |
+| Feedback and educational explanation | Path preview, damage toasts, debrief ledger, CML and segment readouts on the report |
+| Multiple scenarios | 72 real planets, 13 biomes, survey and relay sectors, seeded events |
+| Team play (optional) | 1–4 players hot-seat, conflicting role goals, shared campaign code |
+| Save, share, compare | Campaign code `OO-…` reproduces the same worlds and loadout; copy with `C` |
+
+Full trace, one row per line of the brief: [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
+
+### 5. How it scores on the judging criteria
+
+The 2026 rubric: **Impact, Creativity, Validity, Relevance, Presentation**.
+
+| Criterion | Our answer | Proof |
+|---|---|---|
+| **Impact** | A full mission-design lesson in one 10–15 minute session; free, browser-only, no account, works on a school laptop. | playable build, `build/web/` |
+| **Creativity** | The planet's real physics is the level design: temperature sets heat per move, gravity sets fuel cost, distance sets data loss. | draft cards, hazard table, sector |
+| **Validity** | Real `pscomppars` rows; every derived number has a formula; abstractions are labelled as abstractions; dataset and builder ship in the repo. | `data/exoplanets.json`, `tools/build_exoplanets.py` |
+| **Relevance** | Answers the *Space Mission Design Game* brief end to end, with NASA data as the core mechanic, not decoration. | [brief match](#4-how-it-matches-the-challenge-brief) |
+| **Presentation** | 30 s video, 7-slide deck, project page, and a final report that reads like a real mission ledger. | `demo/`, `docs/DECK_NOTES.md` |
+
+### 6. NASA data and resources — what we use, and where
 
 **Say this in 20 seconds:** *the NASA Exoplanet Archive gives us the planets, the challenge brief gives us the mission, and NASA's mission-design resources give us the language and the readouts. Every number the player sees traces back to a real archive row or a published design method.*
 
 | NASA resource | What we take from it | Where the player sees it | Proof in the repo |
 |---|---|---|---|
 | **Exoplanet Archive — Planetary Systems Composite Parameters (`pscomppars`)** | 72 real planets: equilibrium temperature, mass/radius, insolation, distance, host star | Draft cards (measured line + five hazard bars); per-move heat, Δv cost and downlink loss in a sector | `data/pscomppars_raw.csv`, `data/exoplanets.json`, `tools/build_exoplanets.py` |
-| **Space Apps 2026 — *Space Mission Design Game* brief** | The 15 design requirements the game must cover | Mission design → architecture review → surface run → report | `docs/SUBMISSION.md` (requirement trace) |
-| **Design and Develop Science Missions** | The four mission segments: launch, space, ground, user | Design screen grouping; `SEGMENTS` line on the final report | `scripts/report.gd`, `docs/SUBMISSION.md` |
+| **Space Apps 2026 — *Space Mission Design Game* brief** | The requirements the game must cover | Design → review → surface run → report | `docs/SUBMISSION.md` |
+| **Design and Develop Science Missions** | The four mission segments: launch, space, ground, user | Design grouping; `SEGMENTS` line on the report | `scripts/report.gd` |
 | **General Mission Analysis Tool (GMAT)** | Orbit as real quantities: altitude, period, eclipse fraction, passes/day | Orbit choice on the design screen; `ORBIT` readout on the report | `scripts/game_state.gd` |
-| **Concept Maturity Levels (CML)** | Design maturity 1–4, earned from mass margin, power margin and science traceability | Design validation line; review gate; `CONCEPT` line on the report | `scripts/game_state.gd`, `scripts/design.gd` |
-| **Mission Design Lab (MDL)** | Trade study first, point design second | The design screen is the trade study; the between-sector refit is the point design | `scenes/design.tscn`, `scenes/debrief.tscn` |
-| **NASA Mission Viz** | An Earth-to-target transfer arc and mission timeline | Mission Architecture Review, before the target is committed | `scripts/draft.gd` |
-| **Visualize a Space Mission Using Virtual Reality (2023)** | Concept, trajectory and timeline in one view (we do it in 2D, not VR) | The six-stage ConOps timeline on the review screen | `scripts/draft.gd` |
+| **Concept Maturity Levels (CML)** | Design maturity 1–4 from mass margin, power margin and science traceability | Design validation line; review gate; `CONCEPT` line on the report | `scripts/game_state.gd`, `scripts/design.gd` |
+| **Mission Design Lab (MDL)** | Trade study first, point design second | Design screen is the trade study; the between-sector refit is the point design | `scenes/design.tscn`, `scenes/debrief.tscn` |
+| **NASA Mission Viz** | Earth-to-target transfer arc and mission timeline | Mission Architecture Review, before the target is committed | `scripts/draft.gd` |
+| **Visualize a Space Mission Using Virtual Reality (2023)** | Concept, trajectory and timeline in one view (we do it in 2D, not VR) | Six-stage ConOps timeline on the review screen | `scripts/draft.gd` |
 | **A Learning Game About Telescopes** | Instruments should answer the science question | `SCIENCE FIT +10%` when the payload matches the objective | `scripts/game_state.gd` |
-| **CubeSat 101** | A compressed ConOps with mass, power, thermal, data and budget lines | The whole run: design → launch → surface ops → downlink → end of mission | `docs/PROJECT.md`, final report |
+| **CubeSat 101** | A compressed ConOps with mass, power, thermal, data and budget lines | The whole run: design → launch → surface ops → downlink → end of mission | final report |
 | **CSA digital games and activities** | Short, readable, pick-up-and-play browser games | 640×360, 10–15 minute run, mouse/touch, no install | `project.godot`, `build/web/` |
-| **Chen & Kipping (2017)** *(external paper, not NASA)* | Mass–radius relation for planets with missing or implausible masses | Flagged `mass_est: true` in the data and on the card | `tools/build_exoplanets.py` |
+| **Chen & Kipping (2017)** *(external paper, not NASA)* | Mass–radius relation for missing or implausible masses | Flagged `mass_est: true` in the data and on the card | `tools/build_exoplanets.py` |
 
-**What we do not use:** no NASA logos, flags, mission identifiers or NASA imagery — the event name appears only as plain text on the title screen and report. All in-game art is original, AI-generated art, disclosed in [Credits](#credits).
+**What we do not use:** no NASA logos, flags, mission identifiers or NASA imagery — the event name appears only as plain text. All in-game art is original, AI-generated art, disclosed in [Credits](#credits).
 
-Deeper detail — the exact derived formulas and the full resource-to-screen mapping — is in [Where the science comes from](#where-the-science-comes-from) and [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
+### 7. Mandatory submission checklist
 
-### Who is doing what
+| Requirement | Status |
+|---|---|
+| Project name, summary, description | written — `docs/SUBMISSION.md` |
+| Demo: ≤30 s video **or** ≤7-slide deck | both exist — `demo/orbit_outplay_demo.mp4` (29.6 s), `demo/orbit_outplay_deck.pdf` (7 slides) |
+| Public demo link, no password | upload before submitting |
+| Public final-project link | host `build/web/` or upload `submission/orbit_outplay_web.zip` |
+| NASA data used and named | PSCompPars, cited in the repo and on the page |
+| References for every source | `docs/SUBMISSION.md` reference list |
+| Super Intelligence (AI) disclosure | in [Credits](#credits) and the project-page field |
+| English throughout | yes |
+| No NASA logos, branding or imagery | checked — event name as plain text only |
+| No under-18 names, voices or likeness | checked |
+| Submitted before 15 Nov 23:59 local | **to do** |
 
-| Who | Job | Right now |
-|---|---|---|
-| **ATLAS** | engine and map | make terrain read as land, wire new rocks, fix the volcano corners |
-| **VEGA** | art | hero rocks, planets, UI skin, ship art |
-| **NOVA** | game design | fog-of-war survey loop, crew/difficulty tuning, rubric fit |
-| **b** | terrain algorithms | coastlines, water bodies, reachability audits |
-| **VFX agent** | animation and shaders | animated hazards, lighting grade, effect library |
-| **c / d** | build and QA | one-command export, browser test loop |
-| **e** | data and words | NASA numbers, README, deck, project page |
-| **f** | feel | sound effects, HUD polish, overlay readability |
-| **ECHO** | music | soundtrack spec and loops (not shipped yet) |
+### 8. If the mentor asks (Q&A crib)
+
+- **"Is the science real?"** Every target is a `pscomppars` row. Derived numbers use documented formulas, and the game prints the abstraction next to the measurement.
+- **"Is the trajectory real?"** No. Orbit is a profile (altitude, period, eclipse, passes/day) and transfer time is a labelled c-fraction abstraction. The screen says so.
+- **"Leaderboard?"** Local best and daily best only. No server, no account — deliberate, so it runs anywhere.
+- **"Did AI make it?"** Yes, and it is disclosed: art generated by the user in ComfyUI, code written by agents under human review.
+- **"What is missing?"** A soundtrack; the new UI kit is only partly integrated; some terrain still reads tiled at 2×. Each has an owner and a plan.
+- **"What next?"** Classroom mode with printable design worksheets, a codex linking every number to its archive row, and networked co-op.
 
 ### The gameplay loop, as a flowchart
 
@@ -131,7 +183,7 @@ flowchart LR
 
 ### The loop on screen
 
-Every frame below is a fresh capture of the current build (`screenshots/loop/`), numbered to match the flowchart.
+Fresh captures from the current build, numbered to match the flowchart.
 
 | | |
 |---|---|
@@ -146,88 +198,19 @@ Default sector view, with survey fog on — you only see what you have scanned:
 
 <img src="screenshots/loop/loop_sector.png" width="920" alt="Surface sector with survey fog">
 
-More current frames live in `screenshots/loop/`: `loop_briefing.png` (story briefing), `loop_crew.png` (crew manifest), `loop_buff.png` (field commission), `loop_relay.png` (relay-survey sector).
+More frames: `loop_briefing.png` (story briefing), `loop_crew.png` (crew manifest), `loop_buff.png` (field commission), `loop_relay.png` (relay-survey sector).
 
-### How the content is made
+### Newest look — what changed in this pass
 
-```mermaid
-flowchart LR
-    subgraph DATA["Data lane"]
-        N["NASA Exoplanet Archive<br/>pscomppars.csv"] --> B["tools/build_exoplanets.py"] --> J["data/exoplanets.json<br/>72 planets + derived game values"]
-    end
-    subgraph ART["Art lane"]
-        C["ComfyUI<br/>SDXL + Pixel Art XL"] --> PX["tools/pixelize.py<br/>palette lock · seam heal"] --> A["assets/tilesets · props · sprites"]
-    end
-    subgraph GAME["Game lane"]
-        J --> GS["GameState autoload<br/>rules · economy · scoring"]
-        A --> MG["map_generator.gd<br/>13 biomes · transitions · fog"]
-        GS --> UI["scenes/*.tscn"]
-        MG --> UI
-    end
-    UI --> EX["Godot export<br/>threadless WebGL 2"] --> Z["submission/<br/>ZIP · video · deck"]
-```
+<img src="screenshots/latest_sector.png" width="920" alt="Current surface sector with hero outcrops, hazard telegraph and the new HUD">
 
-Every asset in this repository is original: diffusion art generated by the user in ComfyUI, palette-locked to a per-biome 16–21 colour set, then integrated by code. Every planet value is a real archive measurement — the game publishes the abstraction formula next to it.
+Captured from the current build (survey fog switched off here so the whole board is visible). What is new in this frame:
 
-### Done vs. in flight
-
-| Workstream | State | Where it lives |
-|---|---|---|
-| Run loop, economy, scoring, report | **Done** | `scripts/game_state.gd`, `scenes/` |
-| Exoplanet data + derived hazards | **Done** | `data/exoplanets.json`, `tools/build_exoplanets.py` |
-| Crew, difficulty tiers, daily seed, share codes | **Done** | `scripts/crew_director.gd` |
-| Mission Architecture Review + briefing | **Done** | `scenes/briefing.tscn`, `docs/BRIEFING.md` |
-| 13-biome terrain, transitions, structures | **Done** | `scripts/map_generator.gd`, `assets/tilesets/` |
-| Animated hazards + effect library | **In tree, not packaged** | `shaders/hazard_field.gdshader`, `scripts/vfx.gd`, `docs/VFX.md` |
-| Fog of war + signal-tier nodes | **Prototype, default on** | `docs/MAP_GAMEPLAY.md` (M1/M4), `--no-fog` |
-| W6 hero/support outcrops | **Art landed, wiring in progress** | `assets/tilesets/outcrops/` |
-| UI identity pass (folders/cards/stamps) | **Kit delivered, integration open** | `docs/UI_REDESIGN.md`, `assets/ui/skin/` |
-| Music bed (3 reactive loops) | **Shipped in the tree — 2 measured defects** | `assets/music/` (84 BPM, 24 bars, 788 KiB); `sector` peaks −0.6 dBTP and the cues are 1.16 dB apart — numbers in `docs/AUDIO.md` §5.1 |
-
-### What needs to happen next
-
-**Short version:** package the newest build, add the music, then make the map and the menus look finished. Everything below is that list with names and proof attached.
-
-**P0 — before the next review (this pass closes the demo):**
-
-1. **Re-export and re-QA the web build.** One `tools/release.sh` run, then the browser loop title → report with zero console errors. Without this the fog/VFX work is invisible in the ZIP.
-2. **Music bed.** Three 76.8 s loops at 100 BPM, A minor (title / sector / debrief), −16 LUFS, ≤2.8 MB. Spec and prompts in `docs/AUDIO.md`. Blocked on approval for a 3.46 GB model download.
-3. **Volcano silhouette.** Each 4×4 volcano still occupies a narrow tower inside its ash square, so the corners read empty. That is an art-shape rework, not a wiring bug.
-
-**P1 — the visible quality gap:**
-
-4. **UI identity integration (U2–U4).** The 9-slice folder/card/stamp kit exists; it needs `UIKit` helpers and screen passes. This is the direct answer to "looks too generic".
-5. **W2 macro composition.** The remaining reason the board still reads tiled: terrain is composed per cell. A generator-level change in `docs/MAP_OVERHAUL.md`; biggest single visual win left.
-6. **Survey choice + terrain cost (M2/M3).** Turns the board from a walk into a plan: sample vs. deep scan, rock costs 2, water/lava blocks.
-
-**P2 — polish, after the above:**
-
-7. Scene transitions and HUD gauge animation (V6), volcanic heat haze (V7).
-8. Return-weight rule (M6), structure-scale acceptance review, extra outcrop silhouettes.
-9. Readme/deck refresh once the packaged build matches the tree (`e` lane).
-
-### Three-minute demo
-
-```bash
-godot --path /home/g1/godot/nasa          # newest code, native
-# or the packaged build:
-cd build/web && python3 -m http.server 8060   # http://localhost:8060
-```
-
-1. **0:00** Title — starfield, daily line, best score. `Begin Mission`.
-2. **0:30** Mission design — swap a hull, show the six telemetry bars repricing live and the launch lock when the loadout is illegal.
-3. **1:00** Draft — read the measured values off a card (`Teq`, gravity, distance) and the derived hazard bars; take the harsh world on purpose.
-4. **1:30** Sector — hover a route to show the preview (Δv, heat, nodes, hazard crossing), commit, watch the telegraph resolve, collect a node, `HOLD` to vent, then `EXTRACT`.
-5. **2:30** Debrief — buy one refit module, show approval and grant; report screen shows grade, breakdown, and the campaign story.
-
-### Known gaps to say out loud
-
-- The packaged build is one pass behind the tree (fog, VFX, outcrops). Re-export first, then demo.
-- There is no soundtrack yet; SFX only. That is the largest remaining feel gap, and the plan is written.
-- The map still has per-cell composition artifacts at 2×. W2 is the fix and it is scheduled, not hand-waved.
-- VFX/UI work is additive polish; the playable loop, data pipeline and scoring are done and verified.
-- **AI/SI disclosure:** the Space Apps project page asks how Super Intelligence was used. Our answer is simple and already in [Credits](#credits) — all art was generated by the user in ComfyUI, and the code was written by agents under human review. Keep that field filled in; it is required, not optional.
-- **Scope honesty:** scores are local only (best score + daily best). There is no online leaderboard, no account, and no server — that is a deliberate choice for a static, classroom-friendly build.
+- **Hazard telegraphs are animated fields**, not flat squares — this one reads `INCOMING: DUST · SHIELD 1 PWR OR −1 INT`, so the player can price the hit before moving.
+- **W6 hero outcrops**: one large landmark plus two or three supporting rocks per board, with scale and tint jitter, instead of a repeated stamp.
+- **New console HUD**: one top telemetry strip and a physical-looking move / `HOLD` / `EXTRACT` cluster.
+- **Lighting grade**: per-biome exposure, hue-only tint and a soft rolloff, so volcanic and sulfur worlds stop clipping while temperate stays readable.
+- **Reachable cells** are outlined as one shape, not a grid of boxes.
 
 ---
 
@@ -237,12 +220,10 @@ cd build/web && python3 -m http.server 8060   # http://localhost:8060
 
 | | |
 |---|---|
-| <img src="screenshots/draft.png" width="480" alt="Target draft"> | <img src="screenshots/surface.png" width="480" alt="Surface sector"> |
-| **Pick a real world.** Three archive planets, each with measured properties and five derived mission bars. | **Fly the surface.** One move per turn, telegraphed hazards, and a limited hull. |
-| <img src="screenshots/crew.png" width="480" alt="Mission Control crew manifest"> | <img src="screenshots/debrief.png" width="480" alt="Debrief and refit"> |
-| **Build the crew.** 1–4 players, four roles whose personal goals conflict, three difficulty tiers, and a shared campaign code. | **Spend the grant.** Repair, refit, and buy rule-bending firmware between sectors. |
-| <img src="screenshots/report.png" width="480" alt="Final report"> | <img src="screenshots/buff.png" width="480" alt="Field commission cards"> |
-| **File the report.** Grade, score breakdown, role-goal result, and the story of what the agency found. | |
+| <img src="screenshots/loop/loop_relay.png" width="480" alt="Temperate relay sector"> | <img src="screenshots/loop/world_volcanic.png" width="480" alt="Volcanic world surface"> |
+| **Temperate worlds.** Ridges, lakes and relay beacons — route around the terrain or pay for the shortcut. | **Volcanic worlds.** Lava fields and ash that punish a slow route. |
+| <img src="screenshots/loop/world_cryo.png" width="480" alt="Frozen world surface"> | <img src="screenshots/loop/world_crystal.png" width="480" alt="Crystal field surface"> |
+| **Frozen worlds.** Fractured plates, ice teeth, and very little cover. | **Crystal fields.** Spires break sightlines and eat the safe path. |
 
 Each run is three planets. At every stop you draft one of three real archive worlds, pick a route across its surface, and decide when to spend fuel, hold position, or extract before the next hazard lands. Between planets you spend the grant on repairs, instruments, and firmware that bend the rules.
 
@@ -251,36 +232,6 @@ The loop is deliberately short: **build → draft → survive → refit → repe
 ### Surface variety
 
 Every sector is drawn from a different archive world. The surface generator switches landform algorithms per biome, so an ice sheet, a volcanic caldera, a crystal field, and a cratered iron desert each ask for a different route. The current 72-planet pool is made of landable worlds; ocean, methane, obsidian, and carbon are terrain-renderer showcases outside the draft pool.
-
-| | |
-|---|---|
-| <img src="screenshots/world-ocean.png" width="480" alt="Ocean terrain showcase"> | <img src="screenshots/world-ice.png" width="480" alt="Frozen world surface"> |
-| **Ocean terrain.** Island chains, shallow reefs, and long water crossings — a renderer showcase, not a draft destination. | **Frozen worlds.** Fractured ice plates, open cracks, and little cover. |
-| <img src="screenshots/world-volcanic.png" width="480" alt="Volcanic world surface"> | <img src="screenshots/world-iron.png" width="480" alt="Iron desert surface"> |
-| **Volcanic worlds.** Lava fields, ash, and thermal vents that punish a slow route. | **Iron deserts.** Crater rims, dust, and long exposed approaches. |
-
----
-
-## Contents
-
-1. [Status & roadmap — mentor check](#status--roadmap--mentor-check-2026-11-14)
-2. [What it looks like](#what-it-looks-like)
-3. [What you actually do](#what-you-actually-do)
-4. [A run, step by step](#a-run-step-by-step)
-5. [Mission design](#mission-design)
-6. [Surface operations](#surface-operations)
-7. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
-8. [Debrief and refit](#debrief-and-refit)
-9. [Scoring](#scoring)
-10. [Where the science comes from](#where-the-science-comes-from)
-11. [Controls](#controls)
-12. [Running the project](#running-the-project)
-13. [How the code is organised](#how-the-code-is-organised)
-14. [The surface generator](#the-surface-generator)
-15. [Art pipeline](#art-pipeline)
-16. [Working with agents](#working-with-agents)
-17. [Repository layout](#repository-layout)
-18. [Credits](#credits)
 
 ---
 

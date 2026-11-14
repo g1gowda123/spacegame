@@ -43,17 +43,6 @@ func _ready() -> void:
 	_build()
 	GameState.changed.connect(_refresh)
 	_refresh()
-	for raw in OS.get_cmdline_user_args():
-		if str(raw).begins_with("--hover="):
-			var parts := str(raw).substr(8).split(",")
-			call_deferred("_dev_hover", Vector2(float(parts[0]), float(parts[1])))
-
-
-func _dev_hover(p: Vector2) -> void:
-	if not hull_cards.is_empty():
-		var first: Dictionary = hull_cards.values()[0]
-		first["button"].mouse_entered.emit()
-	await get_tree().process_frame
 
 
 func _build() -> void:
