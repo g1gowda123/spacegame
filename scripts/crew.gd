@@ -18,6 +18,7 @@ var code_edit: LineEdit
 var code_apply_btn: Button
 var code_status: Label
 var budget_label: Label
+var approval_label: Label
 var start_btn: Button
 var mode_note: Label
 
@@ -48,9 +49,13 @@ func _build() -> void:
 	add_child(step)
 
 	budget_label = UIKit.head("", 10, UIKit.AMBER, HORIZONTAL_ALIGNMENT_RIGHT)
-	budget_label.position = Vector2(380, 5)
-	budget_label.size = Vector2(250, 12)
+	budget_label.position = Vector2(480, 5)
+	budget_label.size = Vector2(140, 12)
 	add_child(budget_label)
+	approval_label = UIKit.mono("", 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
+	approval_label.position = Vector2(480, 20)
+	approval_label.size = Vector2(140, 10)
+	add_child(approval_label)
 	UIKit.hairline(self, 10, 33, 620)
 
 	_build_left()
@@ -88,14 +93,14 @@ func _build_left() -> void:
 		var id: String = ["cadet", "standard", "director"][i]
 		var d: Dictionary = CrewDirector.DIFFICULTIES[id]
 		var card := UIKit.option_card(
-			c, Rect2(10, 134 + i * 36, 170, 32),
+			c, Rect2(10, 132 + i * 42, 170, 40),
 			str(d["name"]), str(d["short"]), Color(str(d["color"])), 9, 7
 		)
 		card["button"].pressed.connect(_set_difficulty.bind(id))
 		diff_cards[id] = card
 
 	var buffs := UIKit.mono("BUFFS ON  ·  GOALS +180", 6, UIKit.DIM)
-	buffs.position = Vector2(10, 246)
+	buffs.position = Vector2(10, 262)
 	c.add_child(buffs)
 
 
@@ -104,12 +109,12 @@ func _build_right() -> void:
 	var c := UIKit.fill(p)
 
 	c.add_child(_label_at("CREW MANIFEST", Vector2(12, 0), 8, UIKit.MUTED))
-	var roles := UIKit.mono("FOUR ROLES  ·  FOUR METRICS  ·  NEGOTIATE", 7, UIKit.DIM,
+	var roles := UIKit.mono("4 ROLES  ·  4 METRICS  ·  NEGOTIATE", 7, UIKit.DIM,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	roles.position = Vector2(200, 1)
 	roles.size = Vector2(210, 10)
 	c.add_child(roles)
-	UIKit.hairline(c, 12, 14, 398)
+	UIKit.hairline(c, 12, 200, 398)
 
 	roster_root = Control.new()
 	roster_root.position = Vector2(12, 24)
@@ -117,12 +122,12 @@ func _build_right() -> void:
 	roster_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(roster_root)
 
-	c.add_child(_label_at("CAMPAIGN CODE", Vector2(12, 188), 8, UIKit.MUTED))
+	c.add_child(_label_at("CAMPAIGN CODE", Vector2(12, 210), 8, UIKit.MUTED))
 	var code_hint := UIKit.mono("SEED OR FULL DESIGN", 7, UIKit.DIM)
-	code_hint.position = Vector2(120, 189)
+	code_hint.position = Vector2(120, 211)
 	c.add_child(code_hint)
 	code_edit = LineEdit.new()
-	code_edit.position = Vector2(12, 206)
+	code_edit.position = Vector2(12, 228)
 	code_edit.size = Vector2(286, 20)
 	code_edit.placeholder_text = "OO-0F7A5-S1-PAVMOLOA-SPTH"
 	code_edit.max_length = 32
@@ -135,12 +140,12 @@ func _build_right() -> void:
 	code_edit.text_submitted.connect(func(_t: String): _apply_code())
 	c.add_child(code_edit)
 	var apply := UIKit.button("APPLY", Vector2(56, 20))
-	apply.position = Vector2(304, 206)
+	apply.position = Vector2(304, 228)
 	apply.pressed.connect(_apply_code)
 	code_apply_btn = apply
 	c.add_child(apply)
 	code_status = UIKit.mono("PASTE A CODE TO FLY SOMEONE ELSE'S WORLDS.", 6, UIKit.DIM)
-	code_status.position = Vector2(12, 230)
+	code_status.position = Vector2(12, 252)
 	code_status.size = Vector2(398, 10)
 	c.add_child(code_status)
 
@@ -243,7 +248,8 @@ func _refresh() -> void:
 	var d: Dictionary = CrewDirector.DIFFICULTIES[difficulty]
 	var budget := GameState.START_BUDGET + float(d["budget"])
 	var approval := clampi(GameState.START_APPROVAL + int(d["approval"]), 1, 100)
-	budget_label.text = "START  $%dM  ·  APPROVAL %d" % [int(budget), approval]
+	budget_label.text = "START $%dM" % int(budget)
+	approval_label.text = "APPROVAL %d" % approval
 	mode_note.text = "2-4 players share one console. 1 is solo." if mode == "campaign" else "Daily: one fixed seed for everyone today."
 	start_btn.text = "START DAILY RUN >" if mode == "daily" else "BEGIN CAMPAIGN >"
 	if code_edit != null:

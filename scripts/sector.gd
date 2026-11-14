@@ -1007,6 +1007,14 @@ func _execute_path() -> void:
 		_render_window()
 		_refresh_status()
 		_animate_player(step_from)
+		if player_sprite != null:
+			# Bank into the turn, then settle. This reads as a vehicle changing
+			# heading instead of a token being teleported one cell.
+			var bank := clampf(float(c.x - step_from.x) * 0.075, -0.12, 0.12)
+			player_sprite.rotation = -bank
+			var bank_tw := create_tween()
+			bank_tw.tween_property(player_sprite, "rotation", 0.0, 0.34) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		_pan_camera(step_from)
 		await camera_tween.finished
 		remaining.pop_front()
@@ -1184,6 +1192,10 @@ func _process(delta: float) -> void:
 		if not done and not moved:
 			bob = sin(Time.get_ticks_msec() * 0.0045) * 6.0
 		player_sprite.offset.y = move_toward(player_sprite.offset.y, bob, 30.0 * delta)
+	# The sector planet is a distant body, not a sticker: drift it a few pixels
+	# so the backdrop reads as depth behind the board.
+	if sector_planet != null:
+		sector_planet.position.y = -32.0 + sin(Time.get_ticks_msec() * 0.00011) * 5.0
 
 
 func _render_window() -> void:

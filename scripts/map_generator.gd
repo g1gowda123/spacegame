@@ -2319,9 +2319,24 @@ func _draw_fog() -> void:
 				_project(Vector2((c.x + 1) * TILE, (c.y + 1) * TILE)),
 				_project(Vector2(c.x * TILE, (c.y + 1) * TILE)),
 			])
+			# Soften the reveal boundary by one band: an unrevealed cell next
+			# to known ground is a haze, two cells out is half-dark, and the
+			# rest is full fog. This keeps the square-cell edge from reading
+			# as a hard spotlight.
+			var near := 3
+			for ny in range(-2, 3):
+				for nx in range(-2, 3):
+					var d := absi(nx) + absi(ny)
+					if d < near and revealed.has(c + Vector2i(nx, ny)):
+						near = d
+			var fog_alpha := 0.62
+			if near == 1:
+				fog_alpha = 0.38
+			elif near == 2:
+				fog_alpha = 0.50
 			var poly := Polygon2D.new()
 			poly.polygon = quad
-			poly.color = Color(0.008, 0.014, 0.024, 0.62)
+			poly.color = Color(0.008, 0.014, 0.024, fog_alpha)
 			fog_layer.add_child(poly)
 
 

@@ -9,6 +9,7 @@ const FALLBACK_PLANET := "res://assets/sprites/planets/rocky.png"
 
 var star_rect: TextureRect
 var planet_rect: TextureRect
+var _star_mat: ShaderMaterial
 var _planet_center := Vector2(0.82, 0.34)
 var _planet_size := 0.62
 var _planet_on := true
@@ -42,6 +43,12 @@ func _build() -> void:
 	star_rect.visible = _stars_on
 	if ResourceLoader.exists(BG_PATH):
 		star_rect.texture = load(BG_PATH) as Texture2D
+	# Drift + twinkle: the plate is a raster, the shader makes it alive.
+	var shader := load("res://shaders/star_drift.gdshader") as Shader
+	if shader != null:
+		_star_mat = ShaderMaterial.new()
+		_star_mat.shader = shader
+		star_rect.material = _star_mat
 	add_child(star_rect)
 
 	planet_rect = TextureRect.new()
@@ -122,6 +129,8 @@ func _layout() -> void:
 	star_rect.position = Vector2.ZERO
 	star_rect.size = vp
 	star_rect.visible = _stars_on
+	if _star_mat != null:
+		_star_mat.set_shader_parameter("resolution", vp)
 	if _shade != null:
 		_shade.position = Vector2.ZERO
 		_shade.size = vp
