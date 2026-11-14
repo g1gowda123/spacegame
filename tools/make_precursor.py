@@ -93,9 +93,26 @@ def main():
     for name, fn in BUILD.items():
         img = apply_palette(fn(), spec("obsidian"))
         img.save(OUT / f"{name}.png")
+        # flat variant: squashed into the ground plane with a rubble skirt, for
+        # the rare `ground: true` landmark slot
+        flat = img.resize((img.size[0], int(img.size[1] * 0.80)), Image.Resampling.LANCZOS)
+        base = canvas()
+        base.alpha_composite(flat, (0, S - flat.size[1]))
+        skirt = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(skirt)
+        rng = np.random.default_rng(4400)
+        for _ in range(14):
+            x = int(rng.uniform(40, 152)); y = int(rng.uniform(150, 178))
+            r = int(rng.uniform(4, 10))
+            sd.ellipse([x - r, y - r // 2, x + r, y + r // 2], fill=(62, 56, 80, 255))
+        base.alpha_composite(skirt)
+        base.save(OUT / f"{name}_ground.png")
         bbox = img.split()[-1].getbbox()
         manifest["keys"][name] = {"file": f"res://assets/tilesets/structures/{name}.png",
-                                  "bbox": list(bbox) if bbox else None, "footprint": "2x2"}
+                                  "ground_file": f"res://assets/tilesets/structures/{name}_ground.png",
+                                  "ground": True,
+                                  "bbox": list(bbox) if bbox else None, "footprint": "2x2",
+                                  "placement": "rare, max 1 per sector, never on objective/extract"}
     (OUT / "precursor_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     sheet = Image.new("RGBA", (S * 4, S + 16), (16, 24, 38, 255))
     for i, name in enumerate(BUILD):

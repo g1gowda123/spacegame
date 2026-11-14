@@ -5,43 +5,55 @@
   "keys": {
     "precursor_monolith": {
       "file": "res://assets/tilesets/structures/precursor_monolith.png",
+      "ground_file": "res://assets/tilesets/structures/precursor_monolith_ground.png",
+      "ground": true,
       "bbox": [
         70,
         40,
         129,
         179
       ],
-      "footprint": "2x2"
+      "footprint": "2x2",
+      "placement": "rare, max 1 per sector, never on objective/extract"
     },
     "precursor_ring": {
       "file": "res://assets/tilesets/structures/precursor_ring.png",
+      "ground_file": "res://assets/tilesets/structures/precursor_ring_ground.png",
+      "ground": true,
       "bbox": [
         21,
         88,
         170,
         157
       ],
-      "footprint": "2x2"
+      "footprint": "2x2",
+      "placement": "rare, max 1 per sector, never on objective/extract"
     },
     "precursor_lattice": {
       "file": "res://assets/tilesets/structures/precursor_lattice.png",
+      "ground_file": "res://assets/tilesets/structures/precursor_lattice_ground.png",
+      "ground": true,
       "bbox": [
         32,
         73,
         161,
         176
       ],
-      "footprint": "2x2"
+      "footprint": "2x2",
+      "placement": "rare, max 1 per sector, never on objective/extract"
     },
     "precursor_cylinder": {
       "file": "res://assets/tilesets/structures/precursor_cylinder.png",
+      "ground_file": "res://assets/tilesets/structures/precursor_cylinder_ground.png",
+      "ground": true,
       "bbox": [
         53,
         46,
         140,
         191
       ],
-      "footprint": "2x2"
+      "footprint": "2x2",
+      "placement": "rare, max 1 per sector, never on objective/extract"
     }
   }
 }
