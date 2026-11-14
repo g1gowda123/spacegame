@@ -120,6 +120,10 @@ func _ready() -> void:
 		fog_enabled = true
 	if "--no-fog" in args:
 		fog_enabled = false
+	# Isometric foreshortens the north-south axis; without the circular mask the
+	# full rectangular fog window is visible on every edge.
+	if "--circle" not in args:
+		circle_view = false
 	var force_relay := "--relay" in args
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.

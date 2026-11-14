@@ -331,18 +331,42 @@ var feature_toggles: Dictionary = {
 
 var rng := RandomNumberGenerator.new()
 var ui_rng := RandomNumberGenerator.new()
-var seed_value: int = 4217
+
+@export_group("Map / Seed")
+## Turn this off to keep the inspector seed instead of rolling a new run.
+@export var randomize_seed: bool = true
+@export var seed_value: int = 4217
+@export_range(0, 12, 1) var biome_index: int = 0
+
+@export_group("Camera / View")
+@export_enum("Dimetric", "Isometric", "Top") var view_mode: int = 1
+@export var show_grid: bool = false
+@export var circle_view: bool = true
+@export_range(0.4, 1.6, 0.01) var zoom: float = 0.88
+@export_range(0.4, 1.0, 0.01) var tilt: float = 0.75
+@export_range(0.5, 1.4, 0.01) var map_scale: float = 0.92
+@export_range(0.20, 0.55, 0.01) var circle_radius: float = 0.40
+@export_range(0.05, 0.15, 0.005) var circle_soft: float = 0.045
+@export_range(0.45, 0.75, 0.01) var circle_outer: float = 0.56
+
+@export_group("Fog / Survey")
+@export var fog_enabled: bool = true
+@export_range(0, 6, 1) var fog_reveal_radius: int = 2
+
+@export_group("Decals")
+@export_range(0.0, 0.5, 0.01) var decal_density: float = 0.15
+@export_range(0.0, 0.5, 0.01) var decal_cluster_threshold: float = -0.20
+@export_range(0.2, 1.0, 0.01) var decal_scale_min: float = 0.48
+@export_range(0.2, 1.2, 0.01) var decal_scale_max: float = 0.64
+@export_range(0.0, 1.0, 0.01) var decal_alpha: float = 0.72
+
+@export_group("Terrain Shader")
+@export_enum("Accepted dither", "Smooth tint", "Off") var edge_mode: int = 1
+@export var relief_enabled: bool = false
+
 var planet_name: String = ""
-var biome_index: int = 0
 var terrain_archetype: Dictionary = {}
 var archetype_name: String = "Open Plains"
-
-var view_mode: int = 1  # 0 = 3/4 tilt, 1 = isometric, 2 = top-down
-var show_grid: bool = false
-var circle_view: bool = true
-var zoom: float = 0.88
-var tilt: float = 0.75
-var map_scale: float = 0.92
 var view_origin := Vector2i.ZERO
 
 var sub_viewport: SubViewport
@@ -380,8 +404,6 @@ var cli_view: int = -1
 var cli_hide_ui: bool = false
 var debug_visible: bool = false
 var debug_transitions: bool = false
-var edge_mode: int = 1
-var relief_enabled: bool = false
 var debug_layer: Node2D
 var terrain_mask_tex: ImageTexture
 var terrain_mask_img: Image
@@ -406,7 +428,6 @@ var objectives: Array[Vector2i] = []
 var collected: Array[bool] = []
 var objective_tiers: Array[int] = []
 var objective_values: Array[int] = []
-var fog_enabled := true
 var revealed: Dictionary = {}
 var fog_layer: Node2D
 var objective_mode := "survey"
