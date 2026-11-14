@@ -337,3 +337,14 @@ Boss approved the story frame. Full beat sheet, layout and acceptance: `docs/BRI
 | Connectivity guarantee after structure placement | **DONE** | `_place_objectives()` accepts only cells in `_reachable_world_cells(28)`; deterministic fallback keeps the node count |
 | Bug evidence | **DONE** | Before: 18 unreachable / 240 markers (9 runs, volcanic worst). After: 0 / 2,400 markers |
 | Full target run (100 seeds per biome) | **DONE** | `REACH OK` exit 0; see `docs/AUDIT_FIXES.md` §5 |
+
+## b — A2 density-vs-footprint formula (claimed 10:36, done 10:40)
+
+| Task | State | Notes |
+|---|---|---|
+| `tools/audit_density.gd` (per-chunk walkable denominator, major-footprint coverage, table, `--gate`) | **DONE** | `godot --headless --path . --script tools/audit_density.gd` |
+| Formula: `sum(A_major) <= 0.25*W_walk`, `N_max=floor(0.25*W_walk/A)` | **DONE** | Caps at `W_walk=196`: 4×4 → 3 (1 with overhang), 3×3 → 5 (1), 2×2 → 12 (3) |
+| 3 example chunks | **DONE** | barren 35.2% (10 craters), temperate 34.0% (5 massifs), volcanic 33.6% (3 volcanoes) |
+| Full measurement | **DONE** | 1,064 chunks, 28 over budget (2.6%) |
+| New finding: no major landform in arid/cryo/ocean | **DONE** | Ridge types are 2×2 mesa/iceberg and 1–2-cell islet |
+| Enforcement in `_generate_chunk_structures()` | **QUEUED (freeze)** | Accumulate footprint, stop at `0.25*W_walk`; `--gate` is acceptance |

@@ -145,3 +145,78 @@ use the shaped raw terrain, visible water/lava cannot disagree with the check.
 This closes the `b / ATLAS` connectivity task (“flood fill to objectives/extract,
 carve a pass”) for objectives: no carving is needed because placement now avoids
 isolated pockets.
+
+## 6. Density-vs-footprint formula (BOARD A2)
+
+`tools/audit_density.gd` (new) measures structure coverage per real 16×16 chunk.
+
+```bash
+godot --headless --path . --script tools/audit_density.gd
+godot --headless --path . --script tools/audit_density.gd -- --seeds=5 --chunks=6
+# add --gate to exit 1 when any chunk is over budget
+```
+
+**Definitions**
+
+- `W_walk` — cells in the chunk whose shaped terrain is not in `BLOCKED`
+  (water/lava already excluded; this is the denominator the spec means by
+  “walkable cells”).
+- **Major landform** — a structure with a 3×3+ collision footprint, a `pieces`
+  assembly, or a rendered width ≥ 4 tiles (`w * sprite_scale`). This covers the
+  4×4 massif/volcano, 3×3 crater/outpost and the 2×2 range at 2.40×; the 2×2
+  mesa/iceberg/coral spire/geyser stay “medium”.
+- `A = w * h` — collision footprint in cells. `A_eff = (w+2)*(h+2)` adds the
+  one-tile overhang the pieces contract allows.
+
+**Formula**
+
+```
+budget:   sum(A of major landforms in chunk) <= 0.25 * W_walk
+max count: N_max(type) = floor(0.25 * W_walk / A_type)
+p_major = N_max / placement_slots
+```
+
+At the measured mean `W_walk = 196`:
+
+| Type | A | Max per chunk (spec metric) | Max with 1-tile overhang (`A_eff`) |
+|---|---|---|---|
+| 4×4 massif / volcano | 16 | **3** | 1 |
+| 3×3 crater / outpost | 9 | **5** | 1 |
+| 2×2 range | 4 | **12** | 3 |
+
+Sparse chunks (`W_walk` below ~64) cannot fit even one 4×4 under the strict
+overhang variant, so they must fall back to a medium 2×2 feature. The placement
+rule is “keep drawing while cumulative footprint stays under budget, then stop”,
+not a fixed per-chunk count, because water/lava can shrink a chunk.
+
+**Measured violations (5 seeds × 6 biomes × 6×6 chunks = 1,064 chunks)**
+
+| Biome | Chunks over 25% | Mean | Max | Worst chunk |
+|---|---|---|---|---|
+| temperate | 14 | 11.9% | 34.0% | seed 1548 (4,0): 5 massifs, 80/235 |
+| volcanic | 5 | 6.7% | 33.6% | seed 1000 (3,2): 3 volcanoes, 48/143 |
+| barren | 9 | 10.6% | 35.2% | seed 1274 (5,2): 10 craters, 90/256 |
+| arid / cryo / ocean | 0 | 0% | 0% | no major landform at all |
+
+**28 of 1,064 chunks (2.6%) are over budget.** The failure mode is always the
+same: the generator rolls a fixed number of ridge attempts, and on a chunk with
+little walkable area (or a biome whose ridge type is major) those attempts stack
+past 25%.
+
+**Observations beyond the budget**
+
+- Arid, cryo and ocean have **zero** major landforms: their ridge types are
+  mesa (2×2), iceberg (2×2) and islet (1–2 cells). That is the opposite failure
+  from temperate/volcanic and directly contradicts the “major landform 4–6
+  tiles” layer in `docs/STRUCTURE_SCALE.md`.
+- Barren’s `impact_crater` is 3×3 and spawned up to **10 per chunk**, so it
+  behaves like a major landform even though it is a flat ground decal.
+
+**Enforcement (queued behind the 16:50 shipped-build freeze)**
+
+The fix belongs in `scripts/map_generator.gd::_generate_chunk_structures()`:
+accumulate `A` for each committed ridge/feature and stop before
+`0.25 * W_walk`; give sparse chunks a medium fallback. Do this together with a
+`mesa_b`/iceberg/crystal-outcrop 4×4 variant so the three empty biomes get a
+real major landform rather than only a cap. `tools/audit_density.gd --gate` is
+ready to be the acceptance check once that lands.
