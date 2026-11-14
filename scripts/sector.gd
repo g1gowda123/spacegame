@@ -1970,9 +1970,11 @@ func _draw_hazards() -> void:
 		var cells: Array[Vector2i] = h["cells"]
 		var armed := int(h.get("age", 1)) >= 1
 		var kind := int(HAZARD_KIND.get(str(h.get("kind", "")), 0))
+		var major := bool(h.get("major", false))
 		var mat := _hazard_material(
 			kind, 0 if armed else 1, col,
-			float(int(hash(str(h.get("kind", "")))) % 997) * 0.37, 1.0
+			float(int(hash(str(h.get("kind", "")))) % 997) * 0.37,
+			1.25 if major else 1.0
 		)
 		for c in cells:
 			if not _in_view(c.x, c.y):
