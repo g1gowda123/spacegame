@@ -1135,7 +1135,7 @@ func _place_start_landmark() -> void:
 	# lander; use a low, readable landmark instead.
 	if archetype_name == "Open Plains":
 		key = "impact_crater"
-	elif archetype_name in ["Lake District", "Archipelago"]:
+	elif archetype_name in ["Lake District", "Archipelago"] and biome_id not in ["volcanic", "sulfur", "obsidian"]:
 		key = "islet" if biome_id == "ocean" else "geyser"
 	var info: Dictionary = STRUCTURES[key]
 	var w: int = info["w"]
