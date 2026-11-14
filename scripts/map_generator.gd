@@ -3130,6 +3130,44 @@ func _load_piece_sets() -> Dictionary:
 	return piece_sets
 
 
+func _structure_visibility(cell: Vector2i, screen: Vector2) -> float:
+	"""Match structures to the terrain's fog / circular-edge grade.
+
+	The map shader only owns the SubViewport terrain; structures and props live
+	on separate Node2D layers. Without this, a bright volcano/massif sits on a
+	fogged or edge-faded tile like a cut-out.
+	"""
+	var vp := get_viewport_rect().size
+	var alpha := 1.0
+	if fog_enabled:
+		var near := 3
+		for ny in range(-2, 3):
+			for nx in range(-2, 3):
+				var d := absi(nx) + absi(ny)
+				if d < near and revealed.has(cell + Vector2i(nx, ny)):
+					near = d
+		var fog_a := fog_alpha_inner
+		if near == 1:
+			fog_a = fog_alpha_outer
+		elif near == 2:
+			fog_a = fog_alpha_mid
+		alpha *= 1.0 - fog_a * 0.55
+	if circle_view:
+		var disc := (screen / vp - Vector2(0.5, 0.5)) * Vector2(vp.x / vp.y, 1.0)
+		var dist := disc.length()
+		var focus := 1.0 - smoothstep(
+			circle_radius - circle_soft, circle_radius + circle_soft, dist
+		)
+		var outside := 1.0 - smoothstep(
+			circle_radius + circle_soft, circle_outer, dist
+		)
+		alpha *= lerpf(0.20, 1.0, clampf(focus * outside, 0.0, 1.0))
+	else:
+		var edge := minf(minf(screen.x, screen.y), minf(vp.x - screen.x, vp.y - screen.y))
+		alpha *= smoothstep(0.0, 46.0, edge)
+	return clampf(alpha, 0.10, 1.0)
+
+
 func _add_piece_sprites(
 	info: Dictionary, gx: int, gy: int, w: int, h: int, anchor_screen: Vector2
 ) -> bool:
@@ -3145,6 +3183,9 @@ func _add_piece_sprites(
 	# its own screen offset so the joins stay pixel-exact. z is derived from
 	# the piece's bottom row, letting actors pass in front of the south face.
 	var top_left := anchor_screen - Vector2(w * unit * map_scale * 0.5, h * unit * map_scale)
+	var dim := _structure_visibility(
+		Vector2i(gx + w / 2, gy + h / 2), anchor_screen
+	)
 	for p in pieces:
 		var tile: Array = p.get("tile", [0, 0])
 		var col := int(tile[0])
@@ -3158,6 +3199,7 @@ func _add_piece_sprites(
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		sprite.position = top_left + Vector2(col, row) * unit * map_scale
 		sprite.scale = Vector2(map_scale, map_scale)
+		sprite.modulate = Color(1.0, 1.0, 1.0, dim)
 		sprite.z_index = min(int(anchor_screen.y - float(h - 1 - row) * unit * map_scale), 940)
 		structure_layer.add_child(sprite)
 	return true
@@ -3182,6 +3224,9 @@ func _add_structure_sprite(s: Dictionary) -> void:
 	)
 	var anchor_screen := _project(anchor_world)
 	var bounds := _texture_bounds(tex)
+	var dim := _structure_visibility(
+		Vector2i(gx + w / 2, gy + h / 2), anchor_screen
+	)
 
 	var sprite_boost := float(info.get("sprite_scale", 1.0))
 	var shadow_rx := w * TILE * map_scale * (0.46 if is_ground else 0.62) * sprite_boost
@@ -3194,7 +3239,7 @@ func _add_structure_sprite(s: Dictionary) -> void:
 		Vector2.ZERO, shadow_rx, shadow_ry,
 		hash(Vector2i(roundi(anchor_screen.x), roundi(anchor_screen.y)))
 	)
-	shadow.color = Color(0.0, 0.0, 0.0, 0.20 if is_ground else 0.19)
+	shadow.color = Color(0.0, 0.0, 0.0, (0.20 if is_ground else 0.19) * dim)
 	shadow.position = anchor_screen + Vector2(0.0, -shadow_ry * 0.55)
 	shadow.z_index = min(int(anchor_screen.y) - 1, 939)
 	structure_layer.add_child(shadow)
@@ -3214,7 +3259,8 @@ func _add_structure_sprite(s: Dictionary) -> void:
 			float(h * TILE) / tex.get_height()
 		)
 	var extra_scale := float(info.get("sprite_scale", 1.0)) * float(s.get("scale_jitter", 1.0))
-	sprite.modulate = s.get("tint", Color.WHITE)
+	var tint: Color = s.get("tint", Color.WHITE)
+	sprite.modulate = Color(tint.r, tint.g, tint.b, tint.a * dim)
 	sprite.scale = Vector2(
 		map_scale * fit.x * extra_scale,
 		map_scale * fit.y * (tilt if is_ground else 1.0) * extra_scale
@@ -3335,6 +3381,9 @@ func _add_prop_sprite(p: Dictionary) -> void:
 	var base_world := Vector2((int(p["gx"]) + 0.5) * TILE, (int(p["gy"]) + 1.0) * TILE)
 	var base_screen := _project(base_world)
 	var bounds := _texture_bounds(tex)
+	var dim := _structure_visibility(
+		Vector2i(int(p["gx"]), int(p["gy"])), base_screen
+	)
 	var scale: float = map_scale * float(p.get("scale", 0.72))
 
 	var prop_shadow_ry := TILE * map_scale * 0.09
@@ -3343,7 +3392,7 @@ func _add_prop_sprite(p: Dictionary) -> void:
 		Vector2.ZERO, TILE * map_scale * 0.30, prop_shadow_ry,
 		hash(Vector2i(roundi(base_screen.x), roundi(base_screen.y)))
 	)
-	shadow.color = Color(0.0, 0.0, 0.0, 0.17)
+	shadow.color = Color(0.0, 0.0, 0.0, 0.17 * dim)
 	shadow.position = base_screen + Vector2(0.0, -prop_shadow_ry * 0.5)
 	shadow.z_index = min(int(base_screen.y) - 1, 939)
 	structure_layer.add_child(shadow)
@@ -3357,6 +3406,7 @@ func _add_prop_sprite(p: Dictionary) -> void:
 		(bounds.position.x + bounds.size.x * 0.5) * scale,
 		(bounds.position.y + bounds.size.y) * scale
 	)
+	sprite.modulate = Color(1.0, 1.0, 1.0, dim)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = min(int(base_screen.y), 940)
 	structure_layer.add_child(sprite)
