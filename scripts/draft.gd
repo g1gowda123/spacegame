@@ -280,7 +280,7 @@ func _refresh() -> void:
 		return
 	var p := selected_planet
 	var g: Dictionary = p["game"]
-	detail_label.text = "Teq %d K > heat %d   ·   %.2fg > dv %d   ·   %.1f ly > comms -%d%%   ·   science %d" % [
+	detail_label.text = "Teq %d K  ·  heat %d   ·   %.2fg  ·  dv %d   ·   %.1f ly  ·  comms -%d%%   ·   science %d" % [
 		int(p["eq_temp_k"]), int(g["heat"]), float(p["gravity_g"]),
 		int(g["delta_v"]), float(p["distance_ly"]), int(g["comms_loss"]),
 		int(g["science"])
@@ -390,8 +390,8 @@ func _show_mission_review() -> void:
 	e2.position = Vector2(160, 55)
 	e2.size = Vector2(102, 8)
 	traj.add_child(e2)
-	var t1 := UIKit.label("TRANSFER ARC  ·  %.1f LY  ·  %.1f YR" % [
-		float(p["distance_ly"]), maxf(0.4, float(p["distance_ly"]) / 4.0)
+	var t1 := UIKit.label("TRANSFER ARC  ·  %.1f LY  ·  %.1f YR @0.85c" % [
+		float(p["distance_ly"]), maxf(0.4, float(p["distance_ly"]) / 0.85)
 	], 5, UIKit.CYAN, true)
 	t1.position = Vector2(56, 88)
 	t1.size = Vector2(206, 10)
