@@ -61,7 +61,7 @@ Browser, 640×360 pixel art, **10–15 minutes**, 1–4 players local hot-seat, 
 
 ### 3. The 5-minute demo path
 
-Newest code: `godot --path /home/g1/godot/nasa`. Packaged build: `cd build/web && python3 -m http.server 8060`, then open `http://localhost:8060`.
+Newest code: `godot --path /home/g1/godot/nasa`. Packaged build: run `tools/play_web.sh` (serves `build/web` on `http://127.0.0.1:8061/index.html`). If the port is busy, pass another one: `tools/play_web.sh 8062`.
 
 | Time | Screen | What you show | What you say |
 |---|---|---|---|
