@@ -34,13 +34,13 @@ const BEATS := [
 	},
 ]
 
-const PAPER := Color("#e8dfc8")
-const INK := Color("#1b1a17")
-const INK_SOFT := Color("#4a4438")
-const ORANGE := Color("#e4572e")
-const SIGNAL := Color("#b8332f")
-const NIGHT := Color("#101826")
-const TEAL := Color("#5f8f8a")
+const PAPER := Color("#0b1721")
+const INK := Color("#e8e3d1")
+const INK_SOFT := Color("#a3b4b1")
+const ORANGE := Color("#ff7a2f")
+const SIGNAL := Color("#ef5d62")
+const NIGHT := Color("#050a10")
+const TEAL := Color("#4f9b93")
 const SHIP_DIR := "res://assets/sprites/crew/"
 
 var beat := 0
@@ -127,11 +127,11 @@ func _build() -> void:
 	var portrait_card := Panel.new()
 	portrait_card.position = Vector2(3, 12)
 	portrait_card.size = Vector2(170, 250)
-	portrait_card.add_theme_stylebox_override("panel", _paper_style(Color("#e8dfc8"), INK, 1))
+	portrait_card.add_theme_stylebox_override("panel", _paper_style(PAPER, ORANGE, 1))
 	portrait_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(portrait_card)
 
-	var card_code := UIKit.label("PERSONNEL FILE // VALE", 5, Color("#4a4438"), true)
+	var card_code := UIKit.label("PERSONNEL FILE // VALE", 5, INK_SOFT, true)
 	card_code.position = Vector2(8, 238)
 	card_code.size = Vector2(154, 9)
 	card_code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -140,7 +140,7 @@ func _build() -> void:
 	var photo_back := Panel.new()
 	photo_back.position = Vector2(10, 20)
 	photo_back.size = Vector2(152, 152)
-	photo_back.add_theme_stylebox_override("panel", _paper_style(Color("#d8c9ab"), Color("#1b1a17"), 1))
+	photo_back.add_theme_stylebox_override("panel", _paper_style(Color("#07111a"), INK_SOFT, 1))
 	photo_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(photo_back)
 
@@ -154,33 +154,24 @@ func _build() -> void:
 	portrait.modulate = Color(1.06, 1.04, 1.0)
 	add_child(portrait)
 
-	var id_name := UIKit.label("DR. IMANI VALE", 6, Color("#1b1a17"), true)
+	var id_name := UIKit.label("DR. IMANI VALE", 6, INK, true)
 	id_name.position = Vector2(12, 180)
 	id_name.size = Vector2(146, 9)
 	id_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(id_name)
 
-	var id_role := UIKit.label("EXECUTIVE SECRETARY", 5, Color("#4a4438"), true)
+	var id_role := UIKit.label("EXECUTIVE SECRETARY", 5, INK_SOFT, true)
 	id_role.position = Vector2(12, 191)
 	id_role.size = Vector2(146, 8)
 	id_role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(id_role)
 
-	var id_clear := UIKit.label("CLEARANCE  A-2  ·  MISSION CONTROL", 4, Color("#6b5f4c"), true)
+	var id_clear := UIKit.label("CLEARANCE  A-2  ·  MISSION CONTROL", 4, INK_SOFT, true)
 	id_clear.position = Vector2(12, 202)
 	id_clear.size = Vector2(146, 8)
 	id_clear.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(id_clear)
 
-	var photo_tape := TextureRect.new()
-	photo_tape.texture = load("res://assets/ui/skin/tape_masking.png")
-	photo_tape.position = Vector2(35, 5)
-	photo_tape.size = Vector2(104, 14)
-	photo_tape.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	photo_tape.stretch_mode = TextureRect.STRETCH_SCALE
-	photo_tape.modulate = Color(1, 1, 1, 0.75)
-	photo_tape.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(photo_tape)
 
 	var tab := Panel.new()
 	tab.position = Vector2(166, 228)
@@ -204,11 +195,11 @@ func _build() -> void:
 	add_child(dialogue)
 
 	var paper_tex := TextureRect.new()
-	paper_tex.texture = load("res://assets/ui/skin/paper_texture.png")
+	paper_tex.texture = load("res://assets/ui/skin_ops/grid.png")
 	paper_tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	paper_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	paper_tex.stretch_mode = TextureRect.STRETCH_TILE
-	paper_tex.modulate = Color(1, 1, 1, 0.18)
+	paper_tex.modulate = Color(1, 1, 1, 0.55)
 	paper_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue.add_child(paper_tex)
 
@@ -218,7 +209,7 @@ func _build() -> void:
 	barcode.size = Vector2(64, 9)
 	barcode.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	barcode.stretch_mode = TextureRect.STRETCH_SCALE
-	barcode.modulate = Color(0.15, 0.14, 0.12, 0.55)
+	barcode.modulate = Color(1.0, 0.58, 0.30, 0.32)
 	barcode.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue.add_child(barcode)
 
@@ -276,14 +267,6 @@ func _build_name_prompt() -> void:
 	sheet.mouse_filter = Control.MOUSE_FILTER_STOP
 	name_layer.add_child(sheet)
 
-	var tape := TextureRect.new()
-	tape.texture = load("res://assets/ui/skin/tape_masking.png")
-	tape.position = Vector2(168, 72)
-	tape.size = Vector2(120, 16)
-	tape.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	tape.stretch_mode = TextureRect.STRETCH_SCALE
-	tape.modulate = Color(1, 1, 1, 0.8)
-	name_layer.add_child(tape)
 
 	var kicker := UIKit.label("AGENCY PERSONNEL  //  CALLSIGN", 7, ORANGE, true)
 	kicker.position = Vector2(18, 18)
@@ -311,11 +294,11 @@ func _build_name_prompt() -> void:
 	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_edit.add_theme_font_override("font", UIKit.pixel_font)
 	name_edit.add_theme_font_size_override("font_size", 9)
-	name_edit.add_theme_color_override("font_color", Color("#1b1a17"))
-	name_edit.add_theme_color_override("font_placeholder_color", Color(0.35, 0.32, 0.27, 0.6))
+	name_edit.add_theme_color_override("font_color", INK)
+	name_edit.add_theme_color_override("font_placeholder_color", Color(0.45, 0.54, 0.53, 0.8))
 	name_edit.add_theme_color_override("caret_color", ORANGE)
-	name_edit.add_theme_stylebox_override("normal", _paper_style(Color("#f2ead6"), INK, 1))
-	name_edit.add_theme_stylebox_override("focus", _paper_style(Color("#fff8e6"), ORANGE, 2))
+	name_edit.add_theme_stylebox_override("normal", _paper_style(Color("#07111a"), INK_SOFT, 1))
+	name_edit.add_theme_stylebox_override("focus", _paper_style(Color("#07111a"), ORANGE, 2))
 	name_edit.text_submitted.connect(func(_t): _submit_name())
 	sheet.add_child(name_edit)
 
@@ -325,11 +308,11 @@ func _build_name_prompt() -> void:
 	sheet.add_child(submit)
 
 	var hint := UIKit.mono("THIS NAME GOES ON THE MISSION RECORD AND THE HONOURS BOARD.",
-		6, Color("#4a4438"))
+		6, INK_SOFT)
 	hint.position = Vector2(18, 146)
 	hint.size = Vector2(384, 9)
 	sheet.add_child(hint)
-	var key_hint := UIKit.mono("ENTER TO FILE  ·  ESC TO USE 'CHIEF'", 6, Color("#6b5f4c"))
+	var key_hint := UIKit.mono("ENTER TO FILE  ·  ESC TO USE 'CHIEF'", 6, INK_SOFT)
 	key_hint.position = Vector2(18, 160)
 	key_hint.size = Vector2(384, 9)
 	sheet.add_child(key_hint)

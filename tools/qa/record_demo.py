@@ -5,6 +5,9 @@ Walks the judged flow (callsign -> briefing -> title -> design -> draft ->
 review -> sector turns) in a recording browser context and saves one still per
 beat, plus the raw video. Cutting/trimming to <30 s is a separate ffmpeg step.
 
+Godot's Web export ignores Playwright's synthetic mouse on Firefox, so clicks
+are dispatched straight onto the canvas.
+
 Usage: python3 tools/qa/record_demo.py [outdir]
 """
 import asyncio
@@ -20,15 +23,32 @@ BUILD = os.path.join(ROOT, "build", "web")
 OUT = sys.argv[1] if len(sys.argv) > 1 else "/tmp/opencode/demo_rec"
 PORT = "8899"
 
+BTN_BEGIN = (243, 445)
+BTN_CONFIRM_DESIGN = (1195, 673)
+BTN_COMMIT = (1101, 605)
+
+
+async def tap(page, x, y):
+    await page.evaluate(
+        """(pt) => {
+            const c = document.querySelector('canvas');
+            for (const type of ['pointerdown','pointerup','mousedown','mouseup','click']) {
+                const ev = type.startsWith('pointer')
+                    ? new PointerEvent(type, {clientX: pt[0], clientY: pt[1], bubbles: true,
+                                              pointerId: 1, button: 0, isPrimary: true, buttons: 1})
+                    : new MouseEvent(type, {clientX: pt[0], clientY: pt[1], bubbles: true,
+                                            button: 0, buttons: 1});
+                c.dispatchEvent(ev);
+            }
+        }""",
+        [x, y],
+    )
+
 
 async def main():
     os.makedirs(OUT, exist_ok=True)
-    server = subprocess.Popen(
-        [sys.executable, "-m", "http.server", PORT],
-        cwd=BUILD,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    server = subprocess.Popen([sys.executable, "-m", "http.server", PORT], cwd=BUILD,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
     marks, errors = [], []
     try:
@@ -55,7 +75,7 @@ async def main():
                 marks.append((name, round(time.time() - t0, 1)))
 
             await asyncio.sleep(3)
-            await page.mouse.click(640, 660)
+            await tap(page, 640, 660)
             await asyncio.sleep(2.0)
             await mark("01_callsign")
             await page.keyboard.press("Enter")
@@ -64,16 +84,16 @@ async def main():
             await page.keyboard.press("Escape")
             await asyncio.sleep(2.5)
             await mark("03_title")
-            await page.mouse.click(180, 353)
+            await tap(page, *BTN_BEGIN)
             await asyncio.sleep(5.0)
             await mark("04_design")
-            await page.keyboard.press("Enter")
+            await tap(page, *BTN_CONFIRM_DESIGN)
             await asyncio.sleep(4.5)
             await mark("05_draft")
             await page.keyboard.press("Enter")
             await asyncio.sleep(4.5)
             await mark("06_review")
-            await page.keyboard.press("Enter")
+            await tap(page, *BTN_COMMIT)
             await asyncio.sleep(5.5)
             await mark("07_sector")
             for i, key in enumerate(["ArrowRight", "ArrowRight", "Enter", "ArrowDown", "Enter", "ArrowRight", "Enter"]):

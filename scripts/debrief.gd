@@ -36,6 +36,8 @@ func _ready() -> void:
 		GameState.run["event_card"] = {}
 		GameState.event_card = {}
 	_build()
+	if "--tiptest" in cli:
+		call_deferred("_dev_tip")
 	if "--next" in cli:
 		call_deferred("_on_next", false)
 	if "--event" in OS.get_cmdline_args() or "--event" in OS.get_cmdline_user_args():
@@ -47,6 +49,12 @@ func _ready() -> void:
 		if str(raw).begins_with("--buy="):
 			call_deferred("_dev_buy", int(str(raw).substr(6)))
 
+
+
+func _dev_tip() -> void:
+	await get_tree().process_frame
+	if shop_root != null and shop_root.get_child_count() > 0:
+		shop_root.get_child(0).mouse_entered.emit()
 
 
 func _dev_buy(idx: int) -> void:
@@ -266,10 +274,13 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	buy.disabled = not afford
 	buy.pressed.connect(_on_buy.bind(idx))
 	card.add_child(buy)
-	UIKit.hover_info(card, str(up["name"]),
-		"%s\n\nCOST $%dM · %s" % [
-			str(up.get("plain", up["desc"])), int(cost), kind_text.to_upper()
-		], UIKit.ORANGE if afford else UIKit.SIGNAL)
+	var tip_title := str(up["name"])
+	var tip_body := "%s\n\nCOST $%dM · %s" % [
+		str(up.get("plain", up["desc"])), int(cost), kind_text.to_upper()
+	]
+	var tip_accent := UIKit.ORANGE if afford else UIKit.SIGNAL
+	UIKit.hover_info(card, tip_title, tip_body, tip_accent)
+	UIKit.hover_info(buy, tip_title, tip_body, tip_accent)
 	return card
 
 

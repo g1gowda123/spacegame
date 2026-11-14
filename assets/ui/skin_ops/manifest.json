@@ -1,0 +1,11 @@
+{
+  "name": "Mission Ops",
+  "author": "NOVA",
+  "style": "dark machined pixel console",
+  "margins": {
+    "panel": 7,
+    "card": 5,
+    "tab": 4,
+    "button": 4
+  }
+}

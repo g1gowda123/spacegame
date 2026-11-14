@@ -1,4 +1,5 @@
 extends Control
+const ORBIT_PLOT := preload("res://scripts/ui_orbit_plot.gd")
 
 var howto_layer: Control
 var ranks_layer: Control
@@ -31,10 +32,18 @@ func _build_ui() -> void:
 	# hero on the right; the left is the agency's filed mission cover.
 	UIKit.sheet(self, 18, 10, 456, 338)
 	var margin_rule := ColorRect.new()
-	margin_rule.color = Color(0.72, 0.20, 0.18, 0.35)
+	margin_rule.color = Color(1.0, 0.48, 0.18, 0.45)
 	margin_rule.position = Vector2(34, 18)
 	margin_rule.size = Vector2(1, 322)
 	add_child(margin_rule)
+	var plot := ORBIT_PLOT.new()
+	plot.position = Vector2(300, 78)
+	plot.size = Vector2(150, 78)
+	add_child(plot)
+	var plot_label := UIKit.mono("TRANSFER PLOT  //  18.6 LY", 5, UIKit.INK_FAINT)
+	plot_label.position = Vector2(300, 156)
+	add_child(plot_label)
+
 	var stamp := TextureRect.new()
 	stamp.texture = load("res://assets/ui/skin/stamp_approved.png")
 	stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -42,7 +51,7 @@ func _build_ui() -> void:
 	stamp.position = Vector2(366, 26)
 	stamp.size = Vector2(92, 30)
 	stamp.rotation = -0.06
-	stamp.modulate = Color(1, 1, 1, 0.82)
+	stamp.modulate = Color(1.18, 1.08, 0.98, 0.92)
 	add_child(stamp)
 
 	var kicker := UIKit.mono("NASA SPACE APPS CHALLENGE 2026", 8, UIKit.ORANGE)
@@ -212,14 +221,14 @@ func _build_ranks() -> void:
 	title.position = Vector2(18, 32)
 	title.size = Vector2(420, 14)
 	sheet.add_child(title)
-	var note := UIKit.label("BEST RUN PER CALLSIGN  ·  STORED ON THIS TERMINAL", 5, Color("#4a4438"), true)
+	var note := UIKit.label("BEST RUN PER CALLSIGN  ·  STORED ON THIS TERMINAL", 5, UIKit.MUTED, true)
 	note.position = Vector2(18, 48)
 	note.size = Vector2(420, 10)
 	sheet.add_child(note)
 
 	var rows := GameState.leaderboard_top(5)
 	if rows.is_empty():
-		var empty := UIKit.label("NO FLIGHTS FILED YET. BE THE FIRST.", 8, Color("#4a4438"), true)
+		var empty := UIKit.label("NO FLIGHTS FILED YET. BE THE FIRST.", 8, UIKit.MUTED, true)
 		empty.position = Vector2(18, 92)
 		empty.size = Vector2(420, 14)
 		sheet.add_child(empty)
@@ -243,12 +252,12 @@ func _build_ranks() -> void:
 			grade.position = Vector2(242, y)
 			grade.size = Vector2(20, 12)
 			sheet.add_child(grade)
-			var meta := UIKit.label("%s  ·  %s" % [str(row.get("date", "")), str(row.get("difficulty", "standard")).to_upper()], 5, Color("#4a4438"), true)
+			var meta := UIKit.label("%s  ·  %s" % [str(row.get("date", "")), str(row.get("difficulty", "standard")).to_upper()], 5, UIKit.MUTED, true)
 			meta.position = Vector2(270, y + 2)
 			meta.size = Vector2(168, 10)
 			sheet.add_child(meta)
 			var rule := ColorRect.new()
-			rule.color = Color(0.11, 0.10, 0.09, 0.18)
+			rule.color = UIKit.STEEL
 			rule.position = Vector2(18, y + 22)
 			rule.size = Vector2(420, 1)
 			sheet.add_child(rule)
