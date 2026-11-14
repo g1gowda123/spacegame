@@ -101,7 +101,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "barren", "name": "Barren", "profile": "barren", "life": "lifeless", "generator": "cratered",
-		"tint": "#ffffff", "tint_strength": 0.0,
+		"tint": "#d9b98e", "tint_strength": 0.28,
 		"base": "barren/regolith", "detail": "barren/dust",
 		"rock": "barren/rock", "shore": "", "water": "",
 	},
@@ -1847,12 +1847,21 @@ func _append_structure(
 	var h: int = info["h"]
 	if not _structure_fits(arr, allowed, occupied, lx, ly, w, h):
 		return false
+	# One silhouette repeated eight times reads as a rubber stamp. Give each
+	# instance a small deterministic size/tint offset; the footprint and
+	# collision stay identical, so this is purely visual de-duplication.
+	var jr := RandomNumberGenerator.new()
+	jr.seed = hash(Vector3i(coord.x * 37 + lx, coord.y * 53 + ly, key.hash()))
+	var warm := Color(1.04, 1.01, 0.94)
+	var cool := Color(0.96, 0.99, 1.04)
 	out.append({
 		"key": key,
 		"gx": coord.x * CHUNK + lx,
 		"gy": coord.y * CHUNK + ly,
 		"w": w,
 		"h": h,
+		"scale_jitter": jr.randf_range(0.92, 1.08),
+		"tint": warm.lerp(cool, jr.randf()),
 	})
 	occupied.append(Rect2i(lx, ly, w, h))
 	return true
@@ -1867,7 +1876,7 @@ func _ridge_key(biome_id: String) -> String:
 		"cryo", "methane", "ammonia":
 			return "iceberg"
 		"barren":
-			return "impact_crater"
+			return "mountain_range"
 		"temperate", "carbon":
 			return "mountain_range"
 		"crystal":
@@ -2661,7 +2670,8 @@ func _add_structure_sprite(s: Dictionary) -> void:
 			float(w * TILE) / tex.get_width(),
 			float(h * TILE) / tex.get_height()
 		)
-	var extra_scale := float(info.get("sprite_scale", 1.0))
+	var extra_scale := float(info.get("sprite_scale", 1.0)) * float(s.get("scale_jitter", 1.0))
+	sprite.modulate = s.get("tint", Color.WHITE)
 	sprite.scale = Vector2(
 		map_scale * fit.x * extra_scale,
 		map_scale * fit.y * (tilt if is_ground else 1.0) * extra_scale
