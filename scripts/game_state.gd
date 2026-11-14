@@ -196,7 +196,13 @@ var body_font: Font
 var audio_click: AudioStream
 var audio_confirm: AudioStream
 var audio_alarm: AudioStream
-var audio_player: AudioStreamPlayer
+var audio_move: AudioStream
+var audio_hazard: AudioStream
+# A small round-robin pool: a single player cuts the previous cue when two land
+# in the same frame (multi-node pickup, hazard + overheat).
+const AUDIO_VOICES := 4
+var audio_players: Array[AudioStreamPlayer] = []
+var audio_voice := 0
 
 
 func _ready() -> void:
@@ -236,9 +242,13 @@ func _load_audio() -> void:
 	audio_click = _load_ogg("res://assets/audio/click.wav")
 	audio_confirm = _load_ogg("res://assets/audio/confirm.wav")
 	audio_alarm = _load_ogg("res://assets/audio/alarm.wav")
-	audio_player = AudioStreamPlayer.new()
-	audio_player.bus = "Master"
-	add_child(audio_player)
+	audio_move = _load_ogg("res://assets/audio/move.wav")
+	audio_hazard = _load_ogg("res://assets/audio/hazard.wav")
+	for _i in range(AUDIO_VOICES):
+		var player := AudioStreamPlayer.new()
+		player.bus = "Master"
+		add_child(player)
+		audio_players.append(player)
 
 
 func _load_ogg(path: String) -> AudioStream:
@@ -248,23 +258,34 @@ func _load_ogg(path: String) -> AudioStream:
 
 
 func _exit_tree() -> void:
-	if audio_player != null:
-		audio_player.stop()
-		audio_player.stream = null
+	for player in audio_players:
+		player.stop()
+		player.stream = null
+	audio_players.clear()
 	audio_click = null
 	audio_confirm = null
 	audio_alarm = null
+	audio_move = null
+	audio_hazard = null
 
 
 func sfx(which: String) -> void:
 	var stream: AudioStream = null
+	var volume_db := 0.0
 	match which:
 		"click": stream = audio_click
 		"confirm": stream = audio_confirm
 		"alarm": stream = audio_alarm
-	if stream != null and audio_player != null:
-		audio_player.stream = stream
-		audio_player.play()
+		"move":
+			stream = audio_move
+			volume_db = -4.0
+		"hazard": stream = audio_hazard
+	if stream != null and not audio_players.is_empty():
+		var player := audio_players[audio_voice % audio_players.size()]
+		audio_voice += 1
+		player.volume_db = volume_db
+		player.stream = stream
+		player.play()
 
 
 func _load_best() -> void:

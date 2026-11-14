@@ -165,6 +165,10 @@ func _ready() -> void:
 		elif arg == "--result=fail":
 			sec["integrity"] = 0
 			_end(false, "HULL BREACH")
+		elif arg == "--collect":
+			# QA hook for the pickup flash/sound without hunting for a node.
+			if not objectives.is_empty():
+				_collect_node_at(objectives[0])
 
 
 func _configure_map() -> void:
@@ -702,6 +706,7 @@ func _try_move(dir: Vector2i) -> void:
 			message_text = "DATA NODE SECURED  +%d" % gain
 			message_color = UIKit.CYAN
 			_show_toast(message_text, message_color)
+			_pickup_flash()
 
 	if _in_hazard(player_cell):
 		_resolve_hazard()
@@ -709,7 +714,7 @@ func _try_move(dir: Vector2i) -> void:
 	if int(sec["thermal"]) >= 100:
 		sec["thermal"] = 62
 		sec["integrity"] = int(sec["integrity"]) - 1
-		GameState.sfx("alarm")
+		GameState.sfx("hazard")
 		message_text = "THERMAL OVERLOAD  -1 INTEGRITY"
 		message_color = UIKit.RED
 		_show_toast(message_text, message_color)
@@ -848,6 +853,7 @@ func _collect_node_at(cell: Vector2i) -> void:
 			message_text = "DATA NODE SECURED  +%d" % gain
 			message_color = UIKit.CYAN
 			_show_toast(message_text, message_color)
+			_pickup_flash()
 			return
 
 
@@ -855,7 +861,7 @@ func _check_overheat() -> void:
 	if int(sec["thermal"]) >= 100:
 		sec["thermal"] = 62
 		sec["integrity"] = int(sec["integrity"]) - 1
-		GameState.sfx("alarm")
+		GameState.sfx("hazard")
 		message_text = "THERMAL OVERLOAD  -1 INTEGRITY"
 		message_color = UIKit.RED
 		_show_toast(message_text, message_color)
@@ -870,6 +876,7 @@ func _execute_path() -> void:
 		_show_toast(message_text, message_color)
 		return
 	moved = true
+	GameState.sfx("move")
 	var steps: Array[Vector2i] = path_cells.duplicate()
 	for c in steps:
 		if done:
@@ -1042,9 +1049,16 @@ func _draw_move_preview() -> void:
 	move_layer.add_child(target_edge)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if fx_layer != null and not done:
 		fx_layer.modulate.a = 0.88 + 0.12 * sin(Time.get_ticks_msec() * 0.006)
+	# Idle hover: a sub-pixel bob sells the lander as floating without touching
+	# the shadow. Sprite2D.offset is independent of the move tween on position.
+	if player_sprite != null:
+		var bob := 0.0
+		if not done and not moved:
+			bob = sin(Time.get_ticks_msec() * 0.0045) * 6.0
+		player_sprite.offset.y = move_toward(player_sprite.offset.y, bob, 30.0 * delta)
 
 
 func _render_window() -> void:
@@ -1190,7 +1204,7 @@ func _resolve_hazard() -> void:
 		message_color = hits[0]["info"]["color"]
 		_show_toast(message_text, message_color)
 		_impact(player_cell, hits[0]["info"]["color"], total_i, total_t)
-		GameState.sfx("alarm")
+		GameState.sfx("hazard")
 	elif blocked > 0:
 		message_text = "SHIELD ABSORBED  %s" % str(hits[0]["info"]["name"])
 		message_color = UIKit.CYAN
@@ -1233,8 +1247,17 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 	var base := position
 	var shake := create_tween()
 	for i in range(4):
-		shake.tween_property(self, "position", base + Vector2(rng.randf_range(-3, 3), rng.randf_range(-3, 3)), 0.035)
+		shake.tween_property(self, "position", base + Vector2(rng.randf_range(-2, 2), rng.randf_range(-2, 2)), 0.035)
 	shake.tween_property(self, "position", base, 0.06)
+
+
+func _pickup_flash() -> void:
+	if _impact_flash == null:
+		return
+	_impact_flash.color = Color(1, 1, 1, 0)
+	var flash := create_tween()
+	flash.tween_property(_impact_flash, "color:a", 0.18, 0.02)
+	flash.tween_property(_impact_flash, "color:a", 0.0, 0.12)
 
 
 func _float_text(text: String, cell: Vector2i, color: Color) -> void:
