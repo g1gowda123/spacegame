@@ -109,12 +109,7 @@ func _build_right() -> void:
 	var c := UIKit.fill(p)
 
 	c.add_child(_label_at("CREW MANIFEST", Vector2(12, 0), 8, UIKit.MUTED))
-	var roles := UIKit.mono("4 ROLES  ·  4 METRICS  ·  NEGOTIATE", 7, UIKit.DIM,
-		HORIZONTAL_ALIGNMENT_RIGHT)
-	roles.position = Vector2(200, 1)
-	roles.size = Vector2(210, 10)
-	c.add_child(roles)
-	UIKit.hairline(c, 12, 200, 398)
+	UIKit.hairline(c, 12, 198, 398)
 
 	roster_root = Control.new()
 	roster_root.position = Vector2(12, 24)
@@ -122,12 +117,12 @@ func _build_right() -> void:
 	roster_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(roster_root)
 
-	c.add_child(_label_at("CAMPAIGN CODE", Vector2(12, 210), 8, UIKit.MUTED))
+	c.add_child(_label_at("CAMPAIGN CODE", Vector2(12, 208), 8, UIKit.MUTED))
 	var code_hint := UIKit.mono("SEED OR FULL DESIGN", 7, UIKit.DIM)
-	code_hint.position = Vector2(120, 211)
+	code_hint.position = Vector2(120, 209)
 	c.add_child(code_hint)
 	code_edit = LineEdit.new()
-	code_edit.position = Vector2(12, 228)
+	code_edit.position = Vector2(12, 226)
 	code_edit.size = Vector2(286, 20)
 	code_edit.placeholder_text = "OO-0F7A5-S1-PAVMOLOA-SPTH"
 	code_edit.max_length = 32
@@ -140,12 +135,12 @@ func _build_right() -> void:
 	code_edit.text_submitted.connect(func(_t: String): _apply_code())
 	c.add_child(code_edit)
 	var apply := UIKit.button("APPLY", Vector2(56, 20))
-	apply.position = Vector2(304, 228)
+	apply.position = Vector2(304, 226)
 	apply.pressed.connect(_apply_code)
 	code_apply_btn = apply
 	c.add_child(apply)
 	code_status = UIKit.mono("PASTE A CODE TO FLY SOMEONE ELSE'S WORLDS.", 6, UIKit.DIM)
-	code_status.position = Vector2(12, 252)
+	code_status.position = Vector2(12, 250)
 	code_status.size = Vector2(398, 10)
 	c.add_child(code_status)
 

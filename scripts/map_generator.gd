@@ -379,6 +379,7 @@ var cli_view: int = -1
 var cli_hide_ui: bool = false
 var debug_visible: bool = false
 var debug_transitions: bool = false
+var soft_edges_enabled: bool = true
 var debug_layer: Node2D
 var terrain_mask_tex: ImageTexture
 var terrain_mask_img: Image
@@ -482,6 +483,8 @@ func _parse_cli() -> void:
 			cli_hide_ui = true
 		elif arg == "--debug-transitions":
 			debug_transitions = true
+		elif arg == "--no-soft-edges":
+			soft_edges_enabled = false
 		elif arg == "--legacy-water":
 			# Agent b: leaves the 1-cell halo and the old 3x3-only smoothing,
 			# i.e. the pre-coalescing shoreline, for side-by-side evidence.

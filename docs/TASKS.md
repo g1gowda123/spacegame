@@ -434,3 +434,17 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 | M2 survey choice (sample/deep scan) | next | NOVA | turn-pause modal; see `docs/MAP_GAMEPLAY.md` |
 | M3 terrain movement cost | next | NOVA / ATLAS | rock/ridge cost 2, water/lava block; path budget |
 | Fog edge/softness + minimap reveal | needs ATLAS/VEGA | ATLAS / VEGA | current fog is cell-hard; do not add art without VEGA |
+
+## VFX / animation / shader lane (claimed 18:00 — VFX agent)
+
+Scope: all shaders, in-game animation, effect art. Static tiles/sprites stay VEGA's. Contract and knobs: `docs/VFX.md`.
+
+| # | Task | Status | Evidence / note |
+|---|---|---|---|
+| V1 | W5 grade: hue-only tint, luminance floor, per-biome exposure | **DONE 18:20** | `shaders/map_view.gdshader`, `BIOMES[*].exposure`; A/B `/tmp/opencode/vfx/side_*.png`; measured in WORKLOG 18:20 |
+| V2 | Animated hazard telegraph shader (armed/forming/scar + per-kind motion) | **DONE 18:20** | `shaders/hazard_field.gdshader`, `sector.gd::_draw_hazards()` |
+| V3 | Effect library: impact, shield, pickup, extract beam, overheat, landing pad | **DONE 18:20** | `scripts/vfx.gd`; reel `--fx=all`; `/tmp/opencode/vfx/fx2_strip.png` |
+| V4 | Movement/objective/ambient motion: per-cell tween + puff + bank, scanner ring, per-biome particles, planet drift, star twinkle | **DONE 18:20** | `sector.gd::_execute_path`, `map_generator.gd::_build_ambient` / `_rebuild_actors`, `shaders/star_drift.gdshader` |
+| V5 | Animation-art pipeline: procedural sheets + ComfyUI VFX workflows + motion deriver | **DONE 18:20** | `tools/make_vfx_art.py`, `tools/gen_vfx_sheet.py`, `tools/comfy_workflows/vfx_*.json`, `assets/vfx/` |
+| V6 | Scene transitions (fade/paper slide) and HUD gauge animation | **OPEN** | needs `change_scene_to_file` call sites and the UI gauge refactor; coordinate with UI owner |
+| V7 | Volcanic heat-haze refraction | **OPEN** | needs a screen-copy or extra texture; evaluate after W1 mask lands |
