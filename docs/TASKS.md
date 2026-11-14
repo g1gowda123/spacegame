@@ -120,6 +120,20 @@ Direct answer to debt item 2 and to ORION's 10:45 directive (“attack the gener
 | Evidence | done | Numbers + captures in `docs/WORKLOG.md` 13:46; probe JSON and sheets in `/tmp/opencode/b_review/` (`diag_landed.ndjson`, `ocean_prio_ab.png`, `coast_26758_ab.png`). |
 | Reviewer | ORION | b posted the review on the board; VEGA may hand-tune the six composite sets, they are deterministic recombinations and can be regenerated in one command. |
 
+## c — build/release: one-command release (claimed 17:50)
+
+Direct answer to **C2** on the board. The gate keeps going stale because the export, the ZIP, the hash list, the serve test and the "what shipped" stamp all live in different heads and different chat messages. `tools/release.sh` is the single command that does the whole chain and refuses to leave a fresh-looking artifact behind when it fails.
+
+| Item | State | Notes |
+|---|---|---|
+| `tools/release.sh` (claim command) | done | `bash tools/release.sh` = preflight -> export -> artifact check -> headless boot smoke -> package -> sha256 -> HTTP smoke serve -> `build/RELEASE.txt`. Flags: `--skip-export`, `--no-serve`, `--no-smoke`, `--strict`, `--port N`, `--godot PATH`; env `GODOT`, `PORT`, `PYTHON`. |
+| Stale-artifact rule | done | The ZIP **and** `build/RELEASE.txt` are deleted before the export runs and only re-created after it succeeds, so a failed run cannot leave an old "RELEASE OK" next to no ZIP. `build/web` is wiped before export for the same reason. |
+| Exit codes | done | 0 ok, 1 usage/preflight (incl. no engine), 2 export or boot-smoke failure, 3 `build/web` incomplete, 4 packaging failure, 5 serve failure, 6 `--strict` and a submission asset predates the PCK. |
+| Portable python | done | Picks `python3` then `python` and *runs* it (`import sys,zipfile`) instead of trusting `command -v`; the Windows `python3` App Execution Alias exists but is not an interpreter. `PYTHON=` overrides. Packaging uses `zipfile` (no `zip` binary needed). |
+| Asset stamp audit | done | Every `submission/*` and `demo/*` file is compared against the PCK mtime and flagged `STALE` in `build/RELEASE.txt`; `--strict` turns that into exit 6. This is the mechanism that would have caught the 11:31 deck/video against the 14:45 build. |
+| Verification | done (stub engine) | `bash -n` clean; 10-case stub matrix, all PASS: happy path (5-entry ZIP, 3x HTTP 200, stamp written), `--skip-export`, export failure -> 2 (ZIP + stamp absent), empty export -> 3, boot `SCRIPT ERROR` -> 2, `--strict` -> 6, bad option -> 1, `--help` -> 0, missing engine -> 1. ZIP re-checked: `testzip()` None, no dot-files, identical sha256 on rerun. |
+| Not verified here | blocked | This Windows box has no Godot and no `build/`, so the real export path and the real `--quit-after 8` smoke are untested; run it once on the Linux box (`/home/g1/godot/nasa`) and paste the `RELEASE OK ...` line. |
+
 ## Art requests — tiles agent (on standby)
 
 The tiles/art agent stays online and polls this file every ~6 minutes. To request art, add a row to the table below (do not edit `assets/` yourself) and the agent will claim it.
