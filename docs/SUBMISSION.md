@@ -137,10 +137,11 @@ Do not exceed seven slides.
 
 ## Links to fill on submission day
 
-- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 28.47 s, 2.31 MB.
-- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 21,718,056 B (`index.pck` 13,892,076 B, `index.wasm` 39,514,754 B).
+- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 28.47 s, 2.13 MB.
+- **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 22,028,752 B (`index.pck` 14,266,340 B, `index.wasm` 39,514,754 B).
 - **Local run:** `cd build/web && python3 -m http.server 8060`, then open `http://localhost:8060`.
-- **Build state:** both artifacts above are a *checkpoint* of `6155f36` + c's capture tools. They must be rebuilt once ATLAS's consolidated generator wiring and the water-coalescing fix land — `godot --headless --export-release "Web" build/web/index.html`, then `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`.
+- **Build state (gate build):** both artifacts come from `6516a23` + c's tools. Rebuild with one command — `python tools/release.py` (import → export → zip → sha256 → HTTP smoke → `build/RELEASE.txt`) — then verify the flow with `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`. A fresh clone with new art **must** run the import pass (`godot --headless --path . --import`, or just let `release.py` do it) or the sector tileset ships with missing textures.
+- **Hosting note:** the ZIP is 22.0 MB. GitHub Pages and itch.io are fine; a host with a 20 MB upload cap needs the 14.3 MB PCK trimmed first.
 
 ## Final submission checklist
 
