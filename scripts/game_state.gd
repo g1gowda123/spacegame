@@ -46,12 +46,23 @@ const HULLS := [
 
 const ORBITS := [
 	{"id": "low", "name": "LOW", "desc": "Balanced global survey.",
-	 "heat_mult": 1.0, "science": 0.0},
+	 "heat_mult": 1.0, "science": 0.0, "alt_km": 400.0, "eclipse": 34, "passes": 5},
 	{"id": "polar", "name": "POLAR", "desc": "+15% science, +10% heat per tile.",
-	 "heat_mult": 1.1, "science": 0.15},
+	 "heat_mult": 1.1, "science": 0.15, "alt_km": 600.0, "eclipse": 36, "passes": 6},
 	{"id": "high", "name": "HIGH", "desc": "-15% heat per tile, -10% science.",
-	 "heat_mult": 0.85, "science": -0.10},
+	 "heat_mult": 0.85, "science": -0.10, "alt_km": 1200.0, "eclipse": 41, "passes": 4},
 ]
+
+# Instrument families that directly address each objective. This is the
+# "science traceability" rule from the NASA telescope-design game: a payload
+# only earns the full science return when at least one instrument matches the
+# question the mission was built to answer.
+const OBJECTIVE_INSTRUMENTS := {
+	"atmosphere": ["spectrometer", "camera"],
+	"surface": ["camera", "radar"],
+	"astro": ["camera", "spectrometer"],
+	"geology": ["drill", "radar", "magnetometer"],
+}
 
 const VEHICLES := [
 	{"id": "vector_l", "name": "VECTOR L", "cost": 55.0, "capacity": 450.0,
@@ -316,6 +327,54 @@ func objective() -> Dictionary:
 	return {}
 
 
+func science_fit() -> bool:
+	var oid := str(run.get("objective", ""))
+	var fits: Array = OBJECTIVE_INSTRUMENTS.get(oid, [])
+	for iid in run.get("instruments", []):
+		if str(iid) in fits:
+			return true
+	return false
+
+
+func cml() -> Dictionary:
+	var s := ship()
+	if hull().is_empty():
+		return {"level": 1, "label": "CONCEPT", "desc": "Idea only; select a bus."}
+	if not bool(s.get("valid", false)):
+		return {"level": 2, "label": "FEASIBILITY", "desc": "Resolve mass, power and budget."}
+	var cap := maxf(1.0, float(s.get("capacity", 1.0)))
+	var mass_margin := 1.0 - float(s.get("mass", 0.0)) / cap
+	var gen := maxf(1.0, float(s.get("power_gen", 1.0)))
+	var power_margin := (gen - float(s.get("power_draw", 0.0))) / gen
+	if mass_margin >= 0.10 and power_margin >= 0.15 and science_fit():
+		return {"level": 4, "label": "POINT DESIGN", "desc": "Margins and science traceability closed."}
+	return {"level": 3, "label": "TRADE STUDY", "desc": "Valid, but margins or science fit are tight."}
+
+
+func orbit_stats(p: Dictionary) -> Dictionary:
+	var orb := orbit()
+	var radius_earth := maxf(0.2, float(p.get("radius_earth", 1.0)))
+	var mass_earth := maxf(0.05, float(p.get("mass_earth", 1.0)))
+	var r_km := radius_earth * 6371.0 + float(orb.get("alt_km", 400.0))
+	var mu := 398600.0 * mass_earth
+	var period_min := (2.0 * PI * sqrt(pow(r_km, 3.0) / mu)) / 60.0
+	return {
+		"alt_km": int(orb.get("alt_km", 400.0)),
+		"period_min": int(round(period_min)),
+		"eclipse": int(orb.get("eclipse", 34)),
+		"passes": int(orb.get("passes", 5)),
+		"label": str(orb.get("name", "LOW")),
+	}
+
+
+func orbit_summary(p: Dictionary) -> String:
+	var st := orbit_stats(p)
+	return "ORBIT %s · %d km · %d min · %d%% eclipse · %d passes/day" % [
+		str(st["label"]), int(st["alt_km"]), int(st["period_min"]),
+		int(st["eclipse"]), int(st["passes"]),
+	]
+
+
 func instrument_list() -> Array:
 	var out: Array = []
 	for iid in run.get("instruments", []):
@@ -413,6 +472,8 @@ func ship() -> Dictionary:
 				bonus_data = 1
 
 	science += float(orb.get("science", 0.0))
+	if science_fit():
+		science += 0.10
 	heat_mult *= float(orb.get("heat_mult", 1.0))
 
 	var thermal_res := int(h["thermal_res"])
@@ -481,6 +542,7 @@ func ship() -> Dictionary:
 		"power_regen_bonus": power_regen_bonus, "shield_cost": shield_cost,
 		"bonus_data": bonus_data, "power_regen": power_regen,
 		"orbit": str(orb.get("id", "low")),
+		"science_fit": science_fit(),
 		"valid": valid, "warnings": warnings,
 	}
 

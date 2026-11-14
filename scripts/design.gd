@@ -303,7 +303,10 @@ func _refresh() -> void:
 	cost_label.text = "MISSION COST  $%dM" % int(cost)
 	budget_label.text = "BUDGET  $%dM" % int(GameState.run.get("budget", 0))
 	if bool(s.get("valid", false)):
-		warning_label.text = "ALL CHECKS PASS  ·  READY TO DRAFT"
+		var cm := GameState.cml()
+		warning_label.text = "CML %d %s  ·  READY TO DRAFT" % [int(cm["level"]), str(cm["label"])]
+		if bool(s.get("science_fit", false)):
+			warning_label.text += "\nSCIENCE FIT +10%"
 		warning_label.add_theme_color_override("font_color", UIKit.GREEN)
 		confirm_btn.disabled = false
 	else:
