@@ -50,6 +50,10 @@ godot --path . -- --screen=sector --biome=temperate --fx=all
 # One effect
 godot --path . -- --screen=sector --biome=volcanic --fx=impact
 #   impact | shield | pickup | extract | all
+#   disaster | strike-miss | strike-turn | world | meteor | gust | devil
+
+# Transfer-arc ship in the mission review
+godot --path . -- --screen=draft --review
 
 # Record it (Godot Movie Maker)
 godot --path . --write-movie /tmp/opencode/vfx/fx.avi --fixed-fps 30 --quit-after 110 \
