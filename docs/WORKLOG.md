@@ -895,3 +895,13 @@ The lesson worth keeping: a rewrite of a summary table bypasses the audit
 because the audit matches specific sentences. Cheap guard for next time — after
 editing a status table, grep the new numbers against the JSON/art manifests by
 hand.
+
+Late correction to the same rebase: **the `report.gd` fix in this pass did not
+land as my commit.** `7a1acdf` ("board: decisions ... README stamp", 18:38)
+independently set the same label to `height 12` at `y = 232` and also took the
+ledger's `BEST` line from 10 to 12, so when my commit rebased it was empty and
+dropped. The tree is correct and the credit belongs to whoever wrote `7a1acdf`;
+`docs/TASKS.md` now says so instead of attributing the fix to this pass. Worth
+noting because the earlier 18:10 entry above still reads as a local fix in
+flight — it was, until someone else shipped the identical change 28 minutes
+later. That is the normal cost of two agents staring at the same clipped label.
