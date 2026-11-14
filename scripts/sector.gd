@@ -1534,8 +1534,8 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 	if _impact_flash != null:
 		_impact_flash.color = Color(color.r, color.g, color.b, 0.0)
 		var flash := create_tween()
-		flash.tween_property(_impact_flash, "color:a", 0.20, 0.04)
-		flash.tween_property(_impact_flash, "color:a", 0.0, 0.22)
+		flash.tween_property(_impact_flash, "color:a", 0.14, 0.04)
+		flash.tween_property(_impact_flash, "color:a", 0.0, 0.20)
 	var base := position
 	var shake := create_tween()
 	for i in range(4):
