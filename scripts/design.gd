@@ -7,12 +7,12 @@ var objective_cards: Dictionary = {}
 var instrument_cards: Dictionary = {}
 var diagram: ShipDiagram
 var build_label: Label
-var mass_bar: ProgressBar
-var power_bar: ProgressBar
-var dv_bar: ProgressBar
-var hull_bar: ProgressBar
-var thermal_bar: ProgressBar
-var data_bar: ProgressBar
+var mass_bar: UIGauge
+var power_bar: UIGauge
+var dv_bar: UIGauge
+var hull_bar: UIGauge
+var thermal_bar: UIGauge
+var data_bar: UIGauge
 var mass_val: Label
 var power_val: Label
 var dv_val: Label
@@ -45,21 +45,32 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.label("MISSION DESIGN  //  01  ·  STEP 1 OF 3", 12, UIKit.CYAN, true)
-	header.position = Vector2(10, 8)
+	var header := UIKit.head("MISSION DESIGN", 12, UIKit.TEXT)
+	header.position = Vector2(10, 6)
 	add_child(header)
 
-	budget_label = UIKit.label("BUDGET $500M", 10, UIKit.AMBER, true)
-	budget_label.position = Vector2(500, 8)
-	budget_label.size = Vector2(130, 14)
-	budget_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	add_child(budget_label)
-	var appr := UIKit.label("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.MUTED, true)
-	appr.position = Vector2(378, 9)
-	appr.size = Vector2(112, 12)
-	appr.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	add_child(appr)
+	var step := UIKit.mono("01 / 03   ·   ENGINEERING TRADE STUDY", 7, UIKit.DIM)
+	step.position = Vector2(10, 22)
+	add_child(step)
 
+	# Required-state sits in the header instead of a second title row.
+	requirement_label = UIKit.mono("REQUIRED: SELECT A HULL", 7, UIKit.AMBER,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	requirement_label.position = Vector2(286, 8)
+	requirement_label.size = Vector2(196, 10)
+	add_child(requirement_label)
+
+	budget_label = UIKit.head("BUDGET $500M", 10, UIKit.AMBER,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	budget_label.position = Vector2(490, 5)
+	budget_label.size = Vector2(140, 12)
+	add_child(budget_label)
+	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.MUTED,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	appr.position = Vector2(490, 20)
+	appr.size = Vector2(140, 10)
+	add_child(appr)
+	UIKit.hairline(self, 10, 33, 620)
 
 	_build_left()
 	_build_center()
@@ -68,18 +79,20 @@ func _build() -> void:
 
 
 func _column(x: float, w: float, title: String) -> VBoxContainer:
-	var p := UIKit.card(self, x, 34, w, 292, Color("#0c1421"), UIKit.LINE)
+	var p := UIKit.sheet(self, x, 39, w, 282)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
-	var head := UIKit.label(title, 8, UIKit.MUTED, true)
+	var head := UIKit.head(title, 8, UIKit.MUTED)
 	v.add_child(head)
+	UIKit.hairline(v, 0, 0, w - 16, UIKit.LINE)
+	v.add_child(UIKit.vspace(3))
 	return v
 
 
 func _subhead(v: VBoxContainer, text: String) -> void:
-	v.add_child(UIKit.vspace(1))
-	v.add_child(UIKit.label(text, 7, UIKit.CYAN, true))
+	v.add_child(UIKit.vspace(5))
+	v.add_child(UIKit.mono(text, 7, UIKit.DIM))
 
 
 func _build_left() -> void:

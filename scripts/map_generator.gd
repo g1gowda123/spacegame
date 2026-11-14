@@ -380,6 +380,10 @@ var cli_hide_ui: bool = false
 var debug_visible: bool = false
 var debug_transitions: bool = false
 var debug_layer: Node2D
+var terrain_mask_tex: ImageTexture
+var terrain_mask_img: Image
+var terrain_mask_size := Vector2i.ZERO
+var terrain_color_cache: Dictionary = {}
 var debug_elapsed: float = 0.0
 var nav_label: Label
 var debug_label: Label
@@ -2224,11 +2228,62 @@ func _render_window() -> void:
 				)
 
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	_build_terrain_mask()
 	_rebuild_structure_sprites()
 	_rebuild_cliffs()
 	_rebuild_actors()
 	if debug_transitions:
 		_draw_transition_debug()
+
+
+func _tile_avg(key: String) -> Color:
+	if terrain_color_cache.has(key):
+		return terrain_color_cache[key]
+	var path := "res://assets/tilesets/%s.png" % key
+	var c := Color(0.3, 0.3, 0.3, 1.0)
+	if ResourceLoader.exists(path):
+		var img := (load(path) as Texture2D).get_image()
+		if img != null:
+			var r := 0.0
+			var g := 0.0
+			var b := 0.0
+			var n := 0
+			for y in range(0, img.get_height(), 4):
+				for x in range(0, img.get_width(), 4):
+					var px := img.get_pixel(x, y)
+					if px.a > 0.2:
+						r += px.r
+						g += px.g
+						b += px.b
+						n += 1
+			if n > 0:
+				c = Color(r / n, g / n, b / n, 1.0)
+	terrain_color_cache[key] = c
+	return c
+
+
+func _build_terrain_mask() -> void:
+	# 4x sub-cell material field: one RGB texel per 4 screen-world pixels.
+	# The shader uses the colour discontinuity to soften the seam between two
+	# tile materials; the transition tiles still own the larger silhouette.
+	var sub := 4
+	var msize := Vector2i(VIEW_W * sub, VIEW_H * sub)
+	if terrain_mask_img == null or terrain_mask_size != msize:
+		terrain_mask_img = Image.create(msize.x, msize.y, false, Image.FORMAT_RGB8)
+		terrain_mask_size = msize
+		terrain_mask_tex = ImageTexture.create_from_image(terrain_mask_img)
+	var b: Dictionary = BIOMES[biome_index]
+	for ly in VIEW_H:
+		for lx in VIEW_W:
+			var t := _render_terrain_world(view_origin.x + lx, view_origin.y + ly)
+			var c := _tile_avg(t)
+			terrain_mask_img.fill_rect(Rect2i(lx * sub, ly * sub, sub, sub), c)
+	terrain_mask_tex.update(terrain_mask_img)
+	if shader_mat != null:
+		shader_mat.set_shader_parameter("terrain_mask", terrain_mask_tex)
+		shader_mat.set_shader_parameter("terrain_mask_size", Vector2(msize))
+		shader_mat.set_shader_parameter("terrain_mask_origin", Vector2(view_origin * TILE))
+		shader_mat.set_shader_parameter("terrain_mask_span", float(VIEW_W * TILE))
 
 
 func _cell_quad(wx: int, wy: int) -> PackedVector2Array:
@@ -3167,6 +3222,7 @@ func _apply_biome_tint() -> void:
 	var c := Color(str(b.get("tint", "#ffffff")))
 	shader_mat.set_shader_parameter("biome_tint", c)
 	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
+	shader_mat.set_shader_parameter("exposure", float(b.get("exposure", 1.0)))
 
 
 func _update_view() -> void:

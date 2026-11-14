@@ -80,7 +80,7 @@ var dv_label: Label
 var sol_label: Label
 var data_label: Label
 var data_caption: Label
-var heat_bar: ProgressBar
+var heat_bar: UIGauge
 var heat_val: Label
 var data_bar: ProgressBar
 var power_pips: Array = []
@@ -453,7 +453,7 @@ func _refresh_status() -> void:
 		hc = UIKit.RED
 	elif float(sec["thermal"]) >= 45:
 		hc = UIKit.AMBER
-	heat_bar.add_theme_stylebox_override("fill", _fill_style(hc))
+	UIKit.set_bar_color(heat_bar, hc)
 	heat_val.add_theme_color_override("font_color", hc)
 
 	for i in range(power_pips.size()):

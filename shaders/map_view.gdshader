@@ -22,6 +22,10 @@ uniform float circle_radius = 0.40;
 uniform float circle_soft = 0.055;
 uniform float circle_outer = 0.56;
 uniform float circle_outer_soft = 0.06;
+uniform sampler2D terrain_mask : filter_linear, repeat_disable;
+uniform vec2 terrain_mask_size = vec2(80.0, 64.0);
+uniform vec2 terrain_mask_origin = vec2(0.0);
+uniform float terrain_mask_span = 1280.0;
 
 void fragment() {
     // Use UV rather than FRAGCOORD: UV is stable across windowed/fullscreen
@@ -72,6 +76,21 @@ void fragment() {
         }
     } else {
         COLOR = texture(TEXTURE, uv);
+
+        // Sub-cell material edge: sample the 4x material field on both sides of
+        // the fragment and dither a small amount of the neighbour's average
+        // colour into the seam. The transition tiles still own the silhouette;
+        // this only removes the one-pixel cut between two correct tiles.
+        vec2 muv = (uv * map_size - terrain_mask_origin) / max(terrain_mask_span, 1.0);
+        vec3 m0 = texture(terrain_mask, muv).rgb;
+        vec3 mx = texture(terrain_mask, muv + vec2(1.5 / terrain_mask_size.x, 0.0)).rgb;
+        vec3 my = texture(terrain_mask, muv + vec2(0.0, 1.5 / terrain_mask_size.y)).rgb;
+        float mask_edge = max(distance(m0, mx), distance(m0, my));
+        float edge_amt = smoothstep(0.012, 0.075, mask_edge);
+        float dither = fract(sin(dot(floor(UV * screen_size * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
+        if (edge_amt > dither) {
+            COLOR.rgb = mix(COLOR.rgb, (mx + my) * 0.5, 0.34 * edge_amt);
+        }
 
         // Biome tint, hue-only. Multiplying by the raw tint colour darkened the
         // board (barren measured 40 % of its source luma); normalising the tint

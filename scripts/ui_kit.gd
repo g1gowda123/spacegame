@@ -1,6 +1,10 @@
 class_name UIKit
 extends RefCounted
-## Shared visual language for every screen: colours, type, panels, bars.
+## Shared visual language for every screen.
+##
+## Navy console grammar: one textured sheet per decision area, flat rows inside
+## it, a hairline rule between regions, and an accent that only marks the
+## current choice. Cyan is an accent, not the default border.
 
 const BG := Color("#070a11")
 const PANEL := Color("#0e1624")
@@ -17,6 +21,13 @@ const RED := Color("#ff5d6c")
 const GREEN := Color("#7fe08a")
 const PURPLE := Color("#b692ff")
 const BLUE := Color("#7cc8ff")
+
+# Surface tokens (flatter than the old panel-on-panel stack).
+const SHEET := Color("#0b1522")
+const SHEET_LINE := Color("#22364c")
+const ROW_BG := Color("#0b1725")
+const ROW_HOVER := Color("#102030")
+const ROW_SELECTED := Color("#0d2630")
 
 # Aliases used by the briefing/title cards; keep them on the original palette.
 const PAPER := PANEL
@@ -57,6 +68,33 @@ static func _skin(name: String) -> StyleBoxTexture:
 	sb.content_margin_bottom = 3
 	_skin_cache[name] = sb
 	return sb
+
+
+static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> PanelContainer:
+	## A major decision surface: dark navy 9-slice, no nested card borders.
+	var p := PanelContainer.new()
+	var sb := _skin("panel")
+	sb.content_margin_left = 0
+	sb.content_margin_right = 0
+	sb.content_margin_top = 0
+	sb.content_margin_bottom = 0
+	p.add_theme_stylebox_override("panel", sb)
+	p.position = Vector2(x, y)
+	p.size = Vector2(w, h)
+	p.custom_minimum_size = Vector2(w, h)
+	parent.add_child(p)
+	return p
+
+
+static func hairline(parent: Control, x: float, y: float, w: float,
+	color: Color = LINE) -> ColorRect:
+	var line := ColorRect.new()
+	line.color = color
+	line.position = Vector2(x, y)
+	line.size = Vector2(w, 1)
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(line)
+	return line
 
 
 static func skin_button(text: String, min_size: Vector2 = Vector2.ZERO) -> Button:
@@ -116,6 +154,18 @@ static func label(
 	return l
 
 
+static func head(text: String, size: int = 9, color: Color = TEXT,
+	align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+	## Silkscreen is chunky; below 8 px it turns to noise. Use it for headings.
+	return label(text, maxi(8, size), color, true, align)
+
+
+static func mono(text: String, size: int = 8, color: Color = MUTED,
+	align: int = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
+	## Body face: readable at small sizes and mixed case survives.
+	return label(text, size, color, false, align)
+
+
 static func rich(text: String, size: int = 9, color: Color = TEXT) -> RichTextLabel:
 	var r := RichTextLabel.new()
 	r.bbcode_enabled = true
@@ -150,53 +200,54 @@ static func button(
 		b.add_theme_color_override("font_disabled_color", DIM)
 		b.pressed.connect(func(): if GameState: GameState.sfx("click"))
 		return b
-	var base := style_panel(Color("#123a3c"), CYAN_DARK, 2)
+	# Accent button: dark ink fill with a cyan edge. High contrast, not a slab
+	# of saturated colour.
+	var base := style_panel(Color("#0e3336"), CYAN_DARK, 2)
 	base.content_margin_left = 6
 	base.content_margin_right = 6
-	var hover := style_panel(Color("#1a5553"), CYAN, 2)
-	var press := style_panel(CYAN_DARK, CYAN, 2)
+	var hover := style_panel(Color("#124a4d"), CYAN, 2)
+	var press := style_panel(Color("#123f42"), CYAN, 2)
 	b.add_theme_stylebox_override("normal", base)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", press)
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.add_theme_color_override("font_color", Color("#071012"))
-	b.add_theme_color_override("font_hover_color", Color("#071012"))
-	b.add_theme_color_override("font_pressed_color", Color("#071012"))
+	b.add_theme_color_override("font_color", Color("#d9fbf5"))
+	b.add_theme_color_override("font_hover_color", Color("#ffffff"))
+	b.add_theme_color_override("font_pressed_color", Color("#ffffff"))
 	b.add_theme_color_override("font_disabled_color", DIM)
 	b.pressed.connect(func(): if GameState: GameState.sfx("click"))
 	return b
 
 
-static func bar(width: float, height: float, color: Color) -> ProgressBar:
-	var pb := ProgressBar.new()
-	pb.custom_minimum_size = Vector2(width, height)
-	pb.show_percentage = false
-	pb.max_value = 100.0
-	pb.value = 0.0
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color("#060a12")
-	bg.set_corner_radius_all(1)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = color
-	fill.set_corner_radius_all(1)
-	pb.add_theme_stylebox_override("background", bg)
-	pb.add_theme_stylebox_override("fill", fill)
-	return pb
+static func bar(width: float, height: float, color: Color) -> UIGauge:
+	return UIGauge.new(width, height, color)
 
 
-static func set_bar(pb: ProgressBar, value: float, maximum: float) -> void:
+static func set_bar(pb, value: float, maximum: float) -> void:
 	if pb == null:
 		return
-	pb.max_value = max(1.0, maximum)
-	pb.value = clamp(value, 0.0, pb.max_value)
+	if pb is UIGauge:
+		pb.set_value(value, maximum)
+		return
+	if pb is ProgressBar:
+		pb.max_value = max(1.0, maximum)
+		pb.value = clamp(value, 0.0, pb.max_value)
+
+
+static func set_bar_color(pb, color: Color) -> void:
+	if pb is UIGauge:
+		pb.set_fill(color)
+	elif pb is ProgressBar:
+		var fill := StyleBoxFlat.new()
+		fill.bg_color = color
+		fill.set_corner_radius_all(1)
+		pb.add_theme_stylebox_override("fill", fill)
 
 
 static func chip(text: String, color: Color, pixel: bool = false) -> PanelContainer:
 	var p := PanelContainer.new()
-	var st := style_panel(
-		Color(color.r * 0.15, color.g * 0.15, color.b * 0.15, 0.95),
-		Color(color.r, color.g, color.b, 0.5), 2
-	)
+	var st := style_panel(Color(color.r * 0.12, color.g * 0.12, color.b * 0.12, 0.7),
+		Color(color.r, color.g, color.b, 0.32), 2)
 	st.content_margin_left = 4
 	st.content_margin_right = 4
 	st.content_margin_top = 0
@@ -255,9 +306,30 @@ static func stat_color(v: float, good_high: bool = true) -> Color:
 	return GREEN if v <= 0.33 else (AMBER if v <= 0.66 else RED)
 
 
+static func row_style(selected: bool, hovered: bool = false,
+	accent: Color = CYAN) -> StyleBoxFlat:
+	## Flat list row. Selected rows get a 2 px left marker instead of a full
+	## coloured outline, so a column of options stays quiet.
+	var s := StyleBoxFlat.new()
+	if selected:
+		s.bg_color = ROW_SELECTED
+		s.border_color = accent
+		s.border_width_left = 2
+	else:
+		s.bg_color = ROW_HOVER if hovered else ROW_BG
+		s.border_color = LINE
+		s.border_width_left = 1 if hovered else 0
+	s.set_corner_radius_all(2)
+	s.content_margin_left = 8
+	s.content_margin_right = 6
+	s.content_margin_top = 2
+	s.content_margin_bottom = 2
+	return s
+
+
 static func option_card(
 	parent: Control, rect: Rect2, title: String, subtitle: String,
-	accent: Color = CYAN, title_size: int = 7, sub_size: int = 7
+	accent: Color = CYAN, title_size: int = 8, sub_size: int = 7
 ) -> Dictionary:
 	var root := Control.new()
 	root.position = rect.position
@@ -265,23 +337,27 @@ static func option_card(
 	root.custom_minimum_size = rect.size
 	parent.add_child(root)
 
-	var p := panel(PANEL_2, LINE, 2)
+	var p := PanelContainer.new()
 	p.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	p.add_theme_stylebox_override("panel", row_style(false, false, accent))
 	root.add_child(p)
 
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 1)
+	v.add_theme_constant_override("separation", 0)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(v)
 
-	var t := label(title, title_size, TEXT, true)
+	var t := label(title, maxi(8, title_size), TEXT, true)
+	t.clip_text = true
 	v.add_child(t)
 	var s: Label = null
 	if subtitle != "":
 		s = label(subtitle, sub_size, MUTED, false)
 		s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		s.custom_minimum_size = Vector2(max(10.0, rect.size.x - 16.0), 0)
+		s.custom_minimum_size = Vector2(max(10.0, rect.size.x - 20.0), 0)
 		s.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		s.clip_text = rect.size.y < 34.0
 		v.add_child(s)
 
 	var btn := Button.new()
@@ -290,10 +366,8 @@ static func option_card(
 	btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var empty := StyleBoxEmpty.new()
-	btn.add_theme_stylebox_override("normal", empty)
-	btn.add_theme_stylebox_override("hover", empty)
-	btn.add_theme_stylebox_override("pressed", empty)
-	btn.add_theme_stylebox_override("focus", empty)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		btn.add_theme_stylebox_override(state, empty)
 	root.add_child(btn)
 
 	var card := {
@@ -303,12 +377,11 @@ static func option_card(
 	}
 	btn.mouse_entered.connect(func():
 		if card["enabled"] and not card["selected"]:
-			p.add_theme_stylebox_override("panel", style_panel(PANEL_3, Color(accent.r, accent.g, accent.b, 0.45), 2))
-			btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			p.add_theme_stylebox_override("panel", row_style(false, true, accent))
 	)
 	btn.mouse_exited.connect(func():
 		if card["enabled"] and not card["selected"]:
-			p.add_theme_stylebox_override("panel", style_panel(PANEL_2, LINE, 2))
+			p.add_theme_stylebox_override("panel", row_style(false, false, accent))
 	)
 	return card
 
@@ -321,11 +394,8 @@ static func select_card(card: Dictionary, on: bool) -> void:
 	var p: PanelContainer = card["panel"]
 	var title: Label = card["title"]
 	if on:
-		p.add_theme_stylebox_override("panel", style_panel(
-			Color(accent.r * 0.10, accent.g * 0.10, accent.b * 0.10, 0.99),
-			Color(accent.r, accent.g, accent.b, 0.95), 2
-		))
-		title.add_theme_color_override("font_color", accent)
+		p.add_theme_stylebox_override("panel", row_style(true, false, accent))
+		title.add_theme_color_override("font_color", CYAN)
 	else:
-		p.add_theme_stylebox_override("panel", style_panel(PANEL_2, LINE, 2))
+		p.add_theme_stylebox_override("panel", row_style(false, false, accent))
 		title.add_theme_color_override("font_color", TEXT)
