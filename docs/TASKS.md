@@ -453,8 +453,11 @@ Scope: all shaders, in-game animation, effect art. Static tiles/sprites stay VEG
 | V3 | Effect library: impact, shield, pickup, extract beam, overheat, landing pad | **DONE 18:20** | `scripts/vfx.gd`; reel `--fx=all`; `/tmp/opencode/vfx/fx2_strip.png` |
 | V4 | Movement/objective/ambient motion: per-cell tween + puff + bank, scanner ring, per-biome particles, planet drift, star twinkle | **DONE 18:20** | `sector.gd::_execute_path`, `map_generator.gd::_build_ambient` / `_rebuild_actors`, `shaders/star_drift.gdshader` |
 | V5 | Animation-art pipeline: procedural sheets + ComfyUI VFX workflows + motion deriver | **DONE 18:20** | `tools/make_vfx_art.py`, `tools/gen_vfx_sheet.py`, `tools/comfy_workflows/vfx_*.json`, `assets/vfx/` |
-| V6 | Scene transitions (fade/paper slide) and HUD gauge animation | **OPEN** | needs `change_scene_to_file` call sites and the UI gauge refactor; coordinate with UI owner |
+| V6 | Scene transitions (fade/paper slide) and HUD gauge animation | **DONE 18:20** | `scripts/scene_fx.gd` autoload fades every `current_scene` arrival in 0.24 s with no call-site edits; HUD values use `_pulse()` / `UIKit.set_bar` animation |
 | V7 | Volcanic heat-haze refraction | **OPEN** | needs a screen-copy or extra texture; evaluate after W1 mask lands |
+| V8 | Persistent installed-systems rack + hover dossiers + ARSENAL sheet | **DONE 02:10** | `scripts/upgrade_strip.gd`, wired in `sector.gd::_build_hud`; hover stat → matching chip glow; QA `--rack-tip`, `--rack-highlight`, `--arsenal`; evidence `/tmp/opencode/vfx/rack_tip.png`, `arsenal_final.png`, `rack_hl.png` |
+| V9 | Launch-countdown header collision (ORION gate nit 1) | **DONE 02:04** | `T-1.0s` clock + separate `IGNITION` subline (`_phase_label`) in `launch_cinematic.gd`; evidence `ignition_fix.png` |
+| V10 | Launch booster sprite override for VEGA's 2× sheets | **DONE 01:44** | existence-checked `assets/sprites/vehicles/<veh>_booster.png` at 0.5 scale, vector draw fallback; QA `--debug-launch` |
 ## Static truth pass (18:10, this pass)
 
 No Godot binary on this machine, so everything below is source/Python-tool work

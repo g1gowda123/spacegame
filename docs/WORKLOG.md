@@ -1122,3 +1122,22 @@ must not sound like an mp3 starting.
   ≤3 MB line.
 - Not pushed — ORION owns `git push`.
 - **01:44 — VFX / launch-vehicle art handoff:** logged the boss's note that the launch vehicle may use generated sprites instead of the vector draw. Actual state: `scripts/launch_cinematic.gd` still paints `vector_l/m/h` boosters procedurally; payload already uses `assets/sprites/ships/<hull>.png`. Board entry gives VEGA a 2× asset spec (`assets/sprites/vehicles/vector_*_booster.png`, engine plane at bottom edge) and QA routes. Adding an existence-checked sprite override with the vector draw as fallback; no asset yet, so the judged build is unchanged.
+
+- **01:50 — Terrain material variety.** Expanded `BIOMES` base variants and switched alien worlds to their dedicated tilesets; added `water_level` and blocked methane/sulfur/ammonia water keys. Scale unchanged at 64 px/32×32. Evidence `final_biomes_variants.jpg`.
+
+- **02:10 — Barren crater cap.** Start-landmark retries no longer duplicate `impact_crater`; feature craters are board-wide one-off. Evidence `barren_onecrater.png`.
+- **02:04 — VFX / launch + rack follow-through:** Nit 1 from ORION's launch gate is fixed: countdown split into `T-1.0s` + `IGNITION` subline (new `_phase_label`), no header collision. VEGA's `assets/sprites/vehicles/vector_*_booster.png` were already landed (`49a354c`), so the existence-checked loader picks them automatically at 0.5 scale; captures at pad/ignition/liftoff verified. Rack footer changed from a `TAB` text button (theme minimum size overflowed the 22 px column) to a three-bar list porthole with a dossier; duplicate-count and 2-column overflow verified. Evidence `/tmp/opencode/vfx/rack_more6.png`, `ignition_fix.png`.
+
+- **02:05 — Deck v2 rebuilt (judging cut).** v1 was rejected as generic: same kicker/title/bullets/screenshot on every slide. Rebuilt all 7 slides in DeckCraft around the judged artefacts instead of a template:
+  1. full-bleed in-engine world (TEEGARDEN'S STAR B, fog off) with the title block in a black footer band;
+  2. cream "requirements trace" paper slide — 8 brief requirements mapped to the screen where each is playable;
+  3. five-frame filmstrip of one run (design → draft → review → sector → debrief) with the thesis "you don't lose to the planet, you lose to the build";
+  4. NASA archive → builder → world pipeline with the shipped formulas (`heat = clamp((Teq - 140) / 8, 4, 100)`, `delta_v = round(parsecs * 0.9 + gravity * 4)`) and the Chen & Kipping fallback;
+  5. annotated sector plate (volcanic, 55 CNC E) with a 4-point legend for telemetry / move cost / hazard telegraph / commit;
+  6. rubric scorecard (impact 0 installs, creativity 72, validity 5,801, relevance 8/8, presentation 7) plus a "limits, stated" block and the grade-A report capture;
+  7. closing mission card with repo, data source, citations and the AI-assistance label.
+- **Files:** `submission/orbit_outplay_deck.pptx` (4.9 MB), `.pdf` (3.7 MB, 7 pages), `.deckcraft`; mirrors `demo/orbit_outplay_deck.pdf`, `demo/deck_contact_sheet.png` (7-up).
+- **Method:** DeckCraft MCP (`deckcraft-cli mcp`). `add_text_box` ignores `font_size` (use `size`), `inspect_slide` ignores `slide_index` (acts on the current slide), font family needs `format.font` on a selection — these cost the first hour.
+- **Still open:** no public play URL (`g1gowda123.github.io/spacegame` 404s); deck points at `github.com/g1gowda123/spacegame` + `build/web` instead.
+- **02:22 — VFX / launch booster width + rack badge QA:** the booster sprite loader now measures the opaque core (`Image.get_used_rect()`) and applies a per-class x-scale (L 20, M 28, H 62 px) so VEGA's 2× sheets match the vector widths and sit on axis; height stays 0.5. Verified all three at ignition (`launch_vector_l.png`, `launch_width.png`, `launch_vector_h.png`). `--owned=repair,repair` now appends the repeatable kit for QA, so the rack `x2` badge is captured in `/tmp/opencode/vfx/rack_badge_crop.png`. Headless `--quit-after 40` clean; `--screen=flowtest` 5117/A.
+- **02:32 — VFX / launch pad + gantry sprites wired:** `launch_cinematic.gd` now loads `assets/sprites/vehicles/launch_pad.png` (280×76 → 140×38 at 0.5, centred `-70,0`) and `launch_gantry.png` (52×320 → 26×160 at `0,-160`). The vector pad/gantry remain the fallback. Umbilical arms moved to `_gantry_arm_node` / `_draw_gantry_arms()` so they draw over the sprite and still retract at `_time > 7`. Captures `launch_art2.png`, `launch_art_ign.png`.

@@ -133,7 +133,7 @@ var BIOMES: Array = [
 	# later without changing the generator.
 	{
 		"id": "methane", "name": "Methane Lakes", "profile": "temperate", "generator": "continents",
-		"life": "lifeless", "shore_ring": true, "water_level": 0.06,
+		"life": "lifeless", "shore_ring": true, "water_level": -0.40,
 		"tint": "#63d6c4", "tint_strength": 0.10, "exposure": 1.0,
 		"base": "methane/flat",
 		"base_variants": ["methane/flat", "methane/frost_crust", "methane/mud", "methane/seep"],
@@ -182,7 +182,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ammonia", "name": "Ammonia Ice", "profile": "cryo", "generator": "fractured",
-		"life": "lifeless", "shore_ring": true, "water_level": 0.02,
+		"life": "lifeless", "shore_ring": true, "water_level": -0.40,
 		"tint": "#72c8e8", "tint_strength": 0.10, "exposure": 1.10,
 		"base": "ammonia/slush",
 		"base_variants": ["ammonia/slush", "ammonia/frost", "ammonia/vapor_crust", "ammonia/white_crust"],
@@ -1252,7 +1252,7 @@ func _generate() -> void:
 	# seed is visible before the player moves.
 	if archetype_name in ["Mountainous", "Broken Highlands", "Canyonlands", "Fractured"]:
 		for i in range(2):
-			_place_start_landmark()
+			_place_start_landmark(false)
 	_place_objectives()
 	_spawn_hazard()
 	_update_chunks()
@@ -1376,7 +1376,7 @@ func _find_start() -> Vector2i:
 	return best
 
 
-func _place_start_landmark() -> void:
+func _place_start_landmark(allow_crater: bool = true) -> void:
 	# Guarantee one readable natural landmark near the lander so the opening
 	# screen shows more than flat terrain. The rest still comes from chunks.
 	if not bool(feature_toggles.get("mountains", true)):
@@ -1394,7 +1394,7 @@ func _place_start_landmark() -> void:
 		"ocean":
 			key = "islet"
 		"barren":
-			key = "impact_crater"
+			key = "impact_crater" if allow_crater else "mesa"
 		"methane":
 			key = "iceberg"
 		"iron":
@@ -1415,6 +1415,8 @@ func _place_start_landmark() -> void:
 		key = "impact_crater"
 	elif archetype_name in ["Lake District", "Archipelago"] and biome_id not in ["volcanic", "sulfur", "obsidian"]:
 		key = "islet" if biome_id == "ocean" else "geyser"
+	if key == "impact_crater" and not allow_crater:
+		key = "mesa"
 	var info: Dictionary = STRUCTURES[key]
 	var w: int = info["w"]
 	var h: int = info["h"]
@@ -2406,6 +2408,8 @@ func _generate_chunk_structures(coord: Vector2i, arr: Array, b: Dictionary) -> A
 	var feature_chance := 0.24 if biome_id == "barren" else 0.44
 	if crng.randf() < feature_chance:
 		var key := _feature_key(biome_id, crng.randf())
+		if key == "impact_crater" and _structure_key_seen("impact_crater"):
+			key = "mesa"
 		# Never add a second identical cone/geyser to this chunk; the ridge
 		# pass already placed the hero volcano.
 		if key in ["volcano", "geyser", "impact_crater"]:
@@ -2444,6 +2448,14 @@ func _place_outcrop_cluster(
 				continue
 			if _append_structure(out, occupied, arr, allowed, coord, str(piece), lx, ly):
 				break
+
+
+func _structure_key_seen(key: String) -> bool:
+	for data in chunks.values():
+		for s in data.get("structures", []):
+			if str(s.get("key", "")) == key:
+				return true
+	return false
 
 
 func _chunk_seed(coord: Vector2i) -> int:

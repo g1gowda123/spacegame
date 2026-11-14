@@ -264,7 +264,7 @@ Captured from the current build (survey fog switched off here so the whole board
 ```bash
 godot --path /home/g1/godot/nasa          # newest code, native
 # or the packaged build:
-cd build/web && python3 -m http.server 8060   # http://localhost:8060
+tools/play_web.sh                          # http://127.0.0.1:8061/index.html
 ```
 
 1. **0:00** Title — starfield, daily line, best score. `Begin Mission`.
@@ -653,9 +653,8 @@ The project is configured for a **static, threadless WebGL 2 build**:
 3. Serve the output over HTTP (WebGL cannot load from `file://`):
 
 ```bash
-cd build/web
-python3 -m http.server 8060
-# open http://localhost:8060
+tools/play_web.sh
+# open http://127.0.0.1:8061/index.html
 ```
 
 The export is purely static, so it also runs on GitHub Pages, itch.io, or any plain HTTP host. No server-side code, no cross-origin isolation headers required.

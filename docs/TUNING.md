@@ -45,3 +45,12 @@ godot --path . --scene res://scenes/map_generator.tscn -- \
 If a value changes *how every board plays* (window size, fog, density, biome
 selection), expose it in an Inspector group and keep a CLI override. If it is a
 one-off art placement, keep it in the art manifest.
+
+
+## Terrain material variety
+
+`BIOMES` entries can declare `base_variants` (large, noise-selected patches), `detail`, `detail_alt`, `detail_alt2` and `detail_alt3` (elevation/detail thresholds), plus dedicated `rock`, `shore` and `water` keys.  The generator picks a variant in world space, so the same seed always produces the same regions.
+
+The alien worlds now use their own material sets instead of tinting the terrestrial ones: methane (`methane/flat`, frost, mud, seep), iron (`iron/iron_crust`, red soil, oxide dunes), sulfur (`sulfur/flat`, powder, yellow crust, acid pools), obsidian (glass/black/cracked glass), carbon (dark soil, coal, graphite, grit, tar), ammonia (slush, frost, vapour crust, white crust).  Temperate, arid, cryo, volcanic and barren also cycle the full variant sets already in `assets/tilesets/`.
+
+Scale is unchanged: **64 px tiles**, a **32×32-cell render window** (2048×2048 SubViewport), and the 640×360 composition.  Increasing the window or tile size is not required for material variety; add variants inside a biome instead.

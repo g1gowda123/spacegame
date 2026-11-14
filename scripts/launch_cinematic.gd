@@ -32,6 +32,9 @@ var _sky_rect: ColorRect
 var _ground_root: Control
 var _pad_mount: Control
 var _gantry_tower: Control
+var _gantry_sprite: Sprite2D
+var _gantry_arm_node: Node2D
+var _pad_sprite: Sprite2D
 var _gantry_arms: Array[Line2D] = []
 var _clouds_root: Control
 var _space_root: Control
@@ -51,6 +54,7 @@ var _pad_smoke_right: CPUParticles2D
 var _spotlights: Node2D
 var _hud_layer: CanvasLayer
 var _countdown_label: Label
+var _phase_label: Label
 var _status_vbox: VBoxContainer
 var _status_items: Array[Dictionary] = []
 var _mission_plaque: PanelContainer
@@ -221,11 +225,35 @@ func _build_scene_layers() -> void:
 	_pad_mount.position = Vector2(320, 275)
 	_pad_mount.draw.connect(_draw_launch_pad)
 	_ground_root.add_child(_pad_mount)
+	# 2x VEGA art (280x76) replaces the 140x38 vector pad; same for the 26x160
+	# gantry tower. The animated umbilical arms stay procedural on their own
+	# node so they can still retract at liftoff over the sprite.
+	var pad_art := "res://assets/sprites/vehicles/launch_pad.png"
+	if ResourceLoader.exists(pad_art):
+		_pad_sprite = Sprite2D.new()
+		_pad_sprite.texture = load(pad_art) as Texture2D
+		_pad_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_pad_sprite.centered = false
+		_pad_sprite.scale = Vector2(0.5, 0.5)
+		_pad_sprite.position = Vector2(-70, 0)
+		_pad_mount.add_child(_pad_sprite)
 
 	_gantry_tower = Control.new()
 	_gantry_tower.position = Vector2(380, 160)
 	_gantry_tower.draw.connect(_draw_gantry)
 	_ground_root.add_child(_gantry_tower)
+	var gantry_art := "res://assets/sprites/vehicles/launch_gantry.png"
+	if ResourceLoader.exists(gantry_art):
+		_gantry_sprite = Sprite2D.new()
+		_gantry_sprite.texture = load(gantry_art) as Texture2D
+		_gantry_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_gantry_sprite.centered = false
+		_gantry_sprite.scale = Vector2(0.5, 0.5)
+		_gantry_sprite.position = Vector2(0, -160)
+		_gantry_tower.add_child(_gantry_sprite)
+	_gantry_arm_node = Node2D.new()
+	_gantry_arm_node.draw.connect(_draw_gantry_arms)
+	_gantry_tower.add_child(_gantry_arm_node)
 
 	_spotlights = Node2D.new()
 	_spotlights.draw.connect(_draw_spotlights)
@@ -291,14 +319,30 @@ func _build_rocket_assembly() -> void:
 			_booster_sprite.texture = art
 			_booster_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			_booster_sprite.centered = false
-			_booster_sprite.scale = Vector2(0.5, 0.5)
 			var art_size := art.get_size()
-			# Art contract: interstage top at y=0, engine plane on the bottom
-			# edge, vehicle centred. Place its top-left at the interstage lip.
-			_booster_sprite.position = Vector2(-art_size.x * 0.25, -30.0)
+			var base := 0.5
+			var sx := base
+			var cx := art_size.x * 0.5
+			# VEGA ships the sheets at 2x with generous side margin. Measure the
+			# opaque core so the booster matches the width of the vector class it
+			# replaces instead of reading as a thin stick under a wide fairing.
+			var img := art.get_image()
+			if img != null:
+				var used := img.get_used_rect()
+				if used.size.x > 0:
+					var target_w := 20.0
+					match _veh_id:
+						"vector_l": target_w = 20.0
+						"vector_h": target_w = 62.0
+						_: target_w = 28.0
+					sx = target_w / float(used.size.x)
+					cx = float(used.position.x) + float(used.size.x) * 0.5
+			_booster_sprite.scale = Vector2(sx, base)
+			_booster_sprite.position = Vector2(-cx * sx, -30.0)
 			booster_node.add_child(_booster_sprite)
 			if "--debug-launch" in OS.get_cmdline_args() + OS.get_cmdline_user_args():
-				print("LAUNCH booster art ", booster_art, " ", art_size)
+				print("LAUNCH booster art ", booster_art, " ", art_size,
+					" sx=", sx, " cx=", cx)
 
 	# Exhaust plume node (under rocket)
 	_exhaust_plume = Node2D.new()
@@ -379,6 +423,8 @@ func _build_rocket_assembly() -> void:
 # --- Custom Drawing Callbacks ----------------------------------------------
 
 func _draw_launch_pad() -> void:
+	if _pad_sprite != null and is_instance_valid(_pad_sprite):
+		return
 	# Steel flame trench and mobile launch platform
 	var pad_w := 140.0
 	var pad_h := 38.0
@@ -396,6 +442,8 @@ func _draw_launch_pad() -> void:
 
 
 func _draw_gantry() -> void:
+	if _gantry_sprite != null and is_instance_valid(_gantry_sprite):
+		return
 	# Steel lattice service tower
 	var w := 26.0
 	var h := 160.0
@@ -406,20 +454,20 @@ func _draw_gantry() -> void:
 		var py := -float(y)
 		_gantry_tower.draw_line(Vector2(0, py), Vector2(w, py - 20), Color("#1e313d"), 1.0)
 		_gantry_tower.draw_line(Vector2(w, py), Vector2(0, py - 20), Color("#1e313d"), 1.0)
-	# Umbilical service swing arms connecting to the rocket
+
+
+func _draw_gantry_arms() -> void:
+	# Umbilical service swing arms connecting to the rocket. Kept on their own
+	# node so they can animate over VEGA's gantry sprite.
 	var arm_rot := 0.0
 	if _phase >= Phase.LIFTOFF:
 		arm_rot = clampf((_time - 7.0) * 1.8, 0.0, 1.0)
-	
-	# Upper umbilical (crew/payload service)
 	var upper_end := Vector2(-60 + arm_rot * 40.0, -118 - arm_rot * 22.0)
-	_gantry_tower.draw_line(Vector2(0, -118), upper_end, Color("#3a5666"), 2.0)
-	_gantry_tower.draw_circle(upper_end, 2.5, Color("#5ce1d0"))
-	
-	# Lower umbilical (fuel & cryo lines)
+	_gantry_arm_node.draw_line(Vector2(0, -118), upper_end, Color("#3a5666"), 2.0)
+	_gantry_arm_node.draw_circle(upper_end, 2.5, Color("#5ce1d0"))
 	var lower_end := Vector2(-60 + arm_rot * 45.0, -42 - arm_rot * 26.0)
-	_gantry_tower.draw_line(Vector2(0, -42), lower_end, Color("#ff7a2f"), 2.5)
-	_gantry_tower.draw_circle(lower_end, 2.8, Color("#ffc45c"))
+	_gantry_arm_node.draw_line(Vector2(0, -42), lower_end, Color("#ff7a2f"), 2.5)
+	_gantry_arm_node.draw_circle(lower_end, 2.8, Color("#ffc45c"))
 
 
 func _draw_spotlights() -> void:
@@ -673,6 +721,12 @@ func _build_hud() -> void:
 	_countdown_label.position = Vector2(240, 16)
 	_countdown_label.size = Vector2(160, 24)
 	root.add_child(_countdown_label)
+	# Phase word on its own row. Appending it to the clock made the ignition
+	# string wider than its slot and it wrote over the agency header.
+	_phase_label = UIKit.label("", 7, UIKit.ORANGE, true, HORIZONTAL_ALIGNMENT_CENTER)
+	_phase_label.position = Vector2(240, 39)
+	_phase_label.size = Vector2(160, 10)
+	root.add_child(_phase_label)
 
 	# Skip Launch Button (Bottom Right)
 	_skip_button = UIKit.button("SKIP LAUNCH  >", Vector2(100, 22))
@@ -830,8 +884,10 @@ func _enter_ignition_phase() -> void:
 	_phase_time = 0.0
 	print("LAUNCH PHASE 2: ENGINE IGNITION & FLAME TRENCH EXHAUST")
 	if _countdown_label != null:
-		_countdown_label.text = "T-1.0s // IGNITION"
+		_countdown_label.text = "T-1.0s"
 		_countdown_label.add_theme_color_override("font_color", UIKit.ORANGE)
+	if _phase_label != null:
+		_phase_label.text = "IGNITION"
 	_play_sfx(_audio_ignition)
 	_play_sfx(_audio_beep)
 	
@@ -862,6 +918,8 @@ func _enter_liftoff_phase() -> void:
 	if _countdown_label != null:
 		_countdown_label.text = "LIFTOFF!"
 		_countdown_label.add_theme_color_override("font_color", UIKit.LIVE)
+	if _phase_label != null:
+		_phase_label.text = ""
 	if _smoke_particles != null:
 		_smoke_particles.emitting = true
 	_acceleration = 22.0

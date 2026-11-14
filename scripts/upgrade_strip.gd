@@ -26,7 +26,7 @@ var _sig := ""
 var _first := true
 var _arsenal: Control
 var _arsenal_layer: CanvasLayer
-var _more: Button
+var _more: Panel
 var arsenal_open := false
 
 
@@ -37,27 +37,46 @@ func _ready() -> void:
 
 	# A single porthole at the foot of the rack opens the full sheet. Icons
 	# alone do not advertise that a readable list exists.
-	_more = Button.new()
-	_more.text = "\u2261"
-	_more.focus_mode = Control.FOCUS_NONE
+	_more = Panel.new()
 	_more.position = Vector2(0, STEP * MAX_ROWS + 2.0)
 	_more.size = Vector2(CHIP, 15)
-	_more.add_theme_font_override("font", UIKit.body_font)
-	_more.add_theme_font_size_override("font_size", 10)
-	_more.add_theme_color_override("font_color", UIKit.MUTED_C)
-	_more.add_theme_color_override("font_hover_color", UIKit.CREAM)
-	_more.add_theme_stylebox_override("normal", _chip_style(UIKit.STEEL, false))
-	_more.add_theme_stylebox_override("hover", _chip_style(UIKit.CYAN, true))
-	_more.add_theme_stylebox_override("pressed", _chip_style(UIKit.CYAN, true))
-	_more.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	_more.pivot_offset = Vector2(CHIP, 15) * 0.5
 	_more.mouse_filter = Control.MOUSE_FILTER_STOP
-	_more.pressed.connect(toggle_arsenal)
+	_more.add_theme_stylebox_override("panel", _chip_style(UIKit.STEEL, false))
+	# Three bars read as "list" at this size; text LABEL was both too wide
+	# and clipped by the 22 px rack column.
+	var bars: Array[ColorRect] = []
+	for i in range(3):
+		var bar := ColorRect.new()
+		bar.color = UIKit.MUTED_C
+		bar.position = Vector2(7, 4 + i * 4)
+		bar.size = Vector2(8, 1)
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_more.add_child(bar)
+		bars.append(bar)
+	_more.mouse_entered.connect(func():
+		_more.add_theme_stylebox_override("panel", _chip_style(UIKit.CYAN, true))
+		for bar in bars:
+			bar.color = UIKit.CREAM
+		_tween_chip(_more, 1.14)
+	)
+	_more.mouse_exited.connect(func():
+		_more.add_theme_stylebox_override("panel", _chip_style(UIKit.STEEL, false))
+		for bar in bars:
+			bar.color = UIKit.MUTED_C
+		_tween_chip(_more, 1.0)
+	)
+	_more.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton:
+			var mb := ev as InputEventMouseButton
+			if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+				toggle_arsenal()
+	)
 	_more.visible = false
 	add_child(_more)
 	UIKit.hover_info(_more, "ARSENAL",
 		"Open the full installed-systems sheet.\nEvery refit and field commission is listed with its exact effect.\n\nTAB or click any chip also opens this.",
 		UIKit.CYAN)
-
 
 func _on_state_changed() -> void:
 	# Shop/buff screens mutate GameState while the sector is not visible; a
@@ -100,6 +119,7 @@ func refresh() -> void:
 			float(i / MAX_ROWS) * COL,
 			float(i % MAX_ROWS) * STEP
 		)
+		chip.set_meta("accent", e["accent"])
 		add_child(chip)
 		_chips.append(chip)
 		var id := str(e["id"])
@@ -273,7 +293,7 @@ func _build_chip(e: Dictionary) -> Panel:
 func _chip_style(accent: Color, lit: bool) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = Color(0.031, 0.063, 0.071, 0.93 if not lit else 0.98)
-	s.border_color = accent if lit else Color(accent.r, accent.g, accent.b, 0.62)
+	s.border_color = accent if lit else Color(accent.r, accent.g, accent.b, 0.74)
 	s.set_border_width_all(1)
 	s.set_corner_radius_all(0)
 	s.content_margin_left = 0
@@ -350,6 +370,30 @@ func pop_chip(chip: Control, color: Color) -> void:
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(chip, "modulate", Color.WHITE, 0.36)
 	chip.set_meta("pulse_tw", tw)
+
+
+## Hovering a HUD stat lights every chip that feeds it, so "why is my hull
+## 10?" points straight at the armor/commission hardware instead of the
+## player having to read each dossier.
+func highlight(stat: String) -> void:
+	for i in range(_chips.size()):
+		if i >= _entries.size():
+			break
+		if not ((_entries[i]["stats"] as Array).has(stat)):
+			continue
+		var chip: Control = _chips[i]
+		chip.add_theme_stylebox_override("panel",
+			_chip_style(chip.get_meta("accent", UIKit.CYAN), true))
+		_tween_chip(chip, 1.12)
+
+
+func clear_highlight() -> void:
+	for chip in _chips:
+		if not is_instance_valid(chip):
+			continue
+		chip.add_theme_stylebox_override("panel",
+			_chip_style(chip.get_meta("accent", UIKit.CYAN), false))
+		_tween_chip(chip, 1.0)
 
 
 func preview_tip(index: int) -> void:

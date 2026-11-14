@@ -17,3 +17,5 @@ __pycache__/
 
 # QA captures (regenerate with tools/qa/*; see tools/qa/README.md)
 qa/artifacts/
+trailer/raw/
+trailer/

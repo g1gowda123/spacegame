@@ -211,5 +211,5 @@ with printable design worksheets.
   attach the 7-slide deck PDF.
 - **Playable build:** upload `submission/orbit_outplay_web.zip` to itch.io or
   GitHub Pages; the ZIP is the static `build/web/` folder.
-- **Local run:** `cd build/web && python3 -m http.server 8060`, then open
-  `http://localhost:8060`.
+- **Local run:** `tools/play_web.sh`, then open
+  `http://127.0.0.1:8061/index.html`.

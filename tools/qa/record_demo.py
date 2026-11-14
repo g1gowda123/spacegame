@@ -26,6 +26,7 @@ PORT = "8899"
 BTN_BEGIN = (243, 445)
 BTN_CONFIRM_DESIGN = (1195, 673)
 BTN_COMMIT = (1101, 605)
+BTN_SKIP_LAUNCH = (1168, 671)
 
 
 async def tap(page, x, y):
@@ -94,7 +95,11 @@ async def main():
             await asyncio.sleep(4.5)
             await mark("06_review")
             await tap(page, *BTN_COMMIT)
-            await asyncio.sleep(5.5)
+            await asyncio.sleep(2.6)
+            await mark("06b_launch")
+            await asyncio.sleep(1.2)
+            await tap(page, *BTN_SKIP_LAUNCH)
+            await asyncio.sleep(4.0)
             await mark("07_sector")
             for i, key in enumerate(["ArrowRight", "ArrowRight", "Enter", "ArrowDown", "Enter", "ArrowRight", "Enter"]):
                 await page.keyboard.press(key)

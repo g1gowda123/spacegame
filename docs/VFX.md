@@ -179,3 +179,33 @@ target, the transfer arc and the ship — then changes to the sector after 1.85 
 
 Test: `godot --path . -- --screen=draft --review` (panel) and
 `godot --path . -- --screen=draft --review --commit` (full transit).
+
+## Installed-systems rack (`scripts/upgrade_strip.gd`)
+
+The sector HUD keeps a persistent Risk-of-Rain-style icon rack on the left edge
+(`Vector2(10, 52)`), so a paid refit or field commission cannot vanish into the
+debrief once the next sector starts.
+
+- One 22 px chip per unique id; duplicates stack into a single chip with an
+  `xN` badge (`FIELD REPAIR KIT` is the repeatable one).
+- Refits are square steel chips (amber border for FIRMWARE); field commissions
+  get a warm corner notch and a rarity accent (common muted, rare sage, epic
+  amber).
+- Hover opens the shared Balatro dossier (`UIKit.hover_info` / `UITip`) with
+  `desc`, plain-language `plain`, type and installed count.
+- Chips **pop** in staggered at sector start, flash when a new id appears, and
+  **pulse when their stat changes**: hull → integrity, fuel → `dv`, heat →
+  `thermal_res`, data → `data_cap`, power → `power_regen` / `shield`. The
+  mapping is driven by `_refresh_status()` diffing the last HUD values, not by
+  call sites.
+- A three-bar porthole under the rack (also `TAB` / `I` / any chip click) opens
+  the **ARSENAL** sheet on `CanvasLayer` 55: every entry with icon, name, effect,
+  count, grouped in columns; fade/scale in, `ESC`/`TAB`/`CLOSE`/backdrop exits.
+- Hovering a **top-bar stat** (`INTEGRITY`, `DELTA-V`, `DATA`, `THERMAL LOAD`,
+  `POWER`) lights every rack chip that feeds it, so "why is my hull 10?" points
+  at the armor/commission hardware without opening six dossiers.
+- QA: `--screen=sector --owned=rtg,armor,wheel --buffs=harden,reactor`,
+  `--rack-tip=0` (pin one dossier), `--rack-highlight=integrity` (light the
+  matching chips), `--arsenal` (open the sheet), `--rack-dump` (print entries).
+  Capture evidence `/tmp/opencode/vfx/rack_tip.png`, `arsenal_final.png`,
+  `rack_many.png`, `rack_hl.png`.

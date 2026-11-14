@@ -23,6 +23,7 @@ PORT = "8777"
 BTN_BEGIN = (243, 445)
 BTN_CONFIRM_DESIGN = (1195, 673)
 BTN_COMMIT = (1101, 605)
+BTN_SKIP_LAUNCH = (1168, 671)
 
 
 async def tap(page, x, y):
@@ -80,14 +81,17 @@ async def run(pw, width, height, tag, outdir):
     await asyncio.sleep(3.5)
     await shot("05_review")
     await tap(page, *scale(BTN_COMMIT, width, height))
-    await asyncio.sleep(5)
-    await shot("06_sector")
+    await asyncio.sleep(3)
+    await shot("06_launch")
+    await tap(page, *scale(BTN_SKIP_LAUNCH, width, height))
+    await asyncio.sleep(4)
+    await shot("07_sector")
     for key in ["ArrowRight", "ArrowRight"]:
         await page.keyboard.press(key)
         await asyncio.sleep(0.7)
     await page.keyboard.press("Enter")
     await asyncio.sleep(3)
-    await shot("07_move")
+    await shot("08_move")
     await browser.close()
     return errors
 

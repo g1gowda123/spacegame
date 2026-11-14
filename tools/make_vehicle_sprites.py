@@ -92,7 +92,12 @@ def vector_h():
         d.polygon([(x0, 40), (x0 + 10, 32), (x0 + 20, 40)], fill=CREAM)
         nozzle(d, x0 + 10, 190, 14, 12)
     body(d, 46, 82, 2, 206, bands=7)
-    d.polygon([(46, 2), (64, 0), (82, 2)], fill=CREAM)
+    # the fairing must overhang the triple core, otherwise the stack reads as a
+    # narrow stick on a wide base
+    d.polygon([(40, 26), (42, 8), (64, 0), (86, 8), (88, 26)], fill=CREAM)
+    d.line([(40, 26), (42, 8)], fill=CREAM_SH)
+    d.line([(88, 26), (86, 8)], fill=(250, 246, 234))
+    d.rectangle([40, 26, 88, 30], fill=BAND)
     fin(d, 46, 176, 12, 28, -1)
     fin(d, 82, 176, 12, 28, 1)
     nozzle(d, 55, 206, 16, 14)

@@ -79,5 +79,5 @@ Do not demo the ZIP until it is re-exported; demo native (`godot --path .`) or r
 ```bash
 godot --headless --path . --quit-after 8        # parse/runtime smoke
 godot --path .                                 # newest code
-cd build/web && python3 -m http.server 8060    # packaged build
+tools/play_web.sh                             # packaged build on :8061
 ```

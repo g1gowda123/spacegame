@@ -25,9 +25,13 @@ func _apply_owned(csv: String) -> void:
 	for raw_id in csv.split(","):
 		var id := raw_id.strip_edges()
 		for up in GameState.UPGRADES:
-			if str(up["id"]) == id and not (id in GameState.owned):
+			if str(up["id"]) != id:
+				continue
+			# Allow a repeated --owned=repair for QA of the rack's xN badge;
+			# every other id still dedupes like the real shop.
+			if not (id in GameState.owned) or id == "repair":
 				GameState.owned.append(id)
-				break
+			break
 
 
 func _run_flowtest() -> void:

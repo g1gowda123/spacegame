@@ -114,6 +114,7 @@ var data_bar: ProgressBar
 var power_pips: Array = []
 var threat_label: Label
 var route_label: Label
+var onboard_label: Label
 var dpad: Control
 var hold_btn: Button
 var extract_btn: Button
@@ -231,6 +232,8 @@ func _ready() -> void:
 			_debug_rack(-1)
 		elif arg.begins_with("--rack-tip="):
 			_debug_rack(int(arg.substr(11)))
+		elif arg.begins_with("--rack-highlight="):
+			_debug_highlight(arg.substr(17))
 		elif arg == "--arm-hazard":
 			if not hazards.is_empty():
 				hazards[0]["age"] = 1
@@ -342,7 +345,7 @@ func _start_sector() -> void:
 	# bottom line instead of as a board-overlay toast.
 	_sector_hint = ""
 	if bool(sec.get("shakedown", false)):
-		_sector_hint = "SHAKEDOWN // +2 HULL · CYAN PAD = EXIT"
+		_sector_hint = "SHAKEDOWN +2 HULL · CYAN = EXIT"
 	elif extract_cell != start_cell:
 		_sector_hint = "CYAN PAD = EXIT"
 	_update_chunks()
@@ -632,27 +635,27 @@ func _build_hud() -> void:
 	# cursor, Balatro-style, when a judge wants the exact mechanic.
 	_hover_cell(tc, Rect2(168, 2, 52, 36), "INTEGRITY",
 		"Hull hits left. At 0 the sector fails.\nBlockable hazards spend shield power; unblockable ones always land.",
-		UIKit.RED)
+		UIKit.RED, "integrity")
 	_hover_cell(tc, Rect2(224, 2, 50, 36), "DELTA-V",
 		"Fuel left. Each path tile costs 1 ΔV.\nAt 0 the sector fails; return to the cyan extraction pad to extract.",
-		UIKit.CYAN)
+		UIKit.CYAN, "dv")
 	_hover_cell(tc, Rect2(276, 2, 44, 36), "SOLS",
 		"Mission window. One sol per move or HOLD.\nAt 0 the sector fails.",
-		UIKit.AMBER)
+		UIKit.AMBER, "")
 	_hover_cell(tc, Rect2(324, 2, 70, 36), "DATA",
 		"Nodes delivered / quota.\nMeet the quota, return to the cyan extraction pad, then EXTRACT.",
-		UIKit.GREEN)
+		UIKit.GREEN, "data_cap")
 	_hover_cell(tc, Rect2(400, 2, 100, 36), "THERMAL LOAD",
 		"Heat rises every move. At 100: overload, -1 hull.\nHOLD vents 8 + thermal resistance and burns one sol.",
-		UIKit.AMBER)
+		UIKit.AMBER, "thermal_res")
 	_hover_cell(tc, Rect2(508, 2, 114, 36), "POWER",
 		"Shield energy for blockable hazards.\nRecharges at end of turn; HOLD adds reactor vent power.",
-		UIKit.CYAN)
+		UIKit.CYAN, "power_regen")
 
 	# ----- bottom-left status
 	var bottom := UIKit.panel(Color(0.035, 0.055, 0.085, 0.92), UIKit.NIGHT_LINE)
-	bottom.position = Vector2(10, 314)
-	bottom.size = Vector2(414, 36)
+	bottom.position = Vector2(10, 292)
+	bottom.size = Vector2(414, 50)
 	root.add_child(bottom)
 	var bc := Control.new()
 	bc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -664,11 +667,19 @@ func _build_hud() -> void:
 	threat_label.size = Vector2(398, 12)
 	bc.add_child(threat_label)
 	route_label = UIKit.mono("—", 8, Color("#f2ead6"))
-	route_label.position = Vector2(8, 18)
-	route_label.size = Vector2(398, 12)
+	route_label.position = Vector2(8, 14)
+	route_label.size = Vector2(398, 18)
 	route_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	route_label.add_theme_constant_override("outline_size", 1)
 	bc.add_child(route_label)
+
+	onboard_label = UIKit.mono("", 7, UIKit.CYAN)
+	onboard_label.position = Vector2(8, 21)
+	onboard_label.size = Vector2(398, 11)
+	onboard_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	onboard_label.add_theme_constant_override("outline_size", 1)
+	onboard_label.visible = false
+	bc.add_child(onboard_label)
 
 	toast_label = UIKit.head("", 9, UIKit.CYAN, HORIZONTAL_ALIGNMENT_CENTER)
 	toast_label.position = Vector2(110, 288)
@@ -716,13 +727,22 @@ func _build_hud() -> void:
 
 
 func _hover_cell(parent: Control, rect: Rect2, title: String, body: String,
-	accent: Color = UIKit.CYAN) -> void:
+	accent: Color = UIKit.CYAN, stat: String = "") -> void:
 	var zone := Control.new()
 	zone.position = rect.position
 	zone.size = rect.size
 	zone.mouse_filter = Control.MOUSE_FILTER_STOP
 	parent.add_child(zone)
 	UIKit.hover_info(zone, title, body, accent)
+	if stat != "":
+		zone.mouse_entered.connect(func():
+			if upgrade_strip != null:
+				upgrade_strip.highlight(stat)
+		)
+		zone.mouse_exited.connect(func():
+			if upgrade_strip != null:
+				upgrade_strip.clear_highlight()
+		)
 
 
 
@@ -799,6 +819,9 @@ func _refresh_status() -> void:
 	sol_label.add_theme_color_override("font_color",
 		UIKit.RED if int(sec["sols"]) <= 5 else UIKit.AMBER)
 	data_caption.text = "RELAYS" if _is_relay() else "DATA"
+	var data_need := maxi(0, int(sec["quota"]) - int(sec["data"]))
+	if data_need > 0 and not done:
+		data_caption.text += " · NEED %d" % data_need
 	data_label.text = "%d/%d" % [int(sec["data"]), int(sec["quota"])]
 
 	UIKit.set_bar(heat_bar, float(sec["thermal"]), 100.0)
@@ -896,6 +919,16 @@ func _refresh_status() -> void:
 	else:
 		threat_label.text = "—"
 
+	var onboard := _sector_hint != "" and turn == 1 and not moved and not done 		and cursor_cell == player_cell
+	if onboard_label != null:
+		onboard_label.visible = onboard
+		onboard_label.text = "TURN %d · RANGE %d · %s" % [
+			turn, _current_range(), _sector_hint
+		] if onboard else ""
+	# Do not stack the onboarding hint on top of the live route line; the
+	# hint owns the bottom HUD while it is visible, then the route returns.
+	if route_label != null:
+		route_label.visible = not onboard
 	if done:
 		route_label.text = "Continue to the debrief for grants, approval, and refit."
 		route_label.add_theme_color_override("font_color", Color("#f7f0df"))
@@ -904,8 +937,6 @@ func _refresh_status() -> void:
 		return
 	var quota := int(sec["quota"])
 	var base := "TURN %d · RANGE %d" % [turn, _current_range()]
-	if _sector_hint != "" and turn == 1 and not moved:
-		base = "%s · %s" % [base, _sector_hint]
 	var threat := float(sec.get("threat", 1.0))
 	if threat > 1.01:
 		base += " · THREAT %.1fx" % threat
@@ -927,11 +958,7 @@ func _refresh_status() -> void:
 			route_label.text = "%s · QUOTA MET — RETURN TO CYAN PAD" % base
 		route_label.add_theme_color_override("font_color", UIKit.LIVE)
 	else:
-		var need := quota - int(sec["data"])
-		var noun := "relay" if need == 1 else "relays"
-		if not _is_relay():
-			noun = "node" if need == 1 else "nodes"
-		route_label.text = "%s · need %d more %s · CLICK A TILE" % [base, need, noun]
+		route_label.text = "%s · CLICK A TILE" % base
 		route_label.add_theme_color_override("font_color", Color("#f7f0df"))
 	if move_btn != null:
 		move_btn.disabled = done or moved or not path_valid or path_cost <= 0
@@ -1371,6 +1398,13 @@ func _debug_rack(index: int) -> void:
 		upgrade_strip.toggle_arsenal()
 	else:
 		upgrade_strip.preview_tip(index)
+
+
+func _debug_highlight(stat: String) -> void:
+	await get_tree().create_timer(1.0).timeout
+	if upgrade_strip != null:
+		upgrade_strip.highlight(stat)
+		print("RACK HIGHLIGHT ", stat)
 
 
 func _run_fx_demo(kind: String) -> void:
@@ -2697,12 +2731,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not key.pressed or key.echo:
 		return
 	if upgrade_strip != null and upgrade_strip.arsenal_open:
-		if key.keycode == KEY_ESCAPE:
+		if key.keycode == KEY_ESCAPE or key.keycode == KEY_TAB or key.keycode == KEY_I:
 			upgrade_strip.toggle_arsenal()
+			get_viewport().set_input_as_handled()
 		return
 	match key.keycode:
 		KEY_TAB, KEY_I:
-			if upgrade_strip != null:
+			if upgrade_strip != null and not done:
 				upgrade_strip.toggle_arsenal()
 				get_viewport().set_input_as_handled()
 		KEY_UP, KEY_W:
