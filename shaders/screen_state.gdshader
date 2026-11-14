@@ -22,7 +22,7 @@ void fragment() {
 	vec2 p = UV * 2.0 - 1.0;
 	p.x *= screen_size.x / max(screen_size.y, 1.0);
 	float r = length(p);
-	float edge = smoothstep(0.52, 1.18, r);
+	float edge = smoothstep(0.74, 1.26, r);
 
 	float pulse = 0.55 + 0.45 * sin(TIME * 3.6);
 	float low = low_hull * edge * pulse * 0.60;

@@ -380,9 +380,10 @@ class DevilNode extends Node2D:
 			var r := radius * (1.0 - float(i) * 0.18)
 			draw_arc(Vector2(sin(a) * 2.2, -float(i) * 4.5), r, a, a + 2.7, 10,
 				Color(tint.r, tint.g, tint.b, tint.a * (0.95 - float(i) * 0.18)), 1.4, true)
-		var grit := Vector2(cos(age * 7.0) * 4.0, 3.0)
-		draw_rect(Rect2(grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.7), true)
-		draw_rect(Rect2(-grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.5), true)
+		for j in range(3):
+			var ga := age * 6.0 + float(j) * 2.3
+			var grit := Vector2(cos(ga) * 6.0, -float(j) * 3.0 + 2.0)
+			draw_rect(Rect2(grit, Vector2(1, 1)), Color(tint.r, tint.g, tint.b, tint.a * 0.8), true)
 
 
 static func dust_devil(parent: Node, at: Vector2, color: Color, z := 6) -> void:
@@ -390,7 +391,8 @@ static func dust_devil(parent: Node, at: Vector2, color: Color, z := 6) -> void:
 		return
 	var d := DevilNode.new()
 	d.position = at
-	d.tint = Color(color.r, color.g, color.b, 0.42)
+	d.tint = Color(color.r, color.g, color.b, 0.72)
+	dust(parent, at, Color(color.r, color.g, color.b, 0.28), 3, 9.0, z - 1)
 	d.drift = Vector2(18.0 + randf() * 18.0, -3.0 - randf() * 4.0)
 	d.z_index = z
 	d.z_as_relative = true
@@ -404,9 +406,14 @@ static func meteor_streak(parent: Node, at: Vector2, color: Color, z := 12) -> v
 		return
 	var dir := Vector2(1.0, 0.52).normalized()
 	var streak := Line2D.new()
-	streak.points = PackedVector2Array([Vector2.ZERO, -dir * 46.0])
-	streak.width = 1.4
-	streak.default_color = Color(color.r, color.g, color.b, 0.0)
+	streak.points = PackedVector2Array([Vector2.ZERO, -dir * 62.0])
+	streak.width = 2.2
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1.0, 0.98, 0.92, 0.95))
+	grad.set_color(1, Color(color.r, color.g, color.b, 0.0))
+	streak.gradient = grad
+	streak.default_color = Color(color.r, color.g, color.b, 0.95)
+	streak.modulate.a = 0.0
 	streak.position = at - dir * 120.0
 	streak.z_index = z
 	parent.add_child(streak)
@@ -417,18 +424,18 @@ static func meteor_streak(parent: Node, at: Vector2, color: Color, z := 12) -> v
 	streak.add_child(head)
 	var tw := streak.create_tween()
 	tw.set_parallel(true)
-	tw.tween_property(streak, "position", at - dir * 44.0, 0.30) \
+	tw.tween_property(streak, "position", at - dir * 44.0, 0.55) \
 		.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-	tw.tween_property(streak, "modulate:a", 1.0, 0.10)
-	tw.chain().tween_property(streak, "modulate:a", 0.0, 0.12)
+	tw.tween_property(streak, "modulate:a", 1.0, 0.12)
+	tw.chain().tween_property(streak, "modulate:a", 0.0, 0.18)
 	tw.chain().tween_callback(streak.queue_free)
-	var t2 := parent.get_tree().create_timer(0.30)
+	var t2 := parent.get_tree().create_timer(0.55)
 	t2.timeout.connect(func():
 		if not is_instance_valid(parent):
 			return
-		dust(parent, at, Color(color.r * 0.8, color.g * 0.7, color.b * 0.6, 0.5), 5, 18.0, z - 1)
+		dust(parent, at, Color(color.r * 0.8, color.g * 0.7, color.b * 0.6, 0.5), 8, 22.0, z - 1)
 		sparks(parent, at, color, 6, 34.0, 60.0, z)
-		ring(parent, at, Color(color.r, color.g, color.b, 0.55), 16.0, 0.45, 1.2, z - 1)
+		ring(parent, at, Color(color.r, color.g, color.b, 0.55), 22.0, 0.5, 1.4, z - 1)
 	)
 
 

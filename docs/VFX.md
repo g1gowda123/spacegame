@@ -118,3 +118,53 @@ generation never breaks the game.
   reference implementation for the raster plate's animated successor.
 - Ship portrait: module blocks could stagger in on install (one block per 40 ms)
   instead of the single flash; needs `ShipBuild` slot ordering.
+
+## Disaster beat (end of turn)
+
+`_end_turn()` calls `_resolve_hazard()` for **every** live front, not just a
+front under the player. The return value plus `_last_strike_near` gates a
+0.62 s hold, so the player registers the strike before the next telegraph
+lands. Per strike:
+
+- every footprint tile gets dust; the front centre gets flare/shockwave/sparks/
+  debris/beam for a dodged or remote strike, and `_impact()` covers a hit;
+- tiles within 6 of the player get a scar (`_add_scar(cell,color,3)`), capped at
+  26 scars;
+- a hit shows the dark `_disaster_banner()` with title `!! <HAZARD> STRIKE` and
+  the damage line; a near miss shows `!! <HAZARD> SURGE` / `NO CONTACT ·
+  GROUND SCARRED`;
+- `_disaster_edge()` ramps the `screen_state` shader `flash` uniform (hazard
+  colour) 1→0 over 0.55 s, and `_shake()` shakes 5 steps on a near miss.
+
+QA: `--fx=disaster` (unblockable quake on the player), `--fx=strike-miss`
+(adjacent quake), `--fx=impact`, `--fx=all`.
+
+## World aliveness director
+
+Runs from `sector.gd::_process` while the sector is live:
+
+| Timer | Action |
+|---|---|
+| 2.2–4.4 s | `_world_event()`: authored structure signature (volcano smoke+embers, geyser steam, crystal/ice glints) or a biome micro-event (lava embers, water ring, ice sparks, dust devil, spores) |
+| 7–12 s | `_meteor_event()`: `VFX.meteor_streak()` at a cell near the player (gradient streak, dust, sparks, ring; cosmetic) |
+| 6–12 s | `_shooting_star()`: gradient streak across the sky |
+
+`VFX.dust_devil()` uses the `DevilNode` inner class: four rotating arcs plus
+grit, drifting 18–36 px/s, 2.8 s life, sine fade. Ambient CPUParticles2D counts
+were raised for weather presence: snow 62, embers 44, dust 48, spores 34,
+crystal 24. The map shader sways green-dominant pixels ±1 px for grass/scrub.
+
+## Transfer-arc ship (`scripts/transfer_ship.gd`)
+
+Used by `draft.gd::_show_mission_review()` in the 270×112 transfer panel.
+`TransferShip` builds a `Curve2D` through the arc points and samples it:
+- 4.6 s smoothstep travel from Earth to target, 0.9 s hold, fade in/out at loop
+  edges;
+- comet trail (last 22 %), space-dust, cyan engine flare, launch ring, arrival
+  ring;
+- draws the selected hull sprite (`assets/sprites/ships/<id>.png`) at 32 px
+  along the tangent; falls back to a golden delta if the hull art is missing;
+- emits `progress_changed(u)`; the review shows `IN TRANSIT  N%`, then `ORBIT
+  INSERTION`.
+
+Test: `godot --path . -- --screen=draft --review`.
