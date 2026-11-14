@@ -1056,3 +1056,19 @@ to the lane owner.
 - Fixed the real refit-hover bug: `sheet()` returned a `PanelContainer` that swallowed mouse input, so the dossier only worked when emitted in tests. It is now input-transparent; the hover is bound to the whole card and the BUY button.
 - Title ranks modal fixed (absolute labels were being sorted by PanelContainer; content now sits in a `UIKit.fill` root).
 - Verification: headless clean; `flowtest` 5384/S; 640×360 + 1280 captures under `/tmp/opencode/ops640/` and `/tmp/opencode/ops_*.png`; web zip repacked at `141a9e4`. Deck/demo still binder-era; regenerate if the direction is approved.
+
+- **00:38 — Volcanic/feature repetition cap.** At most one volcano ridge per chunk; no duplicate volcano/geyser/impact_crater feature key. Commit `0dfe6cf`; evidence `sulfur_oneperchunk.png`, `barren_fewer.png`.
+
+## 2026-11-15 00:50 — Judging deck rebuilt on the console UI (deck lane)
+
+- Replaced the binder-era deck: all seven slides now use fresh 1280x720 captures from the current `MISSION OPERATIONS` build (`/tmp/opencode/deck_rec/`), plus a `--screen=report --capture` native shot of the final ledger. No stale binder screenshots remain.
+- Built with DeckCraft 0.18.1 over MCP (`new_presentation` → `add_slide` → `insert_picture` → `run_command`), 960x540, dark console grammar: `#070D13` ground, cream `#F2ECDC`, telemetry cyan `#6FD3C3`, agency orange `#F26B1D`, Inter + Noto Sans Mono.
+- Seven slides, judged-criteria order: title/team/challenge · problem and brief fit · the five-decision loop · NASA data map (`pscomppars` field → mechanic, dossier crop with archive value beside derived value) · surface play · validity/impact/creativity plus final report · next + links + citations. Speaker notes on every slide.
+- Files: `submission/orbit_outplay_deck.pptx`, `.pdf`, `.deckcraft` (source); PDF mirrored to `demo/orbit_outplay_deck.pdf`; contact sheet `demo/deck_contact_sheet.png`. PPTX re-rendered from disk to verify fonts and layout survive the round trip.
+- Still placeholders: the play link ("link on the submission page") and the 23 s demo (still binder-era). Host the web build and re-record before the 23:59 submission.
+
+## 2026-11-15 — Transit animation is the loading screen (NOVA)
+
+- `draft.gd` starts a threaded load of `res://scenes/sector.tscn` when the player commits, plays the ship transfer, waits until the ship reaches the target, then instantiates the sector while the transit card still covers the screen. The fixed post-animation wait is gone; the cut lands on a finished board.
+- The transit ship holds at the target (`hold_seconds = 8.0`) instead of looping back to Earth if generation takes a moment.
+- QA: `--screen=draft --auto-commit --capture-delay=2.2` shows the sector at 2.2 s; `...=1.8` still shows the transit. `--screen=flowtest` 5361/S.
