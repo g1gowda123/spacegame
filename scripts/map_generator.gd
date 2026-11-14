@@ -157,7 +157,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ammonia", "name": "Ammonia Ice", "profile": "cryo", "generator": "fractured",
-		"life": "lifeless", "tint": "#72c8e8", "tint_strength": 0.30, "exposure": 0.72,
+		"life": "lifeless", "tint": "#72c8e8", "tint_strength": 0.30, "exposure": 1.10,
 		"base": "cryo/snow", "detail": "cryo/ice",
 		"detail_alt": "cryo/glacier", "detail_alt2": "cryo/frozen_lake",
 		"rock": "cryo/rock", "shore": "", "water": "",

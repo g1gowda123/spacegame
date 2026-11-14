@@ -121,6 +121,10 @@ func _ready() -> void:
 		fog_enabled = true
 	if "--no-fog" in args:
 		fog_enabled = false
+	# Tactical sector view: keep the rectangular focus but let the shader fade
+	# the slab edge into space. The old circle mask hid too much of the board.
+	if "--circle" not in args:
+		circle_view = false
 	var force_relay := "--relay" in args
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.
@@ -946,6 +950,26 @@ func _path_has_hazard() -> bool:
 	return false
 
 
+func _pulse(node: Control, color: Color) -> void:
+	## Quick scale/colour pop on a HUD value. Used for damage, heat and data so
+	## the number that changed is the number the eye lands on.
+	if node == null:
+		return
+	if node.has_meta("pulse_tw"):
+		var old: Tween = node.get_meta("pulse_tw")
+		if old != null and old.is_valid():
+			old.kill()
+	node.pivot_offset = node.size * 0.5
+	node.scale = Vector2(1.18, 1.18)
+	node.modulate = Color.WHITE.lerp(color, 0.65)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(node, "scale", Vector2.ONE, 0.26) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(node, "modulate", Color.WHITE, 0.32)
+	node.set_meta("pulse_tw", tw)
+
+
 func _run_fx_demo(kind: String) -> void:
 	await get_tree().create_timer(0.9).timeout
 	if done:
@@ -996,6 +1020,7 @@ func _collect_node_at(cell: Vector2i) -> void:	for i in range(objectives.size())
 			message_color = UIKit.AMBER if _is_relay() else UIKit.CYAN
 			_show_toast(message_text, message_color)
 			_pickup_flash(cell, message_color)
+			_pulse(data_label, message_color)
 			return
 
 
@@ -1463,6 +1488,10 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 		text += ("  " if text != "" else "") + "+%d HEAT" % dmg_t
 	if text != "":
 		_float_text(text, cell, color)
+	if dmg_i > 0 and int_label != null:
+		_pulse(int_label, color)
+	if dmg_t > 0 and heat_val != null:
+		_pulse(heat_val, color)
 	var at := _cell_center(cell)
 	if vfx_layer != null:
 		if dmg_i > 0 or dmg_t > 0:

@@ -107,7 +107,7 @@ func _build() -> void:
 	appr.position = Vector2(480, 20)
 	appr.size = Vector2(140, 12)
 	add_child(appr)
-	UIKit.hairline(self, 10, 33, 620)
+	UIKit.hairline(self, 10, 36, 620)
 
 	_build_summary()
 	_build_shop()

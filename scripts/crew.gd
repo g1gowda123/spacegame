@@ -56,7 +56,7 @@ func _build() -> void:
 	approval_label.position = Vector2(480, 20)
 	approval_label.size = Vector2(140, 12)
 	add_child(approval_label)
-	UIKit.hairline(self, 10, 33, 620)
+	UIKit.hairline(self, 10, 36, 620)
 
 	_build_left()
 	_build_right()

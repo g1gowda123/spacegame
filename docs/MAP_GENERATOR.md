@@ -169,3 +169,6 @@ Cost: the raw halo grows from 1 to 2 cells (`pad` 18 → 20 per chunk, +23 % noi
 - **Web export**: add `export_presets.cfg`; install Web export templates; browser test.
 - **Debug**: seed copy is done; add a seed input field, minimap, and chunk-border overlay.
 - **Terrain art**: noisy grass and bright patchwork are art-agent issues; do not regenerate tiles in this scope.
+
+## Tuning from the editor
+See `docs/TUNING.md`: the map root now exposes Inspector groups for render window, seed/biome, camera/circle, fog, decals and shader edge/relief modes, with CLI equivalents.
