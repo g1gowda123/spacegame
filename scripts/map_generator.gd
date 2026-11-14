@@ -9,8 +9,8 @@ extends Node2D
 
 const TILE := 64
 const CHUNK := 16
-const VIEW_W := 20
-const VIEW_H := 16
+const VIEW_W := 24
+const VIEW_H := 18
 const VIEW_PX := Vector2(VIEW_W * TILE, VIEW_H * TILE)
 const VIEW_TILES := 10.0
 const TURNS_START := 36
@@ -384,6 +384,9 @@ var terrain_mask_tex: ImageTexture
 var terrain_mask_img: Image
 var terrain_mask_size := Vector2i.ZERO
 var terrain_color_cache: Dictionary = {}
+var decal_noise := FastNoiseLite.new()
+var decal_cache: Dictionary = {}
+var decal_layer: Node2D
 var debug_elapsed: float = 0.0
 var nav_label: Label
 var debug_label: Label
@@ -828,6 +831,12 @@ func _build_view() -> void:
 	cliff_layer.z_index = 11
 	add_child(cliff_layer)
 
+	# Small palette-locked pebbles/cracks/tufts sit above transition tiles and
+	# below structures, so they dress the ground without competing with props.
+	decal_layer = Node2D.new()
+	decal_layer.z_index = 14
+	add_child(decal_layer)
+
 	overlay_layer = Node2D.new()
 	overlay_layer.z_index = 22
 	add_child(overlay_layer)
@@ -1144,6 +1153,14 @@ func _init_noise() -> void:
 	rough_noise.fractal_octaves = 2
 	rough_noise.fractal_gain = 0.5
 	rough_noise.fractal_lacunarity = 2.0
+
+	# Decal scatter clusters in 2-4 cell neighbourhoods rather than freckling
+	# every eligible cell independently.
+	decal_noise.seed = seed_value + 6103
+	decal_noise.frequency = 0.075
+	decal_noise.fractal_octaves = 2
+	decal_noise.fractal_gain = 0.5
+	decal_noise.fractal_lacunarity = 2.0
 
 	# Low-frequency belts, not another shoreline. A narrow band of rock terrain
 	# crosses several chunks, so the eye reads a mountain range rather than
@@ -2316,6 +2333,7 @@ func _render_window() -> void:
 	_build_terrain_mask()
 	_rebuild_structure_sprites()
 	_rebuild_cliffs()
+	_rebuild_decals()
 	_rebuild_actors()
 	if debug_transitions:
 		_draw_transition_debug()
@@ -3147,6 +3165,21 @@ func _rebuild_actors() -> void:
 		])
 		beam.color = Color(base_col.r, base_col.g, base_col.b, 0.38)
 		marker.add_child(beam)
+		# A slow scanner diamond orbiting the pickup. The marker itself only
+		# breathes; this adds the second motion that reads as "active".
+		var halo := Node2D.new()
+		var hline := Line2D.new()
+		hline.points = _diamond_points(15.0)
+		hline.closed = true
+		hline.width = 1.0
+		hline.default_color = Color(base_col.r, base_col.g, base_col.b, 0.50)
+		halo.add_child(hline)
+		marker.add_child(halo)
+		var spin := halo.create_tween().set_loops()
+		spin.tween_property(halo, "rotation", TAU, 5.5).from(0.0)
+		var bp := beam.create_tween().set_loops()
+		bp.tween_property(beam, "modulate:a", 0.45, 0.85).set_ease(Tween.EASE_IN_OUT)
+		bp.tween_property(beam, "modulate:a", 1.0, 0.85).set_ease(Tween.EASE_IN_OUT)
 		if relay and relay_tex != null:
 			# VEGA's purpose-built relay beacon: tripod, mast and cyan lens.
 			var beacon := Sprite2D.new()
@@ -3246,7 +3279,7 @@ func _animate_player(from_cell: Vector2i) -> void:
 
 
 func _camera_world_layers() -> Array:
-	return [cliff_layer, overlay_layer, structure_layer, occlusion_layer]
+	return [cliff_layer, decal_layer, overlay_layer, structure_layer, occlusion_layer]
 
 
 func _pan_camera(from_cell: Vector2i) -> void:

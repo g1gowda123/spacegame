@@ -71,6 +71,7 @@ var toast_label: Label
 var _toast_tween: Tween
 var fx_layer: Node2D
 var vfx_layer: Node2D
+var pad_beacon: VFX.RingNode
 var fx_root: Control
 var _impact_flash: ColorRect
 
@@ -184,6 +185,11 @@ func _ready() -> void:
 			# QA hook for the pickup flash/sound without hunting for a node.
 			if not objectives.is_empty():
 				_collect_node_at(objectives[0])
+		elif arg.begins_with("--fx="):
+			# Visual QA hook: play one effect sequence on a loop so a movie
+			# capture can show it. `--fx=all` plays impact, shield, pickup and
+			# the extraction beacon in order.
+			_run_fx_demo(arg.substr(5).to_lower())
 
 
 
@@ -252,6 +258,29 @@ func _start_sector() -> void:
 	_render_window()
 	_refresh_all()
 	_draw_move_preview()
+	_spawn_pad_beacon()
+
+
+func _spawn_pad_beacon() -> void:
+	if vfx_layer == null:
+		return
+	if pad_beacon != null and is_instance_valid(pad_beacon):
+		pad_beacon.queue_free()
+	var ring := VFX.RingNode.new()
+	ring.position = _cell_center(start_cell)
+	ring.z_index = 2
+	ring.z_as_relative = true
+	ring.radius = 17.0
+	ring.width = 1.6
+	ring.ring_color = Color(0.33, 0.90, 0.82, 0.55)
+	ring.set_meta("pad_beacon", true)
+	vfx_layer.add_child(ring)
+	pad_beacon = ring
+	var tw := ring.create_tween().set_loops()
+	tw.tween_property(ring, "radius", 25.0, 1.1).set_ease(Tween.EASE_IN_OUT)
+	tw.parallel().tween_property(ring, "ring_color:a", 0.10, 1.1)
+	tw.tween_property(ring, "radius", 17.0, 1.1).set_ease(Tween.EASE_IN_OUT)
+	tw.parallel().tween_property(ring, "ring_color:a", 0.55, 1.1)
 
 
 func _build_hud() -> void:
@@ -856,8 +885,39 @@ func _path_has_hazard() -> bool:
 	return false
 
 
-func _collect_node_at(cell: Vector2i) -> void:
-	for i in range(objectives.size()):
+func _run_fx_demo(kind: String) -> void:
+	await get_tree().create_timer(0.9).timeout
+	if done:
+		return
+	match kind:
+		"impact":
+			_impact(player_cell, Color("#ff9c4a"), 2, 24)
+		"shield":
+			_impact(player_cell, UIKit.CYAN, 0, 0)
+		"pickup":
+			_pickup_flash(player_cell, UIKit.CYAN)
+		"extract":
+			VFX.beam(vfx_layer, _cell_center(player_cell), Color(0.55, 1.0, 0.92, 0.9), 62.0, 0.85, 9)
+			VFX.ring(vfx_layer, _cell_center(player_cell), UIKit.CYAN, 40.0, 0.55, 2.4, 8)
+			VFX.sparks(vfx_layer, _cell_center(player_cell), UIKit.CYAN, 14, 55.0, -40.0, 10)
+		_:
+			_impact(player_cell, Color("#ff9c4a"), 2, 24)
+			await get_tree().create_timer(0.75).timeout
+			if done:
+				return
+			_impact(player_cell, UIKit.CYAN, 0, 0)
+			await get_tree().create_timer(0.65).timeout
+			if done:
+				return
+			_pickup_flash(player_cell, UIKit.CYAN)
+			await get_tree().create_timer(0.75).timeout
+			if done:
+				return
+			VFX.beam(vfx_layer, _cell_center(player_cell), Color(0.55, 1.0, 0.92, 0.9), 62.0, 0.85, 9)
+			VFX.ring(vfx_layer, _cell_center(player_cell), UIKit.CYAN, 40.0, 0.55, 2.4, 8)
+
+
+func _collect_node_at(cell: Vector2i) -> void:	for i in range(objectives.size()):
 		if objectives[i] == cell and not collected[i]:
 			collected[i] = true
 			var gain := 1
@@ -933,9 +993,12 @@ func _execute_path() -> void:
 			_show_toast(message_text, message_color)
 		# Render each cell and pan one step, so committing a 2-3 tile route
 		# follows the preview instead of collapsing the whole path into a cut.
+		# `_animate_player()` re-anchors the sprite at the previous cell and
+		# tweens it in, which also fires the dust puff for this step.
 		_update_chunks()
 		_render_window()
 		_refresh_status()
+		_animate_player(step_from)
 		_pan_camera(step_from)
 		await camera_tween.finished
 		remaining.pop_front()

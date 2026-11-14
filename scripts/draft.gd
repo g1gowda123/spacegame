@@ -23,33 +23,27 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.label("DESTINATION DRAFT  //  %02d" % int(GameState.run.get("sector", 1)), 13, UIKit.CYAN, true)
-	header.position = Vector2(10, 7)
+	var header := UIKit.head("DESTINATION DRAFT", 12, UIKit.TEXT)
+	header.position = Vector2(10, 6)
 	add_child(header)
-	var step := UIKit.label("SECTOR %d OF %d  ·  CHOOSE A REAL EXOPLANET" % [
+	var step := UIKit.mono("SECTOR %d OF %d   ·   NASA EXOPLANET ARCHIVE   ·   PSCompPars" % [
 		int(GameState.run.get("sector", 1)), GameState.SECTORS_PER_RUN
-	], 7, UIKit.DIM, true)
-	step.position = Vector2(10, 24)
+	], 7, UIKit.DIM)
+	step.position = Vector2(10, 22)
 	add_child(step)
 
-	# Body face: the pixel font is uppercase-only and would print PSCOMPPARS.
-	var src := UIKit.label("NASA EXOPLANET ARCHIVE  ·  PSCompPars", 7, UIKit.DIM, false)
-	src.position = Vector2(10, 33)
-	add_child(src)
-
-	var budget := UIKit.label("GRANTS  $%dM" % int(GameState.run.get("budget", 0)), 10, UIKit.AMBER, true)
-	budget.position = Vector2(500, 8)
-	budget.size = Vector2(130, 14)
-	budget.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var budget := UIKit.head("GRANTS $%dM" % int(GameState.run.get("budget", 0)), 10, UIKit.AMBER,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	budget.position = Vector2(490, 5)
+	budget.size = Vector2(140, 12)
 	add_child(budget)
 
-	var appr := UIKit.label("APPROVAL  %d" % int(GameState.run.get("approval", 0)), 7, UIKit.MUTED, true)
-	appr.position = Vector2(392, 25)
-	appr.size = Vector2(238, 12)
-	appr.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 0)), 7, UIKit.MUTED,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	appr.position = Vector2(490, 20)
+	appr.size = Vector2(140, 10)
 	add_child(appr)
-
-
+	UIKit.hairline(self, 10, 33, 620)
 
 	for i in range(mini(3, GameState.draft.size())):
 		_make_card(GameState.draft[i], i)
@@ -59,8 +53,8 @@ func _build() -> void:
 func _make_card(p: Dictionary, idx: int) -> void:
 	var x := 10.0 + float(idx) * 208.0
 	var root := Control.new()
-	root.position = Vector2(x, 44)
-	root.size = Vector2(196, 236)
+	root.position = Vector2(x, 40)
+	root.size = Vector2(196, 238)
 	add_child(root)
 
 	var panel := UIKit.panel(Color("#0d1624"), UIKit.LINE)
@@ -95,27 +89,28 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var star_type := str(p.get("star_type", "")).strip_edges()
 	if star_type == "" or star_type == "—":
 		star_type = "UNKNOWN TYPE"
-	var meta := UIKit.label(
-		"%s  ·  %.1f ly" % [star_type, float(p["distance_ly"])],
-		6, UIKit.MUTED, false, HORIZONTAL_ALIGNMENT_CENTER
+	var meta := UIKit.mono(
+		"%s  ·  %.1f ly  ·  %.2fg" % [star_type, float(p["distance_ly"]), float(p["gravity_g"])],
+		7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	meta.position = Vector2(4, 87)
 	meta.size = Vector2(188, 10)
 	c.add_child(meta)
 
-	var chip1 := UIKit.chip(GameState.biome_name(str(p["biome"])), GameState.biome_color(str(p["biome"])))
-	chip1.position = Vector2(9, 101)
-	chip1.size = Vector2(84, 14)
-	c.add_child(chip1)
-	var chip2 := UIKit.chip("%d K" % int(p["eq_temp_k"]), UIKit.AMBER)
-	chip2.position = Vector2(98, 101)
-	chip2.size = Vector2(52, 14)
-	c.add_child(chip2)
+	var type_line := UIKit.mono(
+		"%s   ·   %d K" % [
+			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"])
+		],
+		8, GameState.biome_color(str(p["biome"])), HORIZONTAL_ALIGNMENT_CENTER
+	)
+	type_line.position = Vector2(4, 100)
+	type_line.size = Vector2(188, 11)
+	c.add_child(type_line)
 	if bool(p.get("mass_est", false)):
-		var chip3 := UIKit.chip("EST", UIKit.DIM)
-		chip3.position = Vector2(154, 101)
-		chip3.size = Vector2(34, 14)
-		c.add_child(chip3)
+		var est := UIKit.mono("MASS ESTIMATE", 6, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+		est.position = Vector2(4, 110)
+		est.size = Vector2(188, 8)
+		c.add_child(est)
 
 	var g: Dictionary = p["game"]
 	# One-second read for the first real decision: how hostile is this world
@@ -132,23 +127,24 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		tag_color = UIKit.AMBER
 	var risk := UIKit.label("%s  ·  THREAT %d" % [tag, int(round(threat))], 6, tag_color, true,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	risk.position = Vector2(4, 117)
+	risk.position = Vector2(4, 120)
 	risk.size = Vector2(188, 10)
 	c.add_child(risk)
 
-	_stat(c, 132, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
+	_stat(c, 134, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
 		UIKit.RED if int(g["heat"]) > 60 else UIKit.AMBER)
-	_stat(c, 147, "RADIATION", "%d" % int(g["radiation"]), float(g["radiation"]) / 100.0,
-		UIKit.AMBER if int(g["radiation"]) > 40 else UIKit.GREEN)
+	_stat(c, 148, "RADIATION", "%d" % int(g["radiation"]), float(g["radiation"]) / 100.0,
+		UIKit.AMBER if int(g["radiation"]) > 40 else UIKit.TEXT)
 	_stat(c, 162, "GRAVITY", "%.2fg" % float(p["gravity_g"]), float(p["gravity_g"]) / 3.0,
-		UIKit.BLUE)
-	_stat(c, 177, "COMMS LOSS", "-%d%%" % int(g["comms_loss"]), 1.0 - float(g["comms_loss"]) / 30.0,
-		UIKit.GREEN if int(g["comms_loss"]) <= 10 else UIKit.AMBER)
-	_stat(c, 192, "SCIENCE", "%d" % int(g["science"]), float(g["science"]) / 120.0,
+		UIKit.TEXT)
+	_stat(c, 176, "COMMS LOSS", "-%d%%" % int(g["comms_loss"]), 1.0 - float(g["comms_loss"]) / 30.0,
+		UIKit.TEXT if int(g["comms_loss"]) <= 10 else UIKit.AMBER)
+	_stat(c, 190, "SCIENCE", "%d" % int(g["science"]), float(g["science"]) / 120.0,
 		UIKit.CYAN)
 
-	var pick := UIKit.button("SELECT TARGET", Vector2(176, 20), false)
+	var pick := UIKit.button("MARK TARGET", Vector2(176, 18), false)
 	pick.position = Vector2(10, 210)
+	pick.add_theme_font_size_override("font_size", 9)
 	pick.pressed.connect(_select.bind(str(p["id"])))
 	c.add_child(pick)
 
@@ -189,17 +185,17 @@ func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
 
 
 func _stat(c: Control, y: float, name: String, value: String, frac: float, color: Color) -> void:
-	var l := UIKit.label(name, 6, UIKit.DIM, true)
+	var l := UIKit.mono(name, 7, UIKit.DIM)
 	l.position = Vector2(10, y)
-	l.size = Vector2(74, 12)
+	l.size = Vector2(80, 11)
 	c.add_child(l)
-	var bar := UIKit.bar(52, 5, color)
-	bar.position = Vector2(86, y + 3)
+	var bar := UIKit.bar(46, 4, UIKit.CYAN)
+	bar.position = Vector2(92, y + 3)
 	c.add_child(bar)
 	UIKit.set_bar(bar, clampf(frac, 0.0, 1.0) * 100.0, 100.0)
-	var v := UIKit.label(value, 7, UIKit.TEXT, false, HORIZONTAL_ALIGNMENT_RIGHT)
+	var v := UIKit.mono(value, 8, color, HORIZONTAL_ALIGNMENT_RIGHT)
 	v.position = Vector2(142, y)
-	v.size = Vector2(44, 12)
+	v.size = Vector2(44, 11)
 	c.add_child(v)
 
 

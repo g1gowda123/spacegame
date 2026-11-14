@@ -27,6 +27,7 @@ var orbit_buttons: Dictionary = {}
 var orbit_desc_label: Label
 var requirement_label: Label
 var instrument_requirement: Label
+var objective_note: Label
 var vehicle_requirement: Label
 
 
@@ -99,24 +100,22 @@ func _build_left() -> void:
 	var v := _column(10, 198, "HULL BUS")
 	for h in GameState.HULLS:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 184, 38), str(h["name"]),
+			v, Rect2(0, 0, 184, 40), str(h["name"]),
 			"%s · %s" % [str(h["class"]), str(h["perk"])],
-			UIKit.CYAN, 8, 7,
-			"%dKG · $%dM" % [int(h["mass"]), int(h["cost"])]
+			UIKit.CYAN, 9, 7,
+			"%dKG · $%dM" % [int(h["mass"]), int(h["cost"])], false
 		)
 		card["button"].pressed.connect(_pick_hull.bind(str(h["id"])))
 		hull_cards[str(h["id"])] = card
-		if "--uidbg" in OS.get_cmdline_user_args():
-			print("UIDBG hull ", card["root"].size, " panelcls ", card["panel"].get_class(), " titlesz ", card["title"].size, " min ", card["title"].get_minimum_size(), " subsz ", card["sub"].size if card["sub"] != null else "none", " submin ", card["sub"].get_minimum_size() if card["sub"] != null else "none")
 
 	_subhead(v, "LAUNCH VEHICLE")
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)
 	v.add_child(vehicle_requirement)
 	for veh in GameState.VEHICLES:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 184, 22), str(veh["name"]), "",
-			UIKit.CYAN, 8, 7,
-			"%.0fKG CAP" % float(veh["capacity"])
+			v, Rect2(0, 0, 184, 20), str(veh["name"]), "",
+			UIKit.CYAN, 9, 7,
+			"%.0fKG CAP" % float(veh["capacity"]), false
 		)
 		card["button"].pressed.connect(_pick_vehicle.bind(str(veh["id"])))
 		vehicle_cards[str(veh["id"])] = card
@@ -208,12 +207,17 @@ func _build_right() -> void:
 	var v := _column(428, 202, "MISSION OBJECTIVE")
 	for o in GameState.OBJECTIVES:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 188, 24), str(o["name"]), str(o["perk"]),
-			UIKit.CYAN, 8, 7
+			v, Rect2(0, 0, 188, 20), str(o["name"]), "",
+			UIKit.CYAN, 9, 7, "", false
 		)
 		card["button"].pressed.connect(_pick_objective.bind(str(o["id"])))
 		objective_cards[str(o["id"])] = card
 		card["button"].tooltip_text = str(o["perk"])
+	objective_note = UIKit.mono("", 7, UIKit.DIM)
+	objective_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	objective_note.custom_minimum_size = Vector2(188, 22)
+	objective_note.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	v.add_child(objective_note)
 
 	_subhead(v, "INSTRUMENTS  ·  PICK 2")
 	instrument_requirement = UIKit.mono("0 / 2 SELECTED", 7, UIKit.AMBER)
@@ -225,10 +229,10 @@ func _build_right() -> void:
 	}
 	for inst in GameState.INSTRUMENTS:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 188, 17),
+			v, Rect2(0, 0, 188, 16),
 			str(short_names.get(str(inst["id"]), str(inst["name"]))), "",
-			UIKit.CYAN, 8, 7,
-			"%.0fKG" % float(inst["mass"])
+			UIKit.CYAN, 9, 7,
+			"%.0fKG · $%.0fM" % [float(inst["mass"]), float(inst["cost"])], false
 		)
 		card["button"].pressed.connect(_toggle_instrument.bind(str(inst["id"])))
 		card["button"].tooltip_text = str(inst["perk"])
@@ -300,8 +304,14 @@ func _refresh() -> void:
 		UIKit.select_card(hull_cards[id], str(GameState.run.get("hull", "")) == id)
 	for id in vehicle_cards:
 		UIKit.select_card(vehicle_cards[id], str(GameState.run.get("vehicle", "")) == id)
+	var chosen_objective := str(GameState.run.get("objective", ""))
 	for id in objective_cards:
-		UIKit.select_card(objective_cards[id], str(GameState.run.get("objective", "")) == id)
+		UIKit.select_card(objective_cards[id], chosen_objective == id)
+	if objective_note != null:
+		var ob := GameState.objective()
+		objective_note.text = str(ob.get("perk", ""))
+		objective_note.add_theme_color_override("font_color",
+			UIKit.MUTED if not chosen_objective.is_empty() else UIKit.DIM)
 	var chosen: Array = GameState.run.get("instruments", [])
 	for id in instrument_cards:
 		UIKit.select_card(instrument_cards[id], id in chosen)
