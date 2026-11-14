@@ -6,7 +6,7 @@ Caltech/IPAC, operated under contract with NASA). Values are the archive's
 composite parameters (pscomppars table).
 
 The game only lands on small, rocky worlds, so the curated set keeps planets
-with 0.4 <= radius <= 2.7 Earth radii and a measured equilibrium temperature.
+with 0.35 <= radius <= 2.2 Earth radii and a measured equilibrium temperature.
 Every derived game number is stored next to the measured value so the UI can
 show exactly which real datum produced which constraint.
 """

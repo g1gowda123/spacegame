@@ -175,15 +175,25 @@ Notes for the implementer:
 
 ## 7. Copy and code mismatches found during the audit (for ATLAS)
 
-These are real, verified against `HEAD 56e583c`; they are listed instead of
+These are real, verified against `HEAD fbc2b7d`; they are listed instead of
 silently edited because they live in another owner's file.
 
 | # | File:line | Problem | Suggested fix |
 |---|---|---|---|
 | 1 | `scripts/debrief.gd:113` | `ORBIT  LOW INSERTION` is hard-coded, so a POLAR or HIGH mission is reported as LOW. | `ORBIT  %s INSERTION` with `GameState.orbit().get("name", "LOW")`. |
-| 2 | `scripts/sector.gd:33-36` + `1125-1133` | `ECLIPSE SHADOW` has `"power": 2` and the resolver subtracts `total_p`, so the hazard **drains** 2 power instead of restoring it (README and the sector theme say "restores"). | Use a negative cost or add a positive `power_gain` branch so the effect matches the copy. |
+| 2 | `scripts/sector.gd:33-36` + `1116-1143` | `ECLIPSE SHADOW` has `"power": 2` and the resolver subtracts `total_p`, so the hazard **drains** 2 power instead of restoring it (README and the sector theme say "restores"). | Use a negative cost or add a positive `power_gain` branch so the effect matches the copy. |
 | 3 | `scripts/sector.gd:1335` vs `map_generator.gd:2833` | The sector overrides `_unhandled_input`, so `H` (hide UI) is dead during a surface run although the board says it works. | Call the parent handler for unhandled keys, or move the H toggle into the sector handler. |
 | 4 | `scripts/title.gd:116` | "Collect 3 of 4 data nodes" is wrong for MAP THE SURFACE (quota 4). | "Collect the quota (3 or 4 nodes) before sols or delta-v run out." |
+| 5 | `scripts/game_state.gd:135-136` (+ `README.md:223`) | Deployable Radiator is advertised as "Heat gain −3 per move", but the module sets `thermal_res: 6`. `begin_sector()` computes `heat_gain = round(heat × 0.11) − thermal_res` and then applies the hull/orbit/instrument multiplier, so it removes about 6, not 3, before multipliers. | Decide the intended value: set `thermal_res: 3`, or rewrite the shop/README copy to the real −6 and keep them in sync. |
+| 6 | `scripts/game_state.gd:141-142` + `design.gd:299-300` | Deep Data Buffer sets `data_cap: 4`, but `data_cap` is only drawn as the design-screen DATA bar. The sector loop and `finish_sector()` delivered math never read it, so "less loss on long links" has no effect. | Use `data_cap` in the downlink/delivered formula, or rewrite the copy to what the module actually changes. |
+| 7 | `scripts/game_state.gd:700-707` + `816` | Field Repair Kit banks `pending_repair`, but `begin_sector()` fills `current_sector.integrity` from the full hull value (`:678-679`), so `integrity < integrity_max` is never true and the purchase is a no-op (including `repeatable`). | Apply the repair to the previous sector's ending integrity, or heal `run` integrity at refit time before the next sector is built. |
+| 8 | `scripts/sector.gd:1335` vs `scripts/map_generator.gd:2848` | Same `_unhandled_input` override as item 3: `F10` (screenshot) is dead during a surface run, although README:329 lists it. | Call the parent handler for unhandled keys, or add `KEY_F10` to the sector handler. |
+
+Second pass (same audit): README now says Δv **and** sols are spent per tile
+moved (not one sol per turn) and marks F10 as map-generation-only, matching
+`sector.gd:874-876`. The builder docstring in `tools/build_exoplanets.py` was
+corrected to the real filter, `0.35 <= radius <= 2.2` (it said `0.4–2.7`,
+which never matched the code or `docs/PROJECT.md`).
 
 None of these block the event/copy pack; they are quick follow-ups.
 

@@ -53,10 +53,11 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 | Task | Status | Notes |
 |---|---|---|
 | Claim audit: README / PROJECT / SUBMISSION vs code | done | 12:30. Fixed stale data + feature claims: curated radius range (0.69–2.19 R⊕, not 0.35), playable vs terrain-only biomes, hazard list (9, not 7), approval math, quota/extract/auto-sweep rule, controls (V, H), mission bars wording. File:line evidence in WORKLOG 12:30. |
+| Repeatable data/copy validator | done | `tools/audit_data.py`: rebuilds the dataset from the raw CSV, recomputes every `game.*` value, checks the event schema/effect contract, and asserts the doc counts/ranges. 28 checks, 0 failed; run `python tools/audit_data.py`. |
 | Event cards (8, seeded between-sector choices) | content done — wiring pending ATLAS | `data/events.json` (8 cards x 2 choices, deterministic selection) + `docs/EVENTS.md` (schema, effect contract, clamps, balance table). No game file loads it yet. |
 | Gameplay-depth copy pack (relay, events, growth, risk, grade gap) | content done 12:53 — wiring pending ATLAS | `docs/COPY_DEPTH.md`: exact HUD/debrief/report strings, card chrome + layout budget, report DECISIONS line, grade-gap format, risk-bonus wording with `%d` left to b's formula. Anchored to `f1eafc9`; no game file reads it yet. |
 | Onboarding hint card copy (first sector) | content done — widget pending ATLAS | Three-line copy in `docs/EVENTS.md` §6. Do not promise the H key in the sector: `sector.gd` overrides `_unhandled_input` and H is dead there. |
-| Copy/code mismatch list for ATLAS | open (re-verified against `f1eafc9`) | `docs/EVENTS.md` §7: debrief hard-codes `ORBIT LOW`; eclipse power sign is inverted; sector H toggle dead; title says "3 of 4" for a 4-node objective. Fix copy for the title row is in `docs/COPY_DEPTH.md` §5.1. |
+| Copy/code mismatch list for ATLAS | open (re-verified against `fbc2b7d`) | `docs/EVENTS.md` §7, now 8 items: debrief hard-codes `ORBIT LOW`; eclipse power sign is inverted; sector H toggle dead; title says "3 of 4" for a 4-node objective; radiator advertises −3 but sets `thermal_res: 6`; Deep Data Buffer `data_cap` is display-only; Field Repair Kit is a no-op because sectors start at full integrity; F10 screenshot key is also dead in-sector. Title-copy fix is in `docs/COPY_DEPTH.md` §5.1. |
 
 ## Standing constraints
 

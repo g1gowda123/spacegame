@@ -161,14 +161,14 @@ The surface is one sector of a planet: a chunked 16×16-cell world streamed from
 |---|---|---|
 | **Integrity** | Structural health | −1 to −2 per hazard hit; zero ends the sector |
 | **Thermal** | Heat load | Every path tile adds heat; HOLD vents it; overheating costs integrity |
-| **Δv** | Remaining propellant | Each move and some hazards spend it |
+| **Δv** | Remaining propellant | Each tile moved and some hazards spend it |
 | **Power** | Shielding and systems | Regenerates each turn; blocking a hazard costs power |
-| **Sols** | Mission clock | One per turn; the sector fails when it runs out |
+| **Sols** | Mission clock | One per tile moved (or one HOLD); the sector fails when it runs out |
 | **Data** | Collected science nodes | Collect the quota, then extract; a full 4/4 sweep auto-completes the sector |
 
 ### The movement rule
 
-Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Reaching all four nodes auto-completes the survey; reaching the objective quota and pressing **EXTRACT** banks the data early.
+Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**; every tile on that path spends 1 Δv and 1 sol, so a three-tile move costs three of each. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Reaching all four nodes auto-completes the survey; reaching the objective quota and pressing **EXTRACT** banks the data early.
 
 That single rule is what makes the sector a route-planning problem rather than a walking simulator: you cannot creep forward one tile at a time, and you cannot see the next threat until you have spent this turn's move.
 
@@ -326,7 +326,7 @@ Source: <https://exoplanetarchive.ipac.caltech.edu/> — NASA Exoplanet Archive,
 | Toggle grid overlay | `G` |
 | Cycle map view (three-quarter / isometric / top-down) | `V` |
 | Open How to Play (title screen) | `H` / **HOW TO PLAY** |
-| Screenshot (development) | `F10` |
+| Screenshot (development) | `F10` on map-generation screens (not yet wired in-sector) |
 | Everything else | Mouse or touch |
 
 The browser build is fully playable with mouse or touch. Landscape is recommended.
