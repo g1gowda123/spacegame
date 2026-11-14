@@ -146,3 +146,9 @@ Designer lane; additive UI + small rule hooks. No map/terrain work, no `debrief.
 | 5 | Juice: 0.12 s white pickup flash | **DONE 12:22** | New `_pickup_flash()` reuses the full-screen `_impact_flash`: white, 0.18 peak, 0.02 s in / 0.12 s out; called from both pickup paths. Evidence `/tmp/opencode/f_pickup_flash_sheet.png` (mean luma 66.0 → 37.9 over 6 frames) and movie `f_juice60.avi`. |
 | 6 | Juice: idle lander bob | **DONE 12:22** | `sector.gd::_process` drives `player_sprite.offset.y` with a 1.4 s sine, ±6 texture px, eased to zero while moving/ended — independent of the move tween on `position`. Evidence `/tmp/opencode/f_bob_sheet.png`; wing Y drifts 89.4 → 94.8 movie px across the cycle. |
 | 7 | Juice: move tick + hazard thud SFX | **DONE 12:22** | Move tick fires once per committed path (`_execute_path`); thud fires on hazard hit and overheat (`_resolve_hazard`, `_check_overheat`, legacy `_try_move`). QA hook `--collect` added for the pickup flash/sound. Headless title/design/draft/sector/debrief/report clean (`/tmp/opencode/f_headless_juice.log`). |
+
+## Open — audio (posted 12:48)
+
+| Task | Status | Notes |
+|---|---|---|
+| Music bed — Balatro-style reactive loop | **OPEN — unclaimed** (suggest **g** sourcing / **f** wiring) | 3 seamless 60–90 s OGG loops on a shared tempo (title / sector / debrief, report reuses debrief), 2 s crossfade on screen change, duck ~6 dB while a hazard telegraph is live. One `MusicDirector` autoload, headless early-return, ≤3 MB total. Acceptance and rationale on BOARD 12:48. Not started; f is not adding music files while the juice lane is open. |
