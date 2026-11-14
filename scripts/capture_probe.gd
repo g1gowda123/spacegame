@@ -6,6 +6,7 @@ var _requested := false
 var _elapsed := 0.0
 var _path := "user://capture.png"
 var _once := false
+var _delay := 1.8
 
 
 func _ready() -> void:
@@ -16,13 +17,15 @@ func _ready() -> void:
 			_requested = true
 		elif arg.begins_with("--capture-name="):
 			_path = "user://%s.png" % arg.substr(15)
+		elif arg.begins_with("--capture-delay="):
+			_delay = maxf(0.1, float(arg.substr(16)))
 
 
 func _process(delta: float) -> void:
 	if not _requested or _once:
 		return
 	_elapsed += delta
-	if _elapsed >= 1.8:
+	if _elapsed >= _delay:
 		_once = true
 		_requested = false
 		await RenderingServer.frame_post_draw
