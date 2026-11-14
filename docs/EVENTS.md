@@ -1,155 +1,133 @@
-# Content Pack - Event Cards + Onboarding (owner: e)
+# Content Pack - Events, Onboarding, and Copy Audit (owner: e)
 
-Status: **content complete, wiring pending (ATLAS)**. Source of truth is
-`data/events.json`; this file explains the schema, the balance intent, and the
-exact hooks each effect needs. Nothing here is loaded by the game yet, so the
-README does not claim events as shipped.
+Status re-verified **after the ORION merge** (working tree on top of `32cff00`
++ `origin/main`). The event feature has **shipped**, but not from this pack:
+ATLAS wired an inline 8-card pool in `scripts/game_state.gd` (`const EVENTS`,
+line 391) and a modal in `scripts/debrief.gd` (`_show_event`, line 301).
 
-Read order for the implementer: this file, then `docs/COPY_DEPTH.md` (exact
-card chrome, report line, relay/risk/growth/grade-gap strings), then
-`scripts/game_state.gd` (`new_run`, `begin_sector`, `finish_sector`,
-`make_shop`) and `scripts/debrief.gd`.
+Therefore:
 
----
+- The **shipped** card content is the table in §2. That is what players see and
+  what the README describes.
+- `data/events.json` is a **prototype pack that no game file loads**. It is kept
+  because it has the richer two-choice contract (SAFE/GREEDY kinds, exact
+  `detail` promises, effect keys) and `tools/audit_data.py` still validates it.
+  It is not the source of truth for the current build.
+- The onboarding hint card is **still not wired** (no widget exists in
+  `scripts/`). Copy is final in §5; it needs an ATLAS widget.
+- The copy/code mismatch list is §6. Every row is verified against the merged
+  working tree, not against an old commit.
 
-## 1. Why this pack exists
-
-The boss directive (BOARD, 11:55) asks for "Event cards between sectors
-(debrief choice)" - one card from a pool of ~8, seeded per run, two choices.
-The goal is a **decision with no obviously correct answer** that changes the
-next sector's opening position, not another shop. Cards are short, thematic,
-and every option has a visible cost.
-
-Hard rules used when writing them:
-
-- **Deterministic.** Same run seed + sector => same card and same option text.
-- **Telegraphed.** Both outcomes are printed on the card before the click.
-- **No dead ends.** No option can zero approval, budget, hull, or sols at the
-  moment it is chosen; clamps below guarantee a playable next sector.
-- **No strictly better option.** Each pair trades a resource for a different
-  resource (budget vs approval, hull vs sols, science vs heat, and so on).
-- **No new systems.** Every effect reuses an existing sector field, so wiring
-  is a `pending` dictionary and an apply block, not a new subsystem.
+Line numbers move; function names and string literals are the reliable anchors.
 
 ---
 
-## 2. Flow and selection
+## 1. Shipped flow
 
 ```
-sector 1 -> debrief (result + shop) -> EVENT CARD -> draft 2
-sector 2 -> debrief (result + shop) -> EVENT CARD -> draft 3
-sector 3 -> debrief -> final report            (no event)
+sector 1 -> debrief (result + shop) -> incident card -> draft 2
+sector 2 -> debrief (result + shop) -> incident card -> draft 3
+sector 3 -> debrief -> final report            (no card)
 ```
 
-Selection (deterministic, no save needed):
+`GameState.finish_sector()` increments `run.sector`, then calls `roll_event()`
+only while `run.sector <= SECTORS_PER_RUN` and approval is above zero
+(`game_state.gd:1002-1005`). The debrief reopens an unresolved card on entry
+(`debrief.gd:286-288`), so closing the overlay cannot skip the choice.
 
-```
-index = (int(run.seed) + int(run.sector) * 17) % events.size()
-while events[index].id in run.event_ids_used:
-    index = (index + 1) % events.size()
-run.event_ids_used.append(events[index].id)
-```
-
-`run.sector` is already incremented by `finish_sector()`, so the event after
-sector 1 reads `run.sector == 2`. Use the pre-increment value if the card is
-shown before the increment; the constant only has to be stable.
-
-Store the choice for the final report:
-
-```
-run.events.append({"id": id, "choice": choice_index, "label": label_text})
-```
-
-The report can then print one line: `DECISIONS  SOLAR STORM (ride it out) ·
-PRIVATE DONOR (declined)`. No score effect.
-
----
-
-## 3. Schema (`data/events.json`)
-
-```json
-{
-  "id": "solar_storm",
-  "tag": "SPACE WEATHER",
-  "title": "SOLAR STORM",
-  "body": "One or two sentences, <= 150 characters for the card width.",
-  "choices": [
-    { "label": "RIDE IT OUT", "kind": "greedy",
-      "detail": "+10% science next sector, +8 starting heat.",
-      "effects": { "science_mult_next": 1.10, "thermal_next": 8 } }
-  ]
-}
-```
-
-- `kind` is presentation only: `safe` = keeps the run stable, `greedy` = more
-  upside with a resource cost. Use it for the choice colour/icon.
-- `detail` is the exact promise the UI must render. Do not shorten it in a way
-  that hides a downside.
-- Effects are additive numbers unless the key ends in `_mult_next`, which is a
-  multiplier.
-
----
-
-## 4. Effect contract (wire these exact keys)
-
-Apply `budget_delta` / `approval_delta` immediately when the choice is taken.
-Bank every `*_next` key in `run.pending` (a Dictionary, default `{}`) and apply
-it in `begin_sector()` **after** the base sector values are built and **before**
-`changed.emit()`:
-
-| Key | Apply at | Formula / clamp |
-|---|---|---|
-| `budget_delta` | immediately | `run.budget = max(0, run.budget + v)` |
-| `approval_delta` | immediately | `run.approval = clamp(run.approval + v, 0, 100)` |
-| `integrity_next` | `begin_sector` | `integrity = clamp(integrity + v, 1, integrity_max)` |
-| `thermal_next` | `begin_sector` | `thermal = clamp(thermal + v, 0, 99)` |
-| `heat_gain_next` | `begin_sector` | `heat_gain = clamp(heat_gain + v, 1, 18)` |
-| `power_max_next` | `begin_sector` | `power_max = max(1, power_max + v)`, also raise `power` to match |
-| `sols_next` | `begin_sector` | `sols = max(1, sols + v)`, update `sols_max` if you want the bar full |
-| `delta_v_pct_next` | `begin_sector` | `dv = max(1, round(dv * (1 + v / 100)))` |
-| `science_mult_next` | `begin_sector` | `science_mult = clamp(science_mult * v, 0.5, 2.0)` |
-| `grant_mult_next` | `begin_sector` | `grant_mult = clamp(grant_mult * v, 0.5, 2.0)` |
-| `move_range_next` | `begin_sector` | `move_range = clamp(move_range + v, 1, 6)` |
-
-Consume the pending dictionary once (`run.pending = {}`) so it cannot stack by
-mistake. If an event is skipped or the run ends, the pending effects are
-simply dropped with the run.
-
-Suggested `GameState` helpers (keeps `debrief.gd` dumb):
+Selection is seeded per run and skips repeats:
 
 ```gdscript
-func draw_event() -> Dictionary   # returns one event, records its id
-func resolve_event(choice_index: int) -> void  # applies immediate + banks pending
+rng.seed = int(run["seed"]) + sector_no * 977
+# walk the pool until an id not in run["events_seen"] is found
 ```
 
+`choose_event(index)` (`game_state.gd:809`) applies `budget` and `approval`
+immediately, banks `next_heat` / `next_dv` / `next_power` / `next_sol` /
+`next_integrity` / `next_data` / `bonus_science` in the run, records the id in
+`events_seen`, and clears `event_card`. `begin_sector()` consumes the `next_*`
+values (`game_state.gd:846-866`, `:909`). There is no `run.pending` dictionary
+in the shipped code - the prototype contract below is the only place that name
+appears.
+
 ---
 
-## 5. Balance intent (expected value, not exact scoring)
+## 2. Shipped card pool (`game_state.gd:391-456`)
 
-| # | Card | Safe option | Greedy option | Tension |
+Eight cards, two trade-offs each, no obviously correct option. Effects in
+brackets are the exact shipped keys; the visible `desc` is the promise.
+
+| # | Title (`id`) | Body | Option A | Option B |
 |---|---|---|---|---|
-| 1 | Solar Storm | -3 sols | +10% science, +8 heat | tempo vs science + thermal risk |
-| 2 | Private Donor | +2 approval | +$60M, -6 approval | ~90 score of funds vs ~72 score of approval and survival risk |
-| 3 | Salvage Wreck | +$45M | +20% delta-v, -1 integrity | cash now vs route range next sector |
-| 4 | Window Slip | -2 sols, +2 integrity | +4 sols, -2 integrity | time vs hull |
-| 5 | Peer Review | +4 approval, -8% science | +20% science, -4 approval | science score vs defunding risk |
-| 6 | Contractor Audit | -$40M, +2 integrity | +$15M, -1 integrity | funds vs a hull hit |
-| 7 | Rival Leak | +1 power capacity | +20% grants, -3 approval | survivability vs money/approval |
-| 8 | Gravity Assist | +10% delta-v, +6 heat | +1 move range, -12% delta-v | reach vs fuel + heat |
+| 1 | **SOLAR STORM WARNING** (`solar_storm`) | A coronal front is tracking toward the next target. | `RIDE IT OUT` - Next sector starts with +8 heat. `[next_heat 8]` | `POWER DOWN` - -1 approval, +1 power next sector. `[approval -1, next_power 1]` |
+| 2 | **PRIVATE DONOR** (`private_donor`) | A launch provider offers a no-strings grant. The board notices. | `TAKE THE GRANT` - +$50M, -2 approval. `[budget 50, approval -2]` | `DECLINE` - +1 approval. `[approval 1]` |
+| 3 | **SALVAGE CACHE** (`salvage_cache`) | A spent upper stage is drifting near the transfer orbit. | `STRIP IT` - +$30M, +1 delta-v next sector. `[budget 30, next_dv 1]` | `LEAVE IT` - +1 integrity next sector. `[next_integrity 1]` |
+| 4 | **CRYO LOOP LEAK** (`cryo_leak`) | The thermal loop is losing working fluid between missions. | `PATCH IT` - $25M, +1 integrity next sector. `[budget -25, next_integrity 1]` | `TOP IT OFF` - +1 heat, +1 power next sector. `[next_heat 1, next_power 1]` |
+| 5 | **STELLAR ARCHIVE** (`stellar_data`) | A colleague offers a calibrated light-curve archive. | `BUY ACCESS` - $30M for +160 science. `[budget -30, bonus_science 160]` | `SHARE LATER` - +1 approval. `[approval 1]` |
+| 6 | **CREW FATIGUE** (`crew_fatigue`) | Two flight controllers have been awake for 31 hours. | `REST ROTATION` - -1 sol next sector, +1 integrity. `[next_sol -1, next_integrity 1]` | `PUSH THROUGH` - +1 delta-v, -1 integrity next sector. `[next_dv 1, next_integrity -1]` |
+| 7 | **RIVAL AGENCY** (`rival_agency`) | A competitor wants your raw survey data before publication. | `PUBLISH FIRST` - +2 approval, -$20M. `[approval 2, budget -20]` | `SELL THE COPY` - +$35M, -1 approval. `[budget 35, approval -1]` |
+| 8 | **ANOMALOUS SIGNAL** (`anomalous_signal`) | The receiver hears a narrowband pulse during the cruise phase. | `INVESTIGATE` - -1 integrity, +180 science. `[next_integrity -1, bonus_science 180]` | `LOG AND MOVE` - +1 power next sector. `[next_power 1]` |
 
-If playtesting shows one side always wins, change the numbers in
-`data/events.json`, not the copy. Keep `detail` in sync with `effects` - the UI
-shows `detail`.
+Tone notes for the next edit pass (E3) are in §7.
+
+### 2.1 Shipped card chrome (`debrief.gd:301-370`)
+
+| Element | Shipped string |
+|---|---|
+| Kicker | `BETWEEN MISSIONS  //  AGENCY EVENT` (7 px, AMBER) |
+| Title | `<card.title>` (13 px, CYAN) |
+| Body | `<card.body>` (7 px, MUTED, wraps in 420 px) |
+| Option row | panel 420x66; `<option.label>` 9 px TEXT, `<option.desc>` 7 px MUTED, button `CHOOSE` |
+| Footer hint | `This choice carries into the next sector.` (6 px, DIM) |
+
+The richer `COPY_DEPTH.md` chrome (SAFE/GREEDY chips, `EVENT 1 OF 2`, exact
+`detail`) did **not** ship. Do not claim it in the README or the submission.
 
 ---
 
-## 6. Onboarding hint card (first sector only)
+## 3. Prototype pack (`data/events.json`, not loaded)
 
-Three lines, shown once per run on the first sector, dismissable, and never
-again in that run. Board item 6 (gameplay sprint) owns the copy; ATLAS owns
-the widget.
+This pack is intentionally kept as a design artifact. If the live pool is ever
+replaced, this is the better contract:
 
-Copy (fits a 300x54 panel at font size 7-8):
+- eight cards keyed by `choices[].kind` (`safe` / `greedy`);
+- exact `detail` promises that the UI must render verbatim;
+- additive effect keys with clamps, applied at `begin_sector()`.
+
+The full schema, effect contract, and balance table live in git history (the
+pre-merge version of this file) and in the JSON `meta` block. The validator
+still enforces: 8 cards, two choices each, uppercase labels, `detail` present,
+known effect keys, multipliers inside 0.5-2.0 (`tools/audit_data.py` §3).
+
+**Do not re-wire this file without also editing the shipped strings.** The ids
+only partly overlap (`solar_storm`, `private_donor`, `salvage_cache` vs
+`salvage_wreck`, `cryo_leak` vs `window_slip`, `stellar_data` vs `peer_review`,
+`crew_fatigue` vs `contractor_audit`, `rival_agency` vs `rival_leak`,
+`anomalous_signal` vs `gravity_assist`), and the choices/numbers differ.
+
+---
+
+## 4. Report line - NOT shipped
+
+`docs/COPY_DEPTH.md` §4.5 asks for a narrative `DECISIONS` line on the final
+report. `scripts/report.gd` has no such line, and `GameState.run` does not store
+the chosen label (only `events_seen` ids). Do not claim it.
+
+Suggested minimal wiring if ATLAS wants it:
+
+1. In `choose_event()`, append
+   `{"id": card.id, "label": options[index].label}` to `run.events`.
+2. In `report.gd:_build_ledger()`, print the labels joined by `  ·  ` under the
+   stats block; truncate to campaign titles if the string exceeds 62 chars.
+
+No score effect.
+
+---
+
+## 5. Onboarding hint card (first sector, still widget-pending)
+
+Three lines, shown once per run on the first sector, dismissable, never again
+in that run. ATLAS owns the widget; the copy is final:
 
 ```
 MOVE   Click a tile to preview the path. ENTER commits one move.
@@ -157,56 +135,90 @@ DATA   Collect the quota (3 or 4 nodes), then EXTRACT with E.
 DANGER Hazards land where the grid shows, at end of turn. HOLD vents heat.
 ```
 
-Notes for the implementer:
+Implementation notes:
 
-- Show when `int(GameState.run.sector) == 1 and turn == 1`, in `_start_sector()`
-  or `_build_hud()`, and set `run.onboarded = true` when dismissed.
-- Keep it inside the existing HUD frame; do not cover the D-pad or the three
-  action buttons (they sit at `y=268..344` on the right).
-- **Do not promise the H key in the sector.** The H "hide UI" toggle lives in
-  `map_generator.gd` (`KEY_H`, `ui_layer.visible`), but `sector.gd` overrides
-  `_unhandled_input()` and does not call the parent, so H does nothing during a
-  surface run. `H` opens How to Play on the title screen only. Either wire the
-  toggle in `sector.gd` first, or leave H off the card (this copy leaves it off).
-- `V` cycles view mode and `G` toggles the grid in the sector, but the card is
-  already full; put those on the pause/help overlay instead.
+- Show when `int(GameState.run.sector) == 1 and turn == 1`, inside the existing
+  HUD frame, and set `run.onboarded = true` on dismiss.
+- Do not cover the D-pad or the action buttons (`y=268..344` on the right).
+- **Do not promise H in the sector.** `sector.gd:1453 _unhandled_input()` does
+  not call the parent, so `H` (hide UI, `map_generator.gd`) and `F10`
+  (screenshot) do nothing during a surface run. `H` opens How to Play on the
+  title screen only.
+- `V` (view cycle) and `G` (grid) do work in-sector, but the card is full;
+  keep them on the pause/help overlay.
 
 ---
 
-## 7. Copy and code mismatches found during the audit (for ATLAS)
+## 6. Copy and code mismatches found during the audit (for ATLAS)
 
-These are real, verified against `HEAD fbc2b7d`; they are listed instead of
-silently edited because they live in another owner's file.
+Re-verified against the merged working tree. These are listed instead of
+silently edited because they live in another owner's file. Ordered by
+player-visible impact.
 
 | # | File:line | Problem | Suggested fix |
 |---|---|---|---|
-| 1 | `scripts/debrief.gd:113` | `ORBIT  LOW INSERTION` is hard-coded, so a POLAR or HIGH mission is reported as LOW. | `ORBIT  %s INSERTION` with `GameState.orbit().get("name", "LOW")`. |
-| 2 | `scripts/sector.gd:33-36` + `1116-1143` | `ECLIPSE SHADOW` has `"power": 2` and the resolver subtracts `total_p`, so the hazard **drains** 2 power instead of restoring it (README and the sector theme say "restores"). | Use a negative cost or add a positive `power_gain` branch so the effect matches the copy. |
-| 3 | `scripts/sector.gd:1335` vs `map_generator.gd:2833` | The sector overrides `_unhandled_input`, so `H` (hide UI) is dead during a surface run although the board says it works. | Call the parent handler for unhandled keys, or move the H toggle into the sector handler. |
-| 4 | `scripts/title.gd:116` | "Collect 3 of 4 data nodes" is wrong for MAP THE SURFACE (quota 4). | "Collect the quota (3 or 4 nodes) before sols or delta-v run out." |
-| 5 | `scripts/game_state.gd:135-136` (+ `README.md:223`) | Deployable Radiator is advertised as "Heat gain −3 per move", but the module sets `thermal_res: 6`. `begin_sector()` computes `heat_gain = round(heat × 0.11) − thermal_res` and then applies the hull/orbit/instrument multiplier, so it removes about 6, not 3, before multipliers. | Decide the intended value: set `thermal_res: 3`, or rewrite the shop/README copy to the real −6 and keep them in sync. |
-| 6 | `scripts/game_state.gd:141-142` + `design.gd:299-300` | Deep Data Buffer sets `data_cap: 4`, but `data_cap` is only drawn as the design-screen DATA bar. The sector loop and `finish_sector()` delivered math never read it, so "less loss on long links" has no effect. | Use `data_cap` in the downlink/delivered formula, or rewrite the copy to what the module actually changes. |
-| 7 | `scripts/game_state.gd:700-707` + `816` | Field Repair Kit banks `pending_repair`, but `begin_sector()` fills `current_sector.integrity` from the full hull value (`:678-679`), so `integrity < integrity_max` is never true and the purchase is a no-op (including `repeatable`). | Apply the repair to the previous sector's ending integrity, or heal `run` integrity at refit time before the next sector is built. |
-| 8 | `scripts/sector.gd:1335` vs `scripts/map_generator.gd:2848` | Same `_unhandled_input` override as item 3: `F10` (screenshot) is dead during a surface run, although README:329 lists it. | Call the parent handler for unhandled keys, or add `KEY_F10` to the sector handler. |
+| 1 | `scripts/sector.gd:45` + `1221`, `1226` | `ECLIPSE SHADOW` has `"power": 2`; the resolver does `total_p += 2` then `power = max(0, power - total_p)`, so the hazard **drains 2 power** and the toast reads `-2 PWR`. README:202 and the hazard theme say "Restores 2 power". | Make power a signed gain (`power_gain`) or set `"power": -2` and apply `power = clampi(power + total_p, 0, power_max)` so the copy ("restores") is true. |
+| 2 | `scripts/debrief.gd:139` | `ORBIT  LOW INSERTION` is hard-coded, so POLAR/HIGH runs are reported as LOW. (`report.gd:214-219` already computes the flown orbit correctly.) | `ORBIT  %s INSERTION` with `str(GameState.orbit().get("name", "LOW"))`. |
+| 3 | `scripts/title.gd:134` | "Collect 3 of 4 data nodes" is wrong for MAP THE SURFACE (quota 4) and for relay sectors (3 beacons). | "Collect the quota (3 or 4 nodes) before sols or delta-v run out." Also mention forming fronts if the line has room (`COPY_DEPTH.md` §5.1). |
+| 4 | `scripts/sector.gd:1453` | `_unhandled_input()` never calls the parent, so `H` (hide UI) and `F10` (screenshot) are dead in-sector although README lists F10 as map-generation-only and H as title-only. | Call `super._unhandled_input(event)` for keys this handler ignores, or add `KEY_H` / `KEY_F10` branches. |
+| 5 | `scripts/game_state.gd:136` | Deployable Radiator desc says "Heat gain -3 per move" but the module sets `thermal_res: 6`. `begin_sector()` computes `round(heat * 0.11) - thermal_res` before multipliers (`:857`), so it removes about 6. | Pick one number: set `thermal_res: 3`, or change the desc (and README:261) to the real value. Keep the three in sync. |
+| 6 | `scripts/game_state.gd:142` + `design.gd:302` | Deep Data Buffer sets `data_cap: 4`, but `data_cap` is only drawn as the design-screen DATA bar. `finish_sector()` uses a fixed cap (`4 if survey else quota`, `:944`), and bonuses already clamp to it. | Either use the ship `data_cap` in the delivered/downlink math, or rewrite the desc ("+4 data capacity on the design screen") so it does not promise gameplay that is not there. |
+| 7 | `scripts/game_state.gd:831`, `902-908` | Field Repair Kit banks `pending_repair`, but `begin_sector()` sets both `integrity` and `integrity_max` to the full hull value (`:871-879`), so `integrity < integrity_max` is never true. The purchase is a no-op, including `repeatable`. | Apply the repair to the run's persisted hull state before the next sector is built, or heal the previous sector's ending integrity instead of starting full. |
+| 8 | `scripts/game_state.gd:391-456` | The shipped event pool is inline and differs from `data/events.json` (ids, titles, choices, numbers). This file used to say the JSON was the source of truth. | Decide one source. If the inline pool stays, delete or clearly quarantine `data/events.json`; if the JSON wins, port the shipped descs and drop `const EVENTS`. |
+| 9 | `scripts/report.gd` | No `DECISIONS` line and no risk-bonus row. Risk is appended to the `CONCEPT CML ...` line (`:194-203`), and the grade gap is `NEXT  +%d TO GRADE %s` at `:114-122`. | Copy is fine as shipped; just make docs describe what exists. If the `COPY_DEPTH` chrome is wanted, wire `run.events` first. |
+| 10 | `scripts/draft.gd:393-395` | The transfer arc prints `distance_ly / 4.0` years, so a 4.2 ly target reads `1.0 YR` (about 4c) and a 4,976 ly target reads 1,244 yr. The note says `c-fraction abstracted`, but the number still implies faster-than-light. | Use a plausible cruise speed and label it, e.g. `distance_ly / 0.06` for 6% c (4.2 ly = 70 yr), or replace the duration with a qualitative `TRANSFER ARC  ·  4.2 LY`. |
+| 11 | `scripts/draft.gd:283` | The dossier detail line uses `>` as a separator: `Teq 167 K > heat 39   ·   1.02g > dv ...`. A judge can read it as "greater than". | Use `→` or `·` between the measurement and the derived value. |
+| 12 | `scripts/sector.gd:1453` + `title.gd:134` | README:176 says "Reaching all four nodes auto-completes the survey"; relay sectors use 3 beacons and the title row says "3 of 4". The HUD itself is correct (`RELAYS n/3`). | Keep the README sentence scoped to survey sectors, and fix the title row (item 3). |
 
-Second pass (same audit): README now says Δv **and** sols are spent per tile
-moved (not one sol per turn) and marks F10 as map-generation-only, matching
-`sector.gd:874-876`. The builder docstring in `tools/build_exoplanets.py` was
-corrected to the real filter, `0.35 <= radius <= 2.2` (it said `0.4–2.7`,
-which never matched the code or `docs/PROJECT.md`).
+Second pass notes (still true):
 
-None of these block the event/copy pack; they are quick follow-ups.
+- README now says Δv **and** sols are spent per tile moved, and marks F10 as
+  map-generation-only, matching `sector.gd:874-876`.
+- The builder docstring in `tools/build_exoplanets.py` was corrected to the real
+  filter, `0.35 <= radius <= 2.2` (it said `0.4-2.7`).
+- Approval is `8 + 2 * delivered` (`game_state.gd:965`); grant is
+  `(55 + 28 * delivered) * grant_mult` plus `+35` on a full sweep and `1.25x`
+  for geology on rocky biomes (`:952-961`). README matches both.
 
 ---
 
-## 8. Acceptance checklist for the wiring PR
+## 7. Event tone pass (E3) - notes for ATLAS
 
-- [ ] `data/events.json` parses (`JSON.parse_string`), 8 events, every choice has `label`, `detail`, `effects`.
-- [ ] Card appears after sectors 1 and 2 only; never after the final sector.
-- [ ] Two choices are clickable with mouse and keyboard; the chosen `detail` is visible before confirming.
-- [ ] `budget_delta` / `approval_delta` apply once (no double click).
-- [ ] `run.pending` is consumed exactly once in `begin_sector()`.
-- [ ] Clamps hold: approval 0-100, budget >= 0, integrity >= 1, thermal <= 99, sols >= 1, delta-v >= 1, move range 1-6.
-- [ ] Same run seed reproduces the same card order; replaying the same run does not repeat a card.
-- [ ] Sector HUD number matches the promise (e.g. "+8 starting heat" shows exactly 8 more THERMAL).
-- [ ] `docs/WORKLOG.md` and `docs/TASKS.md` updated; board message posted.
+The shipped pool is already tonally consistent: one-sentence body, uppercase
+imperative labels, every cost visible. Micro-edits only:
+
+1. **`SOLAR STORM WARNING` is 19 characters**, above the 18-char clip budget in
+   `COPY_DEPTH.md` §4.3. Use `SOLAR STORM`; the body already says "tracking
+   toward the next target".
+2. **Sign consistency.** `PATCH IT` reads `$25M` while `BUY ACCESS` reads `$30M`
+   and `PUBLISH FIRST` reads `-$20M`. House style is an explicit sign: use
+   `-$25M` and `-$30M` (or `$25M` everywhere, never mixed).
+3. **"no-strings grant"** followed by `-2 approval` is the joke; keep it. Do not
+   add "but" or explain it in the body.
+4. **`LOG AND MOVE`** is the only label without a resource verb. `LOG IT` or
+   `FILE AND MOVE` reads faster at a glance; optional.
+5. **Keep the 31-hour detail.** Specific numbers are what make the card feel
+   like an agency, not a deck of abstractions.
+6. **`stellar_data` id vs `STELLAR ARCHIVE` title** is invisible to players; no
+   action, but do not use the id as a caption.
+
+---
+
+## 8. Acceptance checklist
+
+Shipped and verified by reading the merged tree:
+
+- [x] One card after sectors 1 and 2 only; none after sector 3
+      (`finish_sector` / `roll_event` guard).
+- [x] Both options render label + desc before the click; no hidden cost.
+- [x] `budget` / `approval` apply once and clamp (`choose_event`).
+- [x] `next_*` values are consumed at the next `begin_sector()`.
+- [x] Same run seed reproduces card order; `events_seen` prevents repeats.
+- [x] Card is a modal over the debrief, not a new scene.
+
+Still open:
+
+- [ ] `DECISIONS` line on the report (content ready, no storage).
+- [ ] Onboarding hint card widget.
+- [ ] Mismatch items 1-12 above, in ATLAS's files.
+- [ ] `data/events.json` removed or re-wired so there is one source of truth.

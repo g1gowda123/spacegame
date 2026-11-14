@@ -187,6 +187,7 @@ var last_result: Dictionary = {}
 var history: Array = []
 var owned: Array = []
 var shop_offers: Array = []
+var event_card: Dictionary = {}
 var best_score: int = 0
 
 var rng := RandomNumberGenerator.new()
@@ -196,7 +197,13 @@ var body_font: Font
 var audio_click: AudioStream
 var audio_confirm: AudioStream
 var audio_alarm: AudioStream
-var audio_player: AudioStreamPlayer
+var audio_move: AudioStream
+var audio_hazard: AudioStream
+# A small round-robin pool: a single player cuts the previous cue when two land
+# in the same frame (multi-node pickup, hazard + overheat).
+const AUDIO_VOICES := 4
+var audio_players: Array[AudioStreamPlayer] = []
+var audio_voice := 0
 
 
 func _ready() -> void:
@@ -236,9 +243,13 @@ func _load_audio() -> void:
 	audio_click = _load_ogg("res://assets/audio/click.wav")
 	audio_confirm = _load_ogg("res://assets/audio/confirm.wav")
 	audio_alarm = _load_ogg("res://assets/audio/alarm.wav")
-	audio_player = AudioStreamPlayer.new()
-	audio_player.bus = "Master"
-	add_child(audio_player)
+	audio_move = _load_ogg("res://assets/audio/move.wav")
+	audio_hazard = _load_ogg("res://assets/audio/hazard.wav")
+	for _i in range(AUDIO_VOICES):
+		var player := AudioStreamPlayer.new()
+		player.bus = "Master"
+		add_child(player)
+		audio_players.append(player)
 
 
 func _load_ogg(path: String) -> AudioStream:
@@ -248,23 +259,34 @@ func _load_ogg(path: String) -> AudioStream:
 
 
 func _exit_tree() -> void:
-	if audio_player != null:
-		audio_player.stop()
-		audio_player.stream = null
+	for player in audio_players:
+		player.stop()
+		player.stream = null
+	audio_players.clear()
 	audio_click = null
 	audio_confirm = null
 	audio_alarm = null
+	audio_move = null
+	audio_hazard = null
 
 
 func sfx(which: String) -> void:
 	var stream: AudioStream = null
+	var volume_db := 0.0
 	match which:
 		"click": stream = audio_click
 		"confirm": stream = audio_confirm
 		"alarm": stream = audio_alarm
-	if stream != null and audio_player != null:
-		audio_player.stream = stream
-		audio_player.play()
+		"move":
+			stream = audio_move
+			volume_db = -4.0
+		"hazard": stream = audio_hazard
+	if stream != null and not audio_players.is_empty():
+		var player := audio_players[audio_voice % audio_players.size()]
+		audio_voice += 1
+		player.volume_db = volume_db
+		player.stream = stream
+		player.play()
 
 
 func _load_best() -> void:
@@ -295,6 +317,31 @@ func new_run() -> void:
 		"objective": "",
 		"sector": 1,
 		"seed": rng.randi_range(1000, 99999),
+		"event_card": {},
+		"event_resolved": true,
+		"events_seen": [],
+		"next_heat": 0,
+		"next_dv": 0,
+		"next_power": 0,
+		"next_sol": 0,
+		"next_integrity": 0,
+		"next_data": 0,
+		"bonus_science": 0,
+		"risk_points": 0,
+		# Mission-control meta (set by CrewDirector.begin_run).
+		"mode": "campaign",
+		"players": 1,
+		"crew_players": [],
+		"difficulty": "standard",
+		"score_mult": 1.0,
+		"hazard_mod": 0,
+		"heat_mod": 0,
+		"crew_dv": 0,
+		"crew_integrity": 0,
+		"crew_science_mult": 1.0,
+		"daily": false,
+		"daily_key": "",
+		"share_code": "",
 	}
 	draft = []
 	current_sector = {}
@@ -337,6 +384,76 @@ const OBJECTIVE_ANALOG := {
 
 func objective_analog() -> String:
 	return str(OBJECTIVE_ANALOG.get(str(run.get("objective", "")), "NASA Discovery-class survey"))
+
+
+## Between-sector incidents. One card is drawn per gap; both options are
+## deliberately real trade-offs, not a good/bad button.
+const EVENTS := [
+	{
+		"id": "solar_storm", "title": "SOLAR STORM WARNING",
+		"body": "A coronal front is tracking toward the next target.",
+		"options": [
+			{"label": "RIDE IT OUT", "desc": "Next sector starts with +8 heat.", "effect": {"next_heat": 8}},
+			{"label": "POWER DOWN", "desc": "-1 approval, +1 power next sector.", "effect": {"approval": -1, "next_power": 1}},
+		],
+	},
+	{
+		"id": "private_donor", "title": "PRIVATE DONOR",
+		"body": "A launch provider offers a no-strings grant. The board notices.",
+		"options": [
+			{"label": "TAKE THE GRANT", "desc": "+$50M, -2 approval.", "effect": {"budget": 50, "approval": -2}},
+			{"label": "DECLINE", "desc": "+1 approval.", "effect": {"approval": 1}},
+		],
+	},
+	{
+		"id": "salvage_cache", "title": "SALVAGE CACHE",
+		"body": "A spent upper stage is drifting near the transfer orbit.",
+		"options": [
+			{"label": "STRIP IT", "desc": "+$30M, +1 delta-v next sector.", "effect": {"budget": 30, "next_dv": 1}},
+			{"label": "LEAVE IT", "desc": "+1 integrity next sector.", "effect": {"next_integrity": 1}},
+		],
+	},
+	{
+		"id": "cryo_leak", "title": "CRYO LOOP LEAK",
+		"body": "The thermal loop is losing working fluid between missions.",
+		"options": [
+			{"label": "PATCH IT", "desc": "$25M, +1 integrity next sector.", "effect": {"budget": -25, "next_integrity": 1}},
+			{"label": "TOP IT OFF", "desc": "+1 heat, +1 power next sector.", "effect": {"next_heat": 1, "next_power": 1}},
+		],
+	},
+	{
+		"id": "stellar_data", "title": "STELLAR ARCHIVE",
+		"body": "A colleague offers a calibrated light-curve archive.",
+		"options": [
+			{"label": "BUY ACCESS", "desc": "$30M for +160 science.", "effect": {"budget": -30, "bonus_science": 160}},
+			{"label": "SHARE LATER", "desc": "+1 approval.", "effect": {"approval": 1}},
+		],
+	},
+	{
+		"id": "crew_fatigue", "title": "CREW FATIGUE",
+		"body": "Two flight controllers have been awake for 31 hours.",
+		"options": [
+			{"label": "REST ROTATION", "desc": "-1 sol next sector, +1 integrity.", "effect": {"next_sol": -1, "next_integrity": 1}},
+			{"label": "PUSH THROUGH", "desc": "+1 delta-v, -1 integrity next sector.", "effect": {"next_dv": 1, "next_integrity": -1}},
+		],
+	},
+	{
+		"id": "rival_agency", "title": "RIVAL AGENCY",
+		"body": "A competitor wants your raw survey data before publication.",
+		"options": [
+			{"label": "PUBLISH FIRST", "desc": "+2 approval, -$20M.", "effect": {"approval": 2, "budget": -20}},
+			{"label": "SELL THE COPY", "desc": "+$35M, -1 approval.", "effect": {"budget": 35, "approval": -1}},
+		],
+	},
+	{
+		"id": "anomalous_signal", "title": "ANOMALOUS SIGNAL",
+		"body": "The receiver hears a narrowband pulse during the cruise phase.",
+		"options": [
+			{"label": "INVESTIGATE", "desc": "-1 integrity, +180 science.", "effect": {"next_integrity": -1, "bonus_science": 180}},
+			{"label": "LOG AND MOVE", "desc": "+1 power next sector.", "effect": {"next_power": 1}},
+		],
+	},
+]
 
 
 func science_fit() -> bool:
@@ -537,8 +654,13 @@ func ship() -> Dictionary:
 		warnings.append("Choose a mission objective.")
 	elif instrument_list().size() < 2:
 		warnings.append("Install exactly 2 instruments (%d/2)." % instrument_list().size())
-	if cost > float(run.get("budget", START_BUDGET)):
-		warnings.append("Over budget: $%.0fM / $%.0fM" % [cost, float(run.get("budget", START_BUDGET))])
+	# After launch the design cost is sunk. Compare against the budget that was
+	# available when the mission was committed, not the remaining grant balance.
+	var budget_check := float(run.get("budget", START_BUDGET))
+	if bool(run.get("launched", false)):
+		budget_check += float(run.get("design_cost", 0.0))
+	if cost > budget_check:
+		warnings.append("Over budget: $%.0fM / $%.0fM" % [cost, budget_check])
 	if h.get("id", "") == "relay" and v.get("id", "") == "vector_l":
 		warnings.append("DEEP RELAY does not fit on VECTOR L.")
 
@@ -596,6 +718,11 @@ func undo_design() -> void:
 func roll_draft() -> void:
 	if planets.is_empty():
 		return
+	# Draft from the run seed, not the global RNG: a shared campaign code must
+	# reproduce the same three worlds on every machine, and a daily seed must
+	# be identical for every player.
+	var drng := RandomNumberGenerator.new()
+	drng.seed = int(run.get("seed", 1)) + history.size() * 7919
 	var visited := {}
 	for h in history:
 		visited[str(h["planet"]["id"])] = true
@@ -628,7 +755,7 @@ func roll_draft() -> void:
 			if not used_biome.has(str(p["biome"])):
 				choices.append(p)
 		var src: Array = choices if not choices.is_empty() else bucket
-		var p: Dictionary = src[rng.randi_range(0, src.size() - 1)]
+		var p: Dictionary = src[drng.randi_range(0, src.size() - 1)]
 		if not picked.has(p):
 			picked.append(p)
 			used_biome[str(p["biome"])] = true
@@ -637,46 +764,119 @@ func roll_draft() -> void:
 	var guard := 0
 	while picked.size() < 3 and guard < 200:
 		guard += 1
-		var p: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
+		var p: Dictionary = pool[drng.randi_range(0, pool.size() - 1)]
 		if not picked.has(p):
 			picked.append(p)
-	picked.shuffle()
+	# Deterministic Fisher-Yates so card order is part of the seed too.
+	for i in range(picked.size() - 1, 0, -1):
+		var j := drng.randi_range(0, i)
+		var tmp = picked[i]
+		picked[i] = picked[j]
+		picked[j] = tmp
 	draft = picked
 	changed.emit()
 
 
 # ---------------------------------------------------------------- sector
 
+func sector_mode() -> String:
+	return "relay" if int(run.get("sector", 1)) % 2 == 0 else "survey"
+
+
+func roll_event() -> void:
+	event_card = {}
+	run["event_resolved"] = false
+	var sector_no := int(run.get("sector", 1))
+	if sector_no > SECTORS_PER_RUN:
+		run["event_resolved"] = true
+		return
+	var seen: Array = run.get("events_seen", [])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(run.get("seed", 1)) + sector_no * 977
+	var pick: Dictionary = {}
+	for attempt in range(EVENTS.size()):
+		var cand: Dictionary = EVENTS[(rng.randi_range(0, EVENTS.size() - 1) + attempt) % EVENTS.size()]
+		if not seen.has(str(cand["id"])):
+			pick = cand
+			break
+	if pick.is_empty():
+		pick = EVENTS[rng.randi_range(0, EVENTS.size() - 1)]
+	event_card = pick
+	run["event_card"] = pick
+	changed.emit()
+
+
+func choose_event(choice_index: int) -> bool:
+	var card: Dictionary = event_card
+	if card.is_empty():
+		card = run.get("event_card", {})
+	if card.is_empty():
+		return false
+	var options: Array = card.get("options", [])
+	if choice_index < 0 or choice_index >= options.size():
+		return false
+	var effect: Dictionary = options[choice_index].get("effect", {})
+	if effect.has("budget"):
+		run["budget"] = maxf(0.0, float(run["budget"]) + float(effect["budget"]))
+	if effect.has("approval"):
+		run["approval"] = clampi(int(run["approval"]) + int(effect["approval"]), 0, 100)
+	run["next_heat"] = int(run.get("next_heat", 0)) + int(effect.get("next_heat", 0))
+	run["next_dv"] = int(run.get("next_dv", 0)) + int(effect.get("next_dv", 0))
+	run["next_power"] = int(run.get("next_power", 0)) + int(effect.get("next_power", 0))
+	run["next_sol"] = int(run.get("next_sol", 0)) + int(effect.get("next_sol", 0))
+	run["next_integrity"] = int(run.get("next_integrity", 0)) + int(effect.get("next_integrity", 0))
+	run["next_data"] = int(run.get("next_data", 0)) + int(effect.get("next_data", 0))
+	run["bonus_science"] = int(run.get("bonus_science", 0)) + int(effect.get("bonus_science", 0))
+	if effect.has("repair"):
+		run["pending_repair"] = int(run.get("pending_repair", 0)) + int(effect["repair"])
+	var seen: Array = run.get("events_seen", [])
+	seen.append(str(card.get("id", "")))
+	run["events_seen"] = seen
+	run["event_resolved"] = true
+	run["event_card"] = {}
+	event_card = {}
+	sfx("confirm")
+	changed.emit()
+	return true
+
+
 func begin_sector(planet: Dictionary) -> void:
 	var s := ship()
 	var o := objective()
-	var heat := int(planet["game"]["heat"])
+	var heat := int(planet["game"]["heat"]) + int(run.get("next_heat", 0))
 	var rad := int(planet["game"]["radiation"])
 	var base_dv := int(planet["game"]["delta_v"])
-	var dv := int(round(base_dv * (float(s["delta_v"]) / 30.0)))
+	var dv := int(round(base_dv * (float(s["delta_v"]) / 30.0))) + int(run.get("next_dv", 0)) + int(run.get("crew_dv", 0))
 	var sols := int(planet["game"]["sols"]) - (int(run.get("sector", 1)) - 1) * 2
-	sols = max(18, sols)
+	sols = max(18, sols + int(run.get("next_sol", 0)))
+	var integrity := maxi(1, int(s["integrity"]) + int(run.get("next_integrity", 0)) + int(run.get("crew_integrity", 0)))
 
 	var heat_mult := float(s["heat_mult"])
 	if str(hull().get("id", "")) == "cryo":
 		heat_mult *= 0.6
 	var heat_gain := int(round(float(heat) * 0.11)) - int(s["thermal_res"])
 	heat_gain = int(round(float(heat_gain) * heat_mult))
+	heat_gain += int(run.get("heat_mod", 0))
 	heat_gain = clampi(heat_gain, 1, 18)
 
 	var power_max := 4 + int(float(s["power_gen"]) / 40.0)
 	if str(o.get("id", "")) == "atmosphere":
 		power_max += 1
 	power_max += int(run.get("sector", 1)) - 1
+	power_max += int(run.get("next_power", 0))
 
 	var comms_loss := clampi(int(planet["game"]["comms_loss"]) - int(s["comms_bonus"]), 0, 40)
+	var mode := sector_mode()
+	var quota := 3 if mode == "relay" else int(o.get("quota", 3))
+	var starting_integrity := integrity
 
 	current_sector = {
 		"planet": planet,
 		"sector": int(run.get("sector", 1)),
-		"quota": int(o.get("quota", 3)),
-		"integrity": int(s["integrity"]),
-		"integrity_max": int(s["integrity"]),
+		"mode": mode,
+		"quota": quota,
+		"integrity": starting_integrity,
+		"integrity_max": starting_integrity,
 		"delta_v": dv,
 		"delta_v_max": dv,
 		"sols": sols,
@@ -690,11 +890,12 @@ func begin_sector(planet: Dictionary) -> void:
 		"shield_cost": int(s["shield_cost"]),
 		"vent_power_extra": _upgrade_int("vent_power"),
 		"comms_loss": comms_loss,
-		"science_mult": float(s["science_mult"]),
+		"science_mult": float(s["science_mult"]) * float(run.get("crew_science_mult", 1.0)),
 		"grant_mult": float(s["grant_mult"]),
-		"bonus_data": int(s["bonus_data"]),
+		"bonus_data": int(s["bonus_data"]) + int(run.get("next_data", 0)),
 		"data": 0,
 		"thermal_res": int(s["thermal_res"]),
+		"hazard_mod": int(run.get("hazard_mod", 0)),
 		"status": "active",
 	}
 	# Repair-kit upgrades that heal between sectors.
@@ -705,6 +906,8 @@ func begin_sector(planet: Dictionary) -> void:
 			int(current_sector["integrity"]) + repair
 		)
 		run["pending_repair"] = 0
+	for key in ["next_heat", "next_dv", "next_power", "next_sol", "next_integrity", "next_data"]:
+		run[key] = 0
 	sfx("confirm")
 	changed.emit()
 
@@ -737,9 +940,11 @@ func owned_modules() -> Array:
 func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	var planet: Dictionary = sec["planet"]
 	var quota := int(sec["quota"])
+	var mode := str(sec.get("mode", "survey"))
+	var cap := 4 if mode == "survey" else quota
 	var success := extracted and data >= quota
 	var delivered := int(round(float(data) * (1.0 - float(sec["comms_loss"]) / 100.0)))
-	delivered = clampi(delivered, 0, 4)
+	delivered = clampi(delivered, 0, cap)
 	var objective := objective()
 	var science := float(planet["game"]["science"]) * float(sec["science_mult"]) * float(delivered)
 	if str(objective.get("id", "")) == "astro" and str(planet["biome"]) == "temperate":
@@ -751,7 +956,7 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 			"arid", "barren", "volcanic", "iron", "crystal", "sulfur"
 		]:
 			grant *= 1.25
-		if data >= OBJECTIVE_NODES:
+		if data >= cap:
 			grant += 35.0
 		grant = round(grant)
 		run["budget"] = float(run["budget"]) + grant
@@ -763,16 +968,25 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	run["approval"] = clampi(int(run["approval"]) + approval_delta, 0, 100)
 
 	# Data buffer overflow: the deep buffer lets you keep bonus nodes.
-	if data > OBJECTIVE_NODES:
-		data = OBJECTIVE_NODES
+	if data > cap:
+		data = cap
+
+	# Risk pays once per sector, but only twice per run. The player earns it
+	# by extracting while a live front is still close to the lander.
+	var risk_award := 0
+	if success and int(sec.get("risk_bonus", 0)) > 0:
+		risk_award = mini(1, 2 - int(run.get("risk_points", 0)))
+		run["risk_points"] = int(run.get("risk_points", 0)) + risk_award
 	var result := {
 		"planet": planet,
 		"sector": int(sec["sector"]),
 		"success": success,
 		"extracted": extracted,
+		"mode": mode,
 		"data": data,
 		"delivered": delivered,
 		"quota": quota,
+		"risk_bonus": risk_award,
 		"science": science,
 		"grant": grant,
 		"approval_delta": approval_delta,
@@ -787,6 +1001,11 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	history.append(result)
 	run["sector"] = int(run["sector"]) + 1
 	last_result["run_over"] = int(run["approval"]) <= 0
+	if int(run["sector"]) <= SECTORS_PER_RUN and int(run["approval"]) > 0:
+		roll_event()
+	else:
+		run["event_card"] = {}
+		run["event_resolved"] = true
 	sfx("confirm" if success else "alarm")
 	changed.emit()
 
@@ -837,27 +1056,55 @@ func calculate_score() -> Dictionary:
 	var approval_score := float(run.get("approval", 0)) * 12.0
 	var budget_score := float(run.get("budget", 0)) * 1.5
 	var completion := float(successes) * 220.0
-	var total := int(round(science + efficiency + approval_score + budget_score + completion))
+	var risk := float(run.get("risk_points", 0)) * 120.0
+	var bonus_science := float(run.get("bonus_science", 0))
+	var subtotal := int(round(science + efficiency + approval_score + budget_score + completion + risk + bonus_science))
 	if successes == SECTORS_PER_RUN:
-		total += 400
+		subtotal += 400
+	# Difficulty scales the engineering result; crew goals are added after so
+	# four-player co-op is rewarded for coordination, not punished by tier.
+	var mult := float(run.get("score_mult", 1.0))
+	var adjusted := int(round(float(subtotal) * mult))
+	var difficulty_delta := adjusted - subtotal
+	var crew_bonus := CrewDirector.goal_bonus()
+	var total := adjusted + crew_bonus
 	var grade := "C"
+	var next_grade := "B"
+	var next_gap := maxi(0, 2800 - total)
 	if total >= 5200:
 		grade = "S"
+		next_grade = "MAX"
+		next_gap = 0
 	elif total >= 4000:
 		grade = "A"
+		next_grade = "S"
+		next_gap = 5200 - total
 	elif total >= 2800:
 		grade = "B"
+		next_grade = "A"
+		next_gap = 4000 - total
 	_save_best(total)
 	return {
 		"total": total,
-		"science": int(round(science)),
+		"science": int(round(science + bonus_science)),
 		"efficiency": int(round(efficiency)),
 		"approval": int(round(approval_score)),
 		"budget": int(round(budget_score)),
 		"completion": int(round(completion)),
+		"risk": int(round(risk)),
+		"risk_points": int(run.get("risk_points", 0)),
 		"successes": successes,
 		"delivered": delivered,
 		"grade": grade,
+		"next_grade": next_grade,
+		"next_gap": next_gap,
+		"subtotal": subtotal,
+		"difficulty": str(run.get("difficulty", "standard")),
+		"score_mult": mult,
+		"difficulty_delta": difficulty_delta,
+		"crew_bonus": crew_bonus,
+		"crew_goals": CrewDirector.goal_rows(),
+		"share_code": CrewDirector.code_for_run(),
 	}
 
 

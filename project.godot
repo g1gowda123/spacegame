@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameState="*res://scripts/game_state.gd"
+CrewDirector="*res://scripts/crew_director.gd"
 DevRouter="*res://scripts/dev_router.gd"
 CaptureProbe="*res://scripts/capture_probe.gd"
 MCPRuntimeProbe="*res://addons/godot_mcp/mcp_runtime_probe.gd"

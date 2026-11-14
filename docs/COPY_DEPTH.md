@@ -1,17 +1,46 @@
 # Copy pack — gameplay depth (owner: e)
 
-Status: **content ready, wiring pending (ATLAS)**. This file is the single source
-of the exact UI strings for the 12:04 gameplay-depth sprint (BOARD) and the two
-copy bugs that ride along with it. It does **not** ship anything by itself: no
-scene loads these strings yet, so README/SUBMISSION must not claim relay
-surveys, event cards, hazard growth, risk bonus, or the grade-gap line as
-visible until ATLAS wires them and d verifies a frame.
+Status re-verified **after the ORION merge**: **relay sectors, event cards,
+forming fronts, the risk bonus, and the next-grade gap have all shipped.**
+Two pieces of this pack did **not** ship: the report `DECISIONS` line and the
+onboarding hint widget. The rest of this file is now a **reference pack** - the
+shipped strings are listed in §0, and where the implementation differs from the
+original spec, §0 wins.
 
-Anchors below are against **`HEAD f1eafc9`**. Line numbers move; function names
-are the reliable anchor.
+Anchors below were written against `HEAD f1eafc9`; line numbers have moved.
+Function names and string literals are the reliable anchors.
 
-Read order for the implementer: `docs/EVENTS.md` (event content + schema), then
-this file (UI copy + layout budget).
+Read order for the implementer: `docs/EVENTS.md` (shipped card pool + mismatch
+list), then this file (UI copy + layout budget).
+
+---
+
+## 0. Shipped strings vs this spec (read this first)
+
+| Feature | Shipped? | Actual string / state | Where |
+|---|---|---|---|
+| Relay sector | **yes** | HUD caption `RELAYS`; route idle `TURN n · RANGE r · need N more relays · CLICK A TILE`; quota-met `... · RELAYS READY — E EXTRACT`; toast `RELAY BEACON PLANTED  +%d` | `sector.gd:405-440`, `:490-511`, `:741`, `:888` |
+| Relay debrief | **yes** | `RELAY CHAIN ONLINE` / `AGENCY REVIEW FLAGGED`; row `BEACONS PLACED  n / 3 RELAYS` | `debrief.gd:104-128` |
+| Relay result panel | **yes** | `BEACONS PLACED  n / q  (quota q)`; optional row `RISK BONUS  +1 CLASSIFIED` | `sector.gd:1383-1395` |
+| Event card | **yes** (inline pool) | Kicker `BETWEEN MISSIONS  //  AGENCY EVENT`; rows `CHOOSE`; hint `This choice carries into the next sector.` | `debrief.gd:301-370` |
+| Forming front | **yes** | `FORMING: <NAME>  ·  ARMS NEXT TURN` (not `INCOMING: ... · FORMING`) | `sector.gd:466-479` |
+| Risk bonus | **yes** | Sector result row `RISK BONUS  +1 CLASSIFIED`; report appends ` · RISK n` to the `CONCEPT CML` stats line (no seventh row) | `sector.gd:1394`, `report.gd:194-203` |
+| Next-grade gap | **yes** | `NEXT  +%d TO GRADE %s` at y=210; S shows `S GRADE  ·  MAXIMUM` | `report.gd:114-122` |
+| Report `DECISIONS` line | **no** | `run.events` is not populated; no line exists | `report.gd` |
+| Onboarding hint card | **no** | No widget in `scripts/`; copy final in `EVENTS.md` §5 | - |
+
+Consequences for copy:
+
+- Use `RELAYS` (plural) and `RELAY BEACON`, never "relay node".
+- `FORMING` is a prefix and the tail is `ARMS NEXT TURN`, not a shield/sweep
+  tail. Do not print both.
+- The report does not have a risk row; it has a `RISK n` suffix on the concept
+  line and the grade gap wording is `NEXT  +n TO GRADE X`.
+- Do not claim the `DECISIONS` line or the onboarding card until they exist.
+
+Everything below §1 is the original spec. It remains useful for the unwired
+pieces and for exact wording if ATLAS revisits them, but §0 is the shipped
+truth.
 
 ---
 
@@ -174,7 +203,11 @@ Rules:
 - Keyboard: Up/Down moves focus, Enter commits. Do not bind Enter to a default
   choice before focus is shown.
 
-### 4.5 Report line (`scripts/report.gd`)
+### 4.5 Report line (`scripts/report.gd`) - NOT SHIPPED
+
+> **Status:** no `DECISIONS` line exists. `GameState.run` stores only
+> `events_seen` ids, not the chosen labels, so this needs a storage change in
+> `choose_event()` before it can render. The spec below is the target.
 
 Add one line to the ledger panel at `y=190`, 6 px, MUTED, width 320, only when
 `run.events` is non-empty:
@@ -258,7 +291,13 @@ ALL QUOTAS MET  ·  RISK +%d
 (Relay sector: `RELAY NETWORK DEPLOYED  ·  RISK +%d`.) 27–38 chars, fits the
 286 px line at 7 px. No separate row: the summary panel is already full.
 
-### 6.3 Report
+### 6.3 Report - AS SHIPPED
+
+> **Status:** shipped differently. The report has no seventh row; it appends
+> ` · RISK %d` to the `CONCEPT CML %d · %s` stats line (`report.gd:194-203`).
+> The sector result panel shows `RISK BONUS  +1 CLASSIFIED` (`sector.gd:1394`).
+> There is no ` · RISK +1` suffix on the in-sector quota line. Keep the docs to
+> that behaviour; the seventh-row layout below is the unwired alternative.
 
 The breakdown rows must still sum to `total`, so the risk points are a **seventh
 row** after EFFICIENCY, never folded invisibly into another row. Layout
@@ -275,7 +314,12 @@ panel); the risk row is the one that has to be visible.
 
 ---
 
-## 7. Grade gap
+## 7. Grade gap - AS SHIPPED
+
+> **Status:** shipped as `NEXT  +%d TO GRADE %s` (`report.gd:114-122`), not
+> `NEXT: %d TO %s`. S shows `S GRADE  ·  MAXIMUM`. The line sits at y=210,
+> under the score rows, not directly under the total. Docs and deck copy must
+> use the shipped wording.
 
 Only on the final report, directly under the total score
 (`report.gd:68-75`). The grade letter stays the dominant element.
@@ -308,28 +352,33 @@ Rules:
 - **Do not** add a hard-coded `ORBIT LOW` line; the report already computes the
   orbit, and `debrief.gd:113` is the one remaining hard-coded copy (mismatch
   item 1 — replace with `ORBIT  %s INSERTION` and `GameState.orbit().name`).
-- **Do not** claim events/relay/risk/growth in README, SUBMISSION, or the deck
-  until ATLAS lands the wiring and d has a frame. When it lands, the claims to
-  update are:
-  - README §"A run, step by step" surface row: mention the relay sector task.
-  - README §"Debrief and refit": mention the between-sector incident choice.
-  - README §"Hazards": mention forming fronts.
-  - README §"Scoring": mention risk bonus and the next-grade gap.
+- **Do not** claim events/relay/risk/growth unless the merged tree still has
+  them wired - at the time of writing it does (see §0). The claims that are
+  allowed now:
+  - README §"A run, step by step" surface row: the relay sector task is shipped.
+  - README §"Debrief and refit": the between-sector incident choice is shipped.
+  - README §"Hazards": forming fronts are shipped.
+  - README §"Scoring": the risk suffix and next-grade gap are shipped.
   - SUBMISSION feature list: same four lines, one sentence each.
+  Still **not** claimable: the report `DECISIONS` line and the onboarding card.
 
 ---
 
 ## 9. Acceptance checklist (copy side)
 
-- [ ] Relay sector: HUD reads RELAY / `n/3`; no DATA label on that sector.
-- [ ] Relay flow: 3 beacons -> extract succeeds; 2 beacons -> failure reason is
-      RELAY NET NOT DEPLOYED.
-- [ ] Event card renders both `detail` strings in full before either is clicked.
-- [ ] Event card cannot double-apply budget/approval.
-- [ ] Report DECISIONS line appears only for events actually chosen.
-- [ ] Forming fronts print `FORMING` and never the shield/sweep tail.
-- [ ] Risk suffix appears only at quota-met / net-online; toast once per extract.
-- [ ] Report breakdown rows sum to the printed total (risk row included).
-- [ ] Grade gap is correct for C/B/A and says MAX GRADE at S.
-- [ ] Every string above renders without clipping at 640×360 in the Web build.
+Shipped and verified:
+
+- [x] Relay sector: HUD reads `RELAYS` / `n/3`; no DATA label on that sector.
+- [x] Relay flow: 3 beacons -> extract succeeds; fewer -> review flagged.
+- [x] Event card renders both `desc` strings in full before either is clicked.
+- [x] Forming fronts print `FORMING` and never the shield/sweep tail.
+- [x] Risk bonus appears in the sector result and on the report concept line.
+- [x] Grade gap renders for C/B/A and says `S GRADE  ·  MAXIMUM` at S.
+
+Open:
+
+- [ ] Report `DECISIONS` line (needs `run.events` storage).
+- [ ] Onboarding hint card widget.
+- [ ] The 12 copy/code mismatches in `EVENTS.md` §6.
+- [ ] Every string renders without clipping at 640×360 in the Web build.
 - [ ] No "3 of 4", no in-sector H promise, no ORBIT LOW on non-LOW runs.

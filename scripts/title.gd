@@ -14,6 +14,8 @@ func _ready() -> void:
 	})
 	_build_ui()
 	_build_howto()
+	if "--howto" in OS.get_cmdline_args() or "--howto" in OS.get_cmdline_user_args():
+		howto_layer.visible = true
 	GameState.sfx("confirm")
 
 
@@ -21,7 +23,7 @@ func _build_ui() -> void:
 	var kicker := UIKit.label("NASA SPACE APPS CHALLENGE 2026", 9, UIKit.CYAN, true)
 	kicker.position = Vector2(42, 24)
 	add_child(kicker)
-	var sub := UIKit.label("CHALLENGE 13  //  SPACE MISSION DESIGN GAME", 7, UIKit.DIM, true)
+	var sub := UIKit.label("OFFICIAL CHALLENGE  //  SPACE MISSION DESIGN GAME", 7, UIKit.DIM, true)
 	sub.position = Vector2(42, 38)
 	add_child(sub)
 
@@ -48,23 +50,39 @@ func _build_ui() -> void:
 	blurb.position = Vector2(44, 180)
 	add_child(blurb)
 
-	var begin := UIKit.button("BEGIN MISSION", Vector2(176, 32), true)
-	begin.position = Vector2(44, 238)
+	var begin := UIKit.button("BEGIN MISSION", Vector2(160, 30), true)
+	begin.position = Vector2(44, 228)
 	begin.pressed.connect(_start)
 	add_child(begin)
 
-	var how := UIKit.button("HOW TO PLAY", Vector2(132, 32))
-	how.position = Vector2(228, 238)
+	var crew := UIKit.button("MISSION CONTROL", Vector2(148, 30))
+	crew.position = Vector2(212, 228)
+	crew.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew.tscn"))
+	add_child(crew)
+
+	var daily := UIKit.button("DAILY RUN", Vector2(148, 26))
+	daily.position = Vector2(44, 264)
+	daily.pressed.connect(_start_daily)
+	add_child(daily)
+
+	var how := UIKit.button("HOW TO PLAY", Vector2(130, 26))
+	how.position = Vector2(200, 264)
 	how.pressed.connect(func(): howto_layer.visible = true)
 	add_child(how)
 
-	var best := UIKit.label("BEST RUN  %s" % _fmt(GameState.best_score), 8, UIKit.DIM, true)
-	best.position = Vector2(46, 280)
+	var daily_note := "BEST RUN  %s" % _fmt(GameState.best_score)
+	var today := CrewDirector.today_key()
+	if CrewDirector.daily_key == today and CrewDirector.daily_best > 0:
+		daily_note += "   ·   DAILY %s  %d" % [today, CrewDirector.daily_best]
+	else:
+		daily_note += "   ·   DAILY %s  %s" % [today, _fmt(0)]
+	var best := UIKit.label(daily_note, 8, UIKit.DIM, true)
+	best.position = Vector2(46, 296)
 	add_child(best)
 
 	var line := ColorRect.new()
 	line.color = Color(0.33, 0.90, 0.82, 0.35)
-	line.position = Vector2(44, 300)
+	line.position = Vector2(44, 314)
 	line.size = Vector2(316, 1)
 	add_child(line)
 
@@ -72,10 +90,10 @@ func _build_ui() -> void:
 		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars",
 		7, UIKit.DIM, true
 	)
-	credit.position = Vector2(44, 309)
+	credit.position = Vector2(44, 322)
 	add_child(credit)
 
-	var proto := UIKit.label("PROTOTYPE 0.9  ·  WEB BUILD", 7, UIKit.DIM, true)
+	var proto := UIKit.label("PROTOTYPE 1.0  ·  WEB BUILD", 7, UIKit.DIM, true)
 	proto.position = Vector2(468, 338)
 	add_child(proto)
 
@@ -107,11 +125,11 @@ func _build_howto() -> void:
 	p.add_child(v)
 
 	v.add_child(UIKit.label("HOW TO PLAY", 20, UIKit.CYAN, true))
-	v.add_child(UIKit.label("ONE RUN = 3 EXOPLANETS. YOUR AGENCY STARTS WITH 62 APPROVAL.", 7, UIKit.AMBER, true))
+	v.add_child(UIKit.label("ONE RUN = 3 EXOPLANETS. PICK 1-4 CREW AND A DIFFICULTY IN MISSION CONTROL.", 7, UIKit.AMBER, true))
 	v.add_child(UIKit.rule())
 
 	var rows := [
-		["01  DESIGN", "Pick a hull, launch vehicle, mission objective and 2 instruments. Mass, power, budget and delta-v are real trade-offs."],
+		["01  DESIGN", "Choose 1-4 players and a difficulty tier in MISSION CONTROL, then pick a hull, launch vehicle, mission objective and 2 instruments. Mass, power, budget and delta-v are real trade-offs."],
 		["02  DRAFT", "Choose 1 of 3 real exoplanets from the NASA Exoplanet Archive. Its temperature, gravity, radiation and distance generate the mission."],
 		["03  SURVIVE", "Click a tile to preview the path. One move per turn; ENTER commits. Collect 3 of 4 data nodes before sols or delta-v run out."],
 		["04  MANAGE", "Every path tile costs 1 dv + 1 sol and adds heat. Hazards resolve at end of turn. HOLD vents heat, recharges power, and burns a sol."],
@@ -136,7 +154,12 @@ func _build_howto() -> void:
 
 
 func _start() -> void:
-	GameState.new_run()
+	CrewDirector.begin_run("campaign", 1, "standard")
+	get_tree().change_scene_to_file("res://scenes/design.tscn")
+
+
+func _start_daily() -> void:
+	CrewDirector.begin_run("daily", 1, "standard")
 	get_tree().change_scene_to_file("res://scenes/design.tscn")
 
 
@@ -155,5 +178,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_start()
 		elif event.keycode == KEY_H:
 			howto_layer.visible = not howto_layer.visible
+		elif event.keycode == KEY_C:
+			get_tree().change_scene_to_file("res://scenes/crew.tscn")
 		elif event.keycode == KEY_ESCAPE:
 			howto_layer.visible = false

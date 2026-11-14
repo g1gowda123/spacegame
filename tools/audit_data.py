@@ -27,6 +27,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -270,6 +271,49 @@ def main() -> int:
     check("data: all 9 landable biomes are represented",
           set(stats["biomes"]) == landable,
           repr(sorted(landable - set(stats["biomes"]))))
+
+    print("\n== 5. shipped event pool and doc claims ==")
+    game_state = read_text(os.path.join(ROOT, "scripts", "game_state.gd"))
+    events_doc = read_text(os.path.join(ROOT, "docs", "EVENTS.md"))
+    start = game_state.find("const EVENTS := [")
+    end = game_state.find("func science_fit", start)
+    block = game_state[start:end] if start >= 0 and end > start else ""
+    shipped_ids = re.findall(r'"id":\s*"([^"]+)"', block)
+    shipped_titles = re.findall(r'"title":\s*"([^"]+)"', block)
+    expected_ids = {
+        "solar_storm", "private_donor", "salvage_cache", "cryo_leak",
+        "stellar_data", "crew_fatigue", "rival_agency", "anomalous_signal",
+    }
+    check("events: shipped inline pool has 8 cards", len(shipped_ids) == 8,
+          "found %d" % len(shipped_ids))
+    check("events: shipped ids match the documented pool",
+          set(shipped_ids) == expected_ids,
+          repr(sorted(set(shipped_ids) ^ expected_ids)))
+    check("events: shipped titles are uppercase",
+          all(t == t.upper() for t in shipped_titles),
+          repr([t for t in shipped_titles if t != t.upper()]))
+    for eid in sorted(expected_ids):
+        check("EVENTS.md: shipped card %s is documented" % eid, eid in events_doc)
+    check("EVENTS.md: data/events.json is marked as a prototype",
+          "data/events.json" in events_doc and "prototype" in events_doc)
+
+    check("README: incident choice is documented",
+          "one seeded incident with two trade-offs" in readme)
+    check("README: FORMING pre-state is documented", "FORMING" in readme)
+    check("README: next-grade gap is documented", "next-grade gap" in readme)
+    check("README: does not claim a DECISIONS report line",
+          "DECISIONS" not in readme)
+    check("SUBMISSION: relay sector is documented", "RELAY SURVEY" in submission)
+    check("SUBMISSION: seeded agency event is documented",
+          "seeded agency event" in submission)
+    page_path = os.path.join(ROOT, "docs", "PROJECT_PAGE.md")
+    check("E1: project page exists", os.path.exists(page_path))
+    if os.path.exists(page_path):
+        page = read_text(page_path)
+        check("E1: project page carries the crew/difficulty/daily story",
+              all(s in page for s in ("Cadet", "Standard", "Director", "daily")))
+    check("E1: deck speaker notes exist",
+          os.path.exists(os.path.join(ROOT, "docs", "DECK_NOTES.md")))
 
     failed = [name for name, ok, _ in CHECKS if not ok]
     print("\n%d checks, %d failed" % (len(CHECKS), len(failed)))

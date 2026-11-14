@@ -21,7 +21,6 @@ var warning_label: Label
 var budget_label: Label
 var cost_label: Label
 var confirm_btn: Button
-var step_label: Label
 var orbit_buttons: Dictionary = {}
 var orbit_desc_label: Label
 
@@ -41,19 +40,16 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.label("MISSION DESIGN  //  01", 13, UIKit.CYAN, true)
-	header.position = Vector2(10, 7)
+	var header := UIKit.label("MISSION DESIGN  //  01  ·  STEP 1 OF 3", 12, UIKit.CYAN, true)
+	header.position = Vector2(10, 8)
 	add_child(header)
-	step_label = UIKit.label("STEP 1 OF 3  ·  SPACECRAFT, PAYLOAD, LAUNCH & ORBIT", 7, UIKit.DIM, true)
-	step_label.position = Vector2(10, 22)
-	add_child(step_label)
 
 	budget_label = UIKit.label("BUDGET $500M", 10, UIKit.AMBER, true)
 	budget_label.position = Vector2(500, 8)
 	budget_label.size = Vector2(130, 14)
 	budget_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(budget_label)
-	var appr := UIKit.label("APPROVAL 62", 7, UIKit.MUTED, true)
+	var appr := UIKit.label("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.MUTED, true)
 	appr.position = Vector2(378, 9)
 	appr.size = Vector2(112, 12)
 	appr.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -156,6 +152,13 @@ func _build_center() -> void:
 		orbit_buttons[str(o["id"])] = b
 		orbit_row.add_child(b)
 	v.add_child(orbit_row)
+
+	var conops := UIKit.label(
+		"CONOPS  LAUNCH > CRUISE > INSERTION\nSURFACE > DOWNLINK > END",
+		5, UIKit.DIM, false)
+	conops.custom_minimum_size = Vector2(190, 18)
+	conops.add_theme_constant_override("line_spacing", 0)
+	v.add_child(conops)
 
 
 func _stat_row(v: VBoxContainer, name: String, unit: String) -> ProgressBar:

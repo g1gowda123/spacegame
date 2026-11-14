@@ -24,7 +24,7 @@ You run a tiny space agency with a $500M budget and a fragile approval rating. D
 2. **Target draft.** Three real exoplanets are drawn from the NASA Exoplanet Archive. Each dossier shows the measured equilibrium temperature, surface gravity, distance, host star, and biome, plus the derived mission bars (thermal load, radiation, gravity, comms loss, science) the mission will face. The player chooses which physics to accept.
 3. **Surface sector.** A procedurally generated alien surface is rendered as a chunked pixel-art map. Each turn allows **one move** within a 3–4 tile range; selecting a destination previews the full path, the delta-v/sol cost, the heat load, and whether the route crosses a hazard. Hazards are telegraphed one turn ahead and resolve at the **end** of the turn, not on contact: stellar flares, thermal surges, dust storms, seismic shocks, radiation belts, eclipse shadows, cryo quakes, solar-wind fronts, and meteor showers. Blockable hazards can be absorbed with power; HOLD vents heat and recharges; EXTRACT banks the data. Collect the objective quota (three or four nodes) and get out — or push for the fourth node and the full-sweep grant.
 
-Between sectors, a **debrief** converts the result into science points, a grant, and an approval change, then offers three refit modules. Modules stack additively and multiplicatively: radiators cut heat per move, reaction wheels add delta-v, RTGs regenerate power, ablative armor adds integrity, a high-gain antenna recovers downlink loss, science packs multiply the score, and an Ion Thruster extends the per-turn path range. Three successful sectors produce a final **agency ledger** with a grade from C to S.
+After target selection, a **Mission Architecture Review** commits the mission: a transfer arc, the four NASA mission segments, CML, and a launch-to-end ConOps timeline. Survey sectors recover data; every second sector switches to **RELAY SURVEY**, planting three beacons on marked tiles. Between sectors, a **debrief** converts the result into science points, a grant, and an approval change, then offers three refit modules and one seeded agency event with two trade-offs. Modules stack additively and multiplicatively: radiators cut heat per move, reaction wheels add delta-v, RTGs regenerate power, ablative armor adds integrity, a high-gain antenna recovers downlink loss, science packs multiply the score, and an Ion Thruster extends the per-turn path range. Three successful sectors produce a final **agency ledger** with a grade from C to S.
 
 **Why it is a game, not a spreadsheet.** Every number is a decision the player can feel within one turn. A hot planet makes every move expensive; a massive planet eats delta-v; a distant planet loses data on downlink; a dim star changes which hazards appear. The player can always explain a loss: the telemetry was visible, the hazard was telegraphed, and the route was a choice.
 
@@ -32,7 +32,25 @@ Between sectors, a **debrief** converts the result into science points, a grant,
 
 **Presentation.** The game runs in the browser at a 640×360 pixel-art internal resolution with a consistent console UI, ComfyUI-generated planet portraits, ship sprites, and a starfield backdrop. It is a single static WebGL 2 build with mouse and touch controls; no install, no account, no server.
 
-**What is next.** Four-player team missions, more campaigns and hulls, a codex that links every in-game number to its archive row, and a classroom mode with printable design worksheets.
+**What is next.** Networked four-player missions (local hot-seat crew mode for 1–4 players is in this build), more campaigns and hulls, a codex that links every in-game number to its archive row, and a classroom mode with printable design worksheets.
+
+## Challenge requirements trace
+
+| Requirement from the brief | Where it is met |
+|---|---|
+| Define a mission objective and requirements | Objective cards plus the science-fit rule; the objective sets the quota and instrument compatibility. |
+| Design a spacecraft | Four hulls, two instruments, mass/power/thermal/data bars, live ship diagram. |
+| Select launch vehicle and orbit | Three launchers with fairing capacity; LOW/POLAR/HIGH orbit profiles with period, eclipse and passes/day. |
+| Manage budget, mass, power, communications, data, lifetime | Budget and mass validation; HUD power/thermal/delta-v; downlink loss; data quota/buffer; sols. |
+| See trade-offs | Instruments add mass/power/cost; hot planets cost more heat per move; heavy planets cost delta-v; distant planets lose data. |
+| Mission simulation and evaluation | Three-sector campaign, telegraphed hazards, end-of-turn damage, refit shop, final grade and post-mission report. |
+| Feedback and educational explanation | Per-turn HUD, damage toasts, debrief ledger, CML, four mission segments, mission analog, report notes. |
+| Multiple scenarios | 72 real exoplanets, 13 biomes, survey vs relay sectors, seeded events. |
+| Mission concept / trajectory / timeline (VR resource) | Mission Architecture Review: transfer arc plus six-stage ConOps timeline. |
+| Collaboration up to four players | Mission Control supports 1-4 players with crew goals and a shared campaign code; crew bonuses feed the final score. |
+| Save/share/compare | Campaign code on the report, copy with `C`; no online leaderboard. |
+| Difficulty levels | Mission Control difficulty tiers scale score and hazard pressure. |
+| NASA data | NASA Exoplanet Archive PSCompPars; raw CSV, builder and formula table included. |
 
 ## NASA mission-design resources used
 
@@ -47,6 +65,7 @@ The challenge's resource tab is not decoration: each resource maps to a visible 
 | **NASA Mission Viz** | The final report shows the flown orbit profile (altitude, period, eclipse, passes/day) so the player can connect the surface run to the orbital geometry that enabled it. |
 | **A Learning Game About Telescopes** | Instruments are constrained by the science question: a matching instrument family earns a **science fit +10%** bonus, while a mismatched payload is legal but gives up science return. |
 | **CubeSat 101** | The run is a compressed ConOps: design, launch, cruise/insertion, surface operations, downlink, and end-of-mission. Mass, power, thermal, data, and budget are the same budget lines the guide describes. |
+| **Visualize a Space Mission Using Virtual Reality (2023)** | The review screen uses the 2023 brief's mission concept, trajectory and timeline requirements in a 2D Mission-Viz panel: launch, cruise, orbit insertion, surface operations, downlink, end of mission. It is not a VR build, but it teaches the same spatial/temporal mission story. |
 | **CSA digital games and activities** | The browser build, short run length, readable HUD, and explicit feedback are aimed at the same pick-up-and-play audience as the CSA collection. |
 
 ## How NASA data was used
@@ -85,7 +104,8 @@ The challenge's resource tab is not decoration: each resource maps to a visible 
 10. NASA Webb, *Build It Yourself: A Learning Game About Telescopes*. <https://science.nasa.gov/mission/webb/game-build-it-yourself/>
 11. NASA, *CubeSat 101: Basic Concepts and Processes for First-Time CubeSat Developers* (PDF). <https://www3.nasa.gov/sites/default/files/atoms/files/nasa_csli_cubesat_101_508.pdf>
 12. Canadian Space Agency, *Digital Games and Activities*. <https://www.asc-csa.gc.ca/eng/youth-educators/digital-games-and-activities.asp>
-13. Silkscreen and IBM Plex Mono fonts, SIL Open Font License.
+13. NASA Space Apps Challenge 2023, *Visualize a Space Mission Using Virtual Reality*. <https://www.spaceappschallenge.org/2023/challenges/visualize-a-space-mission-using-virtual-reality/>
+14. Silkscreen and IBM Plex Mono fonts, SIL Open Font License.
 
 ## Demo video — 30-second shot list
 

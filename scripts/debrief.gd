@@ -9,6 +9,7 @@ var owned_label: Label
 var footer_title: Label
 var footer_sub: Label
 var next_btn: Button
+var event_layer: CanvasLayer
 
 var _toast_tween: Tween
 
@@ -25,6 +26,28 @@ func _ready() -> void:
 	if GameState.shop_offers.is_empty():
 		GameState.make_shop()
 	_build()
+	if "--event" in OS.get_cmdline_args() or "--event" in OS.get_cmdline_user_args():
+		call_deferred("_show_event")
+	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if str(raw) == "--capture-event":
+			_capture_event()
+			break
+
+
+func _capture_event() -> void:
+	await get_tree().process_frame
+	_show_event()
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	if img != null:
+		var err := img.save_png("user://event_capture.png")
+		print("EVENTCAP ", ProjectSettings.globalize_path("user://event_capture.png"), " err=", err)
+	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if str(raw).begins_with("--event-choice="):
+			var ok := GameState.choose_event(int(str(raw).substr(14)))
+			print("EVENTCHOICE ok=", ok, " resolved=", bool(GameState.run.get("event_resolved", false)), " budget=", int(GameState.run.get("budget", 0)))
+	get_tree().quit()
 
 
 func _build() -> void:
@@ -79,20 +102,23 @@ func _build_summary() -> void:
 	p.add_child(c)
 
 	var success := bool(r.get("success", false))
+	var relay := str(r.get("mode", "survey")) == "relay"
 	var stamp := UIKit.label("MISSION SUCCESS" if success else "MISSION FAILED", 16,
 		UIKit.CYAN if success else UIKit.RED, true)
 	stamp.position = Vector2(10, 8)
 	stamp.size = Vector2(286, 22)
 	c.add_child(stamp)
 	var reason := UIKit.label(
-		"ALL QUOTAS MET" if success else "AGENCY REVIEW FLAGGED", 7,
+		("RELAY CHAIN ONLINE" if relay else "ALL QUOTAS MET") if success else "AGENCY REVIEW FLAGGED", 7,
 		UIKit.GREEN if success else UIKit.RED, true)
 	reason.position = Vector2(10, 30)
 	reason.size = Vector2(286, 12)
 	c.add_child(reason)
 
 	var rows := [
-		["DATA DELIVERED", "%d / %d NODES" % [int(r.get("delivered", 0)), int(r.get("quota", 3))], UIKit.GREEN],
+		["BEACONS PLACED" if relay else "DATA DELIVERED", "%d / %d %s" % [
+			int(r.get("delivered", 0)), int(r.get("quota", 3)), "RELAYS" if relay else "NODES"
+		], UIKit.AMBER if relay else UIKit.GREEN],
 		["SCIENCE VALUE", "+%d PTS" % int(r.get("science", 0)), UIKit.PURPLE],
 		["GRANT AWARDED", "+$%dM" % int(r.get("grant", 0)), UIKit.AMBER],
 		["APPROVAL CHANGE", "%+d" % int(r.get("approval_delta", 0)), UIKit.GREEN if success else UIKit.RED],
@@ -257,8 +283,100 @@ func _on_next(final: bool) -> void:
 	if final or int(GameState.run.get("approval", 0)) <= 0:
 		get_tree().change_scene_to_file("res://scenes/report.tscn")
 		return
+	if not bool(GameState.run.get("event_resolved", true)) \
+			and not ((GameState.run.get("event_card", {}) as Dictionary).is_empty()):
+		_show_event()
+		return
+	_advance_next()
+
+
+func _advance_next() -> void:
+	if int(GameState.run.get("approval", 0)) <= 0:
+		get_tree().change_scene_to_file("res://scenes/report.tscn")
+		return
 	GameState.roll_draft()
 	get_tree().change_scene_to_file("res://scenes/draft.tscn")
+
+
+func _show_event() -> void:
+	var card: Dictionary = GameState.run.get("event_card", {})
+	if card.is_empty():
+		_advance_next()
+		return
+	event_layer = CanvasLayer.new()
+	event_layer.layer = 40
+	add_child(event_layer)
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	event_layer.add_child(root)
+	var shade := ColorRect.new()
+	shade.color = Color(0.01, 0.02, 0.04, 0.82)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_child(shade)
+
+	var p := UIKit.panel(Color("#0d1522"), UIKit.AMBER)
+	p.position = Vector2(96, 44)
+	p.size = Vector2(448, 272)
+	root.add_child(p)
+	var c := Control.new()
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(c)
+
+	var kicker := UIKit.label("BETWEEN MISSIONS  //  AGENCY EVENT", 7, UIKit.AMBER, true)
+	kicker.position = Vector2(14, 10)
+	kicker.size = Vector2(420, 12)
+	c.add_child(kicker)
+	var title := UIKit.label(str(card.get("title", "EVENT")), 13, UIKit.CYAN, true)
+	title.position = Vector2(14, 25)
+	title.size = Vector2(420, 18)
+	c.add_child(title)
+	var body := UIKit.label(str(card.get("body", "")), 7, UIKit.MUTED, false)
+	body.position = Vector2(14, 47)
+	body.size = Vector2(420, 26)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(body)
+
+	var opts: Array = card.get("options", [])
+	for i in range(opts.size()):
+		var opt: Dictionary = opts[i]
+		var y := 80.0 + i * 78.0
+		var row := UIKit.panel(Color("#09111c"), Color("#2b4058"))
+		row.position = Vector2(14, y)
+		row.size = Vector2(420, 66)
+		c.add_child(row)
+		var rc := Control.new()
+		rc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		rc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(rc)
+		var lab := UIKit.label(str(opt.get("label", "CHOOSE")), 9, UIKit.TEXT, true)
+		lab.position = Vector2(10, 8)
+		lab.size = Vector2(280, 14)
+		rc.add_child(lab)
+		var desc := UIKit.label(str(opt.get("desc", "")), 7, UIKit.MUTED, false)
+		desc.position = Vector2(10, 28)
+		desc.size = Vector2(290, 26)
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		rc.add_child(desc)
+		var btn := UIKit.button("CHOOSE", Vector2(86, 24), i == 0)
+		btn.position = Vector2(318, 20)
+		btn.pressed.connect(_on_event_choice.bind(i))
+		rc.add_child(btn)
+
+	var hint := UIKit.label("This choice carries into the next sector.", 6, UIKit.DIM, true,
+		HORIZONTAL_ALIGNMENT_CENTER)
+	hint.position = Vector2(14, 244)
+	hint.size = Vector2(420, 12)
+	c.add_child(hint)
+
+
+func _on_event_choice(index: int) -> void:
+	if not GameState.choose_event(index):
+		return
+	if event_layer != null:
+		event_layer.queue_free()
+		event_layer = null
+	call_deferred("_advance_next")
 
 
 func _hr(x: float, y: float, w: float) -> HSeparator:

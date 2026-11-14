@@ -43,6 +43,8 @@ godot --path . -- --capture --seed=16936 --biome=temperate --view=iso
 | `--grid` | Start with the tile grid on |
 | `--debug` | Start with the debug overlay on |
 | `--no-ui` | Hide the gameplay/UI layer for clean map captures |
+| `--legacy-water` | Skip water-body shaping (pre-coalescing shoreline), for A/B evidence |
+| `--water=<r>,<p>,<wet>,<dry>` | Override the shaper knobs (default `1,1,0.60,0.40`) for same-seed comparisons |
 | `--capture` | Render one frame to `user://map_capture.png`, then quit |
 
 ## Biomes
@@ -76,6 +78,7 @@ Thirteen biome definitions drive terrain, structures, props, tint and life statu
 - Each chunk is generated independently from `_chunk_seed(coord)`, so unloading and revisiting a chunk reproduces it exactly.
 - Active neighborhood: 3×3 chunks. Chunks more than 2 chunks from the player are erased.
 - `_pick_terrain()` uses the biome `profile` and maps elevation/detail through that profile’s thresholds. `shore_ring` is handled at render time.
+- Water bodies go through `scripts/water_shaper.gd` between sampling and smoothing (see “Water shaping” below). Only `shore_ring` biomes are shaped; volcanic lava stays authored.
 - Structures are placed fully inside a chunk; chance is `0.60` per chunk. Selection is biome-specific (sulfur volcano/geyser, iron mesa/crater, methane iceberg/crystal/crater, etc.); ocean structures only appear on reef, barren structures only on regolith.
 - `_in_view()` culls structures, props, hazard cells, and data nodes outside the 20×16 render window, so nothing is drawn on the black board surround.
 - Props are wired at chunk generation time (6% of walkable cells). `_prop_is_usable()` rejects PNGs with less than 8% transparent pixels as a safety net; the art agent rebuilt the six props with `tools/make_prop.py` and 48–80% transparency, so they should now render.
@@ -93,7 +96,25 @@ Thirteen biome definitions drive terrain, structures, props, tint and life statu
 
 - `TRANSITION_PAIRS` lists material pairs. `gen_transition.py` produces four oriented tiles per pair under `assets/tilesets/transitions/<a>_<b>/`.
 - For each rendered tile, the generator finds a differing neighbor with the highest priority (`water > shore > rock > detail > base`) and looks up a transition in either pair order. If no pair exists, it keeps the base tile.
-- This gives straight and wavy boundaries without full blob autotiling. Corners and three-way junctions are not solved yet.
+- Every water material inherits the water priority (`5`), including biomes whose open water is `base`/`detail` instead of `water` (ocean: `ocean/water_shallow` / `ocean/water_deep`). Without that, `ocean/water_shallow` sat at the base priority and lost single-corner cells to the beach ring — 47 of 181 ocean corner cells fell back to right angles even with the diagonal art present.
+- Corner cells (a land tile with exactly one diagonal water neighbor and no orthogonal water neighbor) use the hand-authored 45-degree split in `assets/tilesets/transitions/diagonal/<land>_<water>/<corner>.png`, which cuts the tile on the diagonal instead of stamping a right-angle corner. `tools/make_diagonal.py` (Python) and `tools/make_diagonal_gd.gd` (the same maths in Godot, for machines without numpy) build them from the two existing palette-locked tiles.
+- A pair listed water-first in `transitions.json` still registers its land-first diagonal key, so art authored as `<land>_<water>` is found for both orderings.
+- **Coverage note:** the diagonal art must exist for the material the renderer actually draws at the coast. On a `shore_ring` biome the land cell is swapped to the *shore* tile at render time, so the pair that matters is e.g. `temperate/beach` ↔ `temperate/water_lake`, not `temperate/grass` ↔ `temperate/water_lake`. Before the shore pairs existed, 100 % of corner cells fell back to the right-angle corner tile even though the diagonal art was present.
+- **Measured coverage** (probe `--diagcheck`, 5-chunk window): temperate 235/235, methane 80/80, carbon 106/106, ocean 181/181 corner cells select a diagonal tile, 0 missing. The last ocean gap was not art but priority (see above); with the priority fix the reef↔beach straight/right-angle tiles no longer outrank the reef↔water corner.
+
+### Water shaping
+
+Shorelines are produced in three chunk-local stages, in this order:
+
+1. **Sample.** `_pick_terrain()` thresholds the warped elevation field. `shore_noise` (frequency 0.14) jitters the threshold per cell; `rough_noise` (frequency 0.045) scales that jitter, so some coast stretches read clean and others fray.
+2. **Shape.** `scripts/water_shaper.gd` votes on the binary water mask of the padded chunk: a 3×3 window, land becomes water at ≥ 0.60 wet, water becomes land at ≤ 0.40 wet, one pass. That deletes 1–2 cell lakes, pinholes and sand specks before they ever reach the tile grid, while a straight coastline is a fixed point (land cell 4/9 = 0.44 > 0.40, water cell 5/9 = 0.56 < 0.60) so the coast does not creep outward.
+3. **Smooth.** `_smooth_cell()` runs the legacy 3×3 material vote on the shaped mask.
+
+Why a cellular automaton and not a component-size filter: a “delete water bodies smaller than N cells” pass measures better on paper, but it is not seam-safe. A 2-cell pond that touches one chunk window’s border is kept there (its true size is outside the window) and removed in a window where it is interior — and because a chunk’s raw terrain also feeds its neighbours’ transition choices, that disagreement renders as a shore tile next to land, i.e. a visible line along the chunk edge. A CA is strictly local, so every chunk computes the same value for the cells it shares with its neighbour as long as the raw halo is wide enough.
+
+Cost: the raw halo grows from 1 to 2 cells (`pad` 18 → 20 per chunk, +23 % noise samples) plus 9 compares per cell per pass. Knobs (`RADIUS`, `PASSES`, `WET`, `DRY`) sit at the top of `water_shaper.gd`. `--legacy-water` skips stage 2 for side-by-side captures of the same seed.
+
+`tools/water_probe.gd` measures the result on the real generator (fragmentation, water fraction, perimeter, corner-cell count, diagonal selection, and the clean-vs-frayed split by `rough_noise`) so tuning is evidence-based.
 
 ### Gameplay
 
@@ -139,7 +160,7 @@ Thirteen biome definitions drive terrain, structures, props, tint and life statu
 - Visual validation now uses the in-game capture path; recapture after each meaningful change. Black/gray frames are failed captures.
 - **Props**: the art agent rebuilt all six with transparent borders; verify they appear at the intended 6% density and tune per biome (the temperate map can look shrub-heavy).
 - **Exotic art is placeholder**: methane/iron/sulfur/crystal/obsidian/ammonia/carbon reuse existing tile keys plus tint. Dedicated tiles are art-agent work.
-- **Transitions**: only straight edge tiles exist. Diagonal/three-way boundaries still staircase. Implement the 14-tile corner/stripe set and 8-neighborhood placement from `docs/TASKS.md`. Methane/carbon shore edges also lack dedicated transition pairs.
+- **Transitions**: straight, corner and 45-degree split tiles exist. Three-way junctions are still unsolved, and a pair without a diagonal set falls back to the right-angle corner tile. Methane/carbon shore edges use the shared `cryo_glacier_ocean_water_deep` / `barren_rock_ocean_water_deep` splits.
 - **Structure grounding**: `impact_crater` now uses the `"ground": true` center anchor + tilt squash; audit the upright structures and keep shadows touching the cell base.
 - **World aliveness**: structure chance is `0.60` and props are 6%; assess whether that is too dense or too sparse, and add rare 2–3-tile sites. Art/tiles remain owned by another agent.
 - **Board read**: the 12px bevel is subtle; the board still reads flat. Stronger sidewalls and a tighter ITB-style frame are next.
