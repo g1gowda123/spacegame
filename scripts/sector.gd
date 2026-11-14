@@ -533,7 +533,7 @@ func _build_hud() -> void:
 	layer.add_child(root)
 
 	# ----- top mission bar
-	var top := UIKit.panel(Color(0.035, 0.055, 0.085, 0.94), Color("#2b4058"))
+	var top := UIKit.panel(Color(0.035, 0.055, 0.085, 0.94), UIKit.NIGHT_LINE)
 	top.position = Vector2(10, 6)
 	top.size = Vector2(620, 40)
 	root.add_child(top)
@@ -542,18 +542,18 @@ func _build_hud() -> void:
 	tc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_child(tc)
 
-	name_label = UIKit.head("—", 9, UIKit.TEXT)
+	name_label = UIKit.head("—", 9, UIKit.NIGHT_TEXT)
 	name_label.position = Vector2(10, 3)
 	name_label.size = Vector2(150, 14)
 	tc.add_child(name_label)
-	biome_label = UIKit.mono("—", 7, UIKit.MUTED)
+	biome_label = UIKit.mono("—", 7, UIKit.NIGHT_MUTED)
 	biome_label.position = Vector2(10, 19)
 	biome_label.size = Vector2(150, 12)
 	tc.add_child(biome_label)
 
 	for sx in [166.0, 222.0, 274.0, 322.0, 398.0, 506.0]:
 		var sep := ColorRect.new()
-		sep.color = Color(0.16, 0.25, 0.35, 0.55)
+		sep.color = Color(0.33, 0.39, 0.46, 0.55)
 		sep.position = Vector2(sx, 8)
 		sep.size = Vector2(1, 24)
 		sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -562,16 +562,16 @@ func _build_hud() -> void:
 	int_label = _top_stat(tc, 172, "INTEGRITY", UIKit.RED, 48)
 	dv_label = _top_stat(tc, 228, "DELTA-V", UIKit.CYAN, 44)
 	sol_label = _top_stat(tc, 280, "SOLS", UIKit.AMBER, 40)
-	data_caption = UIKit.mono("DATA", 6, UIKit.DIM)
+	data_caption = UIKit.mono("DATA", 7, UIKit.NIGHT_MUTED)
 	data_caption.position = Vector2(328, 4)
 	data_caption.size = Vector2(60, 11)
 	tc.add_child(data_caption)
-	data_label = UIKit.head("—", 10, UIKit.GREEN)
+	data_label = UIKit.head("—", 10, UIKit.LIVE)
 	data_label.position = Vector2(328, 15)
 	data_label.size = Vector2(60, 14)
 	tc.add_child(data_label)
 
-	var heat_l := UIKit.mono("THERMAL", 6, UIKit.DIM)
+	var heat_l := UIKit.mono("THERMAL", 7, UIKit.NIGHT_MUTED)
 	heat_l.position = Vector2(404, 4)
 	heat_l.size = Vector2(60, 11)
 	tc.add_child(heat_l)
@@ -583,13 +583,13 @@ func _build_hud() -> void:
 	heat_bar.position = Vector2(404, 21)
 	tc.add_child(heat_bar)
 
-	var pwr_l := UIKit.mono("POWER", 6, UIKit.DIM)
+	var pwr_l := UIKit.mono("POWER", 7, UIKit.NIGHT_MUTED)
 	pwr_l.position = Vector2(512, 4)
 	pwr_l.size = Vector2(64, 11)
 	tc.add_child(pwr_l)
 	for i in range(12):
 		var pip := ColorRect.new()
-		pip.color = UIKit.CYAN
+		pip.color = UIKit.LIVE
 		pip.position = Vector2(512 + i * 6, 21)
 		pip.size = Vector2(5, 5)
 		tc.add_child(pip)
@@ -617,7 +617,7 @@ func _build_hud() -> void:
 		UIKit.CYAN)
 
 	# ----- bottom-left status
-	var bottom := UIKit.panel(Color(0.035, 0.055, 0.085, 0.92), Color("#2b4058"))
+	var bottom := UIKit.panel(Color(0.035, 0.055, 0.085, 0.92), UIKit.NIGHT_LINE)
 	bottom.position = Vector2(10, 314)
 	bottom.size = Vector2(414, 36)
 	root.add_child(bottom)
@@ -630,7 +630,7 @@ func _build_hud() -> void:
 	threat_label.position = Vector2(8, 3)
 	threat_label.size = Vector2(398, 12)
 	bc.add_child(threat_label)
-	route_label = UIKit.mono("—", 7, UIKit.MUTED)
+	route_label = UIKit.mono("—", 8, Color("#f7f0df"))
 	route_label.position = Vector2(8, 18)
 	route_label.size = Vector2(398, 12)
 	bc.add_child(route_label)
@@ -683,7 +683,7 @@ func _hover_cell(parent: Control, rect: Rect2, title: String, body: String,
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
-	var l := UIKit.mono(name, 6, UIKit.DIM)
+	var l := UIKit.mono(name, 7, UIKit.NIGHT_MUTED)
 	l.position = Vector2(x, 4)
 	l.size = Vector2(w, 11)
 	parent.add_child(l)
@@ -747,7 +747,7 @@ func _refresh_status() -> void:
 
 	int_label.text = "%d/%d" % [int(sec["integrity"]), int(sec["integrity_max"])]
 	int_label.add_theme_color_override("font_color",
-		UIKit.RED if int(sec["integrity"]) <= 1 else UIKit.TEXT)
+		UIKit.RED if int(sec["integrity"]) <= 1 else UIKit.NIGHT_TEXT)
 	dv_label.text = str(int(sec["delta_v"]))
 	dv_label.add_theme_color_override("font_color",
 		UIKit.RED if int(sec["delta_v"]) <= 5 else UIKit.CYAN)
@@ -759,7 +759,7 @@ func _refresh_status() -> void:
 
 	UIKit.set_bar(heat_bar, float(sec["thermal"]), 100.0)
 	heat_val.text = "%d" % int(sec["thermal"])
-	var hc := UIKit.GREEN
+	var hc := UIKit.LIVE
 	if float(sec["thermal"]) >= 75:
 		hc = UIKit.RED
 	elif float(sec["thermal"]) >= 45:
@@ -784,7 +784,7 @@ func _refresh_status() -> void:
 		var on := i < int(sec["power"])
 		var beyond := i >= int(sec["power_max"])
 		pip.visible = not beyond
-		pip.color = UIKit.CYAN if on else Color("#22344a")
+		pip.color = UIKit.LIVE if on else Color("#263646")
 
 	# The bed drops ~6 dB while a telegraph is on screen so the alarm/thud cues
 	# sit above it; it comes back up as soon as the sector is clear or closed.
@@ -792,7 +792,7 @@ func _refresh_status() -> void:
 
 	if done:
 		threat_label.text = "SECTOR CLOSED  ·  DEBRIEF READY"
-		threat_label.add_theme_color_override("font_color", UIKit.CYAN if game_over else UIKit.MUTED)
+		threat_label.add_theme_color_override("font_color", UIKit.LIVE if game_over else UIKit.NIGHT_MUTED)
 	elif not hazards.is_empty():
 		var first: Dictionary = hazards[0]["info"]
 		var shield := int(sec["shield_cost"])
@@ -817,7 +817,7 @@ func _refresh_status() -> void:
 
 	if done:
 		route_label.text = "Continue to the debrief for grants, approval, and refit."
-		route_label.add_theme_color_override("font_color", UIKit.MUTED)
+		route_label.add_theme_color_override("font_color", Color("#f7f0df"))
 		if move_btn != null:
 			move_btn.disabled = true
 		return
@@ -833,7 +833,7 @@ func _refresh_status() -> void:
 				" · NODE" if path_nodes > 0 else "",
 				" · HAZARD" if _path_has_hazard() else ""
 			]
-			route_label.add_theme_color_override("font_color", UIKit.AMBER if _path_has_hazard() else UIKit.CYAN)
+			route_label.add_theme_color_override("font_color", UIKit.AMBER if _path_has_hazard() else UIKit.LIVE)
 		else:
 			route_label.text = "%s · NO PATH / OUT OF RANGE" % base
 			route_label.add_theme_color_override("font_color", UIKit.RED)
@@ -842,14 +842,14 @@ func _refresh_status() -> void:
 			route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
 		else:
 			route_label.text = "%s · QUOTA MET — RETURN TO LANDER" % base
-		route_label.add_theme_color_override("font_color", UIKit.GREEN)
+		route_label.add_theme_color_override("font_color", UIKit.LIVE)
 	else:
 		var need := quota - int(sec["data"])
 		var noun := "relay" if need == 1 else "relays"
 		if not _is_relay():
 			noun = "node" if need == 1 else "nodes"
 		route_label.text = "%s · need %d more %s · CLICK A TILE" % [base, need, noun]
-		route_label.add_theme_color_override("font_color", Color("#a9bccf"))
+		route_label.add_theme_color_override("font_color", Color("#f7f0df"))
 	if move_btn != null:
 		move_btn.disabled = done or moved or not path_valid or path_cost <= 0
 
@@ -1249,19 +1249,31 @@ func _run_fx_demo(kind: String) -> void:
 		"disaster":
 			# Deterministic hazard strike on the player for reviewing the
 			# disaster beat (banner + edge flash + pause + aftermath).
+			var hcells: Array[Vector2i] = [player_cell, player_cell + Vector2i(1, 0),
+				player_cell + Vector2i(0, 1), player_cell + Vector2i(1, 1)]
 			var h := {
 				"kind": "quake", "info": HAZARDS["quake"],
-				"cells": [player_cell, player_cell + Vector2i(1, 0),
-					player_cell + Vector2i(0, 1), player_cell + Vector2i(1, 1)],
+				"cells": hcells,
 				"origin": player_cell, "shape": "block", "dir": Vector2i.ZERO,
 				"speed": 0, "life": 2, "age": 1,
 			}
 			hazards.append(h)
 			_resolve_hazard()
+		"strike-turn":
+			# Full end-of-turn path: hazard resolves, 0.62 s hold, board advances.
+			var tcell: Array[Vector2i] = [player_cell]
+			var t := {
+				"kind": "quake", "info": HAZARDS["quake"],
+				"cells": tcell, "origin": player_cell, "shape": "single",
+				"dir": Vector2i.ZERO, "speed": 0, "life": 2, "age": 1,
+			}
+			hazards.append(t)
+			_end_turn()
 		"strike-miss":
+			var mcells: Array[Vector2i] = [player_cell + Vector2i(2, 1), player_cell + Vector2i(3, 1)]
 			var m := {
 				"kind": "quake", "info": HAZARDS["quake"],
-				"cells": [player_cell + Vector2i(2, 1), player_cell + Vector2i(3, 1)],
+				"cells": mcells,
 				"origin": player_cell + Vector2i(2, 1), "shape": "block",
 				"dir": Vector2i.ZERO, "speed": 0, "life": 2, "age": 1,
 			}
@@ -2112,6 +2124,24 @@ func _disaster_banner(h: Dictionary, subtitle: String, hit: bool) -> void:
 	tw.chain().tween_callback(p.queue_free)
 
 
+func _disaster_ripple(color: Color) -> void:
+	## A screen-space shockwave rolling out from the hit. The world-space rings
+	## are tile-sized; this one is the "whole board felt that" cue.
+	if fx_root == null:
+		return
+	var r := VFX.RingNode.new()
+	r.position = _cell_center(player_cell)
+	r.radius = 6.0
+	r.width = 2.5
+	r.ring_color = Color(color.r, color.g, color.b, 0.55)
+	fx_root.add_child(r)
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(r, "radius", 330.0, 0.55).set_ease(Tween.EASE_OUT)
+	tw.tween_property(r, "ring_color:a", 0.0, 0.55)
+	tw.chain().tween_callback(r.queue_free)
+
+
 func _disaster_edge(color: Color) -> void:
 	if _state_mat == null:
 		return
@@ -2208,6 +2238,7 @@ func _resolve_hazard() -> bool:
 			GameState.sfx("hazard")
 			_disaster_banner(primary, " · ".join(bits), true)
 			_disaster_edge(primary["info"]["color"])
+			_disaster_ripple(primary["info"]["color"])
 		elif blocked > 0:
 			message_text = "SHIELD ABSORBED  %s" % str(primary["info"]["name"])
 			message_color = UIKit.CYAN
@@ -2222,6 +2253,7 @@ func _resolve_hazard() -> bool:
 		_show_toast(message_text, message_color)
 		_disaster_banner(primary, "NO CONTACT · GROUND SCARRED", false)
 		_disaster_edge(primary["info"]["color"])
+		_disaster_ripple(primary["info"]["color"])
 		_shake(2.2)
 		if closest <= 3:
 			GameState.sfx("hazard")
@@ -2274,7 +2306,7 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 	if _impact_flash != null:
 		_impact_flash.color = Color(color.r, color.g, color.b, 0.0)
 		var flash := create_tween()
-		flash.tween_property(_impact_flash, "color:a", 0.14, 0.04)
+		flash.tween_property(_impact_flash, "color:a", 0.10, 0.04)
 		flash.tween_property(_impact_flash, "color:a", 0.0, 0.20)
 	var base := position
 	var shake := create_tween()

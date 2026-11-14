@@ -1024,3 +1024,6 @@ to the lane owner.
   - **Juice backlog:** `docs/TASKS.md` §Juice (J1–J9) — floating action numbers, quota pips, milestones, grade projection (NOVA); pickup burst, impact vignette, install ping (VFX); module icons (VEGA); five SFX (f); quota sting (ECHO).
   - **Verified:** headless `--quit-after 8` exit 0, no parser/runtime output; `--screen=flowtest` clean (`SHIPFLOW report total=5065 grade=A successes=3`); debrief capture with `--buy=0` shows the `+RAD` chip and slot ring.
   - **Flagged:** a large flat pale diamond north of the lander on `--screen=sector --no-fog` (`/tmp/opencode/dv_floor.png`) reads as an unfinished marker — owner should check before the next gate.
+
+- **23:04 — Forming hazard no longer a pale diamond.** Reduced forming fill to `0.018 + 0.025*scan + 0.018*tape`, raised dashed outline to `.78`; armed tape unchanged. Evidence `hazard_forming3.png`.
+- **22:35 — disaster ripple + tuning:** added a screen-space `_disaster_ripple()` (6→330 px ring, 0.55 s) on every hit/near miss so the whole board registers the strike; reduced the flat flash peak 0.14→0.10 to keep the board readable under the banner. Verified `--fx=strike-turn` exercises the real `_end_turn` await path without errors.
