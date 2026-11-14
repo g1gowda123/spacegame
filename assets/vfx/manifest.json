@@ -62,7 +62,8 @@
       "size": [
         64,
         64
-      ]
+      ],
+      "source": "comfy"
     },
     "smoke_puff": {
       "frames": 8,
@@ -87,6 +88,24 @@
         16,
         16
       ]
+    },
+    "smoke": {
+      "frames": 8,
+      "frame_ms": 42,
+      "size": [
+        40,
+        40
+      ],
+      "source": "comfy"
+    },
+    "ember": {
+      "frames": 8,
+      "frame_ms": 42,
+      "size": [
+        12,
+        12
+      ],
+      "source": "comfy"
     }
   }
 }

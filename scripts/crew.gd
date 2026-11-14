@@ -40,17 +40,18 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.label("MISSION CONTROL  //  00", 13, UIKit.CYAN, true)
-	header.position = Vector2(10, 7)
+	var header := UIKit.head("MISSION CONTROL", 12, UIKit.TEXT)
+	header.position = Vector2(10, 6)
 	add_child(header)
-	var step := UIKit.label("CREW MANIFEST  ·  DIFFICULTY  ·  CAMPAIGN SEED", 7, UIKit.DIM, true)
-	step.position = Vector2(10, 23)
+	var step := UIKit.mono("CREW MANIFEST  ·  DIFFICULTY  ·  CAMPAIGN SEED", 7, UIKit.DIM)
+	step.position = Vector2(10, 22)
 	add_child(step)
 
-	budget_label = UIKit.label("", 9, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	budget_label.position = Vector2(420, 8)
-	budget_label.size = Vector2(210, 12)
+	budget_label = UIKit.head("", 10, UIKit.AMBER, HORIZONTAL_ALIGNMENT_RIGHT)
+	budget_label.position = Vector2(380, 5)
+	budget_label.size = Vector2(250, 12)
 	add_child(budget_label)
+	UIKit.hairline(self, 10, 33, 620)
 
 	_build_left()
 	_build_right()
@@ -58,70 +59,74 @@ func _build() -> void:
 
 
 func _build_left() -> void:
-	var p := _panel(10, 40, 190, 276)
-	var c := Control.new()
-	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(c)
+	var p := _panel(10, 39, 190, 282)
+	var c := UIKit.fill(p)
 
-	c.add_child(_label_at("MISSION TYPE", Vector2(8, 0), 7, UIKit.CYAN))
-	var campaign := UIKit.option_card(c, Rect2(8, 23, 84, 22), "CAMPAIGN", "", UIKit.CYAN, 7, 6)
+	c.add_child(_label_at("MISSION TYPE", Vector2(10, 0), 8, UIKit.MUTED))
+	var campaign := UIKit.option_card(c, Rect2(10, 20, 82, 22), "CAMPAIGN", "", UIKit.CYAN, 9, 7, "", false)
 	campaign["button"].pressed.connect(_set_mode.bind("campaign"))
 	mode_cards["campaign"] = campaign
-	var daily := UIKit.option_card(c, Rect2(98, 23, 84, 22), "DAILY", "", UIKit.AMBER, 7, 6)
+	var daily := UIKit.option_card(c, Rect2(98, 20, 82, 22), "DAILY", "", UIKit.CYAN, 9, 7, "", false)
 	daily["button"].pressed.connect(_set_mode.bind("daily"))
 	mode_cards["daily"] = daily
 
-	c.add_child(_label_at("CREW SIZE", Vector2(8, 47), 7, UIKit.CYAN))
+	c.add_child(_label_at("CREW SIZE", Vector2(10, 50), 8, UIKit.MUTED))
 	for i in range(4):
 		var n := i + 1
 		var card := UIKit.option_card(
-			c, Rect2(8 + i * 44, 69, 40, 22), str(n), "", UIKit.CYAN, 10, 6
+			c, Rect2(10 + i * 44, 70, 40, 22), str(n), "", UIKit.CYAN, 10, 7
 		)
 		card["button"].pressed.connect(_set_players.bind(n))
 		size_cards[n] = card
-	mode_note = UIKit.label("2-4 players share one console. 1 is solo.", 6, UIKit.DIM, false)
-	mode_note.position = Vector2(8, 93)
+	mode_note = UIKit.mono("2-4 players share one console. 1 is solo.", 7, UIKit.DIM)
+	mode_note.position = Vector2(10, 96)
 	mode_note.size = Vector2(174, 10)
 	c.add_child(mode_note)
 
-	c.add_child(_label_at("DIFFICULTY", Vector2(8, 106), 7, UIKit.CYAN))
+	c.add_child(_label_at("DIFFICULTY", Vector2(10, 114), 8, UIKit.MUTED))
 	for i in range(3):
 		var id: String = ["cadet", "standard", "director"][i]
 		var d: Dictionary = CrewDirector.DIFFICULTIES[id]
 		var card := UIKit.option_card(
-			c, Rect2(8, 128 + i * 38, 174, 34),
-			str(d["name"]), str(d["short"]), Color(str(d["color"])), 8, 6
+			c, Rect2(10, 134 + i * 36, 170, 32),
+			str(d["name"]), str(d["short"]), Color(str(d["color"])), 9, 7
 		)
 		card["button"].pressed.connect(_set_difficulty.bind(id))
 		diff_cards[id] = card
 
-	c.add_child(_label_at(
-		"BUFFS ON  ·  GOALS +180",
-		Vector2(8, 240), 6, UIKit.DIM
-	))
+	var buffs := UIKit.mono("BUFFS ON  ·  GOALS +180", 6, UIKit.DIM)
+	buffs.position = Vector2(10, 246)
+	c.add_child(buffs)
 
 
 func _build_right() -> void:
-	var p := _panel(208, 40, 422, 276)
-	var c := Control.new()
-	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(c)
+	var p := _panel(208, 39, 422, 282)
+	var c := UIKit.fill(p)
 
-	c.add_child(_label_at("CREW MANIFEST  ·  FOUR ROLES, FOUR METRICS  ·  NEGOTIATE", Vector2(10, 0), 8, UIKit.AMBER))
+	c.add_child(_label_at("CREW MANIFEST", Vector2(12, 0), 8, UIKit.MUTED))
+	var roles := UIKit.mono("FOUR ROLES  ·  FOUR METRICS  ·  NEGOTIATE", 7, UIKit.DIM,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	roles.position = Vector2(200, 1)
+	roles.size = Vector2(210, 10)
+	c.add_child(roles)
+	UIKit.hairline(c, 12, 14, 398)
+
 	roster_root = Control.new()
-	roster_root.position = Vector2(10, 26)
-	roster_root.size = Vector2(402, 168)
+	roster_root.position = Vector2(12, 24)
+	roster_root.size = Vector2(398, 150)
 	roster_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(roster_root)
 
-	c.add_child(_label_at("CAMPAIGN CODE  ·  SEED OR FULL DESIGN", Vector2(10, 196), 6, UIKit.CYAN))
+	c.add_child(_label_at("CAMPAIGN CODE", Vector2(12, 188), 8, UIKit.MUTED))
+	var code_hint := UIKit.mono("SEED OR FULL DESIGN", 7, UIKit.DIM)
+	code_hint.position = Vector2(120, 189)
+	c.add_child(code_hint)
 	code_edit = LineEdit.new()
-	code_edit.position = Vector2(10, 218)
-	code_edit.size = Vector2(240, 20)
+	code_edit.position = Vector2(12, 206)
+	code_edit.size = Vector2(286, 20)
 	code_edit.placeholder_text = "OO-0F7A5-S1-PAVMOLOA-SPTH"
 	code_edit.max_length = 32
+	code_edit.add_theme_font_override("font", UIKit.body_font)
 	code_edit.add_theme_font_size_override("font_size", 8)
 	code_edit.add_theme_color_override("font_color", UIKit.TEXT)
 	code_edit.add_theme_color_override("font_placeholder_color", UIKit.DIM)
@@ -129,59 +134,45 @@ func _build_right() -> void:
 	code_edit.add_theme_stylebox_override("focus", UIKit.style_panel(Color("#0c1726"), UIKit.CYAN, 2))
 	code_edit.text_submitted.connect(func(_t: String): _apply_code())
 	c.add_child(code_edit)
-	var apply := UIKit.button("APPLY", Vector2(58, 20))
-	apply.position = Vector2(256, 218)
+	var apply := UIKit.button("APPLY", Vector2(56, 20))
+	apply.position = Vector2(304, 206)
 	apply.pressed.connect(_apply_code)
 	code_apply_btn = apply
 	c.add_child(apply)
-	code_status = UIKit.label("PASTE A CODE TO FLY SOMEONE ELSE'S WORLDS.", 6, UIKit.DIM, false)
-	code_status.position = Vector2(10, 242)
-	code_status.size = Vector2(380, 10)
+	code_status = UIKit.mono("PASTE A CODE TO FLY SOMEONE ELSE'S WORLDS.", 6, UIKit.DIM)
+	code_status.position = Vector2(12, 230)
+	code_status.size = Vector2(398, 10)
 	c.add_child(code_status)
 
 
-
 func _build_footer() -> void:
+	UIKit.hairline(self, 10, 325, 620)
 	var back := UIKit.button("< BACK", Vector2(72, 24))
-	back.position = Vector2(10, 324)
+	back.position = Vector2(10, 330)
 	back.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/title.tscn"))
 	add_child(back)
 
-	var note := UIKit.label(
-		"THE BRIEF: design, launch, manage and simulate a complete mission. Every modifier above is explained in-game.",
-		6, UIKit.DIM, false
+	var note := UIKit.mono(
+		"Hot-seat co-op: every role owns a different metric, and the goals conflict.",
+		7, UIKit.DIM
 	)
-	note.position = Vector2(92, 330)
-	note.size = Vector2(300, 12)
+	note.position = Vector2(92, 336)
 	add_child(note)
 
-	start_btn = UIKit.button("BEGIN MISSION >", Vector2(206, 26), true)
-	start_btn.position = Vector2(404, 322)
+	start_btn = UIKit.button("BEGIN CAMPAIGN >", Vector2(196, 26), true)
+	start_btn.position = Vector2(414, 329)
 	start_btn.pressed.connect(_start)
 	add_child(start_btn)
 
 
 func _panel(x: float, y: float, w: float, h: float,
-		bg: Color = Color("#0c1421"), border: Color = UIKit.LINE,
+		bg: Color = Color("#0b1522"), border: Color = UIKit.SHEET_LINE,
 		parent: Node = null) -> PanelContainer:
-	var p := PanelContainer.new()
-	var st := UIKit.style_panel(bg, border, 3)
-	st.content_margin_left = 0
-	st.content_margin_right = 0
-	st.content_margin_top = 0
-	st.content_margin_bottom = 0
-	p.add_theme_stylebox_override("panel", st)
-	p.position = Vector2(x, y)
-	p.size = Vector2(w, h)
-	p.custom_minimum_size = Vector2(w, h)
-	if parent == null:
-		parent = self
-	parent.add_child(p)
-	return p
+	return UIKit.sheet(parent if parent != null else self, x, y, w, h)
 
 
 func _label_at(text: String, pos: Vector2, size: int, color: Color) -> Label:
-	var l := UIKit.label(text, size, color, size <= 7)
+	var l := UIKit.mono(text, size, color)
 	l.position = pos
 	l.size = Vector2(400, 12)
 	return l
@@ -296,34 +287,42 @@ func _build_roster() -> void:
 
 
 func _add_row(idx: int, row: Dictionary, cols: int = 1) -> void:
-	var cell_w := 402.0 if cols == 1 else 197.0
+	var cell_w := 398.0 if cols == 1 else 195.0
 	var col := idx % cols
 	var line_no := int(idx / cols)
 	var x := float(col) * (cell_w + 8.0)
-	var y := float(line_no) * 84.0
-	var p := _panel(x, y, cell_w, 80, Color("#0a1220"), Color("#22354d"), roster_root)
-	var c := Control.new()
-	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(c)
-
+	var y := float(line_no) * 66.0
 	var color := Color(TEAM_COLORS[idx % TEAM_COLORS.size()])
-	var nm := UIKit.label(str(row["name"]), 7, color, true)
-	nm.position = Vector2(8, 2)
-	nm.size = Vector2(150, 20)
-	c.add_child(nm)
+	var bg := Panel.new()
+	bg.position = Vector2(x, y)
+	bg.size = Vector2(cell_w, 60)
+	bg.add_theme_stylebox_override("panel", UIKit.row_style(false, false, color))
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	roster_root.add_child(bg)
+	# Left role-colour marker, the same grammar as selected rows elsewhere.
+	var marker := ColorRect.new()
+	marker.color = color
+	marker.position = Vector2(0, 0)
+	marker.size = Vector2(2, 60)
+	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(marker)
+
+	var nm := UIKit.head(str(row["name"]), 8, color)
+	nm.position = Vector2(10, 4)
+	nm.size = Vector2(120, 12)
+	bg.add_child(nm)
 	if row.has("shorts"):
-		var sh := UIKit.label(str(row["shorts"]), 6, color, true, HORIZONTAL_ALIGNMENT_RIGHT)
-		sh.position = Vector2(120, 3)
-		sh.size = Vector2(cell_w - 128, 18)
-		c.add_child(sh)
-	var line := UIKit.label(str(row["line"]), 6, UIKit.MUTED, false)
-	line.position = Vector2(8, 24)
-	line.size = Vector2(cell_w - 16, 50)
+		var sh := UIKit.mono(str(row["shorts"]), 7, color, HORIZONTAL_ALIGNMENT_RIGHT)
+		sh.position = Vector2(130, 5)
+		sh.size = Vector2(cell_w - 140, 10)
+		bg.add_child(sh)
+	var line := UIKit.mono(str(row["line"]), 7, UIKit.MUTED)
+	line.position = Vector2(10, 20)
+	line.size = Vector2(cell_w - 20, 38)
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	line.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	line.add_theme_constant_override("line_spacing", -2)
-	c.add_child(line)
+	line.add_theme_constant_override("line_spacing", 0)
+	bg.add_child(line)
 
 
 func _start() -> void:

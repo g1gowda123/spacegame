@@ -56,7 +56,7 @@ var BIOMES: Array = [
 	{
 		"id": "temperate", "name": "Temperate", "profile": "temperate", "generator": "continents",
 		"life": "rare biosphere", "shore_ring": false,
-		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.22,
+		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.32,
 		"base": "temperate/grass",
 		"base_variants": [
 			"temperate/grass",
@@ -86,7 +86,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "volcanic", "name": "Volcanic", "profile": "volcanic", "generator": "caldera",
-		"life": "lifeless", "tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.55,
+		"life": "lifeless", "tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.68,
 		"base": "volcanic/ash_rim", "detail": "volcanic/ash_rim",
 		"detail_alt": "volcanic/basalt_shelf", "detail_alt2": "volcanic/ash_rim",
 		"rock": "volcanic/basalt_shelf", "rock_alt": "volcanic/basalt_shelf",
@@ -94,7 +94,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ocean", "name": "Ocean", "profile": "ocean", "life": "lifeless", "generator": "archipelago",
-		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.0, "shore_ring": true,
+		"tint": "#ffffff", "tint_strength": 0.0, "exposure": 1.0, "shore_ring": false,
 		"base": "ocean/water_shallow", "detail": "ocean/water_deep",
 		"rock": "temperate/beach", "rock_alt": "temperate/beach",
 		"shore": "ocean/beach", "water": "ocean/water_deep",
@@ -143,7 +143,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "obsidian", "name": "Obsidian Glass", "profile": "volcanic", "generator": "fractured",
-		"life": "lifeless", "tint": "#9b7bd6", "tint_strength": 0.30, "exposure": 1.45,
+		"life": "lifeless", "tint": "#9b7bd6", "tint_strength": 0.30, "exposure": 1.82,
 		"base": "volcanic/obsidian", "detail": "volcanic/basalt",
 		"detail_alt": "volcanic/ash",
 		"rock": "volcanic/basalt", "shore": "", "water": "volcanic/lava",
@@ -2930,7 +2930,7 @@ func _rebuild_decals() -> void:
 					if shape == "crack" or shape == "shards":
 						sprite.rotation = float((h / 17) % 4) * PI * 0.5
 					var v := 0.97 + float((h / 19) % 7) / 100.0
-					sprite.modulate = Color(v, v, v, 0.88)
+					sprite.modulate = Color(v, v, v, 0.72)
 					decal_layer.add_child(sprite)
 
 

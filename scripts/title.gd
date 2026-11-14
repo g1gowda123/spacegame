@@ -24,63 +24,67 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	var kicker := UIKit.label("NASA SPACE APPS CHALLENGE 2026", 9, UIKit.CYAN, true)
+	var kicker := UIKit.mono("NASA SPACE APPS CHALLENGE 2026", 8, UIKit.CYAN)
 	kicker.position = Vector2(42, 24)
 	add_child(kicker)
-	var sub := UIKit.label("OFFICIAL CHALLENGE  //  SPACE MISSION DESIGN GAME", 7, UIKit.DIM, true)
-	sub.position = Vector2(42, 38)
+	var sub := UIKit.mono("OFFICIAL CHALLENGE  //  SPACE MISSION DESIGN GAME", 7, UIKit.DIM)
+	sub.position = Vector2(42, 37)
 	add_child(sub)
 
 	var logo := UIKit.label("ORBIT", 46, UIKit.TEXT, true)
-	logo.position = Vector2(38, 72)
+	logo.position = Vector2(38, 66)
 	add_child(logo)
 	var amp := UIKit.label("&", 34, UIKit.AMBER, false)
-	amp.position = Vector2(40, 116)
+	amp.position = Vector2(40, 110)
 	amp.size = Vector2(22, 34)
 	add_child(amp)
 	var outplay := UIKit.label("OUTPLAY", 30, UIKit.AMBER, true)
-	outplay.position = Vector2(64, 118)
+	outplay.position = Vector2(64, 112)
 	add_child(outplay)
 
-	var tag := UIKit.label("MISSION ARCHITECTURE ROGUELITE", 9, UIKit.CYAN, true)
+	var tag := UIKit.mono("MISSION ARCHITECTURE ROGUELITE", 8, UIKit.CYAN)
 	tag.position = Vector2(44, 160)
 	add_child(tag)
 
-	var blurb := UIKit.label(
+	var blurb := UIKit.mono(
 		"Design a spacecraft. Draft a real exoplanet.\n"
-		+ "Survive its surface. Three missions to save\nyour agency from being defunded.",
-		9, UIKit.MUTED, false
+		+ "Survive its surface. Save the agency in three missions.",
+		8, UIKit.MUTED
 	)
-	blurb.position = Vector2(44, 180)
+	blurb.position = Vector2(44, 178)
 	add_child(blurb)
 
-	var begin := UIKit.button("BEGIN MISSION", Vector2(160, 30), true)
-	begin.position = Vector2(44, 228)
+	var begin := UIKit.button("BEGIN MISSION", Vector2(156, 30), true)
+	begin.position = Vector2(44, 208)
 	begin.pressed.connect(_start)
 	add_child(begin)
 
-	var crew := UIKit.button("MISSION CONTROL", Vector2(148, 30))
-	crew.position = Vector2(212, 228)
+	var crew := UIKit.button("MISSION CONTROL", Vector2(140, 30))
+	crew.position = Vector2(208, 208)
 	crew.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew.tscn"))
 	add_child(crew)
 
-	var daily := UIKit.button("DAILY RUN", Vector2(148, 26))
-	daily.position = Vector2(44, 264)
+	var daily := UIKit.button("DAILY RUN", Vector2(92, 24))
+	daily.position = Vector2(44, 248)
+	daily.add_theme_font_size_override("font_size", 9)
 	daily.pressed.connect(_start_daily)
 	add_child(daily)
 
-	var how := UIKit.button("HOW TO PLAY", Vector2(130, 26))
-	how.position = Vector2(200, 264)
+	var how := UIKit.button("HOW TO PLAY", Vector2(112, 24))
+	how.position = Vector2(144, 248)
+	how.add_theme_font_size_override("font_size", 9)
 	how.pressed.connect(func(): howto_layer.visible = true)
 	add_child(how)
 
-	var story := UIKit.button("STORY", Vector2(104, 26))
-	story.position = Vector2(338, 264)
+	var story := UIKit.button("STORY", Vector2(80, 24))
+	story.position = Vector2(264, 248)
+	story.add_theme_font_size_override("font_size", 9)
 	story.pressed.connect(_open_briefing)
 	add_child(story)
 
-	var ranks := UIKit.button("RANKS", Vector2(80, 26))
-	ranks.position = Vector2(450, 264)
+	var ranks := UIKit.button("RANKS", Vector2(80, 24))
+	ranks.position = Vector2(352, 248)
+	ranks.add_theme_font_size_override("font_size", 9)
 	ranks.pressed.connect(func(): ranks_layer.visible = true)
 	add_child(ranks)
 
@@ -90,35 +94,32 @@ func _build_ui() -> void:
 		daily_note += "   ·   DAILY %s  %d" % [today, CrewDirector.daily_best]
 	else:
 		daily_note += "   ·   DAILY %s  %s" % [today, _fmt(0)]
-	var best := UIKit.label(daily_note, 8, UIKit.DIM, true)
-	best.position = Vector2(46, 296)
+	var best := UIKit.mono(daily_note, 7, UIKit.MUTED)
+	best.position = Vector2(44, 290)
 	add_child(best)
 
-	var line := ColorRect.new()
-	line.color = Color(0.33, 0.90, 0.82, 0.35)
-	line.position = Vector2(44, 314)
-	line.size = Vector2(316, 1)
-	add_child(line)
-
+	UIKit.hairline(self, 44, 306, 380)
 	# Body face here: the pixel font is uppercase-only, so it would render the
 	# archive table name as PSCOMPPARS. The source name is PSCompPars.
-	var credit := UIKit.label(
+	var credit := UIKit.mono(
 		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars",
-		7, UIKit.DIM, false
+		6, UIKit.DIM
 	)
-	credit.position = Vector2(44, 322)
+	credit.position = Vector2(44, 314)
 	add_child(credit)
 
-	var proto := UIKit.label("PROTOTYPE 1.0  ·  WEB BUILD", 7, UIKit.DIM, true)
-	proto.position = Vector2(468, 338)
+	var proto := UIKit.mono("PROTOTYPE 1.0  ·  WEB BUILD", 6, UIKit.DIM,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	proto.position = Vector2(410, 314)
+	proto.size = Vector2(180, 10)
 	add_child(proto)
 
-	var sig := UIKit.label("> SIGNAL LOCKED", 7, UIKit.GREEN, true)
-	sig.position = Vector2(44, 338)
+	var sig := UIKit.mono("●  SIGNAL LOCKED", 6, UIKit.GREEN)
+	sig.position = Vector2(44, 332)
 	add_child(sig)
 	var tw := create_tween().set_loops()
-	tw.tween_property(sig, "modulate:a", 0.25, 1.4)
-	tw.tween_property(sig, "modulate:a", 1.0, 1.4)
+	tw.tween_property(sig, "modulate:a", 0.35, 1.6)
+	tw.tween_property(sig, "modulate:a", 1.0, 1.6)
 
 
 func _build_howto() -> void:

@@ -424,3 +424,13 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 | 4×4 grand landmarks for cryo/arid/barren | **REQUESTED — VEGA ONLY** | VEGA | `iceberg_4x4`, `mesa_4x4`, `crater_4x4` in the existing piece manifest format; only the artist gets this. |
 
 | Portrait lighting/segmentation fix (seed 4201) | **APPROVED 17:46 — VEGA** | VEGA | `--largest` + fixed head box; neutral canonical, smile/stern derived; cream + dark card check; no other art changes |
+
+## Surface loop overhaul — first slice (NOVA, 18:15)
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| M1 signal tiers / deep caches | **DONE 18:15** | NOVA | Distance bands 4/6/8/10; tiers 1/1/2/2; deep +2 data and +4 heat; larger bright marker; evidence `qa_tier_nodes.png` |
+| M4 survey fog + bigger view | **PROTOTYPE DEFAULT 18:15** | NOVA / ATLAS | `VIEW_W/H 24×18`; fog default on, `--no-fog`; reveal 5 start / 2 per step; evidence `qa_fog_default.png`, `qa_fog_move.png` |
+| M2 survey choice (sample/deep scan) | next | NOVA | turn-pause modal; see `docs/MAP_GAMEPLAY.md` |
+| M3 terrain movement cost | next | NOVA / ATLAS | rock/ridge cost 2, water/lava block; path budget |
+| Fog edge/softness + minimap reveal | needs ATLAS/VEGA | ATLAS / VEGA | current fog is cell-hard; do not add art without VEGA |
