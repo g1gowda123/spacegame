@@ -5,9 +5,10 @@ Status: **content complete, wiring pending (ATLAS)**. Source of truth is
 exact hooks each effect needs. Nothing here is loaded by the game yet, so the
 README does not claim events as shipped.
 
-Read order for the implementer: this file, then `scripts/game_state.gd`
-(`new_run`, `begin_sector`, `finish_sector`, `make_shop`) and
-`scripts/debrief.gd`.
+Read order for the implementer: this file, then `docs/COPY_DEPTH.md` (exact
+card chrome, report line, relay/risk/growth/grade-gap strings), then
+`scripts/game_state.gd` (`new_run`, `begin_sector`, `finish_sector`,
+`make_shop`) and `scripts/debrief.gd`.
 
 ---
 

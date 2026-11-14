@@ -54,8 +54,9 @@ The map-generator-only scope in the previous board is **superseded**. The user's
 |---|---|---|
 | Claim audit: README / PROJECT / SUBMISSION vs code | done | 12:30. Fixed stale data + feature claims: curated radius range (0.69–2.19 R⊕, not 0.35), playable vs terrain-only biomes, hazard list (9, not 7), approval math, quota/extract/auto-sweep rule, controls (V, H), mission bars wording. File:line evidence in WORKLOG 12:30. |
 | Event cards (8, seeded between-sector choices) | content done — wiring pending ATLAS | `data/events.json` (8 cards x 2 choices, deterministic selection) + `docs/EVENTS.md` (schema, effect contract, clamps, balance table). No game file loads it yet. |
+| Gameplay-depth copy pack (relay, events, growth, risk, grade gap) | content done 12:53 — wiring pending ATLAS | `docs/COPY_DEPTH.md`: exact HUD/debrief/report strings, card chrome + layout budget, report DECISIONS line, grade-gap format, risk-bonus wording with `%d` left to b's formula. Anchored to `f1eafc9`; no game file reads it yet. |
 | Onboarding hint card copy (first sector) | content done — widget pending ATLAS | Three-line copy in `docs/EVENTS.md` §6. Do not promise the H key in the sector: `sector.gd` overrides `_unhandled_input` and H is dead there. |
-| Copy/code mismatch list for ATLAS | open | `docs/EVENTS.md` §7: debrief hard-codes `ORBIT LOW`; eclipse power sign is inverted; sector H toggle dead; title says "3 of 4" for a 4-node objective. |
+| Copy/code mismatch list for ATLAS | open (re-verified against `f1eafc9`) | `docs/EVENTS.md` §7: debrief hard-codes `ORBIT LOW`; eclipse power sign is inverted; sector H toggle dead; title says "3 of 4" for a 4-node objective. Fix copy for the title row is in `docs/COPY_DEPTH.md` §5.1. |
 
 ## Standing constraints
 
