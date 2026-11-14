@@ -199,11 +199,13 @@ def map_gen() -> dict:
         path = re.search(r'"path"\s*:\s*"(res://[^"]+)"', body)
         w = re.search(r'"w"\s*:\s*(\d+)', body)
         h = re.search(r'"h"\s*:\s*(\d+)', body)
+        pieces = re.search(r'"pieces"\s*:\s*"([a-z_0-9]+)"', body)
         if path:
             structures[key] = {
                 "path": path.group(1)[6:],
                 "w": int(w.group(1)) if w else None,
                 "h": int(h.group(1)) if h else None,
+                "pieces": pieces.group(1) if pieces else "",
             }
     props = {}
     props_block = block_after(text, "const PROPS: Dictionary = {")
@@ -234,10 +236,26 @@ def check_map_art(mg: dict) -> None:
         ok("map tile keys resolve at 64x64", f"{len(mg['tile_keys'])} keys")
 
     bad, notes = [], []
+    # Piece-backed structures (massif_4x4, volcano_4x4) are drawn from cut
+    # pieces at unit_px per tile; the single `path` PNG is only a fallback when
+    # the manifest is missing. Validate the piece set's footprint instead.
+    piece_sets = {}
+    piece_manifest = ROOT / "assets/tilesets/structures/pieces/manifest.json"
+    if piece_manifest.exists():
+        try:
+            piece_sets = json.loads(piece_manifest.read_text(encoding="utf-8")).get("sets", {})
+        except ValueError:
+            piece_sets = {}
     for key, info in sorted(mg["structures"].items()):
         path = ROOT / info["path"]
         if not path.exists():
             bad.append(f"missing structure {key} -> {info['path']}")
+            continue
+        set_name = str(info.get("pieces", ""))
+        if set_name and set_name in piece_sets:
+            fp = piece_sets[set_name].get("footprint", [])
+            if list(fp) != [info["w"], info["h"]]:
+                bad.append(f"{key}: piece set {set_name} footprint {fp} vs code {info['w']}x{info['h']}")
             continue
         size = png_size(path)
         if not (info["w"] and info["h"] and size):

@@ -33,9 +33,11 @@ ROOT = Path(__file__).resolve().parents[2]
 PROJECT_NAME = "Orbit & Outplay \u2014 Exoplanet Survey"  # user:// folder uses an em dash
 SCREENS = [
     ("title", "title", []),
+    ("crew", "crew", []),
     ("design", "design", []),
     ("draft", "draft", []),
     ("sector", "sector", []),
+    ("relay", "relay", []),
     ("sector_success", "sector", ["--result=success"]),
     ("sector_fail", "sector", ["--result=fail"]),
     ("debrief", "debrief", []),

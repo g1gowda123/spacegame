@@ -13,13 +13,13 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | logical viewport 640x360 |  |
 | PASS | all .tscn ext_resources resolve |  |
 | PASS | literal res:// refs resolve | scripts/*.gd |
-| PASS | map tile keys resolve at 64x64 | 36 keys |
+| PASS | map tile keys resolve at 64x64 | 43 keys |
 | PASS | structure files + footprints | 13 structures |
 | PASS | biome props resolve (32-64 px) | 13 biomes |
 | PASS | transition sets complete | 98 pairs x 4 edge tiles |
-| PASS | diagonal split sets complete | 5 pairs |
-| WARN | art wiring (code references) | INERT: cliff tiles (art), river autotile (art), ridge_wide, sandstone_arch, glacier_wall, crystal_spire, canyon_bridge, ash_mound, crystal_nub, ice_teeth, shell_spiral, arid/dunes_ripple, crystal/shard_field, barren/ejecta, volcanic/lava_core, sulfur/acid_pool, ammonia/slush, obsidian/glass_plate, ocean/reef_chain, ... |
-| WARN | props on disk but not placed | ash_mound, crystal_nub, ice_teeth, shell_spiral |
+| PASS | diagonal split sets complete | 11 pairs |
+| WARN | art wiring (code references) | INERT: river autotile (art), ridge_wide, sandstone_arch, glacier_wall, crystal_spire, canyon_bridge, ash_mound, crystal_nub, shell_spiral, arid/dunes_ripple, crystal/shard_field, barren/ejecta, sulfur/acid_pool, ammonia/slush, obsidian/glass_plate, ocean/reef_chain, cryo/ice_plate, water_foam, lava_crust, lava_glow,... |
+| WARN | props on disk but not placed | accent_arid_ice_teeth, accent_arid_shell, accent_arid_vent, accent_barren_ice_teeth, accent_barren_shell, accent_barren_tuft, accent_barren_vent, accent_cryo_bones, accent_cryo_shell, accent_cryo_tuft, accent_cryo_vent, accent_temperate_ice_teeth, accent_temperate_shell, accent_temperate_vent, accent_volcanic_bones,... |
 | PASS | dataset size = 72 curated planets |  |
 | PASS | planet ids unique |  |
 | PASS | radius range inside 0.35-2.2 R_earth | 0.69-2.19 |
@@ -53,74 +53,100 @@ python tools/qa/audit_project.py --check   # non-zero exit on FAIL
 - The Web build itself: `build/` is gitignored and absent from a fresh clone.
 
 <!-- findings -->
-## Live-pass findings (d, 12:20) — hand-written, preserved on re-run
+## Live-pass findings (d, 15:35) - hand-written, preserved on re-run
 
 Environment: Windows, Godot 4.7.2 (`Godot_v4.7.2-stable_win64_console.exe`),
-Node 24.15.0, Chrome 157.0.8103.51 at 1280×720 (2× the 640×360 logical canvas).
-Evidence: `qa/artifacts/native/qa_*.png`, `qa/artifacts/web/selftest.png`,
-`qa/artifacts/native/hud_power_crop.png`.
+Node 24.15.0, Chrome 157.0.8103.51 at 1280x720 (2x the 640x360 logical canvas).
+Tested HEAD: `75c42f1` (origin/main). Evidence: `qa/artifacts/native/qa_*.png`,
+`qa/artifacts/web/selftest.png`.
 
-### Q1 — static audit: 26 pass / 0 fail / 5 warn
+### P0 - `ship_diagram.gd` does not parse; design and debrief render blank
 
-All tile, structure, prop and transition references resolve; all 98 transition
-pairs are on disk; the 72-planet dataset recomputes (heat, radiation, gravity,
-science, delta-v, comms, sols, quakes) within rounding; README hull / vehicle /
-instrument / objective / module / hazard tables match the code. The five warns
-are art that is generated but inert (cliffs, rivers, `ridge_wide`, four
-landmarks, four props, most ground variants), the radiator copy bug below, the
-stale `MAP_GENERATOR.md`, and the gitignored `build/` + `submission/` paths.
+`scripts/ship_diagram.gd` has `const SHIP_BUILD := preload(...)` on line 2,
+**between** `class_name ShipDiagram` (line 1) and `extends Control` (line 3).
+GDScript rejects that ordering:
 
-### Q2 — native screens: 8/8 pass
+```
+SCRIPT ERROR: Parse Error: Unexpected "extends" in class body.
+   at: GDScript::reload (res://scripts/ship_diagram.gd:3)
+```
 
-`python tools/qa/native_screens.py` → title, design, draft, sector,
-sector_success, sector_fail, debrief, report all exit 0 with no engine or script
-errors and non-blank frames (982–24,347 colours each). A fresh clone needs
-`--import` once or every script fails on `Identifier "UIKit" not declared`.
+`design.gd:8` and `debrief.gd:14` both reference `ShipDiagram`, so the script
+fails to compile and the scene renders one flat colour: `qa_design.png` and
+`qa_debrief.png` are 1-colour frames (FAILED captures by the project's rule).
+Reproduce:
+
+```bash
+godot --headless --path . --check-only --script scripts/ship_diagram.gd
+godot --path . -- --screen=design --capture --capture-name=qa_design
+```
+
+Introduced by `86857f7` (the `const SHIP_BUILD` line); the scene worked at
+`fa6bd63`. Fix is a reorder - `extends` must come before `const`/`var`:
+
+```gdscript
+extends Control
+class_name ShipDiagram
+const SHIP_BUILD := preload("res://scripts/ship_build.gd")
+```
+
+Owner: ATLAS (engineering). Do not ship a build from this HEAD: mission design
+is the second screen of the loop and the refit shop is where every sector ends.
+
+### Q1 - static audit: 26 pass / 0 fail / 5 warn
+
+Every `res://` ref and `.tscn` dependency resolves; tile keys exist at 64x64;
+piece-backed structures (`mountain_massif`, `volcano`) are validated against
+`assets/tilesets/structures/pieces/manifest.json` (4x4 sets, 256 px assembled)
+rather than the 192 px fallback PNG; 98 transition pairs are on disk; the
+72-planet dataset recomputes; README tables match the code. Warns: art that is
+generated but inert (rivers, `ridge_wide`, four landmarks, 22 accent props,
+~15 ground/water variants), the radiator copy bug, stale `MAP_GENERATOR.md`,
+and the gitignored `build/` + `submission/` paths.
+
+### Q2 - native screens: 8/10 pass
+
+`python tools/qa/native_screens.py` covers title, crew, design, draft, sector,
+relay, sector_success, sector_fail, debrief, report. Eight pass with exit 0 and
+non-blank frames (1,053-21,952 colours). **design and debrief fail** - see the
+P0 above. A fresh clone needs one `--import` pass or scripts fail on
+`Identifier "UIKit" not declared`.
 
 ### Bugs
 
-1. **Title and draft render `PSCOMPPARS` instead of `PSCompPars`** — submission-visible typo.
-   The source strings are correct (`scripts/title.gd:72`, `scripts/draft.gd:30`)
-   but both pass `uppercase=true` to `UIKit.label`, which uppercases the whole
-   line. Evidence: `qa_title.png` footer, `qa_draft.png` header. ORION's round-7
-   "PSCompPars naming is now correct" covered README/SUBMISSION copy only; the
-   shipped screens still show the wrong casing. Fix: don't uppercase that line.
-   Owner: ATLAS (text) / f (UI).
+1. **Title and draft render `PSCOMPPARS` instead of `PSCompPars`** -
+   submission-visible typo. Source strings are correct (`scripts/title.gd:90`,
+   `scripts/draft.gd:35`) but both pass `uppercase=true` to `UIKit.label`, which
+   uppercases the acronym. ORION's own 16:25 gate smoke lists `PSCOMPPARS` in
+   the title credit, so it is live in the build lane too. Owner: ATLAS (text)
+   / f (UI).
 
 2. **DEPLOYABLE RADIATOR says "Heat gain -3 per move." but removes 6.**
    `scripts/game_state.gd:135-136` sets `thermal_res: 6`, and the heat formula
-   is `round(heat * 0.11) - thermal_res`, so the module subtracts 6 heat per
-   move. Either the description or the value must change (and README if it
-   repeats the number). Owner: ATLAS (value) / e (copy).
-
-Counter-checked and cleared: the earlier "debrief 3/3 vs report 2/3" worry does
-not reproduce. Both screens read `last_result.delivered` (`debrief.gd:95`,
-`report.gd:133`).
+   is `round(heat * 0.11) - thermal_res` (`game_state.gd:857`), so the module
+   subtracts 6 heat per move. Make the copy and the value agree. Owner: ATLAS
+   (value) / e (copy).
 
 ### Nits / follow-ups
 
-- **Sector HUD crowding:** power pips are placed at `x = 492 + i * 9`
-  (`scripts/sector.gd:278`) while the QUOTA label starts at `x = 562`
-  (`:284`), so from the 8th pip the row runs under it. At the 10 pips in
-  `qa_sector.png` the last pip sits against "QUOTA 3"; modules or later sectors
-  that add power will overlap. Owner: f.
-- **`PROTOTYPE 0.9 · WEB BUILD`** is drawn on the title screen in native runs
-  too (`scripts/title.gd`). Harmless, but the "WEB BUILD" label is hardcoded.
-- **`--screen=report` dev fixture repeats planets** (TOI-2257 b twice in
-  `qa_report.png`) because `DevRouter` does not re-roll between iterations.
-  Real `roll_draft` excludes visited worlds — do not read the fixture as a data
-  bug.
+- **Sector HUD crowding:** power pips at `x = 492 + i * 9`
+  (`scripts/sector.gd:304`) run under the QUOTA label at `x = 562`
+  (`:310`) from the 8th pip; tight at 10 pips. Owner: f.
+- **`--screen=report` dev fixture repeats planets** (no re-roll between
+  iterations) - do not read the fixture as a data bug.
 - **`docs/MAP_GENERATOR.md` is stale:** it calls `scenes/map_generator.tscn` the
   main scene; `project.godot` points at `scenes/title.tscn`.
 - **`build/` and `submission/` are absent** from this clone (gitignored), so
   five doc-referenced artifacts cannot be checked here. Expected, not a defect.
 
-### Q3/Q4 — browser loop: blocked
+### Q3/Q4 - browser loop: blocked
 
-No `build/web/` and no Godot Web export templates on this machine, so the 10:15
-build cannot be exercised locally. `tools/qa/browser_loop.mjs` is ready and its
-harness self-test passes (`qa/artifacts/web/selftest.png`, 21,174 bytes, console
-capture confirmed); `--dir build/web` against the missing build fails with a
-clear message instead of silently passing. Needs an export from c or a hosted
-URL. First real run must confirm the two overlay click points derived from
+No `build/web/` in this clone and no Godot Web export templates installed, so
+the 14:58 gate build cannot be exercised locally (it lives on ATLAS's machine).
+`tools/qa/browser_loop.mjs` is ready and its harness self-test passes
+(`qa/artifacts/web/selftest.png`, 21,174 bytes, console capture confirmed);
+`--dir build/web` against a missing build exits 1 instead of passing. Fetching
+the 1.22 GB template archive to produce a local export has been defeated by
+network resets/DNS drops; it resumes from a partial file when the link is back.
+The first real run must also confirm the two overlay click points derived from
 `sector.gd` / `debrief.gd`.

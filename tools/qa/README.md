@@ -31,9 +31,10 @@ It runs `--screen=<name> --capture` through the game's `DevRouter`, copies each
 frame out of `user://`, and rejects small, near-blank, or single-colour images.
 A white, black, or gray frame is a FAILED capture, not a pass.
 
-Screens: `title`, `design`, `draft`, `sector`, `sector_success`, `sector_fail`,
-`debrief`, `report`. The first run also does a one-time `--import` because a
-fresh clone has no `.godot` cache (without it the scripts fail on `UIKit`).
+Screens: `title`, `crew`, `design`, `draft`, `sector`, `relay`,
+`sector_success`, `sector_fail`, `debrief`, `report`. The first run also does a
+one-time `--import` because a fresh clone has no `.godot` cache (without it the
+scripts fail on `UIKit`).
 
 ## Browser loop
 
