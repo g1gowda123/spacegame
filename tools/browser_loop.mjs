@@ -13,11 +13,12 @@
  * Requires Node 22+ (global fetch + WebSocket) and Chrome/Edge installed.
  * No npm packages.
  *
- * Coordinates below are logical game coordinates (640x360). The canvas is
- * forced to 1280x720 via Emulation.setDeviceMetricsOverride so the scale is a
- * clean 2x, and the canvas rect is re-read before every click (Godot resizes
- * the canvas after boot; a cached rect silently sends every click to the
- * top-left corner).
+ * Coordinates are logical game coordinates (640x360), matching the Control
+ * positions in scripts/*.gd. The canvas is forced to 1280x720 via
+ * Emulation.setDeviceMetricsOverride so the scale is a clean 2x, and the
+ * canvas rect is re-read before every click: Godot boots at 300x150 and only
+ * resizes after the WASM runtime starts, so a cached rect sends every click to
+ * the top-left corner.
  */
 
 import { spawn } from "node:child_process";
@@ -147,11 +148,18 @@ async function evaluate(expression) {
   return res.result?.value;
 }
 
-async function screenshot(name) {
+async function rawShot() {
   const shot = await send("Page.captureScreenshot", { format: "png" });
-  const file = path.join(OUT, name);
-  fs.writeFileSync(file, Buffer.from(shot.data, "base64"));
+  return shot.data;
+}
+
+const shots = [];
+async function screenshot(name) {
+  const data = await rawShot();
+  fs.writeFileSync(path.join(OUT, name), Buffer.from(data, "base64"));
+  shots.push(name);
   console.log(`shot ${name}`);
+  return data;
 }
 
 async function canvasRect() {
@@ -215,68 +223,104 @@ console.log(`canvas ${rect.cw}x${rect.ch} css ${rect.w}x${rect.h}`);
 // SwiftShader compiles shaders on first draw; give it real time.
 await sleep(12000);
 
-const shots = [];
 async function beat(name, wait = 2200) {
   await screenshot(name);
-  shots.push(name);
   await sleep(wait);
 }
+
+// --- Screen coordinates (logical 640x360) -------------------------------
+const HIT = {
+  begin: [124, 243],        // title.gd BEGIN MISSION (44,228) 160x30
+  quick: [153, 338],        // design.gd QUICK LOADOUT (90,326) 126x24
+  confirmDesign: [514, 338],// design.gd CONFIRM & DRAFT ... (398,326) 232x24
+  setCourse: [557, 299],    // draft.gd SET COURSE > (footer 482,6) 130x22
+  commitMission: [526, 296],// draft.gd COMMIT MISSION > (panel 20,24 + 426,260) 160x24
+  move: [494, 279],         // sector.gd MOVE (444,268) 100x22
+  extract: [494, 331],      // sector.gd EXTRACT (444,320) 100x22
+  continueOverlay: [320, 253], // sector.gd CONTINUE TO DEBRIEF > (150,70 + 70,170)
+  // debrief.gd SELECT NEXT TARGET (408,313..614,341). Left third on purpose:
+  // the report screen's NEW CAMPAIGN > starts at x=466, so a stray click after
+  // the run has already ended cannot restart the campaign.
+  nextSector: [422, 327],
+  eventChoice0: [471, 156], // debrief.gd event modal option 0 CHOOSE (96,44 + 14,80 + 318,20)
+};
 
 // Title screen.
 await beat("01_title.png", 1200);
 
 // BEGIN MISSION -> design
-await clickLogical(132, 254);
+await clickLogical(...HIT.begin);
 await beat("02_design.png", 1800);
 
 // QUICK LOADOUT fills a legal loadout, then CONFIRM -> draft
-await clickLogical(153, 338);
+await clickLogical(...HIT.quick);
 await sleep(700);
 await beat("03_design_filled.png", 700);
-await clickLogical(514, 338);
+await clickLogical(...HIT.confirmDesign);
 await beat("04_draft.png", 2000);
 
-// SET COURSE -> sector 1
-await clickLogical(557, 299);
-await sleep(6500);
-await beat("05_sector.png", 800);
+// SET COURSE -> mission architecture review -> COMMIT -> sector 1
+await clickLogical(...HIT.setCourse);
+await sleep(1500);
+await beat("05_review.png", 600);
+await clickLogical(...HIT.commitMission);
+await sleep(7000);
+await beat("06_sector.png", 800);
 
 // Arrow keys preview a path, MOVE commits one turn, then bail out early.
 await key("ArrowRight", "ArrowRight", 39);
 await key("ArrowRight", "ArrowRight", 39);
 await sleep(700);
-await beat("06_path_preview.png", 300);
-await clickLogical(498, 279); // MOVE (ENTER)
+await beat("07_path_preview.png", 300);
+await clickLogical(...HIT.move);
 await sleep(1800);
-await beat("07_turn_committed.png", 300);
-await clickLogical(498, 331); // EXTRACT (E) -> deliberate failure
+await beat("08_turn_committed.png", 300);
+await clickLogical(...HIT.extract);
 await sleep(2200);
-await beat("08_sector_result.png", 600);
+await beat("09_sector_result.png", 600);
 
 // Result overlay -> debrief
-await clickLogical(320, 255);
-await beat("09_debrief.png", 1800);
+await clickLogical(...HIT.continueOverlay);
+await beat("10_debrief.png", 1800);
 
-// Remaining sectors: straight to the surface, extract immediately, debrief.
-for (let sector = 2; sector <= 3; sector += 1) {
-  await clickLogical(511, 327); // SELECT NEXT TARGET
+// Debrief -> next draft. Every non-final debrief rolls an agency event
+// (game_state.gd roll_event runs whenever sector <= 3 and approval > 0), and
+// the modal only appears when SELECT NEXT TARGET is pressed, so the sequence
+// is deterministic: NEXT opens the modal, CHOOSE closes it, NEXT advances.
+// (471,156) is inert on every other screen, so the CHOOSE click is safe.
+async function advanceFromDebrief(tag) {
+  await clickLogical(...HIT.nextSector);
   await sleep(2200);
-  await beat(`10_draft_s${sector}.png`, 600);
-  await clickLogical(557, 299); // SET COURSE
-  await sleep(6000);
-  await beat(`11_sector_s${sector}.png`, 400);
-  await clickLogical(498, 331); // EXTRACT immediately
-  await sleep(2200);
-  await beat(`12_result_s${sector}.png`, 400);
-  await clickLogical(320, 255); // CONTINUE TO DEBRIEF
-  await sleep(2000);
-  await beat(`13_debrief_s${sector}.png`, 600);
+  await screenshot(`${tag}_event.png`);
+  await clickLogical(...HIT.eventChoice0);
+  await sleep(1400);
+  await clickLogical(...HIT.nextSector);
+  await sleep(2400);
 }
 
-// FILE FINAL REPORT
-await clickLogical(511, 327);
+// Remaining sectors: draft -> commit -> surface -> extract immediately -> debrief.
+for (let sector = 2; sector <= 3; sector += 1) {
+  await advanceFromDebrief(`11_event_s${sector}`);
+  await beat(`12_draft_s${sector}.png`, 600);
+  await clickLogical(...HIT.setCourse);
+  await sleep(1400);
+  await beat(`13_review_s${sector}.png`, 400);
+  await clickLogical(...HIT.commitMission);
+  await sleep(6500);
+  await beat(`14_sector_s${sector}.png`, 400);
+  await clickLogical(...HIT.extract);
+  await sleep(2200);
+  await beat(`15_result_s${sector}.png`, 400);
+  await clickLogical(...HIT.continueOverlay);
+  await sleep(2000);
+  await beat(`16_debrief_s${sector}.png`, 600);
+}
+
+// FILE FINAL REPORT (final debrief and a collapsed agency both route straight
+// to the report, so one click is enough here).
+await clickLogical(...HIT.nextSector);
 await sleep(2600);
-await beat("14_report.png", 400);
+await beat("17_report.png", 400);
 
 const summary = {
   url: URL,
@@ -287,7 +331,12 @@ const summary = {
   consoleWarnings: consoleWarnings.slice(0, 20),
 };
 fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify(summary, null, 2));
-console.log(JSON.stringify({ shots: shots.length, pageErrors, consoleErrors, consoleWarnings: summary.consoleWarnings }, null, 2));
+console.log(JSON.stringify({
+  shots: shots.length,
+  pageErrors,
+  consoleErrors,
+  consoleWarnings: summary.consoleWarnings,
+}, null, 2));
 
 ws.close();
 chrome.kill();
