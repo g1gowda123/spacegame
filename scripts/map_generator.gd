@@ -17,6 +17,8 @@ const TURNS_START := 36
 const OBJECTIVE_COUNT := 4
 const HULL_START := 3
 
+const WaterShaper := preload("res://scripts/water_shaper.gd")
+
 const DIRS: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
 ]
@@ -278,6 +280,12 @@ var source_ids: Dictionary = {}
 var source_alts: Dictionary = {}
 var transition_pairs: Dictionary = {}
 
+# Water-body shaping (agent b). Off only for A/B evidence runs
+# (`--legacy-water`); the shipped generator always runs it.
+var water_shaping: bool = true
+var water_shape_keys: Dictionary = {}
+var water_shape_pad: int = 2
+
 var chunks: Dictionary = {}
 var elevation := FastNoiseLite.new()
 var detail := FastNoiseLite.new()
@@ -423,6 +431,17 @@ func _parse_cli() -> void:
 			debug_visible = true
 		elif arg == "--no-ui":
 			cli_hide_ui = true
+		elif arg == "--legacy-water":
+			# Agent b: leaves the 1-cell halo and the old 3x3-only smoothing,
+			# i.e. the pre-coalescing shoreline, for side-by-side evidence.
+			water_shaping = false
+		elif arg.begins_with("--water="):
+			# --water=<radius>,<passes>,<wet>,<dry> for same-seed A/B tuning.
+			var parts := arg.substr(8).split(",")
+			if parts.size() == 4:
+				WaterShaper.configure(
+					int(parts[0]), int(parts[1]), float(parts[2]), float(parts[3])
+				)
 	if cli_biome >= 0:
 		biome_index = cli_biome
 	if cli_view >= 0:
@@ -503,13 +522,22 @@ func _build_tileset() -> void:
 		# Hand-authored 45-degree coast splits, keyed by which half-cell the
 		# water occupies. These are only used when the cell owns the land side;
 		# the water cell keeps its normal tile.
-		var diag_dir := "res://assets/tilesets/transitions/diagonal/%s_%s" % [
-			a.replace("/", "_"), other.replace("/", "_")
-		]
+		var diag_a := a.replace("/", "_")
+		var diag_b := other.replace("/", "_")
 		for corner in CORNER_NAMES:
-			var diag_path := "%s/%s.png" % [diag_dir, corner]
+			var diag_path := "res://assets/tilesets/transitions/diagonal/%s_%s/%s.png" % [
+				diag_a, diag_b, corner
+			]
 			if ResourceLoader.exists(diag_path):
 				_add_tile("diag|" + a + "|" + other + "|" + corner, diag_path)
+			# The art is authored land-first, so a pair listed water-first in
+			# transitions.json (e.g. ocean/water_shallow + ocean/reef) still
+			# needs the land-first lookup key that _diagonal_key() builds.
+			var diag_rev := "res://assets/tilesets/transitions/diagonal/%s_%s/%s.png" % [
+				diag_b, diag_a, corner
+			]
+			if ResourceLoader.exists(diag_rev):
+				_add_tile("diag|" + other + "|" + a + "|" + corner, diag_rev)
 
 
 func _load_transition_pairs() -> Array:
@@ -927,6 +955,8 @@ func _init_noise() -> void:
 	ridge_noise.fractal_lacunarity = 2.0
 
 	_pick_archetype()
+	water_shape_pad = WaterShaper.pad()
+	water_shape_keys = WaterShaper.water_keys(BIOMES[biome_index])
 
 
 func _pick_archetype() -> void:
@@ -1187,14 +1217,19 @@ func _generate_chunk(coord: Vector2i) -> Dictionary:
 
 	# Sample one cell of padding around the chunk so the smoothing pass sees
 	# the same neighbours from every chunk and the seams stay deterministic.
-	var pad := CHUNK + 2
+	# Water shaping votes over a 3x3 window before the smoothing pass, which
+	# reads one cell further out again, hence water_shape_pad (2) of raw halo.
+	var off := water_shape_pad
+	var pad := CHUNK + off * 2
 	var raw: Array = []
 	raw.resize(pad * pad)
-	for ly in range(-1, CHUNK + 1):
-		for lx in range(-1, CHUNK + 1):
-			raw[(ly + 1) * pad + (lx + 1)] = _sample_terrain(
+	for ly in range(-off, CHUNK + off):
+		for lx in range(-off, CHUNK + off):
+			raw[(ly + off) * pad + (lx + off)] = _sample_terrain(
 				b, coord.x * CHUNK + lx, coord.y * CHUNK + ly
 			)
+	if water_shaping:
+		WaterShaper.apply(raw, pad, b, water_shape_keys)
 	for ly in CHUNK:
 		for lx in CHUNK:
 			arr[ly * CHUNK + lx] = _smooth_cell(raw, pad, lx, ly, b)
@@ -1311,7 +1346,7 @@ func _ground_tiles(b: Dictionary) -> Array:
 
 
 func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> String:
-	var cur := str(raw[(ly + 1) * pad + (lx + 1)])
+	var cur := str(raw[(ly + water_shape_pad) * pad + (lx + water_shape_pad)])
 	var water := str(b.get("water", ""))
 	var ground := _ground_tiles(b)
 	var is_ground := cur in ground
@@ -1321,7 +1356,7 @@ func _smooth_cell(raw: Array, pad: int, lx: int, ly: int, b: Dictionary) -> Stri
 		for ox in range(-1, 2):
 			if ox == 0 and oy == 0:
 				continue
-			var t := str(raw[(ly + 1 + oy) * pad + (lx + 1 + ox)])
+			var t := str(raw[(ly + water_shape_pad + oy) * pad + (lx + water_shape_pad + ox)])
 			if t == cur:
 				same += 1
 			counts[t] = int(counts.get(t, 0)) + 1
@@ -1962,6 +1997,14 @@ func _priority_map(b: Dictionary) -> Dictionary:
 	var water_tile := str(b.get("water", ""))
 	if water_tile != "" and water_tile != str(b["base"]):
 		prio[water_tile] = 5
+	# Every water material must outrank the land materials when the renderer
+	# picks which neighbour transition to show. Ocean's open water is
+	# `base`/`detail` rather than `water`, so `ocean/water_shallow` sat at the
+	# base priority (1) and lost single-corner cells to the beach ring (3):
+	# 47 of 181 ocean corner cells fell back to right-angle tiles even though
+	# the 45-degree art existed. With the water priority they resolve.
+	for water_key in BLOCKED:
+		prio[water_key] = 5
 	return prio
 
 
@@ -2129,11 +2172,18 @@ func _pattern_data(t: String, n: String, wx: int, wy: int, info: Dictionary) -> 
 
 
 func _diagonal_key(info: Dictionary, n: String, corner: String) -> String:
-	if n != str(info["b"]):
-		return ""
-	var key := "diag|" + str(info["a"]) + "|" + str(info["b"]) + "|" + corner
-	if source_ids.has(key):
-		return key
+	# `info` is shared for both orderings of a pair, so a water-first pair
+	# (`ocean/water_shallow` + `ocean/reef`) must also try the reversed key.
+	var a := str(info["a"])
+	var b := str(info["b"])
+	if n == b:
+		var key := "diag|" + a + "|" + b + "|" + corner
+		if source_ids.has(key):
+			return key
+	elif n == a:
+		var reverse := "diag|" + b + "|" + a + "|" + corner
+		if source_ids.has(reverse):
+			return reverse
 	return ""
 
 

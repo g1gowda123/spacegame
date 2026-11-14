@@ -91,6 +91,21 @@ Items 1-4 are concrete art/code passes; item 5 is the acceptance gate. No gamepl
 | Risk bonus | done | Extract with a live front within 2 tiles for +1 risk point, cap 2/run; report includes `RISK n` when earned. |
 | Grade-gap line | done | Pre-existing `NEXT +%d TO GRADE %s` in `report.gd`; duplicate removed; no new label needed. |
 
+## b — generator: water shaping + diagonal coverage (claimed 13:20, done 13:46)
+
+Direct answer to debt item 2 and to ORION's 10:45 directive (“attack the generator side: water-body scale”). **ATLAS no longer needs to implement the water-coalescing pass** — the algorithm, the wiring and the missing diagonal art are in the tree; what remains is ATLAS's own art wiring (cliffs/variants/ridge/rivers) plus the one export.
+
+| Item | State | Notes |
+|---|---|---|
+| Water coalescing | done | `scripts/water_shaper.gd`: local 3×3 vote (1 pass, land→water at ≥0.60 wet, water→land at ≤0.40), applied between `_sample_terrain()` and `_smooth_cell()`. Raw halo 1 → 2 cells. `shore_ring` biomes only; lava stays authored. Chunk-seam-safe by construction (component filters are not — see the review in BOARD). |
+| A/B switch | done | `--legacy-water` restores the pre-coalescing shoreline for same-seed captures; `--water=<r>,<p>,<wet>,<dry>` overrides the knobs. |
+| Diagonal coverage | done | Six shore pairs had no 45° art, so **100 % of corner cells fell back to right-angle tiles**. Composited with VEGA's own maths (`tools/make_diagonal_gd.gd`, a Godot port of `make_diagonal.py` — this machine has no numpy): `temperate_beach_temperate_water_lake`, `ocean_beach_ocean_water_deep`, `ocean_reef_ocean_water_shallow`, `ocean_reef_ocean_beach`, `cryo_glacier_ocean_water_deep`, `barren_rock_ocean_water_deep`. `_build_tileset()` registers the land-first diagonal key for water-first pairs too. |
+| Water priority | done | Last 47 ocean corner cells were **not** missing art: `ocean/water_shallow` is `base`, so it carried priority 1 and lost single-corner cells to `ocean/beach` (shore, 3). `_priority_map()` now gives every `BLOCKED` water tile priority 5. Ocean 134→181 of 181 corners diagonal; temperate/methane/carbon unchanged at 100 %. A/B frame shows no coastal regression. |
+| Final coverage | done | Probe `--diagcheck --chunks=5`: temperate 235/235, methane 80/80, carbon 106/106, ocean 181/181 — 0 missing on all four. |
+| Measurement tool | done | `tools/water_probe.gd` (pre-existing, extended): fragmentation, water fraction, perimeter/area, corner cells, diagonal selection **per material and per pair**, fallback-key histogram, and the clean-vs-frayed split by `rough_noise`; `--legacy` and `--chunks=N` added. |
+| Evidence | done | Numbers + captures in `docs/WORKLOG.md` 13:46; probe JSON and sheets in `/tmp/opencode/b_review/` (`diag_landed.ndjson`, `ocean_prio_ab.png`, `coast_26758_ab.png`). |
+| Reviewer | ORION | b posted the review on the board; VEGA may hand-tune the six composite sets, they are deterministic recombinations and can be regenerated in one command. |
+
 ## Art requests — tiles agent (on standby)
 
 The tiles/art agent stays online and polls this file every ~6 minutes. To request art, add a row to the table below (do not edit `assets/` yourself) and the agent will claim it.
