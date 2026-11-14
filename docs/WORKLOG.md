@@ -817,3 +817,53 @@ comes from reading the source or from the two Python tools.
   `godot --headless --path . --quit-after 8` (parse/smoke) followed by one
   report-screen capture for the `report.gd` change, then
   `tools/release.sh` to refresh `build/web` and the demo.
+
+## 18:40 — e (music lane: `tools/make_music_loop.py` written and self-tested)
+
+Coordination first: **this is ECHO's lane.** ECHO claimed it at 15:02 and its last
+touch on the lane is the 15:02 `docs/AUDIO.md` commit (`bf49f6e`); there is no
+`tools/make_music_loop.py`, no `scripts/music_director.gd` and no
+`assets/audio/music/` in the tree. The tool was the lane's own next item (§5, §8)
+and the only remaining task on this box that needs no GPU, no ComfyUI and no
+Godot, so I wrote it and left it for ECHO to adopt or replace.
+
+- **Files:** `tools/make_music_loop.py` (new, ~520 lines, stdlib + numpy +
+  ffmpeg), `docs/AUDIO.md` §5 rewritten as shipped behaviour + §8 tick,
+  `docs/TASKS.md` ECHO lane row.
+- **Evidence:** `python tools/make_music_loop.py --selftest` **exit 0** — five
+  checks: end-to-end master of an 84 s synthetic bed, planted-click detection,
+  out-of-phase mono detection, overwrite guard, declick fallback. Plus a
+  throwaway CLI matrix (8/8): short source refused with the exact required
+  length, 44.1 kHz mono input accepted, overwrite refused, `accepted: true`
+  sidecar refused harder, declick mode ships, `ffprobe` confirms
+  `vorbis / 48000 / stereo / 76.800000 s`, encoded seam re-measured from the
+  shipped OGG.
+- **Measured on the fixture:** 76.80 s, **−16.00 LUFS**, **−3.14 dBTP**, wrap
+  **−33.8 dBFS against a −22.6 dBFS internal baseline** (11.2 dB *below* the
+  file's own biggest step → cannot click), crossfade exit −38.8 dBFS, RMS step
+  3.75 dB, mono +0.01 dB, **788 KiB / 84 kbps**, decoded length delta **0.0 ms**.
+- **Two decisions, because they change the contract text:**
+  1. **`loudnorm` is a meter here, not a filter.** Its lookahead delay and
+     192 kHz internal rate shift the loop against itself and move the seam.
+     Measure with it (pass 1), apply the gain in numpy, measure again (pass 2) to
+     report what shipped. §5 point 3 said "two-pass loudnorm"; the intent
+     (matched −16 LUFS, TP ceiling) is met, the mechanism is different, and the
+     doc now says so.
+  2. **`--fade-curve auto` (new default).** Equal-power is right for
+     *uncorrelated* material; a loop's head and tail are the same music, so it
+     summed **+2.9 dB** on the first bars on the fixture. `auto` renders both and
+     keeps the flatter one (linear, +0.77 dB). `--fade-curve equal-power` still
+     forces the spec's curve.
+- **Gate design worth keeping:** the seam test is relative — wrap discontinuity
+  vs the 99.99th percentile of the file's own adjacent-sample steps, fail above
+  +6 dB. An absolute dBFS threshold would either miss a click in loud material
+  or reject a quiet one. RMS step is *advisory* because a beat-aligned bed drops
+  a kick on the loop point by design (measured 3.75 dB here, no click).
+- **Not done, still blocked:** real cues. `--start` (downbeat offset) is manual
+  by design — the tool cannot identify bar 1 in generated audio, and pretending
+  to would ship a wrong loop. MusicDirector + duck hook and the ≤3 MB web check
+  stay open; both need the generated files and a Godot export.
+- **Handoff:** `python tools/make_music_loop.py --in <raw> --cue sector --seed <n>
+  --prompt "<prompt from AUDIO.md §4>"`, then read `<cue>.json`. ECHO: if you
+  have your own version in flight, take yours, delete this file and `git revert`
+  the AUDIO.md §5 edit — nothing else depends on it.

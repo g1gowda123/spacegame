@@ -112,24 +112,75 @@ ACE-Step fallback: 8 steps, cfg 1, euler/simple, `bpm=100`, `musical_key="A mino
 
 ---
 
-## 5. Loop mastering (`tools/make_music_loop.py` — next)
+## 5. Loop mastering (`tools/make_music_loop.py` — shipped 18:40)
 
-The generator gives a track; the tool makes it a loop. Contract:
+**Status: implemented, self-tested, never yet run on generated audio.** Evidence
+is `python tools/make_music_loop.py --selftest` (exit 0 here on ffmpeg 9.0.1,
+numpy 2.5.2): it builds an 84 s synthetic bed with a sub pulse on the beat,
+masters it, encodes it, decodes it back and re-measures the shipped file. It
+cannot prove a Stable Audio 3 track loops well until the download is approved.
 
-1. Trim to `32 × bar` at 100 BPM = 76.8 s, aligned to the first downbeat.
-2. Wrap-around crossfade: overlap the last 2 bars with the first 2 bars
-   (equal-power, 4.8 s). Falls back to a 40 ms declick when the material has a
-   melody the crossfade would smear.
-3. Loudness-normalise to −16 LUFS / −1.5 dBTP (two-pass `loudnorm`), so cue
-   changes do not jump in level.
-4. Verify the seam numerically: report max sample discontinuity, RMS step across
-   the loop point, and a mono fold-down delta. Fail loudly rather than ship a click.
-5. Encode OGG q3 + write `assets/audio/music/<cue>.ogg` and a `.json` sidecar
-   (`bpm`, `bars`, `loop_seconds`, `lufs`, `true_peak`, `seam_delta`, seed, prompt).
-6. Never overwrite an accepted cue without the `.json` sidecar changing too —
-   the work log cites these numbers.
+```bash
+# master a raw bed into assets/audio/music/<cue>.ogg (+ <cue>.json)
+python tools/make_music_loop.py --in raw/sector_84s.wav --cue sector \
+    --seed 4101 --prompt "tense minimal electronic pulse, 100 bpm, A minor"
+# the 40 ms declick fallback, and the manual downbeat offset
+python tools/make_music_loop.py --in raw/title.wav --cue title --start 1.37 \
+    --mode declick
+# no audio needed: synthetic end-to-end check
+python tools/make_music_loop.py --selftest
+```
 
-`ffmpeg` 8.x is on the box; no new runtime dependency (the tool is build-time only).
+The contract it implements:
+
+1. Trim to `32 × bar` at 100 BPM = 76.8 s, offset by `--start` seconds. Downbeat
+   alignment stays a human decision: the tool cannot hear where bar 1 is, so it
+   takes the offset rather than guessing.
+2. Wrap-around crossfade: the tail past the loop point is folded **into the
+   head**, so the loop ends on `src[N-1]` and opens on `src[N]` — the same
+   performance, so the wrap is sample-continuous by construction, while the
+   first 2 bars fade in underneath. `--mode declick` is the 40 ms fallback for
+   material the crossfade would smear.
+3. Loudness to −16 LUFS with −1.5 dBTP as a ceiling, so cue changes do not jump.
+4. Seam verified numerically, and the gate is a **comparison, not a constant**:
+   the wrap discontinuity must not exceed the 99.99th percentile of the file's
+   own adjacent-sample steps by more than 6 dB. That is the click test — a seam
+   quieter than the material's own transients cannot click — and it catches a
+   planted 0.9 full-scale click at +55.9 dB over baseline.
+5. OGG q3 (`libvorbis -q:a 3`) + a `.json` sidecar with bpm, bars, loop_seconds,
+   lufs, true_peak, seed, prompt, the full seam report, the encoded-file delta
+   and the gate verdict. The shipped file is decoded again and re-measured, so
+   the numbers describe what is actually in the OGG, not the pre-encode buffer.
+6. An existing cue is never replaced silently: `--force` is required, and a
+   sidecar with `"accepted": true` gives a louder refusal.
+
+Measured on the self-test fixture (synthetic, so read it as "the tool works",
+not "the score is good"): **76.80 s, −16.00 LUFS, −3.14 dBTP**, wrap
+**−33.8 dBFS vs a −22.6 dBFS internal baseline (−11.2 dB, i.e. below it)**,
+crossfade exit −38.8 dBFS, RMS step 3.75 dB, mono fold-down +0.01 dB, fade level
++0.77 dB, **788 KiB at 84 kbps**, decoded length delta **0.0 ms**.
+
+Two decisions worth keeping:
+
+- **`loudnorm` is used as a meter, not as the filter.** Its lookahead delay and
+  192 kHz internal rate would shift the loop samples against each other and
+  move the seam. The tool measures with it (pass 1), applies that gain in numpy,
+  then measures again (pass 2) to report what actually shipped. Waveform and
+  seam are therefore untouched by mastering.
+- **The fade curve is chosen by measurement (`--fade-curve auto`).** Equal-power
+  is the textbook choice for uncorrelated material, but a loop's head and tail
+  are the *same* music, so equal-power sums +2.9 dB on the first bars (measured).
+  `auto` renders both curves and keeps whichever leaves the head level flat
+  (linear, +0.77 dB on the fixture); `--fade-curve equal-power` still forces the
+  old behaviour.
+- **RMS step is advisory, not fatal.** A beat-aligned bed legitimately drops a
+  kick exactly on the loop point, which lifts the first 10 ms by ~3.8 dB without
+  being a click. Only a >6 dB step (a hole) or a >1.5 dB crossfade level bump is
+  printed as a warning; the wrap test above is what fails the build.
+
+`ffmpeg` 8.x/9.x is already on the box; the tool is build-time only, so it adds
+no runtime dependency. Everything is stdlib + numpy — no `soundfile`, no
+`pydub`, no ffmpeg-python.
 
 ---
 
@@ -167,7 +218,8 @@ the art queue shares this GPU.
 ## 8. Open items
 
 - [ ] User approval for the SA3 Small-Music download (3.46 GB).
-- [ ] `tools/make_music_loop.py` (seam check + loudnorm + OGG).
+- [x] `tools/make_music_loop.py` (seam check + loudnorm + OGG) — shipped 18:40,
+      self-tested; see §5 for the two decisions (loudnorm as meter, auto curve).
 - [ ] Generate and master `title` / `sector` / `debrief`; post seam + LUFS numbers.
 - [ ] `MusicDirector` autoload + duck hook on the hazard telegraph.
 - [ ] Web re-export and size check (`build/web` + ≤3 MB music).

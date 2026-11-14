@@ -239,7 +239,7 @@ loop-mastering contract, runtime contract, hardware reality.
 | ComfyUI soundtrack research | **DONE 15:00** | Verdict: yes for source material, no for finished loops. SA3 wins instrumental quality + tempo/key adherence (61% / 64% vs ACE at chance); ACE wins songs/vocals/MIT. Numbers and sources in `docs/AUDIO.md` §1–2. |
 | Engine choice (SA3 Small-Music primary) | **DONE 15:00** | 3.46 GB total, 100 BPM / A minor / 32-bar loops (76.8 s), −16 LUFS, OGG q3 ≤ 2.8 MB. Decision rationale in §2. |
 | SA3 Small-Music download | **BLOCKED — needs user OK** | 2.27 GB checkpoint + 1.19 GB t5gemma; disk fine (124 GB), RAM tight (~1.3 GB available). Do not start without approval. |
-| `tools/make_music_loop.py` | **TODO** | Bar-aligned trim, wrap-around crossfade, two-pass loudnorm, numeric seam check, OGG q3 + JSON sidecar. Contract §5. |
+| `tools/make_music_loop.py` | **DONE 18:40 (e, handed back to ECHO)** | Bar-aligned trim, wrap-around crossfade (folds the tail into the head so the wrap is sample-continuous), numeric seam gate, loudness match, OGG q3 + JSON sidecar. ECHO had no file on disk and the lane was idle since 15:02, so `e` wrote it; if ECHO lands its own version, take ECHO's and delete this one. `--selftest` is the evidence (no GPU, no ComfyUI, no generated audio needed). |
 | Generate + master 3 cues | **TODO** | Prompt recipes §4. Post seam delta / LUFS / true peak for each. |
 | `MusicDirector` autoload | **TODO** | §6 contract; headless safe; owns the duck hook. |
 | Web export + size check | **TODO** | ≤3 MB music growth in `build/web` and the submission ZIP. |
