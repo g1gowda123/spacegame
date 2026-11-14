@@ -327,6 +327,18 @@ func objective() -> Dictionary:
 	return {}
 
 
+const OBJECTIVE_ANALOG := {
+	"atmosphere": "JWST / Hubble transmission spectroscopy",
+	"surface": "Lunar Reconnaissance Orbiter mapping",
+	"astro": "JWST biosignature survey",
+	"geology": "Mars Reconnaissance Orbiter / Perseverance",
+}
+
+
+func objective_analog() -> String:
+	return str(OBJECTIVE_ANALOG.get(str(run.get("objective", "")), "NASA Discovery-class survey"))
+
+
 func science_fit() -> bool:
 	var oid := str(run.get("objective", ""))
 	var fits: Array = OBJECTIVE_INSTRUMENTS.get(oid, [])

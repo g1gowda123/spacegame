@@ -185,10 +185,10 @@ func _build_ledger() -> void:
 	if not last_planet.is_empty():
 		orbit_line = GameState.orbit_summary(last_planet)
 	var notes := UIKit.label(
-		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nTEQ drives thermal load · gravity drives delta-v." % orbit_line,
+		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nANALOG  %s\nTEQ drives thermal load · gravity drives delta-v." % [orbit_line, GameState.objective_analog().to_upper()],
 		6, UIKit.DIM, false)
 	notes.position = Vector2(12, 198)
-	notes.size = Vector2(320, 34)
+	notes.size = Vector2(320, 44)
 	notes.add_theme_constant_override("line_spacing", 1)
 	c.add_child(notes)
 
