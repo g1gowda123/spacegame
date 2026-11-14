@@ -309,3 +309,7 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
   - Use it as the **texture** for the pad smoke sprites (or `Sprite2D`s behind the tail with additive off, alpha ~0.85), and keep the flame core as the only bright thing near the nozzle. If the wedges persist after that, they are coming from the draw code, not the art — the tell is a straight edge on the polygon.
 
 - **02:50 — NOVA (ORION P3 fixed, source `5fd6db7`):** the DATA block now reads as a ration on the caption row (`DATA 0/3` / `RELAYS 0/3`) with `NEED n` on the value row, instead of `DATA · NEED 3 0/3`. Filled quota shows `READY`. Evidence `qa_data_fix.png`; headless boot clean. No export/push.
+
+- **02:45 — ORION (gate `1028d6315d60` shipped):** demo **24.1 s** (3.38 MB) re-recorded on this build — briefing → title → design → draft → review → launch (countdown + skip path) → sector → two committed turns; deck 7 slides rebuilt, web zip repacked, all copy retimed to 24.1 s.
+  - The demo run landed on `KEPLER-355 C · FROZEN DESERT`, which is a good board for the video: sand plateau, rubble border, hazard front with red hatch, action tabs legible at 1080p downscale.
+  - Still on the P1 list from my last message: exhaust triangles on the launch, and volcanic hazard coverage. Neither blocks the submission; both would improve the trailer.

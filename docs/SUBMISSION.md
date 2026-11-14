@@ -121,7 +121,7 @@ Recorded at 1280×720 as one continuous, deterministic run — not stitched stil
 | 29.4–33.6 → cut to 4.0 s | Debrief: MISSION SUCCESS, grant, approval, shop offers | "Earn grants. Refit. Stack synergies." |
 | → 4.2 s | Final Report: grade A, 4953, three-sector ledger | "Three sectors. One agency. Can you keep the lights on?" |
 
-The shipped cut is **24.6 s** (738 frames at 30 fps, H.264, 2.15 MB). It was re-recorded against the `40a6d72` gate and cut to the live Web flow; the deck is exactly 7 slides. If the platform rejects the length, submit the 7-slide deck instead.
+The shipped cut is **24.1 s** (722 frames at 30 fps, H.264, 3.38 MB). It was re-recorded against the `40a6d72` gate and cut to the live Web flow; the deck is exactly 7 slides. If the platform rejects the length, submit the 7-slide deck instead.
 
 How the cut was made (reproducible):
 ```
@@ -155,7 +155,7 @@ Do not exceed seven slides.
 
 ## Links to fill on submission day
 
-- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 24.6 s, 2.15 MB.
+- **Demo link:** upload `submission/orbit_outplay_demo.mp4` to YouTube/Vimeo (unlisted is fine) or attach the 7-slide PDF. Current file: 1280×720, 30 fps, 24.1 s, 3.38 MB.
 - **Final project link:** upload `submission/orbit_outplay_web.zip` to itch.io or GitHub Pages; the ZIP is the static `build/web/` folder with the nine export files at the zip root. Current file: 31,955,144 B (`index.pck` 24,860,948 B, `index.wasm` 39,514,754 B).
 - **Local run:** `tools/play_web.sh`, then open `http://127.0.0.1:8061/index.html`.
 - **Build state:** `submission/orbit_outplay_web.zip` was repacked from the gate `454080d` (PCK md5 `40a6d72`); `build/RELEASE.txt` records its hashes. Rebuild with one command — `tools/release.sh` on the Linux release box or `python tools/release.py` on Windows, both do import → export → zip → sha256 → HTTP smoke → `build/RELEASE.txt` — then verify the flow with `node tools/browser_loop.mjs --url http://127.0.0.1:8061/index.html --out demo/capture/web`. A fresh clone with new art **must** run the import pass (`godot --headless --path . --import`, or just let either release script do it) or the sector tileset ships with missing textures. This gate includes the hazard-front tint and hatch, dashed LZ ring, structure variants, hover dossiers, upgrade feedback banner and the extraction pad. The VFX disaster/world director and the transfer-ship arc landed in nearby commits — take one more gate export before upload if you want them judged.
@@ -163,7 +163,7 @@ Do not exceed seven slides.
 
 ## Final submission checklist
 
-- [ ] Demo is ≤30.0 s (current: **24.6 s**, 738 frames) or deck is ≤7 slides (current: **7**).
+- [ ] Demo is ≤30.0 s (current: **24.1 s**, 722 frames) or deck is ≤7 slides (current: **7**).
 - [ ] Project page has name, summary, demo link, final project link, detailed description, NASA data, SI use, references.
 - [ ] NASA data is named explicitly: Exoplanet Archive **PSCompPars** (`pscomppars`), with the Chen & Kipping (2017) mass–radius reference.
 - [ ] Build loads from a plain static host over HTTP(S); no server code, no install, no account.
