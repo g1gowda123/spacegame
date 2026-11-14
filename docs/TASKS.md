@@ -8,14 +8,14 @@ d owns QA per `docs/BOARD.md` (browser loops, claim-vs-evidence checks, bug list
 
 | # | Task | Status | Evidence / note |
 |---|---|---|---|
-| Q1 | Static claim-vs-evidence audit (asset refs resolve, art-wiring claims, dataset integrity) | **done** (15:34) | `python tools/qa/audit_project.py` on `75c42f1` → `docs/QA_REPORT.md`: 26 pass, 0 fail, 5 warn |
-| Q2 | Native run + screen check on the current HEAD | **8/10** (15:33) | 10 screens now (crew + relay added). **P0: design + debrief blank** — `ship_diagram.gd:2` puts `const` before `extends` → parse error; see QA_REPORT |
+| Q1 | Static claim-vs-evidence audit (asset refs resolve, art-wiring claims, dataset integrity) | **done** (16:05) | `python tools/qa/audit_project.py` on `7e8c55b` -> `docs/QA_REPORT.md`: 26 pass, 0 fail, 5 warn |
+| Q2 | Native run + screen check on the current HEAD | **done** (16:05) | 10 screens (crew + relay added): **10/10 pass**, exit 0, non-blank (1,000-23,297 colours). The 15:33 P0 (design/debrief blank) is fixed upstream |
 | Q3 | Browser loop against the gate build (title → design → draft → sector ×3 → report; C path + A path) | **blocked** (15:35) | `build/` absent here; 14:58 gate build lives on ATLAS's machine; template archive download defeated by network resets. Harness ready + self-tested: `tools/qa/browser_loop.mjs` |
 | Q4 | Re-run browser loop against the final build | waiting on ATLAS/ORION | needs a build artifact or a published URL; same command as Q3 |
-| Q5 | Bug list (claim vs evidence, docs drift) | **done** (15:35) | `docs/QA_REPORT.md` findings: P0 parse error, 2 bugs (`PSCOMPPARS` casing; radiator −3 vs −6), 4 nits |
+| Q5 | Bug list (claim vs evidence, docs drift) | **done** (16:05) | `docs/QA_REPORT.md`: 2 open bugs (`PSCOMPPARS` casing in title/draft credit; radiator -3 vs -6) + 3 nits. P0 parse error cleared |
 | Q6 | Repeatable QA tooling + usage docs | **done** (12:20) | `tools/qa/{audit_project.py,native_screens.py,browser_loop.mjs,README.md}`; captures gitignored |
 
-**Gate blocker for ATLAS:** `scripts/ship_diagram.gd` line order (`const` between `class_name` and `extends`). Move `extends Control` to line 1. Until then design/debrief compile to nothing and any build from this HEAD is unshippable. QA reports, it does not fix: `scripts/`, `scenes/`, `assets/` belong to ATLAS/VEGA. **Request:** publish `build/web/` (or a hosted URL) and the loop runs as `node tools/qa/browser_loop.mjs --dir build/web --port 8061`.
+**Gate status:** the 15:35 P0 (`ship_diagram.gd` line order) is **fixed** on `7e8c55b`; design and debrief now render and the native pass is 10/10. Remaining pre-ship items are the two copy bugs (PSCompPars casing, radiator -3 vs -6). QA reports, it does not fix: `scripts/`, `scenes/`, `assets/` belong to ATLAS/VEGA. **Request:** publish `build/web/` (or a hosted URL) and the loop runs as `node tools/qa/browser_loop.mjs --dir build/web --port 8061`.
 
 ## Done — playable prototype
 

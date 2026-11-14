@@ -17,7 +17,7 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | structure files + footprints | 13 structures |
 | PASS | biome props resolve (32-64 px) | 13 biomes |
 | PASS | transition sets complete | 98 pairs x 4 edge tiles |
-| PASS | diagonal split sets complete | 11 pairs |
+| PASS | diagonal split sets complete | 17 pairs |
 | WARN | art wiring (code references) | INERT: river autotile (art), ridge_wide, sandstone_arch, glacier_wall, crystal_spire, canyon_bridge, ash_mound, crystal_nub, shell_spiral, arid/dunes_ripple, crystal/shard_field, barren/ejecta, sulfur/acid_pool, ammonia/slush, obsidian/glass_plate, ocean/reef_chain, cryo/ice_plate, water_foam, lava_crust, lava_glow,... |
 | WARN | props on disk but not placed | accent_arid_ice_teeth, accent_arid_shell, accent_arid_vent, accent_barren_ice_teeth, accent_barren_shell, accent_barren_tuft, accent_barren_vent, accent_cryo_bones, accent_cryo_shell, accent_cryo_tuft, accent_cryo_vent, accent_temperate_ice_teeth, accent_temperate_shell, accent_temperate_vent, accent_volcanic_bones,... |
 | PASS | dataset size = 72 curated planets |  |
@@ -37,7 +37,7 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | README hazard table matches code | 9 hazards |
 | PASS | README run constants match code |  |
 | WARN | MAP_GENERATOR.md is current | doc calls scenes/map_generator.tscn the main scene; project.godot main_scene=scenes/title.tscn |
-| WARN | build artifacts referenced by docs exist in this clone | 5 path(s) absent (build/ and submission/ are gitignored): docs/PROJECT.md: build/web/index.html; docs/SUBMISSION.md: submission/orbit_outplay_demo.mp4; docs/SUBMISSION.md: submission/orbit_outplay_web.zip; docs/TASKS.md: build/web/index.pck; docs/TASKS.md: submission/orbit_outplay_web.zip |
+| WARN | build artifacts referenced by docs exist in this clone | 6 path(s) absent (build/ and submission/ are gitignored): docs/PROJECT.md: build/web/index.html; docs/SUBMISSION.md: submission/orbit_outplay_demo.mp4; docs/SUBMISSION.md: submission/orbit_outplay_web.zip; docs/TASKS.md: build/web/index.pck; docs/TASKS.md: submission/orbit_outplay_web.zip; docs/TASKS.md: submission/... |
 | PASS | TASKS transition-pair count matches transitions.json | 98 |
 
 ## How to re-run
@@ -53,100 +53,83 @@ python tools/qa/audit_project.py --check   # non-zero exit on FAIL
 - The Web build itself: `build/` is gitignored and absent from a fresh clone.
 
 <!-- findings -->
-## Live-pass findings (d, 15:35) - hand-written, preserved on re-run
+## Live-pass findings (d, 16:05) - hand-written, preserved on re-run
 
 Environment: Windows, Godot 4.7.2 (`Godot_v4.7.2-stable_win64_console.exe`),
 Node 24.15.0, Chrome 157.0.8103.51 at 1280x720 (2x the 640x360 logical canvas).
-Tested HEAD: `75c42f1` (origin/main). Evidence: `qa/artifacts/native/qa_*.png`,
+Tested HEAD: `7e8c55b` (origin/main). Evidence: `qa/artifacts/native/qa_*.png`,
 `qa/artifacts/web/selftest.png`.
 
-### P0 - `ship_diagram.gd` does not parse; design and debrief render blank
+### P0 cleared - `ship_diagram.gd` parses, design and debrief render
 
-`scripts/ship_diagram.gd` has `const SHIP_BUILD := preload(...)` on line 2,
-**between** `class_name ShipDiagram` (line 1) and `extends Control` (line 3).
-GDScript rejects that ordering:
+The 15:35 P0 (`const` declared between `class_name` and `extends` in
+`scripts/ship_diagram.gd`) is **fixed upstream**: line order is now
+`class_name` / `extends Control` / `const SHIP_BUILD`, and both dependent
+screens render full frames. Confirm:
 
 ```
-SCRIPT ERROR: Parse Error: Unexpected "extends" in class body.
-   at: GDScript::reload (res://scripts/ship_diagram.gd:3)
-```
-
-`design.gd:8` and `debrief.gd:14` both reference `ShipDiagram`, so the script
-fails to compile and the scene renders one flat colour: `qa_design.png` and
-`qa_debrief.png` are 1-colour frames (FAILED captures by the project's rule).
-Reproduce:
-
-```bash
 godot --headless --path . --check-only --script scripts/ship_diagram.gd
-godot --path . -- --screen=design --capture --capture-name=qa_design
 ```
 
-Introduced by `86857f7` (the `const SHIP_BUILD` line); the scene worked at
-`fa6bd63`. Fix is a reorder - `extends` must come before `const`/`var`:
-
-```gdscript
-extends Control
-class_name ShipDiagram
-const SHIP_BUILD := preload("res://scripts/ship_build.gd")
-```
-
-Owner: ATLAS (engineering). Do not ship a build from this HEAD: mission design
-is the second screen of the loop and the refit shop is where every sector ends.
+still exits 1 with `Identifier not found: GameState` because `--check-only` does
+not load autoloads; that is a checker artefact, not a defect - the in-game runs
+below are clean.
 
 ### Q1 - static audit: 26 pass / 0 fail / 5 warn
 
 Every `res://` ref and `.tscn` dependency resolves; tile keys exist at 64x64;
 piece-backed structures (`mountain_massif`, `volcano`) are validated against
-`assets/tilesets/structures/pieces/manifest.json` (4x4 sets, 256 px assembled)
-rather than the 192 px fallback PNG; 98 transition pairs are on disk; the
-72-planet dataset recomputes; README tables match the code. Warns: art that is
-generated but inert (rivers, `ridge_wide`, four landmarks, 22 accent props,
-~15 ground/water variants), the radiator copy bug, stale `MAP_GENERATOR.md`,
-and the gitignored `build/` + `submission/` paths.
+`assets/tilesets/structures/pieces/manifest.json` (4x4 sets) rather than the
+fallback PNG; the 72-planet dataset recomputes; README tables match the code.
+Warns: art generated but inert (rivers, `ridge_wide`, four landmarks, 22 accent
+props, ~15 ground/water variants), the radiator copy bug, stale
+`MAP_GENERATOR.md`, and the gitignored `build/` + `submission/` paths.
 
-### Q2 - native screens: 8/10 pass
+### Q2 - native screens: 10/10 pass
 
 `python tools/qa/native_screens.py` covers title, crew, design, draft, sector,
-relay, sector_success, sector_fail, debrief, report. Eight pass with exit 0 and
-non-blank frames (1,053-21,952 colours). **design and debrief fail** - see the
-P0 above. A fresh clone needs one `--import` pass or scripts fail on
+relay, sector_success, sector_fail, debrief, report. **All ten pass** with exit
+0 and non-blank frames (1,000-23,297 colours), including the two that were blank
+at 15:33. A fresh clone needs one `--import` pass or scripts fail on
 `Identifier "UIKit" not declared`.
 
-### Bugs
+### Bugs still open
 
-1. **Title and draft render `PSCOMPPARS` instead of `PSCompPars`** -
-   submission-visible typo. Source strings are correct (`scripts/title.gd:90`,
-   `scripts/draft.gd:35`) but both pass `uppercase=true` to `UIKit.label`, which
-   uppercases the acronym. ORION's own 16:25 gate smoke lists `PSCOMPPARS` in
-   the title credit, so it is live in the build lane too. Owner: ATLAS (text)
-   / f (UI).
+1. **Title and draft credit render `PSCOMPPARS`, not `PSCompPars`** -
+   submission-visible. Source strings are correct (`scripts/title.gd:90`,
+   `scripts/draft.gd:35`) and the old `uppercase=true` argument is gone from
+   `UIKit.label`, but the pixel font has uppercase glyphs only, so lowercase
+   letters draw as caps. Verified by cropping the live capture
+   (`qa_title.png`, credit line at y~645): reads `PSCOMPPARS`. Fix: render that
+   line with the body font (`pixel=false`) or spell the archive name in a form
+   the font can show. Owner: ATLAS (text) / f (UI).
 
-2. **DEPLOYABLE RADIATOR says "Heat gain -3 per move." but removes 6.**
-   `scripts/game_state.gd:135-136` sets `thermal_res: 6`, and the heat formula
-   is `round(heat * 0.11) - thermal_res` (`game_state.gd:857`), so the module
+2. **DEPLOYABLE RADIATOR says "Heat gain -3 per move." but removes 6.** -
+   `scripts/game_state.gd:135-136` sets `thermal_res: 6`; the heat formula is
+   `round(heat * 0.11) - thermal_res` (`game_state.gd:942`), so the module
    subtracts 6 heat per move. Make the copy and the value agree. Owner: ATLAS
-   (value) / e (copy).
+   (value) / e (copy). The audit flags this as a WARN on every run.
 
 ### Nits / follow-ups
 
 - **Sector HUD crowding:** power pips at `x = 492 + i * 9`
   (`scripts/sector.gd:304`) run under the QUOTA label at `x = 562`
   (`:310`) from the 8th pip; tight at 10 pips. Owner: f.
-- **`--screen=report` dev fixture repeats planets** (no re-roll between
-  iterations) - do not read the fixture as a data bug.
 - **`docs/MAP_GENERATOR.md` is stale:** it calls `scenes/map_generator.tscn` the
   main scene; `project.godot` points at `scenes/title.tscn`.
 - **`build/` and `submission/` are absent** from this clone (gitignored), so
-  five doc-referenced artifacts cannot be checked here. Expected, not a defect.
+  six doc-referenced artifacts cannot be checked here. Expected, not a defect.
 
 ### Q3/Q4 - browser loop: blocked
 
 No `build/web/` in this clone and no Godot Web export templates installed, so
-the 14:58 gate build cannot be exercised locally (it lives on ATLAS's machine).
-`tools/qa/browser_loop.mjs` is ready and its harness self-test passes
-(`qa/artifacts/web/selftest.png`, 21,174 bytes, console capture confirmed);
+the gate build cannot be exercised locally (it lives on ATLAS's machine; `build/`
+is gitignored). `tools/qa/browser_loop.mjs` is ready and its harness self-test
+passes (`qa/artifacts/web/selftest.png`, console capture confirmed);
 `--dir build/web` against a missing build exits 1 instead of passing. Fetching
-the 1.22 GB template archive to produce a local export has been defeated by
-network resets/DNS drops; it resumes from a partial file when the link is back.
-The first real run must also confirm the two overlay click points derived from
-`sector.gd` / `debrief.gd`.
+the 1.22 GB template archive to make a local export was defeated by network
+resets/DNS drops; it resumes from the partial file if the link returns. The
+first real run must also confirm the two overlay click points derived from
+`sector.gd` / `debrief.gd`. `tools/release.sh` (C2) can now produce `build/web`
+in one command on a machine with templates installed - that is the fastest path
+to unblocking the loop.
