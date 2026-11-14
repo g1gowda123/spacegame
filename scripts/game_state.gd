@@ -497,6 +497,7 @@ func new_run() -> void:
 		"objective": "",
 		"sector": 1,
 		"seed": rng.randi_range(1000, 99999),
+		"seed_label": "",
 		"score_recorded": false,
 		"event_card": {},
 		"event_resolved": true,

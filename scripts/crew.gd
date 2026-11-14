@@ -8,6 +8,7 @@ var mode := "campaign"
 var players := 2
 var difficulty := "standard"
 var code_seed := 0
+var code_seed_label := ""
 var code_loadout: Dictionary = {}
 
 var mode_cards: Dictionary = {}
@@ -121,15 +122,15 @@ func _build_right() -> void:
 	roster_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(roster_root)
 
-	c.add_child(_label_at("CAMPAIGN CODE", Vector2(12, 208), 8, UIKit.MUTED))
-	var code_hint := UIKit.mono("SEED OR FULL DESIGN", 7, UIKit.DIM)
+	c.add_child(_label_at("SEED / CAMPAIGN CODE", Vector2(12, 208), 8, UIKit.MUTED))
+	var code_hint := UIKit.mono("TEXT · NUMBER · FULL DESIGN", 7, UIKit.DIM)
 	code_hint.position = Vector2(120, 209)
 	c.add_child(code_hint)
 	code_edit = LineEdit.new()
 	code_edit.position = Vector2(12, 226)
 	code_edit.size = Vector2(286, 20)
-	code_edit.placeholder_text = "OO-0F7A5-S1-PAVMOLOA-SPTH"
-	code_edit.max_length = 32
+	code_edit.placeholder_text = "NASA-2026  ·  12345  ·  OO-0F7A5-S1"
+	code_edit.max_length = 64
 	code_edit.add_theme_font_override("font", UIKit.body_font)
 	code_edit.add_theme_font_size_override("font_size", 8)
 	code_edit.add_theme_color_override("font_color", UIKit.TEXT)
@@ -143,7 +144,7 @@ func _build_right() -> void:
 	apply.pressed.connect(_apply_code)
 	code_apply_btn = apply
 	c.add_child(apply)
-	code_status = UIKit.mono("PASTE A CODE TO FLY SOMEONE ELSE'S WORLDS.", 6, UIKit.DIM)
+	code_status = UIKit.mono("TYPE ANY SEED, OR PASTE A FULL CAMPAIGN CODE.", 6, UIKit.DIM)
 	code_status.position = Vector2(12, 250)
 	code_status.size = Vector2(398, 12)
 	c.add_child(code_status)
@@ -188,6 +189,7 @@ func _set_mode(id: String) -> void:
 		players = 1
 		difficulty = "standard"
 		code_seed = 0
+		code_seed_label = ""
 		code_loadout = {}
 		code_status.text = "DAILY RUN USES TODAY'S FIXED SEED."
 	GameState.sfx("click")
@@ -202,10 +204,6 @@ func _set_players(n: int) -> void:
 	_refresh()
 
 
-func _dev_tip() -> void:
-	if diff_cards.has("standard"):
-		diff_cards["standard"]["button"].mouse_entered.emit()
-
 
 func _set_difficulty(id: String) -> void:
 	if mode == "daily":
@@ -218,19 +216,23 @@ func _set_difficulty(id: String) -> void:
 func _apply_code() -> void:
 	var parsed := CrewDirector.parse_code(code_edit.text)
 	if parsed.is_empty():
-		code_status.text = "INVALID CODE  ·  EXPECTED OO-XXXXX-S1"
+		code_status.text = "TYPE ANY TEXT OR NUMBER AS A SEED."
 		code_status.add_theme_color_override("font_color", UIKit.RED)
 		GameState.sfx("alarm")
 		return
 	code_seed = int(parsed["seed"])
+	code_seed_label = str(parsed.get("seed_label", ""))
 	mode = "campaign"
 	players = int(parsed["players"])
 	difficulty = str(parsed["difficulty"])
 	code_loadout = parsed.get("loadout", {})
 	var design_note := "  ·  DESIGN IMPORTED" if not code_loadout.is_empty() else ""
-	code_status.text = "CODE LOCKED  ·  SEED %05X  ·  %s  ·  %d PLAYER%s%s" % [
-		code_seed, str(CrewDirector.DIFFICULTIES[difficulty]["name"]), players,
-		"" if players == 1 else "S", design_note
+	var shown := code_seed_label.strip_edges()
+	if shown.length() > 20:
+		shown = shown.substr(0, 20) + "…"
+	code_status.text = "LOCKED  ·  %s  ·  %05X  ·  %s  ·  %dP%s" % [
+		shown, code_seed, str(CrewDirector.DIFFICULTIES[difficulty]["name"]), players,
+		design_note
 	]
 	code_status.add_theme_color_override("font_color", UIKit.GREEN)
 	GameState.sfx("confirm")
@@ -336,7 +338,7 @@ func _add_row(idx: int, row: Dictionary, cols: int = 1) -> void:
 
 
 func _start() -> void:
-	CrewDirector.begin_run(mode, players, difficulty, code_seed, code_loadout)
+	CrewDirector.begin_run(mode, players, difficulty, code_seed, code_loadout, code_seed_label)
 	GameState.sfx("confirm")
 	get_tree().change_scene_to_file("res://scenes/design.tscn")
 

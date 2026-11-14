@@ -107,7 +107,7 @@ func _ready() -> void:
 # ------------------------------------------------------------------ run setup
 
 func begin_run(mode: String, players: int, difficulty_id: String, seed_override: int = 0,
-		loadout: Dictionary = {}) -> void:
+		loadout: Dictionary = {}, seed_label: String = "") -> void:
 	GameState.new_run()
 	var run := GameState.run
 	players = clampi(players, 1, 4)
@@ -124,6 +124,7 @@ func begin_run(mode: String, players: int, difficulty_id: String, seed_override:
 	run["approval"] = clampi(GameState.START_APPROVAL + int(diff["approval"]), 1, 100)
 	run["daily"] = mode == "daily"
 	run["daily_key"] = ""
+	run["seed_label"] = seed_label.strip_edges()
 
 	if mode == "daily":
 		run["daily_key"] = today_key()
@@ -271,6 +272,34 @@ func total_goals() -> int:
 
 # --------------------------------------------------------------- share codes
 
+## Accepts any seed a player can type. Numeric strings keep their value,
+## 0x-prefixed strings are hex, and everything else becomes a stable 31-bit
+## hash. This removes the old requirement that every seed be a five-digit
+## number wrapped in an OO- campaign code.
+func seed_for_text(text: String) -> int:
+	var t := text.strip_edges()
+	if t == "":
+		return 0
+	var low := t.to_lower()
+	if low.begins_with("seed="):
+		t = t.substr(5).strip_edges()
+	elif low.begins_with("seed:"):
+		t = t.substr(5).strip_edges()
+	low = t.to_lower()
+	if low.begins_with("0x"):
+		var hx := t.substr(2).hex_to_int()
+		if hx != 0:
+			return (hx & 0x7fffffff)
+	if t.is_valid_int():
+		var n := int(t)
+		var masked := n & 0x7fffffff
+		if masked != 0:
+			return masked
+		return 1
+	var h := hash("orbit-seed:" + low) & 0x7fffffff
+	return h if h != 0 else 1
+
+
 func code_for_run() -> String:
 	if GameState == null or GameState.run == null:
 		return "OO-00000-S1"
@@ -317,31 +346,44 @@ func loadout_blob() -> String:
 ##   OO-043AF-D3                      same worlds, your design
 ##   OO-043AF-D3-PAVMOLOA-SPTH        same worlds, same stack
 func parse_code(text: String) -> Dictionary:
-	var t := text.strip_edges().to_upper().replace(" ", "")
-	if not t.begins_with("OO-"):
+	var raw := text.strip_edges()
+	if raw == "":
 		return {}
-	var parts := t.split("-")
-	if parts.size() < 3:
-		return {}
-	var seed_value := int(str(parts[1]).hex_to_int())
+	var t := raw.to_upper().replace(" ", "")
+	if t.begins_with("OO-"):
+		var parts := t.split("-")
+		if parts.size() >= 3:
+			var seed_value := int(str(parts[1]).hex_to_int())
+			if seed_value > 0:
+				var tag := str(parts[2])
+				var diff := "standard"
+				match tag.substr(0, 1):
+					"C":
+						diff = "cadet"
+					"D":
+						diff = "director"
+				var players := 1
+				if tag.length() > 1:
+					players = clampi(int(tag.substr(1, 1)), 1, 4)
+				var out := {
+					"seed": seed_value, "seed_label": raw,
+					"difficulty": diff, "players": players,
+				}
+				if parts.size() >= 5:
+					var loadout := _parse_loadout(str(parts[3]), str(parts[4]))
+					if not loadout.is_empty():
+						out["loadout"] = loadout
+				return out
+	# Not a legacy OO- code: treat the whole string as a seed. This also means
+	# a malformed OO- string still runs as a text seed instead of being a dead
+	# end; the player can see the resolved hex in the status line.
+	var seed_value := seed_for_text(raw)
 	if seed_value <= 0:
 		return {}
-	var tag := str(parts[2])
-	var diff := "standard"
-	match tag.substr(0, 1):
-		"C":
-			diff = "cadet"
-		"D":
-			diff = "director"
-	var players := 1
-	if tag.length() > 1:
-		players = clampi(int(tag.substr(1, 1)), 1, 4)
-	var out := {"seed": seed_value, "difficulty": diff, "players": players}
-	if parts.size() >= 5:
-		var loadout := _parse_loadout(str(parts[3]), str(parts[4]))
-		if not loadout.is_empty():
-			out["loadout"] = loadout
-	return out
+	return {
+		"seed": seed_value, "seed_label": raw,
+		"difficulty": "standard", "players": 1,
+	}
 
 
 func _parse_loadout(blob: String, inst_blob: String) -> Dictionary:

@@ -240,6 +240,7 @@ func _build_footer() -> void:
 	c.add_child(note)
 
 
+
 func _select_first() -> void:
 	if not GameState.draft.is_empty():
 		_select(str(GameState.draft[0]["id"]), false)

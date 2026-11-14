@@ -464,3 +464,11 @@ only. Nothing here was runtime- or visually verified.
 | Sector button label overflow (`MOVE  (ENTER)` etc.) | **OPEN - documented, not changed** | Measured ~108 px of label in a 100 px button at x=444-544; the D-pad starts at x=554 and the bottom-left panel ends at x=440, so there is no free 8 px to steal without re-laying out the footer. Left for the UI owner with a working Godot. |
 | `SET COURSE >` overflow in draft | **OPEN - documented, not changed** | ~130 px text at x=482 inside a 620 px panel; cosmetic, needs a live check. |
 | Re-export / browser loop / demo | **BLOCKED here** | No Godot, no `build/web`, no `submission/` in this clone; `build/` and `submission/` are gitignored. Must run on a machine with export templates (`tools/release.sh`). |
+
+## Exoplanet outpost theme fix (NOVA request, 19:30)
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| Quarantine human outpost modules (`habitat_dome`, `solar_farm`, `comms_dish`) from normal exoplanet generation | **DONE 19:30** | NOVA | `feature_toggles["outposts"] = false` in `scripts/map_generator.gd`; F5 remains dev-only preview |
+| Re-author or replace the outpost set as alien/precursor ruins, if outposts return | **REQUESTED** | VEGA | No solar panels, habitat domes, airlocks, or Earth-industrial forms; 128/192 px, palette-locked; ComfyUI allowed; fixed brief + creative freedom |
+| Lore/copy check for “abandoned survey architecture” mentions | **REQUESTED** | e | Surface should read as uncolonised survey target; only human objects are lander, flag, deployable relay |

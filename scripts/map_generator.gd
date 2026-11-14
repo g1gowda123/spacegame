@@ -332,7 +332,10 @@ var ridge_noise := FastNoiseLite.new()
 # switchable without deleting code. F4-F7 toggle these live in the viewer.
 var feature_toggles: Dictionary = {
 	"mountains": true,
-	"outposts": true,
+	# Quarantined: habitat/solar/comms modules are human industrial
+	# architecture and break the exoplanet-survey fiction. F5 still previews
+	# them for art review, but they never spawn in a normal run.
+	"outposts": false,
 	"occlusion": true,
 	"props": true,
 }

@@ -89,7 +89,6 @@ var sol_label: Label
 var data_label: Label
 var data_caption: Label
 var heat_bar: UIGauge
-var _first_tip_zone: Control
 var heat_val: Label
 var data_bar: ProgressBar
 var power_pips: Array = []
@@ -178,9 +177,6 @@ func _ready() -> void:
 	_impact_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fx_root.add_child(_impact_flash)
 	_build_hud()
-	for raw in OS.get_cmdline_user_args():
-		if str(raw) == "--tiptest" and _first_tip_zone != null:
-			call_deferred("_dev_tip")
 	_start_sector()
 	GameState.sfx("confirm")
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
@@ -504,13 +500,7 @@ func _hover_cell(parent: Control, rect: Rect2, title: String, body: String,
 	zone.mouse_filter = Control.MOUSE_FILTER_STOP
 	parent.add_child(zone)
 	UIKit.hover_info(zone, title, body, accent)
-	if _first_tip_zone == null:
-		_first_tip_zone = zone
 
-
-func _dev_tip() -> void:
-	if _first_tip_zone != null:
-		_first_tip_zone.mouse_entered.emit()
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
@@ -1072,6 +1062,18 @@ func _run_fx_demo(kind: String) -> void:
 			VFX.beam(vfx_layer, _cell_center(player_cell), Color(0.55, 1.0, 0.92, 0.9), 62.0, 0.85, 9)
 			VFX.ring(vfx_layer, _cell_center(player_cell), UIKit.CYAN, 40.0, 0.55, 2.4, 8)
 			VFX.sparks(vfx_layer, _cell_center(player_cell), UIKit.CYAN, 14, 55.0, -40.0, 10)
+		"disaster":
+			# Deterministic hazard strike on the player for reviewing the
+			# disaster beat (banner + edge flash + pause + aftermath).
+			var h := {
+				"kind": "thermal", "info": HAZARDS["thermal"],
+				"cells": [player_cell, player_cell + Vector2i(1, 0),
+					player_cell + Vector2i(0, 1), player_cell + Vector2i(1, 1)],
+				"origin": player_cell, "shape": "block", "dir": Vector2i.ZERO,
+				"speed": 0, "life": 2, "age": 1,
+			}
+			hazards.append(h)
+			_resolve_hazard()
 		_:
 			_impact(player_cell, Color("#ff9c4a"), 2, 24)
 			await get_tree().create_timer(0.75).timeout
@@ -1212,9 +1214,9 @@ func _end_turn() -> void:
 	if struck:
 		_check_overheat()
 		if int(sec["integrity"]) <= 0:
-		_ending_turn = false
-		_end(false, "HULL BREACH")
-		return
+			_ending_turn = false
+			_end(false, "HULL BREACH")
+			return
 	# Beat before the board advances: the strike, banner and shake need a
 	# moment to read. Without this the new telegraph appears in the same frame
 	# as the damage and the player never registers what happened.
@@ -1805,7 +1807,9 @@ func _resolve_hazard() -> bool:
 
 	# Every front gets world feedback, including the ones the player dodged.
 	var closest := 99
-	var primary: Dictionary = hits[0] if not hits.is_empty() else strikes[0]
+	var primary: Dictionary = strikes[0]
+	if not hits.is_empty():
+		primary = hits[0]
 	for h in strikes:
 		var d := _hazard_distance(h)
 		if d < closest:
