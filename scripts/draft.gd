@@ -35,13 +35,13 @@ func _build() -> void:
 	var budget := UIKit.head("GRANTS $%dM" % int(GameState.run.get("budget", 0)), 10, UIKit.AMBER,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	budget.position = Vector2(490, 5)
-	budget.size = Vector2(140, 12)
+	budget.size = Vector2(140, 15)
 	add_child(budget)
 
 	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 0)), 7, UIKit.MUTED,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	appr.position = Vector2(490, 20)
-	appr.size = Vector2(140, 10)
+	appr.size = Vector2(140, 12)
 	add_child(appr)
 	UIKit.hairline(self, 10, 33, 620)
 
@@ -210,7 +210,7 @@ func _build_footer() -> void:
 	c.add_child(objective_label)
 	detail_label = UIKit.mono("Select a destination to see its mission constraints.", 8, UIKit.MUTED)
 	detail_label.position = Vector2(10, 18)
-	detail_label.size = Vector2(470, 12)
+	detail_label.size = Vector2(470, 14)
 	c.add_child(detail_label)
 
 	confirm_btn = UIKit.button("SET COURSE >", Vector2(130, 22), true)

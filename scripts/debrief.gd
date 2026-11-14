@@ -98,13 +98,13 @@ func _build() -> void:
 
 	funds_label = UIKit.head("FUNDS $0M", 10, UIKit.AMBER, HORIZONTAL_ALIGNMENT_RIGHT)
 	funds_label.position = Vector2(480, 5)
-	funds_label.size = Vector2(140, 12)
+	funds_label.size = Vector2(140, 15)
 	add_child(funds_label)
 	var approval_now := int(GameState.run.get("approval", 0))
 	var appr_color := UIKit.RED if approval_now <= 20 else (UIKit.AMBER if approval_now <= 40 else UIKit.MUTED)
 	var appr := UIKit.mono("APPROVAL %d" % approval_now, 7, appr_color, HORIZONTAL_ALIGNMENT_RIGHT)
 	appr.position = Vector2(480, 20)
-	appr.size = Vector2(140, 10)
+	appr.size = Vector2(140, 12)
 	add_child(appr)
 	UIKit.hairline(self, 10, 33, 620)
 

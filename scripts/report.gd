@@ -27,7 +27,7 @@ func _build() -> void:
 
 	var title := UIKit.head("FINAL MISSION REPORT", 12, UIKit.TEXT)
 	title.position = Vector2(10, 6)
-	title.size = Vector2(300, 16)
+	title.size = Vector2(300, 18)
 	add_child(title)
 	var mode_label := "CAMPAIGN"
 	if bool(GameState.run.get("daily", false)):
@@ -38,10 +38,9 @@ func _build() -> void:
 			mode_label, diff_name, int(GameState.run.get("players", 1)),
 			"" if int(GameState.run.get("players", 1)) == 1 else "S",
 		], 7, UIKit.DIM)
-	sub.position = Vector2(10, 20)
+	sub.position = Vector2(10, 22)
 	add_child(sub)
-	sub.size = Vector2(600, 10)
-	UIKit.hairline(self, 10, 33, 620)
+	UIKit.hairline(self, 10, 34, 620)
 
 	_build_grade()
 	_build_ledger()

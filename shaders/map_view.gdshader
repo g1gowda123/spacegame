@@ -27,6 +27,9 @@ uniform vec2 terrain_mask_size = vec2(80.0, 64.0);
 uniform vec2 terrain_mask_origin = vec2(0.0);
 uniform float terrain_mask_span = 1280.0;
 uniform bool soft_edges = true;
+uniform sampler2D height_mask : filter_linear, repeat_disable;
+uniform vec2 height_mask_size = vec2(80.0, 64.0);
+uniform bool relief = true;
 
 void fragment() {
     // Use UV rather than FRAGCOORD: UV is stable across windowed/fullscreen
@@ -94,6 +97,24 @@ void fragment() {
             // and fought the 64px tile grid; a continuous tint keeps the edge soft
             // without adding a second texture frequency.
             COLOR.rgb = mix(COLOR.rgb, (mx + my) * 0.5, 0.42 * edge_amt);
+        }
+
+        if (relief) {
+            // Elevation field -> slope normal. The light is fixed top-left so
+            // terrain relief agrees with the structure-shadow direction.
+            vec2 huv = (uv * map_size - terrain_mask_origin) / max(terrain_mask_span, 1.0);
+            float hL = texture(height_mask, huv - vec2(1.0 / height_mask_size.x, 0.0)).r;
+            float hR = texture(height_mask, huv + vec2(1.0 / height_mask_size.x, 0.0)).r;
+            float hU = texture(height_mask, huv - vec2(0.0, 1.0 / height_mask_size.y)).r;
+            float hD = texture(height_mask, huv + vec2(0.0, 1.0 / height_mask_size.y)).r;
+            vec2 grad = vec2(hR - hL, hD - hU);
+            vec3 n = normalize(vec3(-grad.x * 9.0, -grad.y * 9.0, 1.0));
+            vec3 sun_dir = normalize(vec3(-0.55, -0.35, 0.76));
+            float sun = clamp(dot(n, sun_dir), 0.0, 1.0);
+            float h = texture(height_mask, huv).r;
+            // Basin floor sits a little darker; crests catch the light.
+            float basin = mix(0.94, 1.0, smoothstep(0.10, 0.55, h));
+            COLOR.rgb *= mix(0.86, 1.10, sun) * basin;
         }
 
         // Biome tint, hue-only. Multiplying by the raw tint colour darkened the

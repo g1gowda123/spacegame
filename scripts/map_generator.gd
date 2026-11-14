@@ -359,6 +359,7 @@ var display: TextureRect
 var shader_mat: ShaderMaterial
 var space_layer: CanvasLayer
 var space_rect: TextureRect
+var space_mat: ShaderMaterial
 var player_tex: Texture2D
 var player_sprite: Sprite2D
 var ambient_layer: Node2D
@@ -380,10 +381,14 @@ var cli_hide_ui: bool = false
 var debug_visible: bool = false
 var debug_transitions: bool = false
 var soft_edges_enabled: bool = true
+var relief_enabled: bool = true
 var debug_layer: Node2D
 var terrain_mask_tex: ImageTexture
 var terrain_mask_img: Image
 var terrain_mask_size := Vector2i.ZERO
+var height_mask_tex: ImageTexture
+var height_mask_img: Image
+var height_mask_size := Vector2i.ZERO
 var terrain_color_cache: Dictionary = {}
 var decal_noise := FastNoiseLite.new()
 var decal_cache: Dictionary = {}
@@ -485,6 +490,8 @@ func _parse_cli() -> void:
 			debug_transitions = true
 		elif arg == "--no-soft-edges":
 			soft_edges_enabled = false
+		elif arg == "--no-relief":
+			relief_enabled = false
 		elif arg == "--legacy-water":
 			# Agent b: leaves the 1-cell halo and the old 3x3-only smoothing,
 			# i.e. the pre-coalescing shoreline, for side-by-side evidence.
@@ -773,6 +780,11 @@ func _build_view() -> void:
 	space_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	space_rect.size = get_viewport_rect().size
 	space_rect.modulate = Color(1, 1, 1, 0.78)
+	var star_shader := load("res://shaders/star_drift.gdshader") as Shader
+	if star_shader != null:
+		space_mat = ShaderMaterial.new()
+		space_mat.shader = star_shader
+		space_rect.material = space_mat
 	space_layer.add_child(space_rect)
 
 	if ResourceLoader.exists("res://assets/tilesets/structures/pieces/parallax_ridge_a.png"):
@@ -2433,18 +2445,36 @@ func _build_terrain_mask() -> void:
 		terrain_mask_img = Image.create(msize.x, msize.y, false, Image.FORMAT_RGB8)
 		terrain_mask_size = msize
 		terrain_mask_tex = ImageTexture.create_from_image(terrain_mask_img)
+	if height_mask_img == null or height_mask_size != msize:
+		height_mask_img = Image.create(msize.x, msize.y, false, Image.FORMAT_RGB8)
+		height_mask_size = msize
+		height_mask_tex = ImageTexture.create_from_image(height_mask_img)
 	var b: Dictionary = BIOMES[biome_index]
 	for ly in VIEW_H:
 		for lx in VIEW_W:
-			var t := _render_terrain_world(view_origin.x + lx, view_origin.y + ly)
+			var wx := view_origin.x + lx
+			var wy := view_origin.y + ly
+			var t := _render_terrain_world(wx, wy)
 			var c := _tile_avg(t)
 			terrain_mask_img.fill_rect(Rect2i(lx * sub, ly * sub, sub, sub), c)
+			# Same field spacing as the material mask, but stores elevation so
+			# the shader can shade slopes against one fixed top-left sun.
+			var h := clampf(
+				elevation.get_noise_2d(float(wx), float(wy)) * 0.82
+				+ ridge_noise.get_noise_2d(float(wx), float(wy)) * 0.18,
+				-1.0, 1.0
+			)
+			var hv := Color(h * 0.5 + 0.5, h * 0.5 + 0.5, h * 0.5 + 0.5, 1.0)
+			height_mask_img.fill_rect(Rect2i(lx * sub, ly * sub, sub, sub), hv)
 	terrain_mask_tex.update(terrain_mask_img)
+	height_mask_tex.update(height_mask_img)
 	if shader_mat != null:
 		shader_mat.set_shader_parameter("terrain_mask", terrain_mask_tex)
 		shader_mat.set_shader_parameter("terrain_mask_size", Vector2(msize))
 		shader_mat.set_shader_parameter("terrain_mask_origin", Vector2(view_origin * TILE))
 		shader_mat.set_shader_parameter("terrain_mask_span", float(VIEW_W * TILE))
+		shader_mat.set_shader_parameter("height_mask", height_mask_tex)
+		shader_mat.set_shader_parameter("height_mask_size", Vector2(msize))
 
 
 func _cell_quad(wx: int, wy: int) -> PackedVector2Array:
@@ -3531,6 +3561,7 @@ func _apply_biome_tint() -> void:
 	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
 	shader_mat.set_shader_parameter("exposure", float(b.get("exposure", 1.0)))
 	shader_mat.set_shader_parameter("soft_edges", soft_edges_enabled)
+	shader_mat.set_shader_parameter("relief", relief_enabled)
 
 
 func _update_view() -> void:
@@ -3556,6 +3587,8 @@ func _update_view() -> void:
 	if space_rect != null:
 		space_rect.size = vp
 		space_rect.position = Vector2.ZERO
+	if space_mat != null:
+		space_mat.set_shader_parameter("resolution", vp)
 	shader_mat.set_shader_parameter("view_mode", view_mode)
 	shader_mat.set_shader_parameter("map_scale", map_scale)
 	shader_mat.set_shader_parameter("tilt", tilt)

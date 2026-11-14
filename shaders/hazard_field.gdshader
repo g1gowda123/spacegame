@@ -69,7 +69,7 @@ void fragment() {
 		// Armed: hazard-type signature + a pulsing warning border.
 		float pulse = 0.5 + 0.5 * sin(t * 4.2 + phase);
 		float border_glow = 1.0 - smoothstep(0.015, 0.085, border);
-		float inner = 0.075 + 0.045 * pulse;
+		float inner = 0.115 + 0.045 * pulse;
 
 		if (kind == 1) {
 			// Stellar flare: spokes radiating from the cell centre.
@@ -119,7 +119,7 @@ void fragment() {
 		// Diagonal warning tape, very low alpha under the signature so the
 		// footprint still reads as a striped hazard rather than a flat wash.
 		float stripe = step(0.5, fract((uv.x + uv.y) * 2.5 - t * 0.55));
-		a = inner + border_glow * (0.55 + 0.35 * pulse) + stripe * 0.035;
+		a = inner + border_glow * (0.34 + 0.22 * pulse) + stripe * 0.035;
 		// Brighten the leading edge so a 5-cell line has a readable contour.
 		col = mix(col, vec3(1.0), border_glow * 0.22);
 	}

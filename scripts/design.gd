@@ -58,18 +58,18 @@ func _build() -> void:
 	requirement_label = UIKit.mono("REQUIRED: SELECT A HULL", 7, UIKit.AMBER,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	requirement_label.position = Vector2(286, 8)
-	requirement_label.size = Vector2(196, 10)
+	requirement_label.size = Vector2(196, 13)
 	add_child(requirement_label)
 
 	budget_label = UIKit.head("BUDGET $500M", 10, UIKit.AMBER,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	budget_label.position = Vector2(490, 5)
-	budget_label.size = Vector2(140, 12)
+	budget_label.size = Vector2(140, 15)
 	add_child(budget_label)
 	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.MUTED,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	appr.position = Vector2(490, 20)
-	appr.size = Vector2(140, 10)
+	appr.size = Vector2(140, 12)
 	add_child(appr)
 	UIKit.hairline(self, 10, 33, 620)
 

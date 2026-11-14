@@ -50,11 +50,11 @@ func _build() -> void:
 
 	budget_label = UIKit.head("", 10, UIKit.AMBER, HORIZONTAL_ALIGNMENT_RIGHT)
 	budget_label.position = Vector2(480, 5)
-	budget_label.size = Vector2(140, 12)
+	budget_label.size = Vector2(140, 15)
 	add_child(budget_label)
 	approval_label = UIKit.mono("", 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
 	approval_label.position = Vector2(480, 20)
-	approval_label.size = Vector2(140, 10)
+	approval_label.size = Vector2(140, 12)
 	add_child(approval_label)
 	UIKit.hairline(self, 10, 33, 620)
 
