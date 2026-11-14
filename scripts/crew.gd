@@ -37,21 +37,6 @@ func _ready() -> void:
 	var bg := SpaceBackdrop.new()
 	add_child(bg)
 	bg.configure({"planet_on": false, "dim": 0.48})
-	if OS.get_cmdline_user_args().has("--seedrepro"):
-		for t in ["NASA-2026", "12345", "hello world"]:
-			var a: Dictionary = CrewDirector.parse_code(t)
-			CrewDirector.begin_run("campaign", 1, "standard", int(a["seed"]), a.get("loadout", {}), str(a.get("seed_label", "")))
-			var ids1: Array = []
-			for p in GameState.draft:
-				ids1.append(str(p.get("id", "")))
-			var seed1: int = int(GameState.run.get("seed", 0))
-			CrewDirector.begin_run("campaign", 1, "standard", int(a["seed"]), a.get("loadout", {}), str(a.get("seed_label", "")))
-			var ids2: Array = []
-			for p in GameState.draft:
-				ids2.append(str(p.get("id", "")))
-			print("SEEDREPRO ", t, " seed=", seed1, " same=", ids1 == ids2, " ids=", ids1)
-		get_tree().quit()
-		return
 	_build()
 	_refresh()
 
