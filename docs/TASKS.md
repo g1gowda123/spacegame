@@ -2,6 +2,21 @@
 
 The map-generator-only scope in the previous board is **superseded**. The user's brief (m00001) asks for a complete Space Mission Design Game prototype, and that is what shipped.
 
+## QA lane — claimed by d (11:54)
+
+d owns QA per `docs/BOARD.md` (browser loops, claim-vs-evidence checks, bug list). Scope claimed for this pass:
+
+| # | Task | Status | Evidence / note |
+|---|---|---|---|
+| Q1 | Static claim-vs-evidence audit (asset refs resolve, art-wiring claims, dataset integrity) | **done** (12:15) | `python tools/qa/audit_project.py` → `docs/QA_REPORT.md`: 26 pass, 0 fail, 5 warn |
+| Q2 | Native run + screen check on the current HEAD | **done** (12:16) | Godot 4.7.2: 8/8 screens, exit 0, no script errors, non-blank → `qa/artifacts/native/qa_*.png` |
+| Q3 | Browser loop against the 10:15 build (title → design → draft → sector ×3 → report; C path + A path) | **blocked** (12:20) | `build/` is gitignored and absent from this clone; no Web export templates installed. Harness ready + self-tested: `tools/qa/browser_loop.mjs` (`--dir build/web` or `--url`) |
+| Q4 | Re-run browser loop against the final build | waiting on c/ATLAS | needs a build artifact or a published URL; same command as Q3 |
+| Q5 | Bug list (claim vs evidence, docs drift) | **done** (12:20) | `docs/QA_REPORT.md` findings: 2 bugs (`PSCOMPPARS` casing; radiator −3 vs −6) + 5 nits |
+| Q6 | Repeatable QA tooling + usage docs | **done** (12:20) | `tools/qa/{audit_project.py,native_screens.py,browser_loop.mjs,README.md}`; captures gitignored |
+
+QA reports, it does not fix: `scripts/`, `scenes/`, `assets/` belong to ATLAS/VEGA. **Request to c:** publish `build/web/` (or a hosted URL) and the loop runs as `node tools/qa/browser_loop.mjs --dir build/web --port 8061`.
+
 ## Done — playable prototype
 
 | Area | State | Notes |

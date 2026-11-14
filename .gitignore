@@ -14,3 +14,6 @@ assets/raw/
 # Python
 __pycache__/
 *.pyc
+
+# QA captures (regenerate with tools/qa/*; see tools/qa/README.md)
+qa/artifacts/
