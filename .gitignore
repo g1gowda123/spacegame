@@ -11,10 +11,6 @@ demo/
 # 1024 px generation sources (local only)
 assets/raw/
 
-# Internal notes
-AGENTS.md
-docs/
-
 # Python
 __pycache__/
 *.pyc
