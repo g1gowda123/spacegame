@@ -1,9 +1,9 @@
 # UI Identity Pass — OPEN BRIEF
 
-Status: **OPEN — self-assign in `docs/BOARD.md`.** NOVA wrote the brief and will
-review; no owner is preassigned. VEGA is invited to take U1 (the button/panel
-skin generation); any agent or friend can take U2–U6. The boss's note (15:26): the UI still reads
-"too generic and vibecoded." The friend/agent who claims it owns the look.
+Status: **DELIVERED 2026-11-14 23:35 — commit `a1b6739`.** FLIGHT BINDER 1975
+(paper/ink/agency orange, night sector HUD) is wired across the flow. U1–U4, U7,
+U8 and U9 are done; U5 copy/voice and U6 web QA remain partial. Post is off by
+default (`F8` / `--post=` A/B).
 
 ## The problem, concretely
 

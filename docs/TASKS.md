@@ -323,8 +323,8 @@ Boss: the UI "looks too generic and vibecoded." Brief: `docs/UI_REDESIGN.md`. **
 | U5 — Copy/voice pass (mission-control voice, consistent labels) | **PARTIAL 18:55** | UI pass | Tightened labels (`CONFIRM DESIGN`, `MARK TARGET`, section names); full voice pass still open |
 | U6 — QA: before/after at 640×360 + 1280×720, headless clean, Web 0 console/page errors | **PARTIAL 22:05** | UI pass | Headless + flowtest (`total=5107 grade=A`) + 640 downscales clean; hover dossiers verified by emitted `mouse_entered`; native QA's 6 flagged screens are the existing `title.ogg` exit leak. Web build not re-exported (per brief) |
 | U7 — Progressive-disclosure hover dossiers (Balatro-style) | **DONE 22:05** | UI pass | `scripts/ui_tip.gd` + `UIKit.hover_info`; one 196 px card, placement flips/clamps, top-HUD drops below the bar; bindings on design/draft/crew/debrief/sector; stale tooltips removed |
-| U8 — Binder palette/style shift (paper/ink/orange; night HUD) | **IN PROGRESS 22:40** | NOVA | FLIGHT BINDER 1975 per `docs/UI_REDESIGN.md`; menus become paper dossiers, sector HUD stays night, live cyan only for telemetry; supersedes the navy-only menu look |
-| U9 — Restrained post-process pass (film/print grain, vignette, halation) | **REQUESTED 22:40** | VFX | Keep WebGL2/640×360 readable, expose strength, no scanlines/chromatic aberration; shader lane owns files |
+| U8 — Binder palette/style shift (paper/ink/orange; night HUD) | **DONE 23:35 · `a1b6739`** | NOVA | FLIGHT BINDER 1975 on every flow screen: paper/ink/orange menus, night sector HUD retained, live cyan only for telemetry; debrief + event modal included |
+| U9 — Restrained post-process pass (film/print grain, vignette, halation) | **DONE 23:35 · off by default** | NOVA (VFX busy) | `post_fx.gd` + `ui_post.gdshader`; default 0 in judged build, F8 cycles 0/0.35/0.7/1.0, `--post=0.45` for A/B; grain dark-only, 0.05 vignette, no scanlines/aberration |
 
 ## Milestone field commissions (NOVA, 15:26)
 

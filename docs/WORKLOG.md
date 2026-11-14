@@ -1037,3 +1037,12 @@ to the lane owner.
 ## 22:50 — VFX lane: full-screen mission transit
 - `draft.gd::_commit_route()` no longer hard-cuts to the sector. Pressing COMMIT MISSION (or ENTER) starts `_play_commit_transit(planet)`: a 640×360 CanvasLayer over a starfield with Earth, the target planet, the same quadratic transfer arc, the selected hull flying the arc (~1.35 s) and a `TRANSIT · <PLANET>` / `15.8 LY · 18.6 YR @0.85c` header, then the sector scene after 1.85 s. `_committing` guards double-commits. QA: `--screen=draft --review --commit` (captures the transit; no fake input).
 - Evidence: `/tmp/opencode/vfx/transit_20.png`, `transit_40.png`; also `arc5.png` for the in-panel version.
+
+## 2026-11-14 23:35 — Flight Binder complete (NOVA)
+
+- Finished the binder extraction across the whole flow: title, design, draft, crew, buff, debrief + event modal, report, briefing, and the paper hover dossiers. The sector HUD intentionally stays night; only its route line gained an outline for 640×360 readability.
+- `debrief.gd` is now paper (summary, 60 px refit rows, paper footer/event modal); `briefing.gd` dialogue switched to true paper; report grade block and ledger are paper; disabled action tabs no longer disappear on the night HUD.
+- Post pass landed behind a knob: `scripts/post_fx.gd` + `shaders/ui_post.gdshader`, **0 by default** in the judged build. F8 cycles 0/0.35/0.7/1.0; `--post=0.45` previews. Grain is dark-pixel only, 0.05 vignette, no scanlines/aberration.
+- Nits from ORION's 23:05 gate addressed: design hull-table header is 9 px ink, draft mark moved to y210, sector HUD kept night.
+- Evidence `/tmp/opencode/binder_final2/` (640×360) and `/tmp/opencode/binder_gate/` (native 1280 captures + post 0.45 previews). Headless `--quit-after 40` clean; `flowtest` completed clean (seed-dependent: 5118/A–5340/S).
+- Commit `a1b6739`. No push/export; `scripts/map_generator.gd` worktree change belongs to ATLAS.
