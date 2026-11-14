@@ -58,6 +58,19 @@ const HAZARDS := {
 		"name": "METEOR SHOWER", "color": Color("#ffb35c"), "block": false,
 		"integrity": 2, "thermal": 4, "dv": 0, "power": 0,
 	},
+	# Major hazards. These are rarer, telegraphed, and deliberately wide.
+	"superflare": {
+		"name": "STELLAR SUPERFLARE", "color": Color("#ff5f91"), "block": true,
+		"integrity": 2, "thermal": 22, "dv": 0, "power": 0,
+	},
+	"tidal": {
+		"name": "TIDAL SHOCK", "color": Color("#9aa7ff"), "block": true,
+		"integrity": 2, "thermal": 4, "dv": 1, "power": 0,
+	},
+	"ion": {
+		"name": "ION STORM", "color": Color("#c08cff"), "block": false,
+		"integrity": 0, "thermal": 10, "dv": 0, "power": 1,
+	},
 }
 
 var sec: Dictionary = {}
@@ -66,6 +79,7 @@ var sector_planet: TextureRect
 var hazard_info: Dictionary = {}
 var hazards: Array[Dictionary] = []
 var scars: Array[Dictionary] = []
+var _major_hazard_seen := false
 var message_color := Color("#54e6d1")
 var toast_label: Label
 var _toast_tween: Tween
@@ -304,6 +318,7 @@ func _start_sector() -> void:
 	path_nodes = 0
 	hazards.clear()
 	scars.clear()
+	_major_hazard_seen = false
 	revealed.clear()
 	_reveal_around(player_cell, 5)
 	_spawn_hazard()
@@ -840,10 +855,10 @@ func _refresh_status() -> void:
 			route_label.text = "%s · NO PATH / OUT OF RANGE" % base
 			route_label.add_theme_color_override("font_color", UIKit.RED)
 	elif int(sec["data"]) >= quota:
-		if player_cell == start_cell:
+		if player_cell == extract_cell:
 			route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
 		else:
-			route_label.text = "%s · QUOTA MET — RETURN TO LANDER" % base
+			route_label.text = "%s · QUOTA MET — RETURN TO CYAN PAD" % base
 		route_label.add_theme_color_override("font_color", UIKit.LIVE)
 	else:
 		var need := quota - int(sec["data"])
@@ -920,12 +935,25 @@ func _roll_hazard() -> Dictionary:
 			shape = "cross"
 		elif r < 0.68:
 			shape = "diamond"
+	var major := false
+	if not _major_hazard_seen and not forced_sweep and sector_no >= 2 and turn >= 4 			and rng.randf() < 0.18:
+		shape = "great" if rng.randf() < 0.64 else "ring"
+		dir = Vector2i.ZERO
+		sweep = false
+		major = true
+	if OS.get_cmdline_user_args().has("--major-hazard"):
+		# QA: force the large footprint so it can be framed and inspected.
+		shape = "great"
+		dir = Vector2i.ZERO
+		sweep = false
+		major = true
 	if shape == "line":
 		var dirs := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 		dir = dirs[rng.randi_range(0, dirs.size() - 1)]
 		sweep = forced_sweep or rng.randf() < 0.45 + 0.12 * float(sector_no) + 0.03 * float(turn)
+	var anchor_pad := 5 if shape == "great" else (4 if shape == "ring" else 0)
 	for attempt in range(10):
-		var anchor := _hazard_anchor()
+		var anchor := _hazard_anchor(anchor_pad)
 		# The visual anchor is the *centre* of the footprint, so a sweep arrow
 		# can start at the middle of its line. `cells[0]` is physically one end
 		# of the front, which put the arrow two cells off the line.
@@ -948,19 +976,47 @@ func _roll_hazard() -> Dictionary:
 					for dy in range(-2, 3):
 						if absi(dx) + absi(dy) <= 2:
 							cells.append(anchor + Vector2i(dx, dy))
+			"great":
+				# A major footprint: 41 tiles, roughly a sixth of the board.
+				for dx in range(-4, 5):
+					for dy in range(-4, 5):
+						if absi(dx) + absi(dy) <= 4:
+							cells.append(anchor + Vector2i(dx, dy))
+			"ring":
+				# A wide shockwave with a safe eye in the middle. The eye gives
+				# the player somewhere to shelter if they read the telegraph.
+				for dx in range(-4, 5):
+					for dy in range(-4, 5):
+						var cheb := maxi(absi(dx), absi(dy))
+						if cheb >= 3 and cheb <= 4:
+							cells.append(anchor + Vector2i(dx, dy))
 			_:
 				for dx in range(-1, 2):
 					for dy in range(-1, 2):
 						cells.append(anchor + Vector2i(dx, dy))
+		if major:
+			# Never open a major front directly on the player or the pad. A
+			# 3×3 breathing pocket makes the first read fair while the rest of
+			# the sector becomes the threat.
+			var pocket: Array[Vector2i] = []
+			for c in cells:
+				if maxi(absi(c.x - player_cell.x), absi(c.y - player_cell.y)) <= 1:
+					continue
+				if c == extract_cell:
+					continue
+				pocket.append(c)
+			cells = pocket
 		if not _hazard_cells_valid(cells):
 			continue
 		if cells.has(player_cell):
 			continue
+		if major:
+			_major_hazard_seen = true
 		var life := 4 if sweep else 1
 		return {
 			"kind": kind, "info": info, "cells": cells,
 			"origin": origin_cell, "shape": shape, "dir": dir,
-			"speed": 1 if sweep else 0, "life": life,
+			"speed": 1 if sweep else 0, "life": life, "major": major,
 			# A front forms for one turn (faint, not yet dangerous) before it
 			# arms. That extra read is the planning window, not extra damage.
 			"age": 0,
@@ -968,7 +1024,7 @@ func _roll_hazard() -> Dictionary:
 	return {}
 
 
-func _hazard_anchor() -> Vector2i:
+func _hazard_anchor(radius: int = 0) -> Vector2i:
 	var base := player_cell
 	var open_nodes: Array[Vector2i] = []
 	for i in range(objectives.size()):
@@ -977,8 +1033,9 @@ func _hazard_anchor() -> Vector2i:
 	if not open_nodes.is_empty() and rng.randf() < 0.55:
 		base = open_nodes[rng.randi_range(0, open_nodes.size() - 1)]
 	var cell := base + Vector2i(rng.randi_range(-4, 4), rng.randi_range(-4, 4))
-	cell.x = clampi(cell.x, player_cell.x - view_w / 2 + 3, player_cell.x + view_w / 2 - 3)
-	cell.y = clampi(cell.y, player_cell.y - view_h / 2 + 3, player_cell.y + view_h / 2 - 3)
+	var margin := maxi(3, radius + 2)
+	cell.x = clampi(cell.x, player_cell.x - view_w / 2 + margin, player_cell.x + view_w / 2 - margin)
+	cell.y = clampi(cell.y, player_cell.y - view_h / 2 + margin, player_cell.y + view_h / 2 - margin)
 	return cell
 
 
@@ -1062,8 +1119,14 @@ func _hazard_pool() -> Array:
 	var pool: Array = []
 	if int(g["heat"]) >= 55:
 		pool.append_array(["thermal", "wind", "quake", "flare"])
+	if int(g["heat"]) >= 70:
+		pool.append("superflare")
 	if int(g["radiation"]) >= 35:
 		pool.append_array(["radiation", "flare", "wind"])
+	if int(g["radiation"]) >= 55:
+		pool.append_array(["ion", "superflare"])
+	if int(sec.get("sector", 1)) >= 2:
+		pool.append("tidal")
 	match str(p["biome"]):
 		"cryo", "ammonia":
 			pool.append_array(["cryo", "cryo", "eclipse", "wind"])
