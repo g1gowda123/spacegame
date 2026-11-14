@@ -386,6 +386,7 @@ var terrain_mask_size := Vector2i.ZERO
 var terrain_color_cache: Dictionary = {}
 var decal_noise := FastNoiseLite.new()
 var decal_cache: Dictionary = {}
+var decal_manifest: Dictionary = {}
 var decal_layer: Node2D
 var debug_elapsed: float = 0.0
 var nav_label: Label
@@ -399,6 +400,9 @@ var objectives: Array[Vector2i] = []
 var collected: Array[bool] = []
 var objective_tiers: Array[int] = []
 var objective_values: Array[int] = []
+var fog_enabled := false
+var revealed: Dictionary = {}
+var fog_layer: Node2D
 var objective_mode := "survey"
 var turns_left: int = TURNS_START
 var hull: int = HULL_START
@@ -840,6 +844,10 @@ func _build_view() -> void:
 	overlay_layer = Node2D.new()
 	overlay_layer.z_index = 22
 	add_child(overlay_layer)
+
+	fog_layer = Node2D.new()
+	fog_layer.z_index = 23
+	add_child(fog_layer)
 
 	debug_layer = Node2D.new()
 	debug_layer.z_index = 30
@@ -2286,8 +2294,40 @@ func _flip_alt(key: String, wx: int, wy: int) -> int:
 	return int(alts[absi(h) % alts.size()])
 
 
+func _reveal_around(cell: Vector2i, radius: int) -> void:
+	for dy in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			if dx * dx + dy * dy <= radius * radius:
+				revealed[cell + Vector2i(dx, dy)] = true
+
+
+func _draw_fog() -> void:
+	if fog_layer == null:
+		return
+	for child in fog_layer.get_children():
+		child.free()
+	if not fog_enabled:
+		return
+	for ly in VIEW_H:
+		for lx in VIEW_W:
+			var c := Vector2i(view_origin.x + lx, view_origin.y + ly)
+			if revealed.has(c):
+				continue
+			var quad := PackedVector2Array([
+				_project(Vector2(c.x * TILE, c.y * TILE)),
+				_project(Vector2((c.x + 1) * TILE, c.y * TILE)),
+				_project(Vector2((c.x + 1) * TILE, (c.y + 1) * TILE)),
+				_project(Vector2(c.x * TILE, (c.y + 1) * TILE)),
+			])
+			var poly := Polygon2D.new()
+			poly.polygon = quad
+			poly.color = Color(0.008, 0.014, 0.024, 0.62)
+			fog_layer.add_child(poly)
+
+
 func _render_window() -> void:
 	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
+	_reveal_around(player_cell, 2 if fog_enabled else 0)
 	if debug_layer != null and not debug_transitions:
 		for child in debug_layer.get_children():
 			child.free()
@@ -2761,6 +2801,137 @@ func _draw_transition_debug() -> void:
 			poly.color = colors.get(kind, colors["other"])
 			debug_layer.add_child(poly)
 	print("TRANSDEBUG ", counts)
+
+
+const DECAL_SHAPES := ["pebbles", "crack", "tuft", "bush", "shards", "flakes"]
+
+
+func _decal_biome() -> String:
+	match str(BIOMES[biome_index].get("id", "")):
+		"temperate":
+			return "temperate"
+		"arid", "iron":
+			return "arid"
+		"volcanic", "sulfur", "obsidian":
+			return "volcanic"
+		"cryo", "ammonia", "methane":
+			return "cryo"
+		"ocean":
+			return "ocean"
+		"barren", "carbon":
+			return "barren"
+	return ""
+
+
+func _load_decal_textures(biome_id: String) -> Array:
+	if decal_cache.has(biome_id):
+		return decal_cache[biome_id]
+	if decal_manifest.is_empty():
+		var manifest_path := "res://assets/tilesets/decals/manifest.json"
+		if FileAccess.file_exists(manifest_path):
+			var parsed: Variant = JSON.parse_string(
+				FileAccess.get_file_as_string(manifest_path)
+			)
+			if parsed is Dictionary:
+				decal_manifest = parsed
+	var out: Array = []
+	var files: Array = []
+	var biomes: Dictionary = decal_manifest.get("biomes", {})
+	if biomes.has(biome_id):
+		files = biomes[biome_id].get("files", [])
+	if not files.is_empty():
+		# Honour the art manifest's per-biome allow-list instead of loading
+		# every decal shape into every biome.
+		for rel in files:
+			var path := "res://assets/tilesets/decals/%s" % str(rel)
+			if ResourceLoader.exists(path):
+				out.append(load(path) as Texture2D)
+	else:
+		for shape in DECAL_SHAPES:
+			for variant in ["a", "b"]:
+				var path := "res://assets/tilesets/decals/%s/%s_%s.png" % [biome_id, shape, variant]
+				if ResourceLoader.exists(path):
+					out.append(load(path) as Texture2D)
+	decal_cache[biome_id] = out
+	return out
+
+
+func _decal_hash(wx: int, wy: int, salt: int) -> int:
+	return absi(int(wx) * 73856093 ^ int(wy) * 19349663 ^ seed_value * 83492791 ^ salt)
+
+
+func _rebuild_decals() -> void:
+	if decal_layer == null or chunks.is_empty():
+		return
+	for child in decal_layer.get_children():
+		child.free()
+	# F7 already hides props; tie decals to the same readability toggle so a
+	# dense board can be stripped back without a second key.
+	if not bool(feature_toggles.get("props", true)):
+		return
+	var biome_id := _decal_biome()
+	if biome_id == "":
+		return
+	var textures := _load_decal_textures(biome_id)
+	if textures.is_empty():
+		return
+	var b: Dictionary = BIOMES[biome_index]
+	var base_keys: Array = [str(b["base"])]
+	for v in b.get("base_variants", []):
+		if not base_keys.has(str(v)):
+			base_keys.append(str(v))
+
+	var occupied := {}
+	for coord in chunks:
+		for s in chunks[coord].get("structures", []):
+			for y in range(int(s["gy"]), int(s["gy"]) + int(s["h"])):
+				for x in range(int(s["gx"]), int(s["gx"]) + int(s["w"])):
+					occupied[Vector2i(x, y)] = true
+
+	var center := _world_to_chunk(player_cell)
+	for cy in range(center.y - 2, center.y + 3):
+		for cx in range(center.x - 2, center.x + 3):
+			var coord := Vector2i(cx, cy)
+			if not chunks.has(coord):
+				continue
+			var data: Dictionary = chunks[coord]
+			var arr: Array = data["terrain"]
+			for ly in CHUNK:
+				for lx in CHUNK:
+					var wx := coord.x * CHUNK + lx
+					var wy := coord.y * CHUNK + ly
+					if not _in_view(wx, wy) or occupied.has(Vector2i(wx, wy)):
+						continue
+					if objectives.has(Vector2i(wx, wy)):
+						continue
+					if not base_keys.has(str(arr[ly * CHUNK + lx])):
+						continue
+					var h := _decal_hash(wx, wy, 6103)
+					# ~11% candidate rate, then a low-frequency cluster gate:
+					# effective coverage is roughly 6-7% of base cells.
+					if float(h % 10000) / 10000.0 > 0.11:
+						continue
+					if decal_noise.get_noise_2d(float(wx), float(wy)) < -0.15:
+						continue
+					var tex: Texture2D = textures[h % textures.size()]
+					var sprite := Sprite2D.new()
+					sprite.texture = tex
+					sprite.centered = true
+					sprite.position = _project(
+						Vector2((float(wx) + 0.5) * TILE, (float(wy) + 0.5) * TILE)
+					)
+					sprite.position += Vector2(
+						float((h / 7) % 21) - 10.0,
+						float((h / 147) % 21) - 10.0
+					)
+					var s := 0.68 + float((h / 11) % 9) / 50.0
+					sprite.scale = Vector2(s, s)
+					var shape := str(DECAL_SHAPES[(h / 13) % DECAL_SHAPES.size()])
+					if shape == "crack" or shape == "shards":
+						sprite.rotation = float((h / 17) % 4) * PI * 0.5
+					var v := 0.97 + float((h / 19) % 7) / 100.0
+					sprite.modulate = Color(v, v, v, 0.88)
+					decal_layer.add_child(sprite)
 
 
 func _rebuild_structure_sprites() -> void:

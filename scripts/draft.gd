@@ -165,7 +165,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var card := {
 		"id": str(p["id"]), "planet": p, "root": root, "panel": panel,
-		"title": name, "accent": GameState.biome_color(str(p["biome"])),
+		"title": name, "pick": pick, "accent": GameState.biome_color(str(p["biome"])),
 		"selected": false,
 	}
 	cards.append(card)
@@ -179,7 +179,7 @@ func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
 	if selected:
 		return
 	panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-		UIKit.PANEL_3 if on else Color("#0d1624"),
+		Color("#0f1d2c") if on else Color("#0d1624"),
 		Color("#3b5370") if on else UIKit.LINE, 3
 	))
 
@@ -200,7 +200,7 @@ func _stat(c: Control, y: float, name: String, value: String, frac: float, color
 
 
 func _build_footer() -> void:
-	var p := UIKit.panel(Color("#0b1320"), Color("#24344a"))
+	var p := UIKit.panel(Color("#0b1522"), UIKit.SHEET_LINE)
 	p.position = Vector2(10, 282)
 	p.size = Vector2(620, 72)
 	add_child(p)
@@ -208,12 +208,12 @@ func _build_footer() -> void:
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	p.add_child(c)
 
-	objective_label = UIKit.label("OBJECTIVE  ·  ...", 7, UIKit.CYAN, true)
-	objective_label.position = Vector2(7, 3)
+	objective_label = UIKit.mono("OBJECTIVE  ·  ...", 7, UIKit.AMBER)
+	objective_label.position = Vector2(10, 5)
 	c.add_child(objective_label)
-	detail_label = UIKit.label("Select a destination to see how its real data becomes mission constraints.", 7, UIKit.MUTED, false)
-	detail_label.position = Vector2(7, 14)
-	detail_label.size = Vector2(460, 12)
+	detail_label = UIKit.mono("Select a destination to see its mission constraints.", 8, UIKit.MUTED)
+	detail_label.position = Vector2(10, 18)
+	detail_label.size = Vector2(470, 12)
 	c.add_child(detail_label)
 
 	confirm_btn = UIKit.button("SET COURSE >", Vector2(130, 22), true)
@@ -222,20 +222,20 @@ func _build_footer() -> void:
 	confirm_btn.pressed.connect(_confirm)
 	c.add_child(confirm_btn)
 
-	var back := UIKit.button("< REFIT", Vector2(64, 22))
-	back.position = Vector2(10, 40)
+	var back := UIKit.button("< REFIT", Vector2(72, 22))
+	back.position = Vector2(10, 42)
 	back.pressed.connect(func():
 		GameState.undo_design()
 		get_tree().change_scene_to_file("res://scenes/design.tscn")
 	)
 	c.add_child(back)
 
-	var note := UIKit.label(
-		"TEQ = starlight-only temperature · gravity drives dv · distance drives comms loss · source: NASA Exoplanet Archive",
-		6, UIKit.DIM, false
+	var note := UIKit.mono(
+		"TEQ = starlight-only temperature · gravity drives ΔV · distance drives comms loss · source: NASA Exoplanet Archive",
+		6, UIKit.DIM
 	)
-	note.position = Vector2(84, 43)
-	note.size = Vector2(536, 22)
+	note.position = Vector2(88, 50)
+	note.size = Vector2(380, 12)
 	c.add_child(note)
 
 
@@ -249,21 +249,22 @@ func _select(id: String, play_sound: bool = true) -> void:
 	for c in cards:
 		var on: bool = str(c["id"]) == id
 		c["selected"] = on
-		var accent: Color = c["accent"]
 		var panel: PanelContainer = c["panel"]
 		var title: Label = c["title"]
+		var pick: Button = c["pick"]
 		if on:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-				Color(accent.r * 0.11, accent.g * 0.11, accent.b * 0.11, 0.99),
-				accent, 3, 2
+				UIKit.ROW_SELECTED, UIKit.CYAN, 3, 2
 			))
-			title.add_theme_color_override("font_color", accent)
+			title.add_theme_color_override("font_color", UIKit.CYAN)
+			pick.text = "TARGET MARKED"
 			selected_planet = c["planet"]
 		else:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 				Color("#0d1624"), UIKit.LINE, 3
 			))
 			title.add_theme_color_override("font_color", UIKit.TEXT)
+			pick.text = "MARK TARGET"
 	if play_sound:
 		GameState.sfx("click")
 	_refresh()
@@ -281,11 +282,10 @@ func _refresh() -> void:
 		return
 	var p := selected_planet
 	var g: Dictionary = p["game"]
-	detail_label.text = "Teq %d K  ·  heat %d   ·   %.2fg  ·  dv %d   ·   %.1f ly  ·  comms -%d%%   ·   science %d" % [
-		int(p["eq_temp_k"]), int(g["heat"]), float(p["gravity_g"]),
-		int(g["delta_v"]), float(p["distance_ly"]), int(g["comms_loss"]),
-		int(g["science"])
+	detail_label.text = "SURFACE WINDOW %d SOLS   ·   DELTA-V %d   ·   %d DATA NODES REQUIRED" % [
+		int(g["sols"]), int(g["delta_v"]), int(GameState.objective().get("quota", 3))
 	]
+	detail_label.add_theme_color_override("font_color", UIKit.TEXT)
 
 
 func _confirm() -> void:

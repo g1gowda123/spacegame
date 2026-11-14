@@ -114,6 +114,8 @@ func _ready() -> void:
 	var args: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
 	if "--debug-transitions" in args:
 		debug_transitions = true
+	if "--fog" in args:
+		fog_enabled = true
 	var force_relay := "--relay" in args
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.
@@ -253,6 +255,8 @@ func _start_sector() -> void:
 	path_nodes = 0
 	hazards.clear()
 	scars.clear()
+	revealed.clear()
+	_reveal_around(player_cell, 5)
 	_spawn_hazard()
 	_update_chunks()
 	_render_window()
@@ -977,6 +981,8 @@ func _execute_path() -> void:
 			return
 		var step_from := player_cell
 		player_cell = c
+		if fog_enabled:
+			_reveal_around(c, 2)
 		sec["delta_v"] = int(sec["delta_v"]) - 1
 		sec["sols"] = int(sec["sols"]) - 1
 		sec["thermal"] = int(sec["thermal"]) + int(sec["heat_gain"])
@@ -1184,6 +1190,7 @@ func _render_window() -> void:
 	hazard_kind = ""
 	super._render_window()
 	_draw_hazards()
+	_draw_fog()
 
 
 func _hazard_quad(cell: Vector2i) -> PackedVector2Array:
@@ -1394,15 +1401,14 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 			VFX.shockwave(vfx_layer, at, color, 34.0)
 			VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 1.0), 12, 70.0, 110.0)
 			VFX.dust(vfx_layer, at, Color(0.55, 0.50, 0.44, 0.55), 7, 26.0)
-			VFX.scorch(vfx_layer, at, color)
 		else:
 			VFX.shield(vfx_layer, at, color)
 			VFX.ring(vfx_layer, at, Color(color.r, color.g, color.b, 0.9), 30.0, 0.34, 2.0)
 	if _impact_flash != null:
 		_impact_flash.color = Color(color.r, color.g, color.b, 0.0)
 		var flash := create_tween()
-		flash.tween_property(_impact_flash, "color:a", 0.34, 0.05)
-		flash.tween_property(_impact_flash, "color:a", 0.0, 0.30)
+		flash.tween_property(_impact_flash, "color:a", 0.20, 0.04)
+		flash.tween_property(_impact_flash, "color:a", 0.0, 0.22)
 	var base := position
 	var shake := create_tween()
 	for i in range(4):
@@ -1417,7 +1423,7 @@ func _pickup_flash(cell := Vector2i.ZERO, color := Color(1, 1, 1)) -> void:
 		return
 	_impact_flash.color = Color(1, 1, 1, 0)
 	var flash := create_tween()
-	flash.tween_property(_impact_flash, "color:a", 0.18, 0.02)
+	flash.tween_property(_impact_flash, "color:a", 0.10, 0.02)
 	flash.tween_property(_impact_flash, "color:a", 0.0, 0.12)
 
 
