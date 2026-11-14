@@ -9,8 +9,8 @@ extends Node2D
 
 const TILE := 64
 const CHUNK := 16
-const VIEW_W := 28
-const VIEW_H := 22
+const VIEW_W := 20
+const VIEW_H := 16
 const VIEW_PX := Vector2(VIEW_W * TILE, VIEW_H * TILE)
 const VIEW_TILES := 10.0
 const TURNS_START := 36
