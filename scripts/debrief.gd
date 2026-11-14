@@ -215,7 +215,7 @@ func _refresh_shop() -> void:
 		return
 	for i in range(GameState.shop_offers.size()):
 		var up: Dictionary = GameState.shop_offers[i]
-		shop_root.add_child(_offer_card(up, i, i * 68.0))
+		shop_root.add_child(_offer_card(up, i, i * 72.0))
 
 
 func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
@@ -223,32 +223,54 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var afford := float(GameState.run.get("budget", 0)) >= cost
 	var card := Control.new()
 	card.position = Vector2(0, y)
-	card.size = Vector2(288, 62)
+	card.size = Vector2(288, 68)
 	var bg := UIKit.panel(Color("#0c1726"), Color("#263d55"))
 	bg.position = Vector2.ZERO
 	bg.size = card.size
 	card.add_child(bg)
 
-	var nm := UIKit.label(str(up["name"]), 9, UIKit.TEXT, true)
-	nm.position = Vector2(8, 6)
-	nm.size = Vector2(198, 12)
+	# Every offer gets a physical module portrait, so the shop reads as a
+	# catalogue of hardware rather than three identical text rows.
+	var icon_frame := Panel.new()
+	icon_frame.position = Vector2(6, 10)
+	icon_frame.size = Vector2(44, 44)
+	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_frame.add_theme_stylebox_override("panel", UIKit.style_panel(
+		Color("#08111c"), Color("#1d344a"), 2
+	))
+	card.add_child(icon_frame)
+	var icon_path := "res://assets/sprites/buffs/%s.png" % str(up.get("icon", "cache"))
+	if ResourceLoader.exists(icon_path):
+		var icon := TextureRect.new()
+		icon.texture = load(icon_path) as Texture2D
+		icon.position = Vector2(3, 3)
+		icon.size = Vector2(38, 38)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon_frame.add_child(icon)
+
+	var nm := UIKit.label(str(up["name"]), 8, UIKit.TEXT, true)
+	nm.position = Vector2(56, 5)
+	nm.size = Vector2(154, 11)
 	card.add_child(nm)
 	var kind := UIKit.label(str(up["kind"]), 5, UIKit.CYAN, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	kind.position = Vector2(188, 8)
-	kind.size = Vector2(80, 10)
+	kind.position = Vector2(212, 6)
+	kind.size = Vector2(68, 9)
 	card.add_child(kind)
-	var desc := UIKit.label(str(up["desc"]), 7, UIKit.MUTED, false)
-	desc.position = Vector2(8, 20)
-	desc.size = Vector2(190, 24)
+	var desc := UIKit.label(str(up.get("plain", up["desc"])), 6, UIKit.MUTED, false)
+	desc.position = Vector2(56, 18)
+	desc.size = Vector2(160, 30)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	card.add_child(desc)
-	var pr := UIKit.label("$%dM" % int(cost), 10, UIKit.AMBER if afford else UIKit.RED, true)
-	pr.position = Vector2(8, 42)
-	pr.size = Vector2(80, 14)
+	var pr := UIKit.label("$%dM" % int(cost), 8, UIKit.AMBER if afford else UIKit.RED, true)
+	pr.position = Vector2(56, 50)
+	pr.size = Vector2(70, 11)
 	card.add_child(pr)
 
-	var buy := UIKit.button("INSTALL", Vector2(72, 22), afford)
-	buy.position = Vector2(206, 34)
+	var buy := UIKit.button("BUY", Vector2(58, 20), afford)
+	buy.position = Vector2(220, 44)
 	buy.disabled = not afford
 	buy.pressed.connect(_on_buy.bind(idx))
 	card.add_child(buy)

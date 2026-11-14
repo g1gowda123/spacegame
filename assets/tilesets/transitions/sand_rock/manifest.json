@@ -1,7 +1,7 @@
 {
   "pair": "sand_rock",
   "a": "assets/tilesets/arid/sand.png",
-  "b": "assets/tilesets/arid/rock.png",
+  "b": "assets/tilesets/barren/rock.png",
   "a_side": "west",
   "tiles": {
     "west": "assets/tilesets/transitions/sand_rock/sand_west.png",
@@ -22,7 +22,7 @@
     "stripe_ew_b": "assets/tilesets/transitions/sand_rock/rock_stripe_ew.png"
   },
   "preview": "assets/tilesets/transitions/sand_rock/sand_rock_preview.png",
-  "seed": 9,
+  "seed": 1,
   "band": 3,
   "scatter": 8,
   "wave": 9.0,

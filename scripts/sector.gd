@@ -93,6 +93,7 @@ var extract_btn: Button
 var move_btn: Button
 
 var turn := 1
+var start_cell := Vector2i.ZERO
 var moved := false
 var move_range := 3
 var cursor_cell := Vector2i.ZERO
@@ -226,6 +227,7 @@ func _start_sector() -> void:
 	objective_mode = str(sec.get("mode", "survey"))
 	_configure_map()
 	_paint_space_planet()
+	start_cell = player_cell
 	turn = 1
 	moved = false
 	move_range = int(sec.get("move_range", 3))
@@ -503,7 +505,10 @@ func _refresh_status() -> void:
 			route_label.text = "%s · NO PATH / OUT OF RANGE" % base
 			route_label.add_theme_color_override("font_color", UIKit.RED)
 	elif int(sec["data"]) >= quota:
-		route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
+		if player_cell == start_cell:
+			route_label.text = "%s · %s — E EXTRACT" % [base, "RELAYS READY" if _is_relay() else "QUOTA MET"]
+		else:
+			route_label.text = "%s · QUOTA MET — RETURN TO LANDER" % base
 		route_label.add_theme_color_override("font_color", UIKit.GREEN)
 	else:
 		var need := quota - int(sec["data"])
@@ -907,8 +912,11 @@ func _execute_path() -> void:
 			_end(false, "HULL BREACH")
 			return
 		if int(sec["data"]) >= _objective_cap():
-			_end(true, "SURVEY COMPLETE")
-			return
+			# All samples are aboard, but the mission is not over: the lander
+			# has to get back to the landing zone before it can extract.
+			message_text = "ALL DATA ABOARD  ·  RETURN TO LANDER"
+			message_color = UIKit.GREEN
+			_show_toast(message_text, message_color)
 		# Render each cell and pan one step, so committing a 2-3 tile route
 		# follows the preview instead of collapsing the whole path into a cut.
 		_update_chunks()
@@ -1321,9 +1329,21 @@ func _risk_bonus_nearby() -> int:
 func _extract() -> void:
 	if done:
 		return
-	var ok := int(sec["data"]) >= int(sec["quota"])
+	if player_cell != start_cell:
+		message_text = "RETURN TO THE LANDING ZONE TO EXTRACT"
+		message_color = UIKit.AMBER
+		_show_toast(message_text, message_color)
+		return
+	if int(sec["data"]) < int(sec["quota"]):
+		var need := int(sec["quota"]) - int(sec["data"])
+		message_text = "NEED %d MORE %s BEFORE EXTRACTION" % [
+			need, "RELAY" if _is_relay() else "DATA"
+		]
+		message_color = UIKit.AMBER
+		_show_toast(message_text, message_color)
+		return
 	sec["risk_bonus"] = _risk_bonus_nearby()
-	_end(ok, "EXTRACTION")
+	_end(true, "EXTRACTION")
 
 
 func _end(extracted: bool, reason: String) -> void:

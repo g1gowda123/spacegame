@@ -4,6 +4,10 @@
   "b": "assets/tilesets/crystal/cluster.png",
   "a_side": "west",
   "tiles": {
+    "west": "assets/tilesets/transitions/plate_cluster/plate_west.png",
+    "east": "assets/tilesets/transitions/plate_cluster/plate_east.png",
+    "north": "assets/tilesets/transitions/plate_cluster/plate_north.png",
+    "south": "assets/tilesets/transitions/plate_cluster/plate_south.png",
     "outer_nw": "assets/tilesets/transitions/plate_cluster/plate_outer_nw.png",
     "inner_nw": "assets/tilesets/transitions/plate_cluster/plate_inner_nw.png",
     "outer_ne": "assets/tilesets/transitions/plate_cluster/plate_outer_ne.png",
@@ -17,6 +21,11 @@
     "stripe_ns_b": "assets/tilesets/transitions/plate_cluster/cluster_stripe_ns.png",
     "stripe_ew_b": "assets/tilesets/transitions/plate_cluster/cluster_stripe_ew.png"
   },
+  "preview": "assets/tilesets/transitions/plate_cluster/plate_cluster_preview.png",
+  "seed": 1,
+  "band": 3,
+  "scatter": 8,
+  "wave": 9.0,
   "extras_seed": 101,
   "extras_band": 3,
   "extras_scatter": 8,

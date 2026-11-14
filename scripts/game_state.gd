@@ -131,27 +131,49 @@ const OBJECTIVES := [
 
 const UPGRADES := [
 	{"id": "rtg", "name": "RTG AUXILIARY", "cost": 70.0, "kind": "MODULE",
-	 "desc": "+1 power regeneration.", "power_regen": 1},
+	 "icon": "reactor", "desc": "+1 power regeneration.",
+	 "plain": "A small nuclear battery. It gives you 1 extra power every turn.",
+	 "power_regen": 1},
 	{"id": "radiator", "name": "DEPLOYABLE RADIATOR", "cost": 65.0, "kind": "MODULE",
-	 "desc": "Heat gain -3 per move.", "thermal_res": 3},
+	 "icon": "aerogel", "desc": "Heat gain -3 per move.",
+	 "plain": "Radiator panels dump heat. Every move adds 3 less heat.",
+	 "thermal_res": 3},
 	{"id": "wheel", "name": "REACTION WHEEL", "cost": 55.0, "kind": "MODULE",
-	 "desc": "+4 delta-v in every sector.", "dv": 4},
+	 "icon": "sling", "desc": "+4 delta-v in every sector.",
+	 "plain": "A momentum wheel saves fuel. You start each sector with 4 extra delta-v.",
+	 "dv": 4},
 	{"id": "armor", "name": "ABLATIVE ARMOR", "cost": 60.0, "kind": "MODULE",
-	 "desc": "+2 maximum integrity.", "integrity": 2},
+	 "icon": "harden", "desc": "+2 maximum integrity.",
+	 "plain": "Extra hull layers. Your lander can take 2 more hits.",
+	 "integrity": 2},
 	{"id": "buffer", "name": "DEEP DATA BUFFER", "cost": 50.0, "kind": "MODULE",
-	 "desc": "+4 data buffer. Comms loss -4%.", "data_cap": 4, "comms_bonus": 4},
+	 "icon": "cache", "desc": "+4 data buffer. Comms loss -4%.",
+	 "plain": "A bigger recorder. You lose 4% less data on the downlink.",
+	 "data_cap": 4, "comms_bonus": 4},
 	{"id": "antenna", "name": "HIGH-GAIN ANTENNA", "cost": 80.0, "kind": "MODULE",
-	 "desc": "Comms loss -10%.", "comms_bonus": 10},
+	 "icon": "deepnet", "desc": "Comms loss -10%.",
+	 "plain": "A larger dish. 10% less data is lost when you send it home.",
+	 "comms_bonus": 10},
 	{"id": "science_pack", "name": "SCIENCE PACKAGE", "cost": 75.0, "kind": "FIRMWARE",
-	 "desc": "+15% science value.", "science": 0.15},
+	 "icon": "science", "desc": "+15% science value.",
+	 "plain": "Better lab software. Every data node is worth 15% more science.",
+	 "science": 0.15},
 	{"id": "salvage", "name": "SALVAGE PROTOCOL", "cost": 70.0, "kind": "FIRMWARE",
-	 "desc": "+30% grant from every sector.", "grant": 0.30},
+	 "icon": "favor", "desc": "+30% grant from every sector.",
+	 "plain": "A sharper contract team. Each successful sector pays 30% more grant money.",
+	 "grant": 0.30},
 	{"id": "repair", "name": "FIELD REPAIR KIT", "cost": 40.0, "kind": "MODULE",
-	 "desc": "Restore 2 integrity next sector.", "repair": 2, "repeatable": true},
+	 "icon": "repair", "desc": "Restore 2 integrity next sector.",
+	 "plain": "Spare parts and sealant. Restore 2 hull integrity at the start of the next sector.",
+	 "repair": 2, "repeatable": true},
 	{"id": "coolant", "name": "CRYO COOLANT LOOP", "cost": 55.0, "kind": "FIRMWARE",
-	 "desc": "Venting heat also restores 1 extra power.", "vent_power": 1},
+	 "icon": "shield", "desc": "Venting heat also restores 1 extra power.",
+	 "plain": "A coolant loop. When you vent heat, you also recover 1 extra power.",
+	 "vent_power": 1},
 	{"id": "ion", "name": "ION THRUSTER", "cost": 60.0, "kind": "MODULE",
-	 "desc": "+1 tile movement range each turn.", "move_range": 1},
+	 "icon": "ranger", "desc": "+1 tile movement range each turn.",
+	 "plain": "A steady low-thrust engine. Move 1 extra tile each turn.",
+	 "move_range": 1},
 ]
 
 
@@ -1205,13 +1227,13 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 		science *= 2.0
 	var grant := 0.0
 	if success:
-		grant = (55.0 + float(delivered) * 28.0) * float(sec["grant_mult"])
+		grant = (30.0 + float(delivered) * 12.0) * float(sec["grant_mult"])
 		if str(objective.get("id", "")) == "geology" and str(planet["biome"]) in [
 			"arid", "barren", "volcanic", "iron", "crystal", "sulfur"
 		]:
 			grant *= 1.25
 		if data >= cap:
-			grant += 35.0
+			grant += 20.0
 		grant = round(grant)
 		run["budget"] = float(run["budget"]) + grant
 	var approval_delta := 0

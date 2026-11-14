@@ -4,6 +4,10 @@
   "b": "assets/tilesets/ocean/beach.png",
   "a_side": "west",
   "tiles": {
+    "west": "assets/tilesets/transitions/beach_beach/beach_west.png",
+    "east": "assets/tilesets/transitions/beach_beach/beach_east.png",
+    "north": "assets/tilesets/transitions/beach_beach/beach_north.png",
+    "south": "assets/tilesets/transitions/beach_beach/beach_south.png",
     "outer_nw": "assets/tilesets/transitions/beach_beach/beach_outer_nw.png",
     "inner_nw": "assets/tilesets/transitions/beach_beach/beach_inner_nw.png",
     "outer_ne": "assets/tilesets/transitions/beach_beach/beach_outer_ne.png",
@@ -17,6 +21,11 @@
     "stripe_ns_b": "assets/tilesets/transitions/beach_beach/beach_stripe_ns.png",
     "stripe_ew_b": "assets/tilesets/transitions/beach_beach/beach_stripe_ew.png"
   },
+  "preview": "assets/tilesets/transitions/beach_beach/beach_beach_preview.png",
+  "seed": 1,
+  "band": 3,
+  "scatter": 8,
+  "wave": 9.0,
   "extras_seed": 101,
   "extras_band": 3,
   "extras_scatter": 8,

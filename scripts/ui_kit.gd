@@ -40,6 +40,44 @@ static func _font(pixel: bool) -> Font:
 	return body_font if body_font != null else ThemeDB.fallback_font
 
 
+static var _skin_cache := {}
+
+static func _skin(name: String) -> StyleBoxTexture:
+	if _skin_cache.has(name):
+		return _skin_cache[name]
+	var sb := StyleBoxTexture.new()
+	sb.texture = load("res://assets/ui/skin_dark/%s.png" % name)
+	sb.texture_margin_left = 5
+	sb.texture_margin_right = 5
+	sb.texture_margin_top = 5
+	sb.texture_margin_bottom = 5
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	_skin_cache[name] = sb
+	return sb
+
+
+static func skin_button(text: String, min_size: Vector2 = Vector2.ZERO) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = min_size
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_override("font", _font(true))
+	b.add_theme_font_size_override("font_size", 10)
+	b.add_theme_stylebox_override("normal", _skin("button_idle"))
+	b.add_theme_stylebox_override("hover", _skin("button_hover"))
+	b.add_theme_stylebox_override("pressed", _skin("button_pressed"))
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	b.add_theme_color_override("font_color", TEXT)
+	b.add_theme_color_override("font_hover_color", Color("#ffffff"))
+	b.add_theme_color_override("font_pressed_color", CYAN)
+	b.add_theme_color_override("font_disabled_color", DIM)
+	b.pressed.connect(func(): if GameState: GameState.sfx("click"))
+	return b
+
+
 static func style_panel(
 	bg: Color = PANEL, border: Color = LINE, radius: int = 3, width: int = 1
 ) -> StyleBoxFlat:
@@ -101,30 +139,29 @@ static func button(
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_override("font", _font(pixel))
 	b.add_theme_font_size_override("font_size", 10 if pixel else 9)
-	var base := style_panel(
-		PANEL_2 if not accent else Color("#123a3c"),
-		LINE if not accent else CYAN_DARK,
-		2
-	)
+	if not accent:
+		b.add_theme_stylebox_override("normal", _skin("button_idle"))
+		b.add_theme_stylebox_override("hover", _skin("button_hover"))
+		b.add_theme_stylebox_override("pressed", _skin("button_pressed"))
+		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		b.add_theme_color_override("font_color", TEXT)
+		b.add_theme_color_override("font_hover_color", Color("#ffffff"))
+		b.add_theme_color_override("font_pressed_color", CYAN)
+		b.add_theme_color_override("font_disabled_color", DIM)
+		b.pressed.connect(func(): if GameState: GameState.sfx("click"))
+		return b
+	var base := style_panel(Color("#123a3c"), CYAN_DARK, 2)
 	base.content_margin_left = 6
 	base.content_margin_right = 6
-	var hover := style_panel(
-		PANEL_3 if not accent else Color("#1a5553"),
-		CYAN if accent else Color("#3b5370"),
-		2
-	)
-	var press := style_panel(
-		Color("#203450") if not accent else CYAN_DARK,
-		CYAN if accent else Color("#3b5370"),
-		2
-	)
+	var hover := style_panel(Color("#1a5553"), CYAN, 2)
+	var press := style_panel(CYAN_DARK, CYAN, 2)
 	b.add_theme_stylebox_override("normal", base)
 	b.add_theme_stylebox_override("hover", hover)
 	b.add_theme_stylebox_override("pressed", press)
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.add_theme_color_override("font_color", TEXT if not accent else Color("#071012"))
-	b.add_theme_color_override("font_hover_color", Color("#ffffff") if not accent else Color("#071012"))
-	b.add_theme_color_override("font_pressed_color", Color("#ffffff") if not accent else Color("#071012"))
+	b.add_theme_color_override("font_color", Color("#071012"))
+	b.add_theme_color_override("font_hover_color", Color("#071012"))
+	b.add_theme_color_override("font_pressed_color", Color("#071012"))
 	b.add_theme_color_override("font_disabled_color", DIM)
 	b.pressed.connect(func(): if GameState: GameState.sfx("click"))
 	return b

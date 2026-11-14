@@ -1,7 +1,7 @@
 {
   "pair": "ice_rock",
   "a": "assets/tilesets/cryo/ice.png",
-  "b": "assets/tilesets/cryo/rock.png",
+  "b": "assets/tilesets/barren/rock.png",
   "a_side": "west",
   "tiles": {
     "west": "assets/tilesets/transitions/ice_rock/ice_west.png",
@@ -22,7 +22,7 @@
     "stripe_ew_b": "assets/tilesets/transitions/ice_rock/rock_stripe_ew.png"
   },
   "preview": "assets/tilesets/transitions/ice_rock/ice_rock_preview.png",
-  "seed": 323,
+  "seed": 1,
   "band": 3,
   "scatter": 8,
   "wave": 9.0,
