@@ -141,6 +141,13 @@ func _fade_voice(index: int, db: float, seconds: float, stop_after: bool) -> voi
 	_vol_tweens[index] = tween
 
 
+## Note on shutdown: if the process exits while a Vorbis playback is live,
+## Godot checks ObjectDB before the audio server has released the playback, so
+## the windowed build can print "N ObjectDB instances were leaked at exit". Those
+## instances are the engine's Ogg stream/playback objects, not anything this node
+## holds: the references below are dropped, headless never creates a player, and
+## the WAV cues do not produce the message. Tracked here so a QA pass does not
+## read it as a regression in `game_state.gd`'s teardown.
 func _exit_tree() -> void:
 	for tween in _vol_tweens:
 		if tween != null and tween.is_valid():
