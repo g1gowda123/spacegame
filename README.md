@@ -38,7 +38,7 @@ Every destination is a real planet. Every hazard is generated from its measured 
 
 ## Five-minute showcase
 
-**For the mentor check:** problem → product → live demo → brief match → NASA data → submission compliance.
+**The five-minute story:** problem → product → live demo → brief match → NASA data → submission compliance.
 
 ### 1. The problem (30 seconds)
 
