@@ -232,6 +232,7 @@ var STRUCTURES: Dictionary = {
 		"path": "res://assets/tilesets/structures/crystal_outcrop.png",
 		"w": 1, "h": 1, "occludes": true,
 	},
+
 	"islet": {
 		"path": "res://assets/tilesets/structures/islet.png",
 		"w": 2, "h": 2,
@@ -359,9 +360,9 @@ var map_scale: float = 0.92
 @export_group("Fog / Survey")
 @export var fog_enabled: bool = true
 @export_range(0, 6, 1) var fog_reveal_radius: int = 2
-@export_range(0.0, 1.0, 0.01) var fog_alpha_inner: float = 0.88
-@export_range(0.0, 1.0, 0.01) var fog_alpha_mid: float = 0.76
-@export_range(0.0, 1.0, 0.01) var fog_alpha_outer: float = 0.62
+@export_range(0.0, 1.0, 0.01) var fog_alpha_inner: float = 0.97
+@export_range(0.0, 1.0, 0.01) var fog_alpha_mid: float = 0.90
+@export_range(0.0, 1.0, 0.01) var fog_alpha_outer: float = 0.78
 
 @export_group("Decals")
 @export_range(0.0, 0.5, 0.01) var decal_density: float = 0.15
@@ -2437,7 +2438,7 @@ func _draw_fog() -> void:
 				fog_alpha = fog_alpha_mid
 			var poly := Polygon2D.new()
 			poly.polygon = quad
-			poly.color = Color(0.008, 0.014, 0.024, fog_alpha)
+			poly.color = Color(0.015, 0.030, 0.055, fog_alpha)
 			fog_layer.add_child(poly)
 
 

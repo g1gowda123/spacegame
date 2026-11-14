@@ -86,6 +86,13 @@ static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> Pa
 	return p
 
 
+static func hover_info(host: Control, title: String, body: String,
+	accent: Color = CYAN) -> void:
+	## Attach a Balatro-style hover dossier to any control. The control keeps
+	## its compact visible label; the dense technical text lives in the card.
+	UITip.bind(host, title, body, accent)
+
+
 static func hairline(parent: Control, x: float, y: float, w: float,
 	color: Color = LINE) -> ColorRect:
 	var line := ColorRect.new()
