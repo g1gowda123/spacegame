@@ -1304,7 +1304,27 @@ func make_shop() -> void:
 			continue
 		pool.append(up)
 	pool.shuffle()
-	shop_offers = pool.slice(0, 3)
+	if pool.is_empty():
+		shop_offers = []
+		changed.emit()
+		return
+	# Keep one affordable option in every shop. Without this, a bad roll can
+	# show three cards the player cannot buy after a low-payout sector, which
+	# reads as a broken store rather than a hard choice.
+	var budget := float(run.get("budget", 0))
+	var affordable: Array = []
+	for up in pool:
+		if float(up["cost"]) <= budget:
+			affordable.append(up)
+	var anchor: Dictionary = affordable[0] if not affordable.is_empty() else pool[0]
+	shop_offers = [anchor]
+	for up in pool:
+		if shop_offers.size() >= 3:
+			break
+		if str(up["id"]) == str(anchor["id"]):
+			continue
+		shop_offers.append(up)
+	shop_offers.shuffle()
 	changed.emit()
 
 
