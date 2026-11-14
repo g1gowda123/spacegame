@@ -20,6 +20,14 @@ var _refits := 0
 var _time := 0.0
 var _flash := 0.0
 var _has_live := false
+# Install feedback: when a refit is bought, the new module's slot pulses for
+# ~2 s so the player can see *where* the upgrade went, not just that a number
+# changed. `_install_slots` holds the world-space rects of the added modules.
+var _install_slots: Array[Rect2] = []
+var _install_left := 0.0
+var _install_name := ""
+var _font: Font = null
+const INSTALL_PULSE := 3.0
 
 
 func _ready() -> void:
@@ -35,6 +43,7 @@ func set_ship(hull: String, insts: Array) -> void:
 
 
 func set_build(hull: String, insts: Array, refits: Array) -> void:
+	var previous_owned := owned.duplicate()
 	hull_id = hull
 	instruments = insts.duplicate()
 	owned = refits.duplicate()
@@ -54,6 +63,23 @@ func set_build(hull: String, insts: Array, refits: Array) -> void:
 		if str(m["id"]) in ["antenna", "ion", "buffer", "radar", "camera"]:
 			_has_live = true
 	_load_texture()
+	# A purchase is a visible event: find modules that were not owned before,
+	# remember their slots, and pulse them. No caller change needed — both the
+	# design and debrief screens already call set_build after a refit.
+	var added: Array = []
+	for m in _modules:
+		var mid := str(m["id"])
+		if mid in owned and not (mid in previous_owned):
+			added.append(m)
+	if not added.is_empty() and _tex != null:
+		var ts := _tex.get_size()
+		_install_slots.clear()
+		for m in added:
+			_install_slots.append(_slot_rect(str(m["slot"]), ts))
+		var first_id := str(added[0]["id"])
+		var info: Dictionary = SHIP_BUILD.MODULE_INFO.get(first_id, {})
+		_install_name = "+" + str(info.get("short", "MOD"))
+		_install_left = INSTALL_PULSE
 	queue_redraw()
 
 
@@ -82,6 +108,10 @@ func _process(delta: float) -> void:
 	_time += delta
 	if _flash > 0.0:
 		_flash = maxf(0.0, _flash - delta * 1.8)
+	if _install_left > 0.0:
+		_install_left = maxf(0.0, _install_left - delta)
+		if _install_left == 0.0:
+			_install_slots.clear()
 	# The portrait is always alive: nav strobe + engine glow run even on a
 	# STOCK hull, not only once a live module is fitted.
 	queue_redraw()
@@ -114,7 +144,46 @@ func _draw() -> void:
 	_draw_live_lights()
 	for m in _modules:
 		_draw_module(m, _slot_rect(str(m["slot"]), ts))
+	_draw_install_pulse()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_install_pulse() -> void:
+	# Drawn in texture space (inside the scaled transform), so the pulse sits on
+	# the module slot at any control size. Reads as "this part just arrived":
+	# white outline on the slot, an expanding accent ring, and a rising "+".
+	if _install_left <= 0.0 or _install_slots.is_empty():
+		return
+	var t := clampf(1.0 - _install_left / INSTALL_PULSE, 0.0, 1.0)
+	var blink := 0.55 + 0.45 * sin(_time * 18.0)
+	for r in _install_slots:
+		# Dark under-stroke first so the accent ring reads on paper and on space.
+		draw_rect(r.grow(1.6), Color(0.03, 0.05, 0.07, 0.55), false, 2.0)
+		draw_rect(r.grow(1.0), Color(1, 1, 1, 0.90 * blink), false, 1.0)
+		draw_rect(r.grow(3.0 + t * 6.0),
+			Color(accent.r, accent.g, accent.b, 0.80 * (1.0 - t)), false, 1.0)
+		var cx := r.get_center().x
+		var y := r.position.y - 2.0 - t * 7.0
+		var a := (1.0 - t) * 0.95
+		draw_line(Vector2(cx - 2.0, y), Vector2(cx + 2.0, y), Color(1, 1, 1, a), 1.0)
+		draw_line(Vector2(cx, y - 2.0), Vector2(cx, y + 2.0), Color(1, 1, 1, a), 1.0)
+	# Name chip so the player reads what arrived, not just that something did.
+	if _font == null:
+		if ResourceLoader.exists("res://assets/ui/Silkscreen-Bold.ttf"):
+			_font = load("res://assets/ui/Silkscreen-Bold.ttf") as Font
+	if _font != null and _install_name != "":
+		var fs := 8
+		var tw := _font.get_string_size(_install_name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var chip := Rect2(
+			clampf(_bbox.position.x + _bbox.size.x * 0.5 - tw * 0.5 - 4.0, 1.0,
+				size.x - tw - 9.0),
+			maxf(1.0, _bbox.position.y + 1.0 - t * 3.0),
+			tw + 8.0, 10.0)
+		var fade := clampf((1.0 - t) * 2.4, 0.0, 1.0)
+		draw_rect(chip, Color(0.04, 0.07, 0.10, 0.92 * fade))
+		draw_rect(chip, Color(accent.r, accent.g, accent.b, 0.95 * fade), false, 1.0)
+		draw_string(_font, chip.position + Vector2(4.0, 9.0), _install_name,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 1, 1, fade))
 
 
 func _draw_live_lights() -> void:

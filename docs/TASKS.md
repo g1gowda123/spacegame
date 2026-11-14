@@ -503,3 +503,27 @@ All segments must align at tile boundaries and preserve the existing 2×2/4×4 m
 | Extraction pad | DONE | LZ flag/pads re-projected after camera recenter; cyan pad chosen once 2–6 tiles away; `_extract` requires pad; `--extract-test` passes. |
 | QA | DONE | Headless clean; flowtest 5284/S; `qa_rig_sector8.png`, `qa_rig_pop2.png`, `qa_extract_test.png`, `qa_pad_start.png`, `qa_pad_moved.png`. |
 | Gate export | REQUESTED | ORION/ATLAS; changes are post-`f86134c` and unexported. |
+
+## Juice / dopamine pass — tasks (ECHO, 22:55)
+
+Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; updates feel like no change to the user"* and *"not enough visual feedback from upgrades and shop items."* Claim a row before editing. `scripts/sector.gd` stays NOVA's until the binder pass lands.
+
+| # | Task | Owner | Acceptance |
+|---|---|---|---|
+| J1 | Floating action text: `+2 DATA`, `−1 HULL`, `−3 HEAT`, `+1 POWER` on the action | NOVA (`sector.gd`) | 0.9 s rise, colour-coded, never covers the HUD; capture |
+| J2 | Quota pips in the HUD that fill one at a time + `QUOTA MET` banner | NOVA | captures at 1/3 and 3/3 |
+| J3 | Milestones: `FIRST NODE`, `QUOTA MET`, `CLEAN RUN ×3`, `DEEP CACHE +2` | NOVA | one toast each, once per sector |
+| J4 | Grade projection in the HUD (`ON TRACK: A`) that updates on every pickup | NOVA | matches the final report within one grade |
+| J5 | Pickup burst (sparks + ring) and hazard-impact vignette | VFX | 0.4 s, pooled, WebGL-safe |
+| J6 | Install ping: ship emit + shop card stamp animation | VFX + UI | visible on purchase; capture |
+| J7 | Module icons for every `UPGRADES` id, at 24 px and 40 px | VEGA | 11 icons + manifest + contact sheet |
+| J8 | SFX: pickup chime, quota sting, deny buzz, upgrade thunk | f | 5 WAVs, ≤0.4 s, no external samples |
+| J9 | Music: 4-bar sting on `QUOTA MET`, bed ducks under it | ECHO | after the first cue set lands |
+
+**Shipped in this pass (ECHO):** `scripts/ship_diagram.gd` now detects a newly installed refit and pulses its slot for 3 s — white slot outline, expanding accent ring, rising `+`, and a `+RAD`-style name chip. No caller change needed; design and debrief both get it.
+
+## Difficulty fairness (ECHO, 22:55)
+
+- **Shipped:** sector-1 fuel/time floor in `scripts/game_state.gd` — `Δv ≥ 26` (plus +6 on the shakedown), `sols ≥ 26`; later sectors floor at 22/20. It only raises stats, so it cannot make a run harder.
+- **Still needed (ATLAS / NOVA):** route-aware budget. After node placement, compute the cheapest route that collects the quota and returns to the pad, then top up Δv to ~1.25× that and print `ROUTE NEEDS ≈N ΔV` on the HUD at sector start. The floor prevents the worst cases but cannot know the actual layout.
+- **Follow-up:** if the quota is 3 and the sector only affords 2, fail *at sector start* with a clear `ROUTE BUDGET` message instead of at the last node.

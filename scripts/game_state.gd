@@ -1068,6 +1068,15 @@ func begin_sector(planet: Dictionary) -> void:
 	if shakedown:
 		integrity += 2
 		sols += 4
+	# Fuel/time floor: a sector must never open unable to pay for the trip to
+	# its quota and back. This is deliberately conservative (it only raises the
+	# stat, never lowers it) until the route-aware budget pass lands: the first
+	# sector should teach the loop, not fail it on arithmetic. Same for sols,
+	# so a slow but correct route is not punished by the clock.
+	if shakedown:
+		dv += 6
+	dv = maxi(dv, 26 if shakedown else 22)
+	sols = maxi(sols, 26 if shakedown else 20)
 
 	var heat_mult := float(s["heat_mult"])
 	if str(hull().get("id", "")) == "cryo":
