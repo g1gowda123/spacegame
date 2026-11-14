@@ -83,7 +83,9 @@ static func configure(r: int, p: int, wet_frac: float, dry_frac: float) -> void:
 ##   district.
 static func water_keys(biome: Dictionary) -> Dictionary:
 	var keys := {}
-	if not bool(biome.get("shore_ring", false)):
+	# Temperate now uses grass<->water transitions instead of a beach ring,
+	# but it still needs the tiny-pond/spur cleanup that the shaper provides.
+	if not bool(biome.get("shore_ring", false)) and str(biome.get("id", "")) != "temperate":
 		return keys
 	var water := str(biome.get("water", ""))
 	if water != "":
