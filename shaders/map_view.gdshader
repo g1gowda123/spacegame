@@ -80,6 +80,17 @@ void fragment() {
             }
         }
     } else {
+        vec4 source = texture(TEXTURE, uv);
+        // Lava/water micro-refraction: nudge the lookup on hot or wet pixels
+        // before grading. Reads as heat shimmer / surface motion, costs one
+        // extra texture fetch, and needs no screen-copy pass.
+        float warm_guess = smoothstep(0.10, 0.42, source.r - max(source.g, source.b));
+        float wet_guess = smoothstep(0.14, 0.46, source.b - max(source.r, source.g));
+        vec2 wobble = vec2(
+            sin(uv.y * map_size.y * 0.55 + TIME * 3.1),
+            cos(uv.x * map_size.x * 0.48 + TIME * 2.6)
+        );
+        uv += wobble * 0.00085 * (warm_guess * 1.0 + wet_guess * 0.55);
         COLOR = texture(TEXTURE, uv);
 
         // Sub-cell material edge: sample the 4x material field on both sides of
@@ -232,6 +243,16 @@ void fragment() {
             float line = (g.x < 0.022 || g.y < 0.022) ? 0.14 : 0.0;
             COLOR.rgb = mix(COLOR.rgb, vec3(0.02, 0.03, 0.04), line);
         }
+    }
+
+    if (circle_view == 0) {
+        // Sector/windowed view: keep the rectangular tactical focus, but fade
+        // the slab edge into space instead of ending on a hard parallelogram.
+        // uv is the view-window rectangle, so this fades all four board edges.
+        vec2 edge_uv = min(uv, vec2(1.0) - uv);
+        float edge_px = min(edge_uv.x, edge_uv.y) * min(map_size.x, map_size.y);
+        float edge_alpha = smoothstep(0.0, 46.0, edge_px);
+        COLOR.a *= edge_alpha;
     }
 
     if (circle_view == 1) {
