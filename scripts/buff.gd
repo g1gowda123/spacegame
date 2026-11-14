@@ -48,26 +48,26 @@ func _build() -> void:
 	})
 	bg.modulate.a = 0.46
 
-	var kicker := UIKit.label("AGENCY REVIEW  //  FIELD COMMISSION", 6, UIKit.AMBER, true,
+	var kicker := UIKit.mono("AGENCY REVIEW  //  FIELD COMMISSION", 7, UIKit.AMBER,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	kicker.position = Vector2(0, 14)
+	kicker.position = Vector2(0, 16)
 	kicker.size = Vector2(640, 10)
 	add_child(kicker)
 
-	var title := UIKit.label("SELECT FIELD COMMISSION", 18, UIKit.CYAN, true,
+	var title := UIKit.head("SELECT FIELD COMMISSION", 16, UIKit.TEXT,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	title.position = Vector2(0, 25)
-	title.size = Vector2(640, 24)
+	title.position = Vector2(0, 28)
+	title.size = Vector2(640, 20)
 	add_child(title)
 
 	var milestone := GameState.buff_milestone_number()
-	var sub := UIKit.label(
-		"MILESTONE %d OF %d  ·  ONE FREE UPGRADE  ·  NO GRANT SPENT" % [
+	var sub := UIKit.mono(
+		"MILESTONE %d OF %d   ·   ONE FREE UPGRADE   ·   NO GRANT SPENT" % [
 			milestone if milestone > 0 else 1,
 			GameState.BUFF_MILESTONES.size(),
-		], 7, UIKit.MUTED, true, HORIZONTAL_ALIGNMENT_CENTER)
-	sub.position = Vector2(0, 51)
-	sub.size = Vector2(640, 12)
+		], 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+	sub.position = Vector2(0, 50)
+	sub.size = Vector2(640, 10)
 	add_child(sub)
 
 	var total_w := CARD_W * 3.0 + CARD_GAP * 2.0
@@ -75,14 +75,14 @@ func _build() -> void:
 	for i in range(cards.size()):
 		_make_card(i, cards[i], start_x + i * (CARD_W + CARD_GAP), CARD_Y)
 
-	status_label = UIKit.label("", 9, UIKit.GREEN, true, HORIZONTAL_ALIGNMENT_CENTER)
-	status_label.position = Vector2(0, 294)
-	status_label.size = Vector2(640, 14)
+	status_label = UIKit.mono("", 8, UIKit.GREEN, HORIZONTAL_ALIGNMENT_CENTER)
+	status_label.position = Vector2(0, 296)
+	status_label.size = Vector2(640, 12)
 	add_child(status_label)
 
-	hint_label = UIKit.label("1  2  3   ·   CLICK A CARD   ·   CHOOSE ONE", 6, UIKit.DIM, true,
+	hint_label = UIKit.mono("1   2   3   ·   CLICK A CARD   ·   ENTER TO CHOOSE", 7, UIKit.DIM,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	hint_label.position = Vector2(0, 324)
+	hint_label.position = Vector2(0, 326)
 	hint_label.size = Vector2(640, 12)
 	add_child(hint_label)
 	_update_focus()
@@ -110,29 +110,27 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(strip)
 
-	var title_label := UIKit.label(str(buff.get("name", "COMMISSION")), 8, UIKit.TEXT, true,
+	var title_label := UIKit.head(str(buff.get("name", "COMMISSION")), 9, UIKit.TEXT,
 		HORIZONTAL_ALIGNMENT_CENTER)
-	title_label.position = Vector2(4, 9)
-	title_label.size = Vector2(CARD_W - 8, 14)
+	title_label.position = Vector2(4, 10)
+	title_label.size = Vector2(CARD_W - 8, 13)
 	title_label.clip_text = true
 	card.add_child(title_label)
 
-	var tag := UIKit.label(rarity.to_upper(), 5, color, true, HORIZONTAL_ALIGNMENT_CENTER)
-	tag.position = Vector2(4, 24)
+	var tag := UIKit.mono(rarity.to_upper(), 6, color, HORIZONTAL_ALIGNMENT_CENTER)
+	tag.position = Vector2(4, 26)
 	tag.size = Vector2(CARD_W - 8, 9)
 	card.add_child(tag)
 
-	var icon_panel := Panel.new()
-	icon_panel.position = Vector2(27, 37)
-	icon_panel.size = Vector2(100, 100)
-	icon_panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-		Color("#050a12"), Color("#1c3044"), 1, 1))
+	var icon_panel := Control.new()
+	icon_panel.position = Vector2(17, 38)
+	icon_panel.size = Vector2(120, 100)
 	icon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(icon_panel)
 
 	var icon := TextureRect.new()
-	icon.position = Vector2(4, 4)
-	icon.size = Vector2(92, 92)
+	icon.position = Vector2(0, 0)
+	icon.size = Vector2(120, 100)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -148,8 +146,8 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	desc.text = "[center]%s[/center]" % str(buff.get("desc", ""))
 	desc.fit_content = false
 	desc.scroll_active = false
-	desc.position = Vector2(8, 143)
-	desc.size = Vector2(CARD_W - 16, 48)
+	desc.position = Vector2(10, 142)
+	desc.size = Vector2(CARD_W - 20, 46)
 	desc.custom_minimum_size = Vector2(CARD_W - 16, 48)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -159,14 +157,14 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	desc.add_theme_constant_override("line_separation", 0)
 	card.add_child(desc)
 
-	var num := UIKit.label(str(index + 1), 7, UIKit.DIM, true)
-	num.position = Vector2(8, 192)
-	num.size = Vector2(20, 12)
+	var num := UIKit.mono(str(index + 1), 7, UIKit.DIM)
+	num.position = Vector2(10, 192)
+	num.size = Vector2(20, 10)
 	card.add_child(num)
-	var free_label := UIKit.label("FREE", 5, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_RIGHT)
-	free_label.position = Vector2(CARD_W - 54, 194)
-	free_label.size = Vector2(46, 9)
-	card.add_child(free_label)
+	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.DIM, HORIZONTAL_ALIGNMENT_RIGHT)
+	pick_hint.position = Vector2(CARD_W - 64, 192)
+	pick_hint.size = Vector2(54, 10)
+	card.add_child(pick_hint)
 
 
 func _card_style(color: Color, hover: bool) -> StyleBoxFlat:

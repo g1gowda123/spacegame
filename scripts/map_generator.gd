@@ -3530,6 +3530,7 @@ func _apply_biome_tint() -> void:
 	shader_mat.set_shader_parameter("biome_tint", c)
 	shader_mat.set_shader_parameter("biome_tint_strength", float(b.get("tint_strength", 0.0)))
 	shader_mat.set_shader_parameter("exposure", float(b.get("exposure", 1.0)))
+	shader_mat.set_shader_parameter("soft_edges", soft_edges_enabled)
 
 
 func _update_view() -> void:
