@@ -469,7 +469,6 @@ func _show_mission_review() -> void:
 
 
 func _commit_route() -> void:
-	print("DBG commit_route planet=%s" % str(selected_planet.get("name", "<empty>")))
 	if selected_planet.is_empty():
 		return
 	GameState.begin_sector(selected_planet)
@@ -496,7 +495,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	print("DBG input key=%d review=%s" % [event.keycode if event is InputEventKey else -1, str(review_layer != null)])
 	# While the review is open it owns the keyboard. Handled in _input rather
 	# than _unhandled_input so a focused button cannot swallow the key first.
 	if review_layer == null or not (event is InputEventKey) or not event.pressed:
