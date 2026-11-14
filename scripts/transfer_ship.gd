@@ -10,6 +10,7 @@ extends Control
 
 var points: PackedVector2Array = PackedVector2Array()
 var accent := Color("#ffc45c")
+var ship_texture: Texture2D
 var travel_seconds := 4.6
 var hold_seconds := 0.9
 
@@ -48,6 +49,17 @@ func set_points(pts: PackedVector2Array) -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	var cycle := travel_seconds + hold_seconds
+	var t := fmod(_time, cycle)
+	# Fade in off Earth, fade out at the end of the hold, so the loop restart is
+	# a launch rather than a teleport.
+	var fade := 1.0
+	var raw := clampf(t / travel_seconds, 0.0, 1.0)
+	if raw < 0.06:
+		fade = raw / 0.06
+	elif t > travel_seconds + hold_seconds * 0.72:
+		fade = clampf(1.0 - (t - travel_seconds - hold_seconds * 0.72) / (hold_seconds * 0.28), 0.0, 1.0)
+	modulate.a = fade
 	queue_redraw()
 
 
@@ -77,7 +89,7 @@ func _draw() -> void:
 		if i == 0:
 			draw_line(_at(u0), _at(u1), Color(accent.r, accent.g, accent.b, 0.0), 1.0, true)
 			continue
-		draw_line(_at(u0), _at(u1), Color(accent.r, accent.g, accent.b, 0.42 * k), 1.0, true)
+		draw_line(_at(u0), _at(u1), Color(accent.r, accent.g, accent.b, 0.60 * k), 1.2, true)
 
 	# Space dust around the trail.
 	var tangent := (_at(minf(u + 0.02, 1.0)) - _at(maxf(u - 0.02, 0.0))).normalized()
@@ -92,7 +104,7 @@ func _draw() -> void:
 
 	# Ship: a small delta with a bright outline and a cyan engine flare.
 	var p := _at(u)
-	var s := 3.4
+	var s := 3.9
 	var tri := PackedVector2Array([
 		p + tangent * s * 1.7,
 		p - tangent * s - normal * s * 0.75,

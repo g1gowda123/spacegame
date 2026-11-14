@@ -76,7 +76,7 @@ func _build_left() -> void:
 	daily["button"].pressed.connect(_set_mode.bind("daily"))
 	mode_cards["daily"] = daily
 
-	c.add_child(_label_at("CREW SIZE", Vector2(10, 50), 8, UIKit.MUTED))
+	c.add_child(_label_at("CREW SIZE", Vector2(10, 44), 8, UIKit.MUTED))
 	for i in range(4):
 		var n := i + 1
 		var card := UIKit.option_card(
@@ -89,7 +89,7 @@ func _build_left() -> void:
 	mode_note.size = Vector2(174, 14)
 	c.add_child(mode_note)
 
-	c.add_child(_label_at("DIFFICULTY", Vector2(10, 114), 8, UIKit.MUTED))
+	c.add_child(_label_at("DIFFICULTY", Vector2(10, 108), 8, UIKit.MUTED))
 	for i in range(3):
 		var id: String = ["cadet", "standard", "director"][i]
 		var d: Dictionary = CrewDirector.DIFFICULTIES[id]
@@ -179,8 +179,7 @@ func _panel(x: float, y: float, w: float, h: float,
 func _label_at(text: String, pos: Vector2, size: int, color: Color) -> Label:
 	var l := UIKit.mono(text, size, color)
 	l.position = pos
-	l.size = Vector2(400, 16)
-	return l
+	l.size = Vector2(400, 20)
 
 
 func _set_mode(id: String) -> void:
