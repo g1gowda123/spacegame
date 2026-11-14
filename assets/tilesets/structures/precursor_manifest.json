@@ -1,0 +1,47 @@
+{
+  "theme": "precursor ruins (alien, non-industrial)",
+  "anchor": "bottom-centre",
+  "shadow": "none \u2014 renderer draws it",
+  "keys": {
+    "precursor_monolith": {
+      "file": "res://assets/tilesets/structures/precursor_monolith.png",
+      "bbox": [
+        70,
+        40,
+        129,
+        179
+      ],
+      "footprint": "2x2"
+    },
+    "precursor_ring": {
+      "file": "res://assets/tilesets/structures/precursor_ring.png",
+      "bbox": [
+        21,
+        88,
+        170,
+        157
+      ],
+      "footprint": "2x2"
+    },
+    "precursor_lattice": {
+      "file": "res://assets/tilesets/structures/precursor_lattice.png",
+      "bbox": [
+        32,
+        73,
+        161,
+        176
+      ],
+      "footprint": "2x2"
+    },
+    "precursor_cylinder": {
+      "file": "res://assets/tilesets/structures/precursor_cylinder.png",
+      "bbox": [
+        53,
+        46,
+        140,
+        191
+      ],
+      "footprint": "2x2"
+    }
+  }
+}
