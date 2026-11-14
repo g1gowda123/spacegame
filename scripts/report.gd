@@ -40,6 +40,7 @@ func _build() -> void:
 		], 7, UIKit.DIM)
 	sub.position = Vector2(10, 22)
 	add_child(sub)
+	sub.size = Vector2(600, 16)
 
 	_build_grade()
 	_build_ledger()
@@ -47,7 +48,7 @@ func _build() -> void:
 
 
 func _build_grade() -> void:
-	var p := UIKit.sheet(self, 10, 39, 266, 252)
+	var p := UIKit.sheet(self, 10, 42, 266, 249)
 	var c := UIKit.fill(p)
 
 	var g := str(score.get("grade", "C"))
@@ -119,7 +120,7 @@ func _build_grade() -> void:
 
 
 func _build_ledger() -> void:
-	var p := UIKit.sheet(self, 286, 39, 344, 252)
+	var p := UIKit.sheet(self, 286, 42, 344, 249)
 	var c := UIKit.fill(p)
 
 	var h := UIKit.head("SECTOR LEDGER", 9, UIKit.AMBER)
@@ -213,7 +214,7 @@ func _build_ledger() -> void:
 			int(st["passes"])
 		]
 	var notes := UIKit.label(
-		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nANALOG  %s\nTEQ drives thermal load · gravity drives delta-v." % [orbit_line, GameState.objective_analog().to_upper()],
+		"SEGMENTS  LAUNCH · SPACE · GROUND · USER\n%s\nANALOG  %s" % [orbit_line, GameState.objective_analog().to_upper()],
 		7, UIKit.DIM)
 	notes.position = Vector2(12, 212)
 	notes.size = Vector2(320, 44)

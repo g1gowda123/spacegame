@@ -3032,11 +3032,11 @@ func _rebuild_decals() -> void:
 					if not base_keys.has(str(arr[ly * CHUNK + lx])):
 						continue
 					var h := _decal_hash(wx, wy, 6103)
-					# ~11% candidate rate, then a low-frequency cluster gate:
-					# effective coverage is roughly 6-7% of base cells.
-					if float(h % 10000) / 10000.0 > 0.15:
+					# Candidate rate × the low-frequency cluster gate controls
+					# effective coverage (inspector: Decals group).
+					if float(h % 10000) / 10000.0 > decal_density:
 						continue
-					if decal_noise.get_noise_2d(float(wx), float(wy)) < -0.20:
+					if decal_noise.get_noise_2d(float(wx), float(wy)) < decal_cluster_threshold:
 						continue
 					var tex: Texture2D = textures[h % textures.size()]
 					var sprite := Sprite2D.new()
@@ -3049,13 +3049,17 @@ func _rebuild_decals() -> void:
 						float((h / 7) % 21) - 10.0,
 						float((h / 147) % 21) - 10.0
 					)
-					var s := 0.48 + float((h / 11) % 9) / 50.0
+					var s := lerpf(
+						decal_scale_min,
+						decal_scale_max,
+						float((h / 11) % 9) / 8.0
+					)
 					sprite.scale = Vector2(s, s)
 					var shape := str(DECAL_SHAPES[(h / 13) % DECAL_SHAPES.size()])
 					if shape == "crack" or shape == "shards":
 						sprite.rotation = float((h / 17) % 4) * PI * 0.5
 					var v := 0.97 + float((h / 19) % 7) / 100.0
-					sprite.modulate = Color(v, v, v, 0.72)
+					sprite.modulate = Color(v, v, v, decal_alpha)
 					decal_layer.add_child(sprite)
 
 
