@@ -2034,7 +2034,7 @@ func _strike_visuals(h: Dictionary, dist: int, hit: bool) -> void:
 	var at := _cell_center(Vector2i(h["origin"]))
 	var major := not hit and dist <= 6
 	if major:
-		VFX.flare_burst(vfx_layer, at, color, 0.85, 9)
+		VFX.flare_burst(vfx_layer, at, color, 1.25, 9)
 		VFX.shockwave(vfx_layer, at, color, 30.0, 8)
 		VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 1.0), 10, 55.0, 90.0, 9)
 		VFX.sheet_burst(vfx_layer, at, "debris", color, 0.8, 9)
@@ -2261,7 +2261,7 @@ func _impact(cell: Vector2i, color: Color, dmg_i: int, dmg_t: int) -> void:
 	var at := _cell_center(cell)
 	if vfx_layer != null:
 		if dmg_i > 0 or dmg_t > 0:
-			VFX.flare_burst(vfx_layer, at, color, 0.9)
+			VFX.flare_burst(vfx_layer, at, color, 1.35)
 			VFX.shockwave(vfx_layer, at, color, 34.0)
 			VFX.sparks(vfx_layer, at, Color(color.r, color.g, color.b, 1.0), 12, 70.0, 110.0)
 			VFX.dust(vfx_layer, at, Color(0.55, 0.50, 0.44, 0.55), 7, 26.0)

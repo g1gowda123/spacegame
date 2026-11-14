@@ -270,10 +270,11 @@ def strip_flare_haze(im: Image.Image) -> Image.Image:
             elif mx < 240 and sat > 0.25:
                 # Palette-lock the shards to the game's impact orange. SDXL
                 # returns brown/olive debris; additive blending needs a warm,
-                # bright spark so the burst does not read as dirt.
-                px[x, y] = (255, 152, 58, a)
+                # bright spark so the burst does not read as dirt. Alpha is
+                # boosted because the sheet is played additively.
+                px[x, y] = (255, 152, 58, min(255, int(a) * 3))
             elif sat < 0.55 and mx < 236:
-                px[x, y] = (r, g, b, int(a * 0.55))
+                px[x, y] = (r, g, b, min(255, int(a) * 2))
     return out
 
 

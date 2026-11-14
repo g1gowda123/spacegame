@@ -24,12 +24,12 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.head("DESTINATION DRAFT", 12, UIKit.TEXT)
+	var header := UIKit.head("DESTINATION DRAFT", 12, UIKit.NIGHT_TEXT)
 	header.position = Vector2(10, 6)
 	add_child(header)
 	var step := UIKit.mono("SECTOR %d OF %d   ·   NASA EXOPLANET ARCHIVE   ·   PSCompPars" % [
 		int(GameState.run.get("sector", 1)), GameState.SECTORS_PER_RUN
-	], 7, UIKit.DIM)
+	], 7, UIKit.NIGHT_MUTED)
 	step.position = Vector2(10, 22)
 	add_child(step)
 
@@ -39,12 +39,12 @@ func _build() -> void:
 	budget.size = Vector2(140, 15)
 	add_child(budget)
 
-	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 0)), 7, UIKit.MUTED,
+	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 0)), 7, UIKit.NIGHT_MUTED,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	appr.position = Vector2(490, 20)
 	appr.size = Vector2(140, 12)
 	add_child(appr)
-	UIKit.hairline(self, 10, 36, 620)
+	UIKit.hairline(self, 10, 36, 620, UIKit.NIGHT_LINE)
 
 	for i in range(mini(3, GameState.draft.size())):
 		_make_card(GameState.draft[i], i)
@@ -58,9 +58,8 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	root.size = Vector2(196, 238)
 	add_child(root)
 
-	var panel := UIKit.panel(Color("#0d1624"), UIKit.LINE)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_child(panel)
+	var panel := UIKit.sheet(root, 0, 0, 196, 238)
+	panel.add_theme_stylebox_override("panel", UIKit.style_panel(Color(0, 0, 0, 0), UIKit.INK, 0, 1))
 
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -83,7 +82,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		"planet_asset": SpaceBackdrop.asset_for_planet(p),
 	})
 
-	var name := UIKit.label(str(p["name"]), 9, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var name := UIKit.label(str(p["name"]), 9, UIKit.INK, true, HORIZONTAL_ALIGNMENT_CENTER)
 	name.position = Vector2(4, 72)
 	name.size = Vector2(188, 13)
 	c.add_child(name)
@@ -95,7 +94,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		"%s   ·   %d K" % [
 			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"])
 		],
-		8, GameState.biome_color(str(p["biome"])).lightened(0.22), HORIZONTAL_ALIGNMENT_CENTER
+		8, UIKit.INK_SOFT, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	type_line.position = Vector2(4, 92)
 	type_line.size = Vector2(188, 11)
@@ -111,10 +110,10 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var tag_color := UIKit.GREEN
 	if threat >= 68.0:
 		tag = "HARSH WORLD"
-		tag_color = UIKit.RED
+		tag_color = UIKit.SIGNAL
 	elif threat >= 36.0:
 		tag = "BALANCED"
-		tag_color = UIKit.AMBER
+		tag_color = UIKit.ORANGE_DARK
 	var risk := UIKit.label("%s  ·  THREAT %d" % [tag, int(round(threat))], 6, tag_color, true,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	risk.position = Vector2(4, 110)
@@ -124,15 +123,15 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	_stat(c, 124, "THERMAL LOAD", "%d" % int(g["heat"]), float(g["heat"]) / 100.0,
 		UIKit.RED if int(g["heat"]) > 60 else UIKit.AMBER)
 	_stat(c, 140, "RADIATION", "%d" % int(g["radiation"]), float(g["radiation"]) / 100.0,
-		UIKit.AMBER if int(g["radiation"]) > 40 else UIKit.TEXT)
+		UIKit.ORANGE_DARK if int(g["radiation"]) > 40 else UIKit.INK)
 	_stat(c, 156, "GRAVITY", "%.2fg" % float(p["gravity_g"]), float(p["gravity_g"]) / 3.0,
-		UIKit.TEXT)
+		UIKit.INK)
 	_stat(c, 172, "COMMS LOSS", "-%d%%" % int(g["comms_loss"]), 1.0 - float(g["comms_loss"]) / 30.0,
-		UIKit.TEXT if int(g["comms_loss"]) <= 10 else UIKit.AMBER)
+		UIKit.INK if int(g["comms_loss"]) <= 10 else UIKit.ORANGE_DARK)
 	_stat(c, 188, "SCIENCE", "%d" % int(g["science"]), float(g["science"]) / 120.0,
-		UIKit.CYAN)
+		UIKit.ORANGE_DARK)
 
-	var mark := UIKit.mono("SELECT", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
+	var mark := UIKit.mono("SELECT", 7, UIKit.INK_FAINT, HORIZONTAL_ALIGNMENT_CENTER)
 	mark.position = Vector2(10, 212)
 	mark.size = Vector2(176, 12)
 	c.add_child(mark)
@@ -179,17 +178,16 @@ func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
 	if selected:
 		return
 	panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-		Color("#0f1d2c") if on else Color("#0d1624"),
-		Color("#3b5370") if on else UIKit.LINE, 3
+		Color(0, 0, 0, 0), UIKit.ORANGE if on else UIKit.INK, 0, 2 if on else 1
 	))
 
 
 func _stat(c: Control, y: float, name: String, value: String, frac: float, color: Color) -> void:
-	var l := UIKit.mono(name, 7, UIKit.DIM)
+	var l := UIKit.mono(name, 7, UIKit.INK_SOFT)
 	l.position = Vector2(10, y)
 	l.size = Vector2(80, 11)
 	c.add_child(l)
-	var bar := UIKit.bar(46, 4, UIKit.CYAN)
+	var bar := UIKit.bar(46, 4, UIKit.TEAL)
 	bar.position = Vector2(92, y + 3)
 	c.add_child(bar)
 	UIKit.set_bar(bar, clampf(frac, 0.0, 1.0) * 100.0, 100.0)
@@ -200,18 +198,15 @@ func _stat(c: Control, y: float, name: String, value: String, frac: float, color
 
 
 func _build_footer() -> void:
-	var p := UIKit.panel(Color("#0b1522"), UIKit.SHEET_LINE)
-	p.position = Vector2(10, 282)
-	p.size = Vector2(620, 72)
-	add_child(p)
+	var p := UIKit.sheet(self, 10, 282, 620, 72)
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	p.add_child(c)
 
-	objective_label = UIKit.mono("OBJECTIVE  ·  ...", 7, UIKit.AMBER)
+	objective_label = UIKit.mono("OBJECTIVE  ·  ...", 7, UIKit.SIGNAL)
 	objective_label.position = Vector2(10, 5)
 	c.add_child(objective_label)
-	detail_label = UIKit.mono("Select a destination to see its mission constraints.", 8, UIKit.MUTED)
+	detail_label = UIKit.mono("Select a destination to see its mission constraints.", 8, UIKit.INK_SOFT)
 	detail_label.position = Vector2(10, 18)
 	detail_label.size = Vector2(470, 14)
 	c.add_child(detail_label)
@@ -247,19 +242,19 @@ func _select(id: String, play_sound: bool = true) -> void:
 		var mark: Label = c["mark"]
 		if on:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-				UIKit.ROW_SELECTED, UIKit.CYAN, 3, 2
+				Color(0, 0, 0, 0), UIKit.ORANGE, 0, 2
 			))
-			title.add_theme_color_override("font_color", UIKit.CYAN)
+			title.add_theme_color_override("font_color", UIKit.ORANGE_DARK)
 			mark.text = "●  TARGET MARKED"
-			mark.add_theme_color_override("font_color", UIKit.CYAN)
+			mark.add_theme_color_override("font_color", UIKit.ORANGE_DARK)
 			selected_planet = c["planet"]
 		else:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-				Color("#0d1624"), UIKit.LINE, 3
+				Color(0, 0, 0, 0), UIKit.INK, 0, 1
 			))
-			title.add_theme_color_override("font_color", UIKit.TEXT)
+			title.add_theme_color_override("font_color", UIKit.INK)
 			mark.text = "SELECT"
-			mark.add_theme_color_override("font_color", UIKit.DIM)
+			mark.add_theme_color_override("font_color", UIKit.INK_FAINT)
 	if play_sound:
 		GameState.sfx("click")
 	_refresh()
@@ -280,7 +275,7 @@ func _refresh() -> void:
 	detail_label.text = "SURFACE WINDOW %d SOLS   ·   DELTA-V %d" % [
 		int(g["sols"]), int(g["delta_v"])
 	]
-	detail_label.add_theme_color_override("font_color", UIKit.TEXT)
+	detail_label.add_theme_color_override("font_color", UIKit.INK)
 
 
 func _confirm() -> void:

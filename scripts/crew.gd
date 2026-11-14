@@ -42,10 +42,10 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.head("MISSION CONTROL", 12, UIKit.TEXT)
+	var header := UIKit.head("MISSION CONTROL", 12, UIKit.NIGHT_TEXT)
 	header.position = Vector2(10, 6)
 	add_child(header)
-	var step := UIKit.mono("CREW MANIFEST  ·  DIFFICULTY  ·  CAMPAIGN SEED", 7, UIKit.DIM)
+	var step := UIKit.mono("CREW MANIFEST  ·  DIFFICULTY  ·  CAMPAIGN SEED", 7, UIKit.NIGHT_MUTED)
 	step.position = Vector2(10, 22)
 	add_child(step)
 
@@ -53,11 +53,11 @@ func _build() -> void:
 	budget_label.position = Vector2(480, 5)
 	budget_label.size = Vector2(140, 15)
 	add_child(budget_label)
-	approval_label = UIKit.mono("", 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
+	approval_label = UIKit.mono("", 7, UIKit.NIGHT_MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
 	approval_label.position = Vector2(480, 20)
 	approval_label.size = Vector2(140, 12)
 	add_child(approval_label)
-	UIKit.hairline(self, 10, 36, 620)
+	UIKit.hairline(self, 10, 36, 620, UIKit.NIGHT_LINE)
 
 	_build_left()
 	_build_right()
@@ -96,7 +96,7 @@ func _build_left() -> void:
 		var dull := Color(str(d["color"]))
 		var card := UIKit.option_card(
 			c, Rect2(10, 122 + i * 34, 170, 30),
-			str(d["name"]), "", dull, 9, 7,
+			str(d["name"]), "", UIKit.ORANGE, 9, 7,
 			"x%.2f" % float(d["score"]), false
 		)
 		card["button"].pressed.connect(_set_difficulty.bind(id))
@@ -133,10 +133,10 @@ func _build_right() -> void:
 	code_edit.max_length = 64
 	code_edit.add_theme_font_override("font", UIKit.body_font)
 	code_edit.add_theme_font_size_override("font_size", 8)
-	code_edit.add_theme_color_override("font_color", UIKit.TEXT)
-	code_edit.add_theme_color_override("font_placeholder_color", UIKit.DIM)
-	code_edit.add_theme_stylebox_override("normal", UIKit.style_panel(Color("#0a1220"), UIKit.LINE, 2))
-	code_edit.add_theme_stylebox_override("focus", UIKit.style_panel(Color("#0c1726"), UIKit.CYAN, 2))
+	code_edit.add_theme_color_override("font_color", UIKit.INK)
+	code_edit.add_theme_color_override("font_placeholder_color", UIKit.INK_FAINT)
+	code_edit.add_theme_stylebox_override("normal", UIKit.style_panel(UIKit.PAPER_HI, UIKit.INK, 0))
+	code_edit.add_theme_stylebox_override("focus", UIKit.style_panel(UIKit.PAPER, UIKit.ORANGE, 0))
 	code_edit.text_submitted.connect(func(_t: String): _apply_code())
 	c.add_child(code_edit)
 	var apply := UIKit.button("APPLY", Vector2(56, 20))
@@ -151,7 +151,7 @@ func _build_right() -> void:
 
 
 func _build_footer() -> void:
-	UIKit.hairline(self, 10, 325, 620)
+	UIKit.hairline(self, 10, 325, 620, UIKit.NIGHT_LINE)
 	var back := UIKit.button("< BACK", Vector2(72, 24))
 	back.position = Vector2(10, 330)
 	back.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/title.tscn"))
@@ -159,7 +159,7 @@ func _build_footer() -> void:
 
 	var note := UIKit.mono(
 		"Hot-seat co-op: every role owns a different metric, and the goals conflict.",
-		7, UIKit.DIM
+		7, UIKit.NIGHT_MUTED
 	)
 	note.position = Vector2(92, 336)
 	add_child(note)
@@ -320,12 +320,12 @@ func _add_row(idx: int, row: Dictionary, cols: int = 1) -> void:
 	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bg.add_child(marker)
 
-	var nm := UIKit.head(str(row["name"]), 8, color)
+	var nm := UIKit.head(str(row["name"]), 8, color.darkened(0.28))
 	nm.position = Vector2(10, 4)
 	nm.size = Vector2(120, 12)
 	bg.add_child(nm)
 	if row.has("shorts"):
-		var sh := UIKit.mono(str(row["shorts"]), 7, color, HORIZONTAL_ALIGNMENT_RIGHT)
+		var sh := UIKit.mono(str(row["shorts"]), 7, color.darkened(0.18), HORIZONTAL_ALIGNMENT_RIGHT)
 		sh.position = Vector2(130, 5)
 		sh.size = Vector2(cell_w - 140, 12)
 		bg.add_child(sh)

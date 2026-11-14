@@ -123,6 +123,24 @@ Recorded at 1280×720 as one continuous, deterministic run — not stitched stil
 
 The shipped cut is **23.4 s** (702 frames at 30 fps, H.264, 3.25 MB). It was re-recorded against the `40a6d72` gate and cut to the live Web flow; the deck is exactly 7 slides. If the platform rejects the length, submit the 7-slide deck instead.
 
+How the cut was made (reproducible):
+```
+python3 tools/qa/record_demo.py /tmp/opencode/demo_rec        # raw.webm + MARK <beat> <seconds>
+ffmpeg -y -i /tmp/opencode/demo_rec/raw.webm -filter_complex "
+  [0:v]trim=9.0:11.0,setpts=PTS-STARTPTS[a];
+  [0:v]trim=11.6:13.8,setpts=PTS-STARTPTS[b];
+  [0:v]trim=17.8:21.0,setpts=PTS-STARTPTS[c];
+  [0:v]trim=22.2:25.2,setpts=PTS-STARTPTS[d];
+  [0:v]trim=27.0:30.6,setpts=PTS-STARTPTS[e];
+  [0:v]trim=38.6:42.2,setpts=PTS-STARTPTS[f];
+  [0:v]trim=42.8:46.2,setpts=PTS-STARTPTS[g];
+  [a][b][c][d][e][f][g]concat=n=7:v=1:a=0,fps=30,format=yuv420p[v]"
+  -map "[v]" -c:v libx264 -crf 20 -preset slow -movflags +faststart demo_raw.mp4
+# then append the 2.4 s letterboxed MISSION SUCCESS card built from screenshots/debrief.png
+```
+Beat times shift when the UI changes; always re-derive them from the `MARK` lines and one
+contact-sheet pass over `raw.webm` before cutting.
+
 ## 7-slide deck — outline
 
 1. **Title** — Orbit & Outplay, one-line pitch, team.

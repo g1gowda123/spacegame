@@ -1,6 +1,6 @@
 class_name UITip
 extends CanvasLayer
-## Balatro-style hover dossier: one dark card with a coloured edge that appears
+## Balatro-style hover dossier: one paper slip with a coloured edge that appears
 ## beside the control under the cursor. The card is input-transparent, so it can
 ## never steal the click that opened it.
 
@@ -36,7 +36,7 @@ static func _open(host: Control, title: String, body: String, accent: Color) -> 
 	var tip := _ensure()
 	tip._host = host
 	tip._title.text = title
-	tip._title.add_theme_color_override("font_color", accent)
+	tip._title.add_theme_color_override("font_color", UIKit.INK)
 	tip._body.text = body
 	tip._panel.add_theme_stylebox_override("panel", tip._style(accent))
 	tip._place(host)
@@ -69,11 +69,11 @@ func _init() -> void:
 	v.add_theme_constant_override("separation", 3)
 	_panel.add_child(v)
 
-	_title = UIKit.head("", 8, UIKit.CYAN, HORIZONTAL_ALIGNMENT_LEFT)
+	_title = UIKit.head("", 8, UIKit.INK, HORIZONTAL_ALIGNMENT_LEFT)
 	_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(_title)
 
-	_body = UIKit.mono("", 7, UIKit.TEXT)
+	_body = UIKit.mono("", 7, UIKit.INK_SOFT)
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.custom_minimum_size = Vector2(178, 0)
 	_body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
@@ -84,15 +84,18 @@ func _init() -> void:
 
 func _style(accent: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.028, 0.048, 0.075, 0.98)
-	s.border_color = accent
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(2)
+	s.bg_color = UIKit.PAPER
+	var edge := accent
+	if edge.get_luminance() > 0.55:
+		edge = edge.darkened(0.32)
+	s.border_color = edge
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(0)
 	s.content_margin_left = 8
 	s.content_margin_right = 8
 	s.content_margin_top = 6
 	s.content_margin_bottom = 6
-	s.shadow_color = Color(0, 0, 0, 0.55)
+	s.shadow_color = Color(0.04, 0.03, 0.02, 0.55)
 	s.shadow_size = 2
 	s.shadow_offset = Vector2(2, 2)
 	return s
@@ -111,7 +114,7 @@ func _place(host: Control) -> void:
 	var y := r.position.y
 	# Top-bar dossiers drop below the bar instead of covering the stat the
 	# cursor is asking about.
-	if y < 50.0:
+	if y < 50.0 and r.size.y <= 50.0:
 		y = r.end.y + 4.0
 	if y + height > 352.0:
 		y = 352.0 - height

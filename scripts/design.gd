@@ -46,11 +46,12 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var header := UIKit.head("MISSION DESIGN", 12, UIKit.TEXT)
-	header.position = Vector2(10, 6)
+	var header := UIKit.head("MISSION DESIGN", 12, UIKit.NIGHT_TEXT)
+	header.position = Vector2(10, 4)
+	header.size = Vector2(300, 18)
 	add_child(header)
 
-	var step := UIKit.mono("01 / 03   ·   ENGINEERING TRADE STUDY", 7, UIKit.DIM)
+	var step := UIKit.mono("01 / 03   ·   ENGINEERING TRADE STUDY", 7, UIKit.NIGHT_MUTED)
 	step.position = Vector2(10, 22)
 	add_child(step)
 
@@ -66,12 +67,12 @@ func _build() -> void:
 	budget_label.position = Vector2(490, 5)
 	budget_label.size = Vector2(140, 15)
 	add_child(budget_label)
-	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.MUTED,
+	var appr := UIKit.mono("APPROVAL %d" % int(GameState.run.get("approval", 62)), 7, UIKit.NIGHT_MUTED,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	appr.position = Vector2(490, 20)
 	appr.size = Vector2(140, 12)
 	add_child(appr)
-	UIKit.hairline(self, 10, 36, 620)
+	UIKit.hairline(self, 10, 36, 620, UIKit.NIGHT_LINE)
 
 	_build_left()
 	_build_center()
@@ -93,7 +94,7 @@ func _column(x: float, w: float, title: String) -> VBoxContainer:
 
 
 func _subhead(v: VBoxContainer, text: String) -> void:
-	v.add_child(UIKit.vspace(8))
+	v.add_child(UIKit.vspace(12))
 	v.add_child(UIKit.mono(text, 7, UIKit.DIM))
 
 
@@ -118,7 +119,7 @@ func _build_left() -> void:
 	var vehicle_head := HBoxContainer.new()
 	vehicle_head.custom_minimum_size = Vector2(0, 12)
 	vehicle_head.add_theme_constant_override("separation", 4)
-	var vehicle_label := UIKit.mono("LAUNCH VEHICLE", 7, UIKit.MUTED)
+	var vehicle_label := UIKit.head("LAUNCH VEHICLE", 9, UIKit.INK)
 	vehicle_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vehicle_head.add_child(vehicle_label)
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)
@@ -138,7 +139,6 @@ func _build_left() -> void:
 			])
 		vehicle_cards[str(veh["id"])] = card
 	v.add_child(UIKit.vspace(5))
-	v.add_child(UIKit.mono("HOVER A ROW FOR FULL SPECS", 7, UIKit.MUTED))
 
 
 func _build_center() -> void:
@@ -147,8 +147,8 @@ func _build_center() -> void:
 	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
 	v.add_child(UIKit.vspace(4))
-	v.add_child(UIKit.mono("SPACECRAFT", 8, UIKit.MUTED))
-	UIKit.hairline(v, 0, 0, 190, UIKit.LINE)
+	v.add_child(UIKit.head("SPACECRAFT", 10, UIKit.INK))
+	UIKit.hairline(v, 0, 0, 188, UIKit.LINE)
 
 	diagram = ShipDiagram.new()
 	diagram.custom_minimum_size = Vector2(190, 60)
@@ -172,7 +172,7 @@ func _build_center() -> void:
 	thermal_val = _stat_value(thermal_bar)
 	data_val = _stat_value(data_bar)
 
-	warning_label = UIKit.mono("Select hull, vehicle, objective and two instruments.", 7, UIKit.AMBER)
+	warning_label = UIKit.mono("Select hull, vehicle, objective and two instruments.", 7, UIKit.SIGNAL)
 	warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	warning_label.custom_minimum_size = Vector2(188, 24)
 	warning_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
@@ -211,13 +211,13 @@ func _stat_row(v: VBoxContainer, name: String, unit: String) -> UIGauge:
 	h.add_theme_constant_override("separation", 5)
 	h.custom_minimum_size = Vector2(190, 13)
 	v.add_child(h)
-	var l := UIKit.mono(name, 7, UIKit.MUTED)
+	var l := UIKit.mono(name, 8, UIKit.INK)
 	l.custom_minimum_size = Vector2(50, 12)
 	h.add_child(l)
 	var pb := UIKit.bar(88, 5, UIKit.CYAN)
 	pb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(pb)
-	var val := UIKit.mono("—", 8, UIKit.TEXT)
+	var val := UIKit.mono("—", 8, UIKit.INK)
 	val.custom_minimum_size = Vector2(42, 12)
 	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	val.name = "Value"
@@ -245,7 +245,7 @@ func _build_right() -> void:
 		objective_cards[str(o["id"])] = card
 
 	_subhead(v, "INSTRUMENTS  ·  PICK 2")
-	instrument_requirement = UIKit.mono("0 / 2 SELECTED", 7, UIKit.AMBER)
+	instrument_requirement = UIKit.mono("0 / 2 SELECTED", 7, UIKit.ORANGE)
 	v.add_child(instrument_requirement)
 	var short_names := {
 		"camera": "MULTISPECTRAL", "spectrometer": "SPECTROMETER",
@@ -271,7 +271,7 @@ func _build_right() -> void:
 
 
 func _build_footer() -> void:
-	UIKit.hairline(self, 10, 323, 620)
+	UIKit.hairline(self, 10, 323, 620, UIKit.NIGHT_LINE)
 	var back := UIKit.button("< BACK", Vector2(68, 24))
 	back.position = Vector2(10, 328)
 	back.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/title.tscn"))
@@ -285,7 +285,7 @@ func _build_footer() -> void:
 	)
 	add_child(quick)
 
-	cost_label = UIKit.mono("MISSION COST  $0M", 7, UIKit.DIM,
+	cost_label = UIKit.mono("MISSION COST  $0M", 7, UIKit.NIGHT_MUTED,
 		HORIZONTAL_ALIGNMENT_RIGHT)
 	cost_label.position = Vector2(216, 332)
 	cost_label.size = Vector2(172, 14)
@@ -342,7 +342,7 @@ func _refresh() -> void:
 	for id in instrument_cards:
 		UIKit.select_card(instrument_cards[id], id in chosen)
 		var locked: bool = chosen.size() >= 2 and not (id in chosen)
-		instrument_cards[id]["root"].modulate = Color(1, 1, 1, 0.32) if locked else Color.WHITE
+		instrument_cards[id]["root"].modulate = Color(1, 1, 1, 0.58) if locked else Color.WHITE
 		instrument_cards[id]["button"].disabled = locked
 		instrument_cards[id]["enabled"] = not locked
 
@@ -354,25 +354,25 @@ func _refresh() -> void:
 	mass_val.text = "%d/%d" % [int(s.get("mass", 0)), int(cap)]
 	UIKit.set_bar(mass_bar, float(s.get("mass", 0)), cap)
 	var over_mass := float(s.get("mass", 0)) > cap
-	UIKit.set_bar_color(mass_bar, UIKit.RED if over_mass else UIKit.CYAN)
+	UIKit.set_bar_color(mass_bar, UIKit.RED if over_mass else UIKit.TEAL)
 	mass_val.add_theme_color_override("font_color", UIKit.RED if over_mass else UIKit.TEXT)
 	power_val.text = "%d/%dW" % [int(s.get("power_draw", 0)), int(s.get("power_gen", 0))]
 	var power_net := float(s.get("power_gen", 0)) - float(s.get("power_draw", 0))
 	UIKit.set_bar(power_bar, maxf(0.0, power_net), maxf(1.0, float(s.get("power_gen", 0))))
-	UIKit.set_bar_color(power_bar, UIKit.RED if power_net < 0.0 else UIKit.CYAN)
+	UIKit.set_bar_color(power_bar, UIKit.RED if power_net < 0.0 else UIKit.TEAL)
 	power_val.add_theme_color_override("font_color", UIKit.RED if power_net < 0.0 else UIKit.TEXT)
 	dv_val.text = "%d" % int(s.get("delta_v", 0))
 	UIKit.set_bar(dv_bar, float(s.get("delta_v", 0)), 45.0)
-	UIKit.set_bar_color(dv_bar, UIKit.AMBER if int(s.get("delta_v", 0)) <= 5 else UIKit.CYAN)
+	UIKit.set_bar_color(dv_bar, UIKit.AMBER if int(s.get("delta_v", 0)) <= 5 else UIKit.TEAL)
 	hull_val.text = "x%d" % int(s.get("integrity", 0))
 	UIKit.set_bar(hull_bar, float(s.get("integrity", 0)), 7.0)
-	UIKit.set_bar_color(hull_bar, UIKit.RED if int(s.get("integrity", 0)) <= 1 else UIKit.CYAN)
+	UIKit.set_bar_color(hull_bar, UIKit.RED if int(s.get("integrity", 0)) <= 1 else UIKit.TEAL)
 	thermal_val.text = "%d" % int(s.get("thermal_res", 0))
 	UIKit.set_bar(thermal_bar, float(s.get("thermal_res", 0)), 24.0)
-	UIKit.set_bar_color(thermal_bar, UIKit.CYAN)
+	UIKit.set_bar_color(thermal_bar, UIKit.TEAL)
 	data_val.text = "%d" % int(s.get("data_cap", 0))
 	UIKit.set_bar(data_bar, float(s.get("data_cap", 0)), 18.0)
-	UIKit.set_bar_color(data_bar, UIKit.CYAN)
+	UIKit.set_bar_color(data_bar, UIKit.TEAL)
 
 	var cost := float(s.get("cost", 0))
 	cost_label.text = "MISSION COST  $%dM" % int(cost)
@@ -398,7 +398,7 @@ func _refresh() -> void:
 			warning_label.text += "\nSCIENCE FIT +10%"
 		warning_label.add_theme_color_override("font_color", UIKit.GREEN)
 		requirement_label.text = "ALL REQUIRED FIELDS SET"
-		requirement_label.add_theme_color_override("font_color", UIKit.GREEN)
+		requirement_label.add_theme_color_override("font_color", UIKit.LIVE)
 		confirm_btn.disabled = false
 	else:
 		var warns: Array = s.get("warnings", [])

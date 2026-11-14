@@ -45,10 +45,10 @@ const GREEN := TEAL
 const PURPLE := Color("#6f5a8a")
 const BLUE := TEAL
 const SHEET := PAPER
-const SHEET_LINE := Color("#b7a586")
-const ROW_BG := Color("#efe7d4")
-const ROW_HOVER := Color("#f7efdd")
-const ROW_SELECTED := Color("#f3e4c2")
+const SHEET_LINE := Color("#8e7a5c")
+const ROW_BG := Color(0, 0, 0, 0)
+const ROW_HOVER := Color(1, 1, 1, 0.18)
+const ROW_SELECTED := Color("#f2d9b8")
 const CRT := TEAL
 const NIGHT_SHEET := NIGHT_2
 
@@ -101,15 +101,29 @@ static func _paper_skin(name: String, margin: int = 5) -> StyleBoxTexture:
 static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> PanelContainer:
 	## A major decision surface: a hard-edged paper dossier with a 2 px ink
 	## shadow. No rounded panel glow; the paper and rule do the hierarchy.
+	var shadow := ColorRect.new()
+	shadow.color = Color(0.06, 0.05, 0.04, 0.42)
+	shadow.position = Vector2(x + 3, y + 3)
+	shadow.size = Vector2(w, h)
+	shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(shadow)
+
+	var paper := TextureRect.new()
+	paper.texture = load("res://assets/ui/skin/paper_texture.png")
+	paper.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	paper.stretch_mode = TextureRect.STRETCH_TILE
+	paper.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	paper.position = Vector2(x, y)
+	paper.size = Vector2(w, h)
+	parent.add_child(paper)
+
 	var p := PanelContainer.new()
-	var sb := style_panel(PAPER, INK, 0, 1)
-	sb.shadow_color = Color(0.06, 0.05, 0.04, 0.46)
-	sb.shadow_size = 2
-	sb.shadow_offset = Vector2(2, 2)
-	sb.content_margin_left = 0
-	sb.content_margin_right = 0
-	sb.content_margin_top = 0
-	sb.content_margin_bottom = 0
+	var sb := style_panel(Color(0, 0, 0, 0), INK, 0, 1)
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
 	p.add_theme_stylebox_override("panel", sb)
 	p.position = Vector2(x, y)
 	p.size = Vector2(w, h)
@@ -356,10 +370,11 @@ static func row_style(selected: bool, hovered: bool = false,
 		s.bg_color = ROW_SELECTED
 		s.border_color = accent
 		s.border_width_left = 3
+		s.border_width_bottom = 1
 	else:
 		s.bg_color = ROW_HOVER if hovered else ROW_BG
-		s.border_color = INK if hovered else SHEET_LINE
-		s.border_width_left = 1 if hovered else 0
+		s.border_color = SHEET_LINE
+		s.border_width_bottom = 1
 	s.set_corner_radius_all(0)
 	s.content_margin_left = 8
 	s.content_margin_right = 6
@@ -445,7 +460,7 @@ static func select_card(card: Dictionary, on: bool) -> void:
 	var title: Label = card["title"]
 	if on:
 		p.add_theme_stylebox_override("panel", row_style(true, false, accent))
-		title.add_theme_color_override("font_color", CYAN)
+		title.add_theme_color_override("font_color", INK)
 	else:
 		p.add_theme_stylebox_override("panel", row_style(false, false, accent))
 		title.add_theme_color_override("font_color", TEXT)
