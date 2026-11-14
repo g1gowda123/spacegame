@@ -42,6 +42,7 @@ var _rocket_body: Node2D
 var _fairing_left: Polygon2D
 var _fairing_right: Polygon2D
 var _ship_sprite: Sprite2D
+var _booster_sprite: Sprite2D
 var _exhaust_plume: Node2D
 var _shock_cone: Polygon2D
 var _smoke_particles: CPUParticles2D
@@ -276,11 +277,28 @@ func _build_rocket_assembly() -> void:
 	_rocket_body = Node2D.new()
 	_rocket_root.add_child(_rocket_body)
 
-	# Booster drawing node
+	# Booster drawing node. If VEGA delivers a 2x vehicle sheet the procedural
+	# draw is replaced; otherwise the vector silhouette stays the fallback.
 	var booster_node := Node2D.new()
 	booster_node.name = "Booster"
 	booster_node.draw.connect(_draw_booster)
 	_rocket_body.add_child(booster_node)
+	var booster_art := "res://assets/sprites/vehicles/%s_booster.png" % _veh_id
+	if ResourceLoader.exists(booster_art):
+		var art := load(booster_art) as Texture2D
+		if art != null:
+			_booster_sprite = Sprite2D.new()
+			_booster_sprite.texture = art
+			_booster_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_booster_sprite.centered = false
+			_booster_sprite.scale = Vector2(0.5, 0.5)
+			var art_size := art.get_size()
+			# Art contract: interstage top at y=0, engine plane on the bottom
+			# edge, vehicle centred. Place its top-left at the interstage lip.
+			_booster_sprite.position = Vector2(-art_size.x * 0.25, -30.0)
+			booster_node.add_child(_booster_sprite)
+			if "--debug-launch" in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+				print("LAUNCH booster art ", booster_art, " ", art_size)
 
 	# Exhaust plume node (under rocket)
 	_exhaust_plume = Node2D.new()
@@ -431,6 +449,8 @@ func _draw_booster() -> void:
 		return
 	var b_node: Node2D = _rocket_body.get_node_or_null("Booster")
 	if b_node == null:
+		return
+	if _booster_sprite != null and is_instance_valid(_booster_sprite):
 		return
 
 	# Adjust position if staging occurred

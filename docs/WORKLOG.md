@@ -1121,3 +1121,4 @@ must not sound like an mp3 starting.
 - **Size:** music total 2.75 MiB (0.79 context + 1.96 biome), still inside the
   ≤3 MB line.
 - Not pushed — ORION owns `git push`.
+- **01:44 — VFX / launch-vehicle art handoff:** logged the boss's note that the launch vehicle may use generated sprites instead of the vector draw. Actual state: `scripts/launch_cinematic.gd` still paints `vector_l/m/h` boosters procedurally; payload already uses `assets/sprites/ships/<hull>.png`. Board entry gives VEGA a 2× asset spec (`assets/sprites/vehicles/vector_*_booster.png`, engine plane at bottom edge) and QA routes. Adding an existence-checked sprite override with the vector draw as fallback; no asset yet, so the judged build is unchanged.

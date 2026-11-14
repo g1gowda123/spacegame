@@ -56,6 +56,7 @@ var BLOCKED: Array[String] = [
 	"volcanic/lava_core",
 	"methane/pool",
 	"sulfur/acid_pool",
+	"ammonia/blue_pool",
 	"ocean/water_shallow",
 	"ocean/water_shelf",
 	"ocean/water_deep",
@@ -138,8 +139,8 @@ var BIOMES: Array = [
 		"base_variants": ["methane/flat", "methane/frost_crust", "methane/mud", "methane/seep"],
 		"detail": "methane/seep", "detail_alt": "methane/frost_crust",
 		"detail_alt2": "methane/mud",
-		"rock": "methane/ice_shards", "shore": "methane/frost_crust",
-		"water": "methane/pool",
+		"rock": "methane/ice_shards", "shore": "methane/pool",
+		"water": "ocean/water_deep",
 	},
 	{
 		"id": "iron", "name": "Iron Desert", "profile": "arid", "generator": "dunes",
@@ -166,7 +167,8 @@ var BIOMES: Array = [
 		"base": "crystal/glass_ground",
 		"base_variants": ["crystal/glass_ground", "crystal/plate", "crystal/prism_plate"],
 		"detail": "crystal/plate",
-		"detail_alt": "crystal/prism_crack", "detail_alt2": "crystal/plate",
+		"detail_alt": "crystal/prism_crack", "detail_alt2": "crystal/shard_field",
+		"detail_alt3": "crystal/plate",
 		"rock": "crystal/cluster", "rock_alt": "crystal/geode", "shore": "", "water": "",
 	},
 	{
@@ -180,12 +182,14 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "ammonia", "name": "Ammonia Ice", "profile": "cryo", "generator": "fractured",
-		"life": "lifeless", "tint": "#72c8e8", "tint_strength": 0.10, "exposure": 1.10,
+		"life": "lifeless", "shore_ring": true,
+		"tint": "#72c8e8", "tint_strength": 0.10, "exposure": 1.10,
 		"base": "ammonia/slush",
 		"base_variants": ["ammonia/slush", "ammonia/frost", "ammonia/vapor_crust", "ammonia/white_crust"],
 		"detail": "ammonia/frost", "detail_alt": "ammonia/vapor_crust",
 		"detail_alt2": "ammonia/white_crust",
-		"rock": "ammonia/frost", "shore": "", "water": "",
+		"rock": "ammonia/frost", "shore": "ammonia/frost",
+		"water": "ammonia/blue_pool",
 	},
 	{
 		"id": "carbon", "name": "Carbon World", "profile": "temperate", "generator": "continents",
@@ -1997,6 +2001,8 @@ func _pick_terrain(b: Dictionary, elev: float, det: float, wx: int, wy: int) -> 
 				return _rock_choice(b, det)
 			return _base_choice(b, det, wx, wy)
 		"cryo":
+			if water != "" and wet < -0.34:
+				return water
 			# Cracks are the low shelves. Keep the plateau on the smooth ice
 			# base: cryo/rock is a high-frequency speckle tile and turns the
 			# whole field into TV static when the fractured plateau is mapped
