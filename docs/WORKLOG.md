@@ -971,3 +971,18 @@ to the lane owner.
   - `README.md`: updated ECHO's role row and the P0 next steps to reflect that the 3-loop music bed is in the tree with `MusicDirector`, leaving only the 2 minor measured gain/peak adjustments from §5.1 to tune.
 
 - **19:52 — Structure silhouette variants.** Added `_load_structure_variants()` (reads `assets/tilesets/structures/variants/manifest.json`) and world-cell-hashed base/v2/v3 selection in `_add_structure_sprite()`. Evidence `var_crystal.png`; same seed/map cell is stable across renders. Structure-variant debt closed; hazard-front and LZ-ring overlap remain.
+
+- **20:02 — Hazard/LZ readability.** `_draw_hazard_edges()` now modulates `hazard_edge_*` with the active hazard colour; the baked lavender band is gone. LZ ring reduced to 0.84 scale and 0.46–0.62 alpha. Evidence `hazard_color.png`, `lz_soft.png`.
+
+## 22:05 — UI hover dossiers: visible chrome down, technical detail on demand
+- **Decision (why):** follow-up to the 18:55 identity pass after the boss asked for technical detail on hover to cut clutter (m00742), citing Balatro. The navy/cyan console and paper-kit veto are unchanged. Decision rows now show the choice plus one decision number; full specs live in one shared dossier instead of more permanent labels.
+- **`scripts/ui_tip.gd` (new, `class_name UITip extends CanvasLayer`):** one reusable layer-60 card, 196 px wide, 1 px accent rule, head 8 / mono 7, input-ignore, 0.08 s fade. `UITip.bind(host, title, body, accent)`. It places right of the host, flips left near x=632, clamps to 8..632/8..352, and drops below the 40 px top bar when the host starts above y=50. `CanvasLayer` has no `modulate`, so the fade animates the inner panel.
+- **`UIKit.hover_info()` alias** added; per-screen `.tooltip_text` calls retired.
+- **Design:** hulls keep class + mass/cost, vehicles keep capacity, objectives/instruments keep names (+ mass/cost on instruments). Hover reveals class/ΔV/hull/data/range/power/perk, capacity/note, quota/ΔV/integrity/power-cap/perk, draw/science. Orbit buttons hover. Launch-vehicle cap line became a proper header row (no more stacked label collision).
+- **Draft:** removed the star/gravity meta duplicated by the stats and the redundant footer node count; hover shows star, distance, gravity, surface sols/ΔV/nodes, threat, and a one-line read.
+- **Crew:** difficulty subtitles removed; hover shows description + multipliers; the campaign mode note is hidden (the footer already explains co-op); section labels moved up so the following card no longer clips them.
+- **Debrief shop:** descriptions removed from the rows; hover shows effect + cost/kind; 7 px hover hint.
+- **Sector:** transparent STOP zones over INTEGRITY/DELTA-V/SOLS/DATA/THERMAL/POWER explain the rules; dossiers drop below the top bar so they do not cover the stat they describe.
+- **Buff:** the keyboard hint merged into the milestone line (`1 / 2 / 3 + ENTER`), removing the floating hint that disappeared into the planet; status lines get a dark shadow; `CHOOSE` got a 4 px margin.
+- **Report:** `BEST` no longer reaches the sheet border, `NEXT` is 7 px and clear of the footer, score columns end inside the panel.
+- **Verification:** headless `--quit-after 8` 0 script/parse errors; `--screen=flowtest` `total=5107 grade=A`; clean 640-first captures in `/tmp/opencode/ui_final/ui_*.png` (title, design, draft, crew, buff, report, debrief, sector). Hover verified by emitting `mouse_entered` on the real hosts because `Input.warp_mouse` is unreliable here. The apparent title “strikethrough” was a display/alias artifact — native pixel crops are clean, so no title code changed. `tools/qa/native_screens.py` still flags only the known `title.ogg` exit leak.

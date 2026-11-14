@@ -310,18 +310,19 @@ and posts `diag_missing_by_key = {}` in BOARD/WORKLOG. Keep the existing `temper
 
 **Status 15:15:** pass 1 (ash recolour + 16 talus lobes) is WIP, not accepted. Disc still readable, side boulders detached, top corners empty. Next: new cone drawn without any base/terrace primitive; generate apron as continuous ridges/ash flats connecting into all four corners. Geyser lineage shares the same replacement generator.
 
-## UI identity pass — U2/U3/U4 DELIVERED 18:55 (keep navy/cyan; paper kit unwired)
+## UI identity pass — U2–U4 + U7 DELIVERED 18:55 / 22:05 (keep navy/cyan; paper kit unwired)
 
 Boss: the UI "looks too generic and vibecoded." Brief: `docs/UI_REDESIGN.md`. **No owner is preassigned; claim in BOARD.** VEGA is invited for the skin/button generation; code integration is open to any agent or friend.
 
 | Task | Status | Owner | Notes |
 |---|---|---|---|
 | U1 — `assets/ui/skin/` 9-slice folder/card/tab/button kit, stamps, tape, punch, ruler/barcode, paper texture | **VEGA — DELIVERED 17:20** (`tools/make_ui_kit.py`, 22 files + manifest + preview) | done | Procedural Pillow pixel geometry for crisp 9-slices, not diffusion; manifest + contact sheet |
-| U2 — `UIKit` tokens/helpers (`folder_panel`, `card`, `stamp_button`, `ruler_gauge`, `stamp`) | **DONE 18:55** | UI pass | `sheet()`, `hairline()`, `head()`/`mono()`, flat `option_card` rows, `UIGauge` (`scripts/ui_gauge.gd`); old helpers kept as aliases |
-| U3 — Screen integration: title, design, draft, debrief, report, crew, buff | **DONE 18:55** | UI pass | All seven migrated; review/event modals included; keyboard paths unchanged. Evidence `/tmp/opencode/fin_*.png` |
-| U4 — Sector HUD pass (corner console, segmented heat/power, warning tape, physical D-pad) | **DONE 18:55** | UI pass | One 620×40 row + separators, 112 px actions clear of the D-pad, duplicate QUOTA removed; verified `--moves=DDH` |
+| U2 — `UIKit` tokens/helpers (`folder_panel`, `card`, `stamp_button`, `ruler_gauge`, `stamp`) | **DONE 18:55 / 22:05** | UI pass | `sheet()`, `hairline()`, `head()`/`mono()`, flat `option_card` rows, `UIGauge` (`scripts/ui_gauge.gd`), `hover_info()` alias; old helpers kept as aliases |
+| U3 — Screen integration: title, design, draft, debrief, report, crew, buff | **DONE 18:55 · hover 22:05** | UI pass | All seven migrated; review/event modals included; keyboard paths unchanged. Hover dossiers trim visible rows on design/draft/crew/debrief/buff. Evidence `/tmp/opencode/ui_final/ui_*.png` |
+| U4 — Sector HUD pass (corner console, segmented heat/power, warning tape, physical D-pad) | **DONE 18:55 · hover 22:05** | UI pass | One 620×40 row + separators, 112 px actions clear of the D-pad, duplicate QUOTA removed; transparent hover zones explain the six HUD stats; verified `--moves=DDH` |
 | U5 — Copy/voice pass (mission-control voice, consistent labels) | **PARTIAL 18:55** | UI pass | Tightened labels (`CONFIRM DESIGN`, `MARK TARGET`, section names); full voice pass still open |
-| U6 — QA: before/after at 640×360 + 1280×720, headless clean, Web 0 console/page errors | **PARTIAL 18:55** | UI pass | Headless + flowtest + 640 downscales clean; native QA's 6 flagged screens are the existing `title.ogg` exit leak. Web build not re-exported (per brief) |
+| U6 — QA: before/after at 640×360 + 1280×720, headless clean, Web 0 console/page errors | **PARTIAL 22:05** | UI pass | Headless + flowtest (`total=5107 grade=A`) + 640 downscales clean; hover dossiers verified by emitted `mouse_entered`; native QA's 6 flagged screens are the existing `title.ogg` exit leak. Web build not re-exported (per brief) |
+| U7 — Progressive-disclosure hover dossiers (Balatro-style) | **DONE 22:05** | UI pass | `scripts/ui_tip.gd` + `UIKit.hover_info`; one 196 px card, placement flips/clamps, top-HUD drops below the bar; bindings on design/draft/crew/debrief/sector; stale tooltips removed |
 
 ## Milestone field commissions (NOVA, 15:26)
 
