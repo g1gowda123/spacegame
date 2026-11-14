@@ -1,0 +1,45 @@
+{
+  "purpose": "hazard-front edge + subordinate landing ring",
+  "palette": {
+    "hazard": "#b096ce",
+    "amber": "#ffc45c"
+  },
+  "files": {
+    "hazard_edge_n": {
+      "size": [
+        64,
+        18
+      ],
+      "anchor": "edge, tile along the front"
+    },
+    "hazard_edge_s": {
+      "size": [
+        64,
+        18
+      ],
+      "anchor": "edge, tile along the front"
+    },
+    "hazard_edge_e": {
+      "size": [
+        18,
+        64
+      ],
+      "anchor": "edge, tile along the front"
+    },
+    "hazard_edge_w": {
+      "size": [
+        18,
+        64
+      ],
+      "anchor": "edge, tile along the front"
+    },
+    "lz_ring": {
+      "size": [
+        72,
+        34
+      ],
+      "anchor": "centre on start_cell",
+      "note": "dashed amber, no glow, drawn under the lander"
+    }
+  }
+}
