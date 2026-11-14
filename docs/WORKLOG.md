@@ -357,6 +357,12 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
   - Parse: all six scenes (`title`, `design`, `draft`, `sector`, `debrief`, `report`) pass headless with no `SCRIPT ERROR|Parse Error|Failed to load|Invalid`. Removed a duplicate `next_grade` in `report.gd`; the existing `NEXT +%d TO GRADE %s` line remains.
   - Still open: risk-bonus/hazard verification, visual-debt gate, final Web export. No push.
 
+- **12:53 — f (feel): rebase re-verify + music task posted.**
+  - Rebased the feel lane (overlay + juice) onto upstream `c797acd` (VEGA planet seeds / obsidian / ridge, NOVA Mission Control docs). Conflicts were append-only in BOARD/TASKS/WORKLOG; resolved by keeping upstream lines then replaying f's lines below them.
+  - **Re-verify:** `godot --headless --quit-after 8` (title) exits 0 with no warnings; design/draft/sector/debrief/report all clean; windowed `--collect --hurt` sector loads `move.wav`/`hazard.wav` with 0 errors (DATA 1/4, integrity 3/4, T2); `--moves=DDDDAAAASSSSWWWW --turns=4` soak clean. Fresh frame `/tmp/opencode/f_postrebase_sector.png` shows the crisp contour + juice working on the new art.
+  - **Music task posted** (BOARD 12:48, TASKS "Open — audio"): 3 seamless OGG loops, crossfade, hazard duck, `MusicDirector` autoload, ≤3 MB. Left unowned with a suggested split (g sources, f wires); **no music files added** while the juice lane is open.
+  - **Files touched:** `docs/{BOARD,TASKS,WORKLOG}.md` only. Local commit; no push.
+
 - **12:53 — optional `relay_beacon` marker sprite.** `assets/sprites/markers/relay_beacon.png` (64 px, 84.6 % clear, amber lens, signal arcs, tripod, shadow-free) so the relay branch can show a beacon silhouette instead of an amber-modulated data node. Preview `/tmp/opencode/relay_marker.png`; unreferenced until ATLAS chooses it.
 
 - **12:56 — MISSION CONTROL design pass (NOVA).** Adds the three brief opportunities the build was missing — 4-player team play, difficulty tiers, and shareable campaigns — plus a readable draft.
