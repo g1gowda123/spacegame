@@ -33,7 +33,7 @@ PALETTE = np.array([INK, NAVY, ORANGE, PAPER, TEAL,
                     *UNIFORM, *SKIN, *HAIR], np.float32)
 
 
-def key_background(img: Image.Image, tol: float = 42.0) -> Image.Image:
+def key_background(img: Image.Image, tol: float = 74.0) -> Image.Image:
     a = np.asarray(img.convert("RGB")).astype(np.float32)
     h, w = a.shape[:2]
     corners = np.concatenate([a[:8, :8].reshape(-1, 3), a[:8, -8:].reshape(-1, 3),
@@ -48,6 +48,12 @@ def key_background(img: Image.Image, tol: float = 42.0) -> Image.Image:
     solid = ndimage.binary_closing(~keep, structure=np.ones((5, 5)))
     solid = ndimage.binary_fill_holes(solid)
     keep = ~solid
+    # keep only the character: stray shadow fragments and enclosed bg wedges
+    # widen the bbox and crop the bust off-centre
+    solid_labels, n = ndimage.label(~keep)
+    if n > 1:
+        sizes = ndimage.sum(~keep, solid_labels, range(1, n + 1))
+        keep = solid_labels != (int(np.argmax(sizes)) + 1)
     rgba = np.dstack([a, np.where(keep, 0, 255)]).astype(np.uint8)
     return Image.fromarray(rgba, "RGBA")
 
@@ -75,6 +81,8 @@ def retune_uniform(img: Image.Image) -> Image.Image:
 def to_sprite(img: Image.Image) -> Image.Image:
     bbox = img.split()[-1].getbbox()
     img = img.crop(bbox)
+    # bust framing: head + shoulders, chest fades out at the bottom
+    img = img.crop((0, 0, img.size[0], int(img.size[1] * 0.82)))
     # head + shoulders: the raw is a half-body render, so keep the upper 68 %
     # and let the 16 px fade take the chest out of frame
     img = img.crop((0, 0, img.size[0], int(img.size[1] * 0.56)))
@@ -119,6 +127,9 @@ def to_sprite(img: Image.Image) -> Image.Image:
     pad = np.pad(solid, 1)
     edge = solid & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
     out[edge, :3] = INK
+    # fade last so the hardening step above cannot re-square the bottom
+    fade = np.clip((H - 1 - np.arange(H)) / 20.0, 0, 1)[:, None]
+    out[..., 3] = (out[..., 3] * fade).astype(np.uint8)
     return Image.fromarray(out, "RGBA")
 
 
@@ -186,7 +197,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     sheets = []
     # one canonical render; the other two are derived so the face cannot drift
-    base = to_sprite(retune_uniform(key_background(Image.open(RAW / "raw2_neutral_4101.png"))))
+    base = to_sprite(retune_uniform(key_background(Image.open(RAW / "raw3_neutral_4201.png"))))
     for name in ("neutral", "smile", "stern"):
         img = base if name == "neutral" else expression_variant(base, name)
         img.save(OUT / f"director_{name}.png")
