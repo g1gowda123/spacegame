@@ -18,6 +18,17 @@ func _ready() -> void:
 	_route()
 
 
+func _apply_owned(csv: String) -> void:
+	if csv.strip_edges() == "":
+		return
+	for raw_id in csv.split(","):
+		var id := raw_id.strip_edges()
+		for up in GameState.UPGRADES:
+			if str(up["id"]) == id and not (id in GameState.owned):
+				GameState.owned.append(id)
+				break
+
+
 func _route() -> void:
 	# Optional crew-mode shortcuts for screenshots and smoke tests:
 	#   --crew=3 --difficulty=director
@@ -25,6 +36,7 @@ func _route() -> void:
 	var diff := "standard"
 	var daily := false
 	var forced_biome := ""
+	var owned_csv := ""
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 		var arg := str(raw)
 		if arg.begins_with("--crew="):
@@ -35,6 +47,8 @@ func _route() -> void:
 			daily = true
 		elif arg.begins_with("--biome="):
 			forced_biome = arg.substr(8)
+		elif arg.begins_with("--owned="):
+			owned_csv = arg.substr(8)
 	if _screen == "crew":
 		get_tree().change_scene_to_file("res://scenes/crew.tscn")
 		return
@@ -44,6 +58,7 @@ func _route() -> void:
 		CrewDirector.begin_run("campaign", crew, diff)
 	else:
 		GameState.new_run()
+	_apply_owned(owned_csv)
 	match _screen:
 		"design":
 			if "--loadout" in OS.get_cmdline_user_args() or "--loadout" in OS.get_cmdline_args():

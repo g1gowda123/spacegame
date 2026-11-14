@@ -1,34 +1,88 @@
 class_name ShipDiagram
 const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 extends Control
-## Generated spacecraft portrait. The PNG is produced by ComfyUI through
-## tools/gen_asset.py + tools/pixelize_sprite.py; this control never draws a
-## vector ship itself.
+## Generated spacecraft portrait with a live build layer.
+##
+## The hull PNG stays the authored pixel-art base. Modules and instruments are
+## drawn as integer-aligned pixel blocks on top of it from the same slot map,
+## so the ship visibly grows as the player installs refits between planets.
 
 const SHIP_DIR := "res://assets/sprites/ships/"
 
 var hull_id := "pathfinder"
 var accent := Color("#54e6d1")
 var instruments: Array = []
+var owned: Array = []
 var _tex: Texture2D
+var _bbox := Rect2(0, 0, 190, 70)
+var _modules: Array = []
+var _refits := 0
+var _time := 0.0
+var _flash := 0.0
+var _has_live := false
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	set_process(true)
 	_load_texture()
 
 
 func set_ship(hull: String, insts: Array) -> void:
+	set_build(hull, insts, GameState.owned)
+
+
+func set_build(hull: String, insts: Array, refits: Array) -> void:
 	hull_id = hull
-	instruments = insts
+	instruments = insts.duplicate()
+	owned = refits.duplicate()
 	match hull:
-		"cryo": accent = Color("#7cc8ff")
-		"relay": accent = Color("#ffc45c")
-		"hopper": accent = Color("#b692ff")
-		_: accent = Color("#54e6d1")
+		"cryo":
+			accent = Color("#7cc8ff")
+		"relay":
+			accent = Color("#ffc45c")
+		"hopper":
+			accent = Color("#b692ff")
+		_:
+			accent = Color("#54e6d1")
+	_refits = ShipBuild.refit_count(owned)
+	_modules = ShipBuild.modules(instruments, owned)
+	_has_live = false
+	for m in _modules:
+		if str(m["id"]) in ["antenna", "ion", "buffer", "radar", "camera"]:
+			_has_live = true
 	_load_texture()
 	queue_redraw()
+
+
+func module_count() -> int:
+	return _modules.size()
+
+
+func refit_count() -> int:
+	return _refits
+
+
+func tier() -> Dictionary:
+	return ShipBuild.tier(_refits)
+
+
+func module_line() -> String:
+	return ShipBuild.line(instruments, owned)
+
+
+func flash_build() -> void:
+	_flash = 1.0
+	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	_time += delta
+	if _flash > 0.0:
+		_flash = maxf(0.0, _flash - delta * 1.8)
+	if _has_live:
+		queue_redraw()
 
 
 func _load_texture() -> void:
@@ -37,12 +91,190 @@ func _load_texture() -> void:
 		path = SHIP_DIR + "pathfinder.png"
 	if ResourceLoader.exists(path):
 		_tex = load(path) as Texture2D
+	if _tex == null:
+		return
+	var img := _tex.get_image()
+	if img != null:
+		var used := img.get_used_rect()
+		if used.size.x > 0 and used.size.y > 0:
+			_bbox = Rect2(used)
 
 
 func _draw() -> void:
 	if _tex == null:
 		return
-	var box := Rect2(Vector2.ZERO, size)
-	if box.size.x < 10.0:
-		box.size = Vector2(190, 70)
-	draw_texture_rect(_tex, box, false)
+	var ts := _tex.get_size()
+	if ts.x <= 0.0 or ts.y <= 0.0:
+		return
+	var s := Vector2(size.x / ts.x, size.y / ts.y)
+	draw_set_transform(Vector2.ZERO, 0.0, s)
+	draw_texture(_tex, Vector2.ZERO)
+	for m in _modules:
+		_draw_module(m, _slot_rect(str(m["slot"]), ts))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _slot_rect(slot: String, ts: Vector2) -> Rect2:
+	var bx := _bbox.position.x
+	var by := _bbox.position.y
+	var bw := _bbox.size.x
+	var bh := _bbox.size.y
+	var cx := bx + bw * 0.5
+	var cy := by + bh * 0.5
+	var r := Rect2(Vector2.ZERO, Vector2(10, 8))
+	match slot:
+		"nose":
+			r = Rect2(bbox_end_x() - 6.0, cy - 4.0, 9.0, 8.0)
+		"nose_low":
+			r = Rect2(bbox_end_x() - 15.0, bbox_end_y() - 7.0, 10.0, 6.0)
+		"top_front":
+			r = Rect2(bx + bw * 0.66, by - 5.0, 10.0, 8.0)
+		"top_mid":
+			r = Rect2(bx + bw * 0.44, by - 8.0, 12.0, 9.0)
+		"top_rear":
+			r = Rect2(bx + bw * 0.18, by - 7.0, 14.0, 9.0)
+		"top_aux":
+			r = Rect2(bx + bw * 0.56, by - 12.0, 10.0, 7.0)
+		"rear":
+			r = Rect2(bx - 6.0, cy - 5.0, 10.0, 10.0)
+		"rear_low":
+			r = Rect2(bx + 1.0, bbox_end_y() - 7.0, 11.0, 7.0)
+		"rear_aux":
+			r = Rect2(bx - 3.0, bbox_end_y() - 11.0, 9.0, 7.0)
+		"bottom":
+			r = Rect2(bx + bw * 0.36, bbox_end_y() - 2.0, 6.0, 6.0)
+		"bottom_front":
+			r = Rect2(bx + bw * 0.62, bbox_end_y() - 5.0, 8.0, 6.0)
+		"boom":
+			r = Rect2(bx - 13.0, cy + 1.0, 15.0, 2.0)
+		"wing_l":
+			r = Rect2(bx - 18.0, cy - 4.0, 18.0, 8.0)
+		"wing_r":
+			r = Rect2(bbox_end_x() - 1.0, cy - 4.0, 18.0, 8.0)
+	r.position.x = clampf(r.position.x, 1.0, ts.x - r.size.x - 1.0)
+	r.position.y = clampf(r.position.y, 1.0, ts.y - r.size.y - 1.0)
+	return r
+
+
+func bbox_end_x() -> float:
+	return _bbox.position.x + _bbox.size.x
+
+
+func bbox_end_y() -> float:
+	return _bbox.position.y + _bbox.size.y
+
+
+func _draw_module(m: Dictionary, r: Rect2) -> void:
+	var id := str(m["id"])
+	var c: Color = m["color"]
+	var dark := c.darkened(0.55)
+	var light := c.lightened(0.28)
+	if _flash > 0.0:
+		draw_rect(r.grow(2.0), Color(1, 1, 1, 0.35 * _flash), false, 1.0)
+	match id:
+		"camera":
+			_rect(r, dark, light)
+			draw_circle(r.get_center(), 2.5, Color("#0a1620"))
+			draw_circle(r.get_center() + Vector2(-0.5, -0.5), 1.0, Color("#54e6d1"))
+		"spectrometer":
+			var p := PackedVector2Array([
+				Vector2(r.position.x, r.end.y),
+				Vector2(r.get_center().x, r.position.y),
+				Vector2(r.end.x, r.end.y),
+			])
+			draw_colored_polygon(p, dark)
+			draw_polyline(p + PackedVector2Array([p[0]]), light, 1.0)
+			draw_line(r.get_center() + Vector2(0, 1), r.get_center() + Vector2(4, -2), light, 1.0)
+		"radar":
+			_rect(r, dark, light)
+			draw_arc(r.get_center(), 3.2, PI * 1.1, PI * 1.9, 8, light, 1.0)
+			draw_line(r.get_center(), r.get_center() + Vector2(2, 3), c, 1.0)
+		"thermal":
+			_rect(r, dark, light)
+			draw_line(r.position + Vector2(1, 2), r.position + Vector2(7, 2), Color("#ff9c4a"), 2.0)
+			draw_circle(r.position + Vector2(8, 4), 1.2, Color("#ffc45c"))
+		"magnetometer":
+			draw_line(r.position, r.position + Vector2(r.size.x, 0), light, 1.0)
+			draw_circle(r.position + Vector2(r.size.x, 0), 1.8, c)
+			draw_line(r.position + Vector2(3, 0), r.position + Vector2(3, 3), light, 1.0)
+		"drill":
+			var d := PackedVector2Array([
+				Vector2(r.position.x, r.position.y),
+				Vector2(r.end.x, r.position.y),
+				Vector2(r.get_center().x, r.end.y),
+			])
+			draw_colored_polygon(d, Color("#9aa2b2"))
+			draw_polyline(d + PackedVector2Array([d[0]]), light, 1.0)
+			draw_line(r.get_center() + Vector2(0, 1), r.get_center() + Vector2(0, 4), dark, 1.0)
+		"rtg":
+			_rect(r, dark, light)
+			draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, r.size.y - 4)), c, false, 1.0)
+			for i in range(3):
+				draw_line(r.position + Vector2(3, 3 + i * 2), r.position + Vector2(r.size.x - 3, 3 + i * 2), light, 1.0)
+		"radiator":
+			for i in range(3):
+				var x := r.position.x + 1.0 + i * 4.0
+				draw_rect(Rect2(x, r.position.y, 3.0, r.size.y), c, true)
+				draw_rect(Rect2(x, r.position.y, 3.0, r.size.y), light, false, 1.0)
+		"wheel":
+			for i in range(3):
+				var px := r.position.x + 1.0 + i * 2.5
+				draw_circle(Vector2(px, r.end.y), 2.2, Color("#101820"))
+				draw_circle(Vector2(px, r.end.y), 0.9, light)
+		"armor":
+			var a := PackedVector2Array([
+				r.position + Vector2(0, 2),
+				r.position + Vector2(r.size.x, 1),
+				r.position + Vector2(r.size.x, 6),
+				r.position + Vector2(0, 7),
+			])
+			draw_colored_polygon(a, light)
+			draw_polyline(a + PackedVector2Array([a[0]]), dark, 1.0)
+		"buffer":
+			_rect(r, dark, light)
+			draw_rect(Rect2(r.position + Vector2(2, 1), Vector2(r.size.x - 4, 2)), c, true)
+			if int(_time * 2.0) % 2 == 0:
+				draw_circle(r.position + Vector2(r.size.x - 2, r.size.y - 2), 1.0, Color("#7fe08a"))
+		"antenna":
+			var center := r.position + Vector2(r.size.x * 0.5, r.size.y * 0.35)
+			draw_line(center, r.position + Vector2(r.size.x * 0.5, r.size.y), light, 1.0)
+			draw_circle(center, 3.8, dark)
+			draw_arc(center, 3.8, 0.0, TAU, 12, light, 1.0)
+			draw_circle(center + Vector2(-1, -1), 1.0, c)
+		"science_pack":
+			_rect(r, dark, light)
+			draw_circle(r.get_center(), 2.2, Color("#b692ff"))
+			draw_circle(r.get_center() + Vector2(-0.5, -0.5), 0.8, Color("#e8eff7"))
+		"salvage":
+			_rect(r, dark, light)
+			draw_line(r.position + Vector2(1, 6), r.position + Vector2(4, 2), c, 1.0)
+			draw_line(r.end + Vector2(-1, -1), r.end + Vector2(-4, -5), c, 1.0)
+			draw_circle(r.get_center(), 1.2, c)
+		"repair":
+			_rect(r, dark, light)
+			draw_line(r.get_center() + Vector2(-3, 0), r.get_center() + Vector2(3, 0), Color("#7fe08a"), 1.0)
+			draw_line(r.get_center() + Vector2(0, -3), r.get_center() + Vector2(0, 3), Color("#7fe08a"), 1.0)
+		"coolant":
+			var p := PackedVector2Array([
+				r.position + Vector2(1, 1), r.position + Vector2(4, 1),
+				r.position + Vector2(4, 5), r.end + Vector2(-1, -1),
+			])
+			draw_polyline(p, light, 1.0)
+			draw_circle(r.position + Vector2(2, 5), 1.5, c)
+		"ion":
+			var n := PackedVector2Array([
+				r.position + Vector2(0, 1),
+				r.position + Vector2(4, 3),
+				r.position + Vector2(0, 5),
+			])
+			draw_colored_polygon(n, dark)
+			draw_polyline(n + PackedVector2Array([n[0]]), light, 1.0)
+			var flicker := 0.55 + 0.45 * sin(_time * 12.0)
+			draw_line(r.position + Vector2(0, 3), r.position + Vector2(-5, 3), Color(0.33, 0.9, 0.82, flicker), 1.0)
+		_:
+			_rect(r, dark, light)
+
+
+func _rect(r: Rect2, fill: Color, outline: Color) -> void:
+	draw_rect(r, fill, true)
+	draw_rect(r, outline, false, 1.0)

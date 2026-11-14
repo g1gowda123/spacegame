@@ -49,8 +49,13 @@ def load(name: str) -> Image.Image:
 
 
 def assemble_massif() -> Image.Image:
-    """Six jittered copies of the mountain sprite into a 256x256 massif."""
-    src = load("mountain_range.png")
+    """Six jittered copies of the mountain sprite into a 256x256 massif.
+
+    The source sprite is pre-smoothed and then given a vertical value ramp:
+    six copies of a crisp 128 px sprite read as gravel noise at 4x4, while a
+    softer, darker-based composite reads as mass.
+    """
+    src = load("mountain_range.png").filter(ImageFilter.GaussianBlur(0.45))
     canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     plan = [
         (-14, 1.34, 0.92, False, 0),
@@ -66,7 +71,19 @@ def assemble_massif() -> Image.Image:
             im = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
         im = ImageEnhance.Brightness(im).enhance(br)
         canvas.alpha_composite(im, (dx, 254 - im.size[1] - dy))
-    return apply_palette(canvas, spec("temperate"))
+
+    # vertical value ramp + soft base shadow band so the massif has form
+    a = np.asarray(canvas, np.float32)
+    h = a.shape[0]
+    ramp = np.linspace(1.14, 0.66, h, dtype=np.float32)[:, None, None]
+    a[..., :3] = np.clip(a[..., :3] * ramp, 0, 255)
+    canvas = Image.fromarray(a.astype(np.uint8), "RGBA")
+    base = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    from PIL import ImageDraw
+    ImageDraw.Draw(base).ellipse([18, 206, 238, 254], fill=(10, 14, 12, 60))
+    base = base.filter(ImageFilter.GaussianBlur(4.0))
+    base.alpha_composite(canvas)
+    return apply_palette(base, spec("temperate"))
 
 
 def assemble_volcano() -> Image.Image:

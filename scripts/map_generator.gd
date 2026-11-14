@@ -176,11 +176,13 @@ var STRUCTURES: Dictionary = {
 	},
 	"mountain_massif": {
 		"path": "res://assets/tilesets/structures/mountain_massif.png",
-		"w": 3, "h": 3, "occludes": true, "sprite_scale": 1.95,
+		"w": 4, "h": 4, "occludes": true, "sprite_scale": 1.0,
+		"pieces": "massif_4x4",
 	},
 	"volcano": {
 		"path": "res://assets/tilesets/structures/volcano.png",
-		"w": 3, "h": 3, "occludes": true, "sprite_scale": 1.75,
+		"w": 4, "h": 4, "occludes": true, "sprite_scale": 1.0,
+		"pieces": "volcano_4x4",
 	},
 	"impact_crater": {
 		"path": "res://assets/tilesets/structures/impact_crater.png",
@@ -237,6 +239,7 @@ const WATER_BANDS: Dictionary = {
 const PROP_DENSITY: Dictionary = {
 	"temperate": 0.045,
 	"ocean": 0.015,
+	"cryo": 0.032,
 }
 
 # Small non-blocking set dressing. These sit on top of the terrain but never
@@ -244,7 +247,7 @@ const PROP_DENSITY: Dictionary = {
 const PROPS: Dictionary = {
 	"temperate": ["boulder", "shrub", "accent_temperate_tuft", "accent_temperate_crack", "accent_temperate_bones"],
 	"arid": ["dead_bush", "accent_arid_crack", "accent_arid_bones", "accent_arid_tuft"],
-	"cryo": ["ice_chunk", "ice_teeth", "accent_cryo_crack", "accent_cryo_ice_teeth"],
+	"cryo": ["ice_chunk", "accent_cryo_crack", "accent_cryo_crack", "accent_cryo_ice_teeth"],
 	"volcanic": ["lava_rock", "sulfur_nodule", "accent_volcanic_vent", "accent_volcanic_crack"],
 	"ocean": ["coral_shard"],
 	"barren": ["barren_rock", "accent_barren_bones", "accent_barren_crack"],
@@ -339,6 +342,7 @@ var player_shadow: Polygon2D
 var player_tween: Tween
 var node_tex: Texture2D
 var relay_tex: Texture2D
+var piece_sets: Dictionary = {}
 var _tex_bounds: Dictionary = {}
 var _prop_ok: Dictionary = {}
 var cli_seed: int = -1
@@ -2279,6 +2283,51 @@ func _texture_bounds(tex: Texture2D) -> Rect2i:
 	return bounds
 
 
+func _load_piece_sets() -> Dictionary:
+	if not piece_sets.is_empty():
+		return piece_sets
+	var path := "res://assets/tilesets/structures/pieces/manifest.json"
+	if not FileAccess.file_exists(path):
+		return piece_sets
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if data is Dictionary:
+		piece_sets = data.get("sets", {})
+	return piece_sets
+
+
+func _add_piece_sprites(
+	info: Dictionary, gx: int, gy: int, w: int, h: int, anchor_screen: Vector2
+) -> bool:
+	var sets := _load_piece_sets()
+	var set_name := str(info.get("pieces", ""))
+	if not sets.has(set_name):
+		return false
+	var pieces: Array = sets[set_name].get("pieces", [])
+	if pieces.is_empty():
+		return false
+	var unit := float(sets[set_name].get("unit_px", TILE))
+	# The assembled sheet is a screen-space 4x4 block; draw each cut piece at
+	# its own screen offset so the joins stay pixel-exact. z is derived from
+	# the piece's bottom row, letting actors pass in front of the south face.
+	var top_left := anchor_screen - Vector2(w * unit * map_scale * 0.5, h * unit * map_scale)
+	for p in pieces:
+		var tile: Array = p.get("tile", [0, 0])
+		var col := int(tile[0])
+		var row := int(tile[1])
+		var tex := load("res://assets/tilesets/structures/" + str(p["path"])) as Texture2D
+		if tex == null:
+			continue
+		var sprite := Sprite2D.new()
+		sprite.texture = tex
+		sprite.centered = false
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sprite.position = top_left + Vector2(col, row) * unit * map_scale
+		sprite.scale = Vector2(map_scale, map_scale)
+		sprite.z_index = int(anchor_screen.y - float(h - 1 - row) * unit * map_scale)
+		structure_layer.add_child(sprite)
+	return true
+
+
 func _add_structure_sprite(s: Dictionary) -> void:
 	var info: Dictionary = STRUCTURES[s["key"]]
 	var tex := load(info["path"]) as Texture2D
@@ -2310,6 +2359,9 @@ func _add_structure_sprite(s: Dictionary) -> void:
 	shadow.position = anchor_screen + Vector2(0.0, -shadow_ry * 0.55)
 	shadow.z_index = int(anchor_screen.y) - 1
 	structure_layer.add_child(shadow)
+
+	if _add_piece_sprites(info, gx, gy, w, h, anchor_screen):
+		return
 
 	var sprite := Sprite2D.new()
 	sprite.texture = tex
