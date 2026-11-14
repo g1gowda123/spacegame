@@ -98,6 +98,9 @@ var lz_hud: Control
 var lz_arrow: Polygon2D
 var lz_label: Label
 var lz_tag: Label
+var lz_world: Label
+var lz_flag: Polygon2D
+var lz_ready := false
 
 var turn := 1
 var start_cell := Vector2i.ZERO
@@ -266,6 +269,7 @@ func _start_sector() -> void:
 	_configure_map()
 	_paint_space_planet()
 	start_cell = player_cell
+	lz_ready = true
 	turn = 1
 	moved = false
 	move_range = int(sec.get("move_range", 3))
@@ -307,18 +311,31 @@ func _spawn_pad_beacon() -> void:
 		return
 	if pad_beacon != null and is_instance_valid(pad_beacon):
 		pad_beacon.queue_free()
-	if lz_tag != null and is_instance_valid(lz_tag):
-		lz_tag.queue_free()
+	if lz_world != null and is_instance_valid(lz_world):
+		lz_world.queue_free()
+	if lz_flag != null and is_instance_valid(lz_flag):
+		lz_flag.queue_free()
 	var mast := Line2D.new()
 	mast.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -28)])
 	mast.width = 2.0
 	mast.default_color = Color(0.33, 0.90, 0.82, 0.62)
 	mast.position = _cell_center(start_cell)
 	vfx_layer.add_child(mast)
-	lz_tag = UIKit.mono("LZ", 7, UIKit.CYAN)
-	lz_tag.position = _cell_center(start_cell) + Vector2(-9, -42)
-	lz_tag.size = Vector2(22, 12)
-	vfx_layer.add_child(lz_tag)
+	var beam := Line2D.new()
+	beam.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -58)])
+	beam.width = 3.0
+	beam.default_color = Color(1.0, 0.69, 0.0, 0.38)
+	beam.position = _cell_center(start_cell)
+	vfx_layer.add_child(beam)
+	lz_flag = Polygon2D.new()
+	lz_flag.polygon = PackedVector2Array([Vector2(0, 0), Vector2(18, -7), Vector2(0, -14)])
+	lz_flag.color = Color(1.0, 0.69, 0.0, 0.95)
+	lz_flag.position = _cell_center(start_cell) + Vector2(0, -44)
+	vfx_layer.add_child(lz_flag)
+	lz_world = UIKit.mono("LZ", 7, UIKit.CYAN)
+	lz_world.position = _cell_center(start_cell) + Vector2(-9, -42)
+	lz_world.size = Vector2(22, 12)
+	vfx_layer.add_child(lz_world)
 	var ring := VFX.RingNode.new()
 	ring.position = _cell_center(start_cell)
 	ring.z_index = 2
@@ -474,6 +491,10 @@ func _build_hud() -> void:
 	lz_label.position = Vector2(14, -7)
 	lz_label.size = Vector2(54, 12)
 	lz_hud.add_child(lz_label)
+	lz_tag = UIKit.mono("LZ", 7, UIKit.CYAN)
+	lz_tag.position = Vector2(-10, -28)
+	lz_tag.size = Vector2(22, 12)
+	root.add_child(lz_tag)
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
@@ -1340,13 +1361,15 @@ func _draw_minimap() -> void:
 
 
 func _update_lz_hud() -> void:
-	if lz_hud == null or start_cell == Vector2i.ZERO:
+	if lz_hud == null or not lz_ready:
 		return
 	var screen := get_viewport_rect().size
 	var p := _cell_center(start_cell)
 	var margin := 26.0
 	var on_screen := p.x > margin and p.x < screen.x - margin and p.y > margin and p.y < screen.y - margin
 	lz_hud.visible = not on_screen
+	lz_tag.visible = on_screen
+	lz_tag.position = p + Vector2(-10, -28)
 	if on_screen:
 		return
 	var center := screen * 0.5
