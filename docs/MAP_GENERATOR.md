@@ -74,18 +74,18 @@ Thirteen biome definitions drive terrain, structures, props, tint and life statu
 | `ammonia` | Ammonia Ice | cryo | lifeless | `#72c8e8` |
 | `carbon` | Carbon World | temperate | lifeless | `#9aa2b2` |
 
-`profile` selects the terrain algorithm; `shore_ring` adds a beach/shore ring around water (temperate, methane, carbon). `life` controls the status line, so only temperate reports a biosphere.
+`profile` selects the terrain algorithm; `shore_ring` adds a beach/shore ring around water (**methane, carbon** — temperate dropped its ring at 17:50 in favour of grass-to-water transitions). `life` controls the status line, so only temperate reports a biosphere.
 
 ## Architecture
 
 ### World and chunks
 
-- `TILE = 64`, `CHUNK = 16`, `VIEW_W = 20`, `VIEW_H = 16`.
+- `TILE = 64`, `CHUNK = 16`, `VIEW_W = 24`, `VIEW_H = 18`.
 - Terrain is an infinite deterministic field from two `FastNoiseLite` layers (elevation and detail), seeded by `seed_value`.
 - Each chunk is generated independently from `_chunk_seed(coord)`, so unloading and revisiting a chunk reproduces it exactly.
 - Active neighborhood: 3×3 chunks. Chunks more than 2 chunks from the player are erased.
 - `_pick_terrain()` uses the biome `profile` and maps elevation/detail through that profile’s thresholds. `shore_ring` is handled at render time.
-- Water bodies go through `scripts/water_shaper.gd` between sampling and smoothing (see “Water shaping” below). Only `shore_ring` biomes are shaped; volcanic lava stays authored.
+- Water bodies go through `scripts/water_shaper.gd` between sampling and smoothing (see “Water shaping” below). Shaped water is the `shore_ring` biomes plus temperate, which needs the tiny-pond/spur cleanup even without a beach ring (`water_keys()` returns nothing for the rest); volcanic lava stays authored.
 - Structures are placed fully inside a chunk; chance is `0.60` per chunk. Selection is biome-specific (sulfur volcano/geyser, iron mesa/crater, methane iceberg/crystal/crater, etc.); ocean structures only appear on reef, barren structures only on regolith.
 - `_in_view()` culls structures, props, hazard cells, and data nodes outside the 20×16 render window, so nothing is drawn on the black board surround.
 - Props are wired at chunk generation time. Density is per biome (`PROP_DENSITY`: temperate 4.5 %, cryo 3.2 %, ocean 1.5 %, 3 % default), and each biome has its own prop list (`PROPS`), including the generated ground accents (`accent_<biome>_<shape>.png`). `_prop_is_usable()` rejects PNGs with less than 8 % transparent pixels as a safety net.
@@ -106,8 +106,8 @@ Thirteen biome definitions drive terrain, structures, props, tint and life statu
 - Every water material inherits the water priority (`5`), including biomes whose open water is `base`/`detail` instead of `water` (ocean: `ocean/water_shallow` / `ocean/water_deep`). Without that, `ocean/water_shallow` sat at the base priority and lost single-corner cells to the beach ring — 47 of 181 ocean corner cells fell back to right angles even with the diagonal art present.
 - Corner cells (a land tile with exactly one diagonal water neighbor and no orthogonal water neighbor) use the hand-authored 45-degree split in `assets/tilesets/transitions/diagonal/<land>_<water>/<corner>.png`, which cuts the tile on the diagonal instead of stamping a right-angle corner. `tools/make_diagonal.py` (Python) and `tools/make_diagonal_gd.gd` (the same maths in Godot, for machines without numpy) build them from the two existing palette-locked tiles.
 - A pair listed water-first in `transitions.json` still registers its land-first diagonal key, so art authored as `<land>_<water>` is found for both orderings.
-- **Coverage note:** the diagonal art must exist for the material the renderer actually draws at the coast. On a `shore_ring` biome the land cell is swapped to the *shore* tile at render time, so the pair that matters is e.g. `temperate/beach` ↔ `temperate/water_lake`, not `temperate/grass` ↔ `temperate/water_lake`. Before the shore pairs existed, 100 % of corner cells fell back to the right-angle corner tile even though the diagonal art was present.
-- **Measured coverage** (probe `--diagcheck`, 5-chunk window): temperate 235/235, methane 80/80, carbon 106/106, ocean 181/181 corner cells select a diagonal tile, 0 missing. The last ocean gap was not art but priority (see above); with the priority fix the reef↔beach straight/right-angle tiles no longer outrank the reef↔water corner.
+- **Coverage note:** the diagonal art must exist for the material the renderer actually draws at the coast. On a `shore_ring` biome (methane, carbon) the land cell is swapped to the *shore* tile at render time, so the pair that matters is the shore↔water pair, not the base↔water pair. Temperate no longer has a shore ring, so for it the pair that matters is now `temperate/grass` ↔ `temperate/water_lake` (added 17:50 with the sand-band removal). Before the shore pairs existed, 100 % of corner cells fell back to the right-angle corner tile even though the diagonal art was present.
+- **Measured coverage** (probe `--diagcheck`, 5-chunk window): temperate 235/235, methane 80/80, carbon 106/106, ocean 181/181 corner cells select a diagonal tile, 0 missing. That run predates temperate dropping its shore ring, so re-run `--diagcheck` to confirm the grass↔water pair covers the same cells. The last ocean gap was not art but priority (see above); with the priority fix the reef↔beach straight/right-angle tiles no longer outrank the reef↔water corner.
 
 ### Water shaping
 
