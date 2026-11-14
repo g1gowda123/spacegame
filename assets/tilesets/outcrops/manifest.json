@@ -1,0 +1,163 @@
+{
+  "layer": "outcrops (W6)",
+  "anchor": "bottom-centre",
+  "shadow": "none \u2014 renderer draws it",
+  "keys": {
+    "temperate": {
+      "source": "mountain_range.png",
+      "pieces": [
+        {
+          "file": "res://assets/tilesets/outcrops/temperate_hero.png",
+          "size": [
+            115,
+            118
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/temperate_sup_a.png",
+          "size": [
+            65,
+            67
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/temperate_sup_b.png",
+          "size": [
+            41,
+            42
+          ]
+        }
+      ]
+    },
+    "arid": {
+      "source": "mesa.png",
+      "pieces": [
+        {
+          "file": "res://assets/tilesets/outcrops/arid_hero.png",
+          "size": [
+            111,
+            115
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/arid_sup_a.png",
+          "size": [
+            60,
+            62
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/arid_sup_b.png",
+          "size": [
+            37,
+            39
+          ]
+        }
+      ]
+    },
+    "cryo": {
+      "source": "iceberg.png",
+      "pieces": [
+        {
+          "file": "res://assets/tilesets/outcrops/cryo_hero.png",
+          "size": [
+            69,
+            119
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/cryo_sup_a.png",
+          "size": [
+            34,
+            58
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/cryo_sup_b.png",
+          "size": [
+            22,
+            38
+          ]
+        }
+      ]
+    },
+    "volcanic": {
+      "source": "crystal_outcrop.png",
+      "pieces": [
+        {
+          "file": "res://assets/tilesets/outcrops/volcanic_hero.png",
+          "size": [
+            70,
+            104
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/volcanic_sup_a.png",
+          "size": [
+            37,
+            56
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/volcanic_sup_b.png",
+          "size": [
+            24,
+            37
+          ]
+        }
+      ]
+    },
+    "ocean": {
+      "source": "coral_spire.png",
+      "pieces": [
+        {
+          "file": "res://assets/tilesets/outcrops/ocean_hero.png",
+          "size": [
+            60,
+            107
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/ocean_sup_a.png",
+          "size": [
+            35,
+            62
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/ocean_sup_b.png",
+          "size": [
+            23,
+            41
+          ]
+        }
+      ]
+    },
+    "barren": {
+      "source": "impact_crater.png",
+      "pieces": [
+        {
+          "file": "res://assets/tilesets/outcrops/barren_hero.png",
+          "size": [
+            184,
+            179
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/barren_sup_a.png",
+          "size": [
+            91,
+            89
+          ]
+        },
+        {
+          "file": "res://assets/tilesets/outcrops/barren_sup_b.png",
+          "size": [
+            57,
+            55
+          ]
+        }
+      ]
+    }
+  }
+}
