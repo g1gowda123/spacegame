@@ -1704,7 +1704,16 @@ func _disaster_banner(h: Dictionary, subtitle: String, hit: bool) -> void:
 	var color: Color = info["color"]
 	var name := str(info["name"]).to_upper()
 	var title := ("!! %s STRIKE" % name) if hit else ("!! %s SURGE" % name)
-	var p := UIKit.panel(Color(0.055, 0.040, 0.055, 0.94), color)
+	# A plain Panel with an explicit style: PanelContainer (UIKit.panel) sizes
+	# itself to its content and ignores the requested 360x40, which flattened
+	# the alert into a full-bleed colour bar in the first pass.
+	var p := Panel.new()
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.030, 0.030, 0.042, 0.96)
+	st.border_color = color
+	st.set_border_width_all(1)
+	st.set_corner_radius_all(2)
+	p.add_theme_stylebox_override("panel", st)
 	p.size = Vector2(360, 40)
 	p.position = Vector2(140, 46)
 	p.pivot_offset = p.size * 0.5
@@ -1716,11 +1725,11 @@ func _disaster_banner(h: Dictionary, subtitle: String, hit: bool) -> void:
 	bar.position = Vector2(1, 1)
 	bar.size = Vector2(2, 38)
 	p.add_child(bar)
-	var title_label := UIKit.label(title, 11, color, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var title_label := UIKit.label(title, 11, Color(1.0, 0.97, 0.90), true, HORIZONTAL_ALIGNMENT_CENTER)
 	title_label.position = Vector2(10, 3)
 	title_label.size = Vector2(340, 15)
 	p.add_child(title_label)
-	var sub_label := UIKit.label(subtitle, 7, UIKit.TEXT, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var sub_label := UIKit.label(subtitle, 7, color, true, HORIZONTAL_ALIGNMENT_CENTER)
 	sub_label.position = Vector2(10, 20)
 	sub_label.size = Vector2(340, 12)
 	p.add_child(sub_label)
