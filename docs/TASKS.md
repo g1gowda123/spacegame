@@ -317,3 +317,15 @@ Boss: a Soul Knight-style free upgrade draft, separate from the shop, after fixe
 | Tool portability | done | `/home/g1/...` defaults replaced with env/HOME |
 | Doc drift record | done | `docs/AUDIT_FIXES.md` (existing docs intentionally not edited) |
 | Evidence | done | `--quit-after 8` exit 0; `--screen=flowtest` `total=5034 grade=A` |
+
+## Chief Engineer briefing (story / tutorial) — 15:44
+
+Boss approved the story frame. Full beat sheet, layout and acceptance: `docs/BRIEFING.md`.
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| Beat sheet + first-run/replay/skip flow + `briefing.seen` persistence | **DONE 15:46** | NOVA | 7 beats, 6+send-off; `docs/BRIEFING.md` |
+| `scenes/briefing.tscn` + `scripts/briefing.gd` paper dialogue scene | **DONE 15:50** | NOVA | Character left, paper dialogue bottom, typewriter, mouse/Space/Enter/Esc |
+| Placeholder portrait set (neutral/smile/stern) for layout QA | **DONE 15:48** | NOVA | Replaced by VEGA; same paths |
+| Character sprite sheet (160×240 ×3 + 64×64 icon + manifest) | **ASSIGNED — VEGA** | VEGA | Creative latitude in face/uniform/pose; new ComfyUI workflows allowed; regenerate all expressions together |
+| QA: first boot → briefing → design; skip; replay; 640×360; Web | **PENDING** | NOVA / d | `qa_briefing*.png`; browser pass after re-export |

@@ -270,7 +270,7 @@ def slide7() -> Image.Image:
     d.text((86, 448), "Local build:", font=F(MONO, 12), fill=MUTED)
     d.text((86, 470), "cd build/web && python3 -m http.server 8060", font=F(MONO, 13), fill=TEXT)
     d.text((86, 500), "Then open http://localhost:8060", font=F(MONO, 12), fill=MUTED)
-    d.text((86, 528), "Demo video: submission/orbit_outplay_demo.mp4  ·  44.5 s", font=F(MONO, 12), fill=AMBER)
+    d.text((86, 528), "Demo video: submission/orbit_outplay_demo.mp4  ·  25.1 s", font=F(MONO, 12), fill=AMBER)
     d.text((760, 160), "BUILT WITH", font=F(PIXEL, 10), fill=AMBER)
     for i, line in enumerate([
         "Godot 4.7.2 · GDScript",
