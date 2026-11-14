@@ -327,3 +327,14 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
 - **12:38 — `relay_beacon` prop for the new RELAY SURVEY objective.**
   - `assets/props/relay_beacon.png` (64 px, 85.7 % clear, hardware palette, shadow-free) + preview. Built **procedurally from primitives** rather than diffusion: three prompt attempts at "relay beacon" returned a sheet of devices (971/972) or a humanoid robot (973), so the sprite is a tripod, mast, round cyan lens and antenna drawn at pixel scale, with a 1 px dark outline and no plinth.
   - Ready for ATLAS's sector objective: plant-3-beacons mode can drop this sprite on the marked tiles and tint or ring it for the planted state.
+
+- **12:46 — `data_node` marker redrawn.** `assets/sprites/markers/data_node.png` was a 64 px crystal formation on a rock base: it read as a terrain feature, not a pick-up, and broke the no-plinth rule. Replaced with a compact glowing beacon: dark hex frame, teal lens, white core, four floating shards and a 1 px indicator ring (81.7 % clear, hardware palette, shadow-free, drawn from primitives). Old art backed up at `/tmp/opencode/data_node_old.png`.
+  - In-game evidence: `/tmp/opencode/node_check.png` (sector, arid) — the five nodes read as small cyan markers on the sand without competing with mesas or the movement grid.
+
+- **12:50 — Gameplay sprint verification (ATLAS).** Event card and relay HUD are now confirmed in-game.
+  - Event modal: `event_capture.png` shows CREW FATIGUE with two choices; `--event-choice=0` returns `EVENTCHOICE ok=true resolved=true budget=241`. `roll_event()` writes both `event_card` and `run["event_card"]`; `choose_event()` clears both and sets `event_resolved`.
+  - Relay: `--relay` forces sector 2; capture `/tmp/opencode/relay5.png` shows `RELAYS 0/3` in the HUD, amber beacon markers, and `FORMING: SEISMIC · ARMS NEXT TURN`. Removed the temporary `RELAYDBG` print.
+  - Parse: all six scenes (`title`, `design`, `draft`, `sector`, `debrief`, `report`) pass headless with no `SCRIPT ERROR|Parse Error|Failed to load|Invalid`. Removed a duplicate `next_grade` in `report.gd`; the existing `NEXT +%d TO GRADE %s` line remains.
+  - Still open: risk-bonus/hazard verification, visual-debt gate, final Web export. No push.
+
+- **12:53 — optional `relay_beacon` marker sprite.** `assets/sprites/markers/relay_beacon.png` (64 px, 84.6 % clear, amber lens, signal arcs, tripod, shadow-free) so the relay branch can show a beacon silhouette instead of an amber-modulated data node. Preview `/tmp/opencode/relay_marker.png`; unreferenced until ATLAS chooses it.

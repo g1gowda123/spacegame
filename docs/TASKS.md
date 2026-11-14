@@ -84,11 +84,11 @@ Items 1-4 are concrete art/code passes; item 5 is the acceptance gate. No gamepl
 
 | Task | Status | Notes |
 |---|---|---|
-| Relay-survey objective | in progress | Markers + RELAY HUD exist; verify on an even sector. |
-| Between-sector event choice | in progress | `EVENTS` + debrief modal exist; fixing `event_card` declaration and `UIColor` parse error. |
-| Hazard growth pre-state | verify | `age` / forming visuals already implemented. |
+| Relay-survey objective | done | Verified sector 2: `RELAYS 0/3`, amber markers, `/tmp/opencode/relay5.png`; `RELAYDBG` removed. |
+| Between-sector event choice | done | `event_card` declared; modal shows two choices; `--event-choice=0` resolves and applies budget; `event_capture.png`. |
+| Hazard growth pre-state | verified | Sector capture shows `FORMING: SEISMIC · ARMS NEXT TURN`; `age=0` path active. |
 | Risk bonus | verify | `_risk_bonus_nearby()` + `risk_points` cap already implemented. |
-| Grade-gap line | in progress | `next_grade` / `next_gap` calculated in `calculate_score`; display not yet built. |
+| Grade-gap line | done | Pre-existing `NEXT +%d TO GRADE %s` in `report.gd`; duplicate removed; no new label needed. |
 
 ## Art requests — tiles agent (on standby)
 

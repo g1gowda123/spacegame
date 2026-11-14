@@ -16,21 +16,24 @@ NASA Space Apps 2026 — *Space Mission Design Game*. The game asks the player t
 | Launch vehicle and orbit | Vector L/M/H; LOW / POLAR / HIGH orbit profiles with period, eclipse and pass readouts |
 | Mission objective and instruments | Four science objectives; six instruments with build effects and objective–instrument science fit |
 | Simulate / manage the mission | Three-sector campaign with telegraphed hazards, resource spending, extraction |
-| Multiple scenarios | Three real exoplanets per run, drawn from a 72-planet pool; 13 biomes |
-| Scoring and feedback | Grants, approval, per-sector debrief, final grade C–S and category breakdown |
+| Mission concept, trajectory, timeline | Pre-commit Mission Architecture Review: transfer arc, orbit insertion, six-stage ConOps and the four NASA mission segments |
+| Random events / changing rhythm | Seeded between-sector event with two trade-offs; survey sectors recover data, every second sector plants 3 relay beacons |
+| Multiple scenarios | Three real exoplanets per run, drawn from a 72-planet pool; 13 biomes; survey and relay objectives |
+| Scoring and feedback | Grants, approval, per-sector debrief, risk bonus, final grade C–S, next-grade gap and category breakdown |
 | Educational explanations | Draft detail line, CML design gate, design telemetry labels, report notes, README formula table |
 | NASA data integral | All planet targets and their constraints come from `pscomppars`; mission-design resources are mapped in README/SUBMISSION |
-| Team play (optional) | Not implemented; single-player run is complete |
+| Team play (optional) | Local hot-seat crew mode for 1–4 players: role ownership (architecture, science, navigation, surface ops), handoff banners, conflicting personal goals scored in the report |
 
 ## Run structure
 
 1. **Title** → best score, how to play.
 2. **Mission Design** → hull + launch vehicle + objective + instruments; validation against budget and fairing mass.
 3. **Target Draft** → three real planets; each card exposes Teq, gravity, distance, biome, and five derived hazard bars.
-4. **Sector** → chunked alien surface; one move per turn within a 3–4 tile range; path preview shows distance, Δv/sol cost and heat; hazards telegraph and resolve at end of turn; HOLD to vent; EXTRACT to bank.
-5. **Debrief** → success/failure, data delivered, science, grant, approval delta, integrity, Δv, comms loss; three-offer refit shop.
-6. Repeat for three sectors; approval at zero ends the run early.
-7. **Final Report** → grade, total, category breakdown, sector ledger, narrative, educational notes, new campaign.
+4. **Mission Architecture Review** → transfer arc, four mission segments, CML, ConOps timeline; commit the architecture.
+5. **Sector** → chunked alien surface; one move per turn within a 3–4 tile range; path preview shows distance, Δv/sol cost and heat; hazards telegraph and resolve at end of turn; HOLD to vent; EXTRACT to bank.
+6. **Debrief** → success/failure, data delivered, science, grant, approval delta, integrity, Δv, comms loss; three-offer refit shop; one seeded event choice before the next draft.
+7. Repeat for three sectors; approval at zero ends the run early.
+8. **Final Report** → grade, total, category breakdown, sector ledger, narrative, educational notes, new campaign.
 
 ## Core design decisions
 
@@ -59,7 +62,7 @@ NASA Space Apps 2026 — *Space Mission Design Game*. The game asks the player t
 
 ## Out of scope for the prototype
 
-- Multiplayer / 4-player team mode.
+- Networked multiplayer (local hot-seat crew mode for 1–4 players is implemented).
 - Persistent meta-progression beyond the local best score.
 - Full 3D flight dynamics or real orbital mechanics.
 - Voice-over, localization, and accessibility pass.
