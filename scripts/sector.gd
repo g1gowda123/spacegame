@@ -94,13 +94,7 @@ var dpad: Control
 var hold_btn: Button
 var extract_btn: Button
 var move_btn: Button
-var lz_hud: Control
-var lz_arrow: Polygon2D
-var lz_label: Label
-var lz_tag: Label
-var lz_world: Label
 var lz_flag: Polygon2D
-var lz_ready := false
 
 var turn := 1
 var start_cell := Vector2i.ZERO
@@ -269,7 +263,6 @@ func _start_sector() -> void:
 	_configure_map()
 	_paint_space_planet()
 	start_cell = player_cell
-	lz_ready = true
 	turn = 1
 	moved = false
 	move_range = int(sec.get("move_range", 3))
@@ -311,8 +304,6 @@ func _spawn_pad_beacon() -> void:
 		return
 	if pad_beacon != null and is_instance_valid(pad_beacon):
 		pad_beacon.queue_free()
-	if lz_world != null and is_instance_valid(lz_world):
-		lz_world.queue_free()
 	if lz_flag != null and is_instance_valid(lz_flag):
 		lz_flag.queue_free()
 	var mast := Line2D.new()
@@ -332,10 +323,6 @@ func _spawn_pad_beacon() -> void:
 	lz_flag.color = Color(1.0, 0.69, 0.0, 0.95)
 	lz_flag.position = _cell_center(start_cell) + Vector2(0, -44)
 	vfx_layer.add_child(lz_flag)
-	lz_world = UIKit.mono("LZ", 7, UIKit.CYAN)
-	lz_world.position = _cell_center(start_cell) + Vector2(-9, -42)
-	lz_world.size = Vector2(22, 12)
-	vfx_layer.add_child(lz_world)
 	var ring := VFX.RingNode.new()
 	ring.position = _cell_center(start_cell)
 	ring.z_index = 2
@@ -478,23 +465,6 @@ func _build_hud() -> void:
 	extract_btn.add_theme_font_size_override("font_size", 8)
 	extract_btn.pressed.connect(_extract)
 	root.add_child(extract_btn)
-	# Landing-zone pointer: the pad is easy to lose once the board opens up.
-	# On-screen the world tag marks it; off-screen this edge arrow says where.
-	lz_hud = Control.new()
-	lz_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(lz_hud)
-	lz_arrow = Polygon2D.new()
-	lz_arrow.polygon = PackedVector2Array([Vector2(11, 0), Vector2(-5, -6), Vector2(-5, 6)])
-	lz_arrow.color = UIKit.CYAN
-	lz_hud.add_child(lz_arrow)
-	lz_label = UIKit.mono("LZ", 7, UIKit.CYAN)
-	lz_label.position = Vector2(14, -7)
-	lz_label.size = Vector2(54, 12)
-	lz_hud.add_child(lz_label)
-	lz_tag = UIKit.mono("LZ", 7, UIKit.CYAN)
-	lz_tag.position = Vector2(-10, -28)
-	lz_tag.size = Vector2(22, 12)
-	root.add_child(lz_tag)
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
@@ -637,7 +607,7 @@ func _refresh_status() -> void:
 			move_btn.disabled = true
 		return
 	var quota := int(sec["quota"])
-	var base := "TURN %d · RANGE %d" % [turn, move_range]
+	var base := "TURN %d · RANGE %d" % [turn, _current_range()]
 	if cursor_cell != player_cell:
 		if path_valid:
 			route_label.text = "%s · PATH %d · %d dv · HEAT +%d%s%s" % [
@@ -911,6 +881,15 @@ func _try_move(dir: Vector2i) -> void:
 # the whole path and its cost, commit one move, then resolve the hazard.
 # ---------------------------------------------------------------------------
 
+func _current_range() -> int:
+	# M6 return weight: once the quota is aboard every extra sample is mass.
+	# The first cargo box costs one range; additional boxes cost one each.
+	var cargo := maxi(0, int(sec.get("data", 0)) - int(sec.get("quota", 3)) + 1)
+	if int(sec.get("data", 0)) < int(sec.get("quota", 3)):
+		cargo = 0
+	return maxi(1, move_range - cargo)
+
+
 func _select_cell(cell: Vector2i) -> void:
 	if done:
 		return
@@ -922,7 +901,7 @@ func _select_cell(cell: Vector2i) -> void:
 	# this cap the preview would accept a 3-tile path with 1 dv left and
 	# `_execute_path` would strand the lander and fail the sector.
 	var resource_cap := mini(int(sec["delta_v"]), int(sec["sols"]))
-	path_cells = _find_path(player_cell, cell, mini(move_range, maxi(0, resource_cap)))
+	path_cells = _find_path(player_cell, cell, mini(_current_range(), maxi(0, resource_cap)))
 	path_valid = cell == player_cell or not path_cells.is_empty()
 	path_cost = path_cells.size()
 	path_heat = path_cost * int(sec.get("heat_gain", 1))
@@ -1138,7 +1117,7 @@ func _execute_path() -> void:
 		if int(sec["data"]) >= _objective_cap():
 			# All samples are aboard, but the mission is not over: the lander
 			# has to get back to the landing zone before it can extract.
-			message_text = "ALL DATA ABOARD  ·  RETURN TO LANDER"
+			message_text = "ALL DATA ABOARD  ·  CARGO HEAVY  ·  RANGE %d" % _current_range()
 			message_color = UIKit.GREEN
 			_show_toast(message_text, message_color)
 		# Render each cell and pan one step, so committing a 2-3 tile route
@@ -1242,7 +1221,7 @@ func _draw_move_preview() -> void:
 	if done:
 		return
 
-	var reach := _reachable_cells(move_range)
+	var reach := _reachable_cells(_current_range())
 	var drawn := {}
 	for key in reach.keys():
 		var cell: Vector2i = key
@@ -1323,7 +1302,6 @@ func _draw_move_preview() -> void:
 
 
 func _process(delta: float) -> void:
-	_update_lz_hud()
 	if fx_layer != null and not done:
 		# The hazard shader owns the pulse now; keep only a faint breath here so
 		# the footprint never doubles up two conflicting rhythms.
@@ -1360,28 +1338,6 @@ func _draw_minimap() -> void:
 			Color(col.r, col.g, col.b, col.a * (1.0 - float(i) / 4.0)), 1.0, true)
 
 
-func _update_lz_hud() -> void:
-	if lz_hud == null or not lz_ready:
-		return
-	var screen := get_viewport_rect().size
-	var p := _cell_center(start_cell)
-	var margin := 26.0
-	var on_screen := p.x > margin and p.x < screen.x - margin and p.y > margin and p.y < screen.y - margin
-	lz_hud.visible = not on_screen
-	lz_tag.visible = on_screen
-	lz_tag.position = p + Vector2(-10, -28)
-	if on_screen:
-		return
-	var center := screen * 0.5
-	var d := p - center
-	if d.length() < 0.01:
-		return
-	var dir := d.normalized()
-	var tx := (screen.x * 0.5 - margin) / maxf(absf(dir.x), 0.001)
-	var ty := (screen.y * 0.5 - margin) / maxf(absf(dir.y), 0.001)
-	lz_hud.position = center + dir * minf(tx, ty)
-	lz_arrow.rotation = dir.angle()
-	lz_label.text = "LZ %d" % int(round(player_cell.distance_to(start_cell)))
 
 
 func _render_window() -> void:
