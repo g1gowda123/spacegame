@@ -418,5 +418,5 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 | Biome-specific ambient life | **DONE 16:56** | NOVA | Dust motes tinted/directed per biome (snow in cryo, embers in volcanic, dust in arid, spores in temperate); lander hover, breathing shadow, pulsing beacons/hazard, movement puff. |
 | Cliff face height | **DONE 16:56** | NOVA | Existing `face_*` plateau rims raised 6→12 px; no new art. |
 | Reachability after landmark/density change | **DONE 16:56** | NOVA/b | `tools/audit_reach.gd`: 600 seeds, 2,400 objectives, **0 unreachable**. |
-| Parallax ridge wiring | **BLOCKED / not visible** | ATLAS | `parallax_ridge_a/b.png` exist, but a TextureRect on `space_layer` did not read in capture; needs ATLAS to choose the correct layer. Removed from NOVA's code. |
+| Parallax ridge wiring | **DONE 16:58** | NOVA | `parallax_ridge_a.png` on `space_layer` at y230, alpha 0.28, slow drift; evidence `qa_parallax_cryo.png`. No art edits. |
 | 4×4 grand landmarks for cryo/arid/barren | **REQUESTED — VEGA ONLY** | VEGA | `iceberg_4x4`, `mesa_4x4`, `crater_4x4` in the existing piece manifest format; only the artist gets this. |

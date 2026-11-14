@@ -359,8 +359,6 @@ var display: TextureRect
 var shader_mat: ShaderMaterial
 var space_layer: CanvasLayer
 var space_rect: TextureRect
-var parallax_layer: Node2D
-var parallax_ridges: Array[Sprite2D] = []
 var player_tex: Texture2D
 var player_sprite: Sprite2D
 var ambient_layer: Node2D
@@ -687,21 +685,6 @@ func _build_view() -> void:
 	space_rect.size = get_viewport_rect().size
 	space_rect.modulate = Color(1, 1, 1, 0.78)
 	space_layer.add_child(space_rect)
-
-	# Distant ridge silhouettes behind the diamond. They move at a fraction of
-	# the board's pan so the map reads as a place, not a slab floating in space.
-	parallax_layer = Node2D.new()
-	space_layer.add_child(parallax_layer)
-	for i in 2:
-		var ridge := Sprite2D.new()
-		var ridge_path := "res://assets/tilesets/structures/pieces/parallax_ridge_%s.png" % ("a" if i == 0 else "b")
-		if ResourceLoader.exists(ridge_path):
-			ridge.texture = load(ridge_path) as Texture2D
-			ridge.centered = false
-			ridge.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			ridge.modulate = Color(0.58, 0.64, 0.76, 0.46 if i == 0 else 0.30)
-			parallax_layer.add_child(ridge)
-			parallax_ridges.append(ridge)
 
 	if ResourceLoader.exists("res://assets/tilesets/structures/pieces/parallax_ridge_a.png"):
 		parallax_ridge = TextureRect.new()
@@ -3040,17 +3023,6 @@ func _camera_world_layers() -> Array:
 	return [cliff_layer, overlay_layer, structure_layer, occlusion_layer]
 
 
-func _layout_parallax(vp: Vector2) -> void:
-	if parallax_layer == null:
-		return
-	var base_y := vp.y - 118.0
-	for i in parallax_ridges.size():
-		var ridge: Sprite2D = parallax_ridges[i]
-		var s := vp.x / 640.0
-		ridge.scale = Vector2(s, 1.0)
-		ridge.position = Vector2(0.0 if i == 0 else -vp.x * 0.35, base_y + (0.0 if i == 0 else 14.0))
-
-
 func _pan_camera(from_cell: Vector2i) -> void:
 	if shader_mat == null:
 		return
@@ -3075,9 +3047,6 @@ func _pan_camera(from_cell: Vector2i) -> void:
 	for layer in _camera_world_layers():
 		if layer != null:
 			layer.position = -delta
-	if parallax_layer != null:
-		var px := parallax_layer.position.x
-		parallax_layer.position.x = px - delta.x * 0.12
 	camera_tween = create_tween().set_parallel(true)
 	camera_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	camera_tween.tween_method(
@@ -3087,8 +3056,6 @@ func _pan_camera(from_cell: Vector2i) -> void:
 	for layer in _camera_world_layers():
 		if layer != null:
 			camera_tween.tween_property(layer, "position", Vector2.ZERO, 0.18)
-	if parallax_layer != null:
-		camera_tween.tween_property(parallax_layer, "position:x", 0.0, 0.18)
 
 
 func _project(world: Vector2) -> Vector2:
@@ -3139,7 +3106,6 @@ func _update_view() -> void:
 	if space_rect != null:
 		space_rect.size = vp
 		space_rect.position = Vector2.ZERO
-	_layout_parallax(vp)
 	shader_mat.set_shader_parameter("view_mode", view_mode)
 	shader_mat.set_shader_parameter("map_scale", map_scale)
 	shader_mat.set_shader_parameter("tilt", tilt)
@@ -3149,7 +3115,7 @@ func _update_view() -> void:
 	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
 	shader_mat.set_shader_parameter("camera_offset", Vector2.ZERO)
 	shader_mat.set_shader_parameter("circle_view", 1 if circle_view else 0)
-	shader_mat.set_shader_parameter("circle_radius", 0.34)
+	shader_mat.set_shader_parameter("circle_radius", 0.32)
 	shader_mat.set_shader_parameter("circle_outer", 0.43)
 	shader_mat.set_shader_parameter("show_grid", 1 if show_grid else 0)
 	_rebuild_structure_sprites()
