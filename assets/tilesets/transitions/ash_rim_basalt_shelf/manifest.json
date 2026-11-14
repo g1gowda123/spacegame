@@ -1,0 +1,25 @@
+{
+  "pair": "ash_rim_basalt_shelf",
+  "a": "assets/tilesets/volcanic/ash_rim.png",
+  "b": "assets/tilesets/volcanic/basalt_shelf.png",
+  "a_side": "west",
+  "tiles": {
+    "outer_nw": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_outer_nw.png",
+    "inner_nw": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_inner_nw.png",
+    "outer_ne": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_outer_ne.png",
+    "inner_ne": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_inner_ne.png",
+    "outer_sw": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_outer_sw.png",
+    "inner_sw": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_inner_sw.png",
+    "outer_se": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_outer_se.png",
+    "inner_se": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_inner_se.png",
+    "stripe_ns": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_stripe_ns.png",
+    "stripe_ew": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_stripe_ew.png",
+    "stripe_ns_b": "assets/tilesets/transitions/ash_rim_basalt_shelf/basalt_shelf_stripe_ns.png",
+    "stripe_ew_b": "assets/tilesets/transitions/ash_rim_basalt_shelf/basalt_shelf_stripe_ew.png"
+  },
+  "extras_seed": 101,
+  "extras_band": 3,
+  "extras_scatter": 8,
+  "extras_wave": 9.0,
+  "extras_preview": "assets/tilesets/transitions/ash_rim_basalt_shelf/ash_rim_basalt_shelf_extras_preview.png"
+}

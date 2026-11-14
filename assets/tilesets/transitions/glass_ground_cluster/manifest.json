@@ -1,0 +1,25 @@
+{
+  "pair": "glass_ground_cluster",
+  "a": "assets/tilesets/crystal/glass_ground.png",
+  "b": "assets/tilesets/crystal/cluster.png",
+  "a_side": "west",
+  "tiles": {
+    "outer_nw": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_outer_nw.png",
+    "inner_nw": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_inner_nw.png",
+    "outer_ne": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_outer_ne.png",
+    "inner_ne": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_inner_ne.png",
+    "outer_sw": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_outer_sw.png",
+    "inner_sw": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_inner_sw.png",
+    "outer_se": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_outer_se.png",
+    "inner_se": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_inner_se.png",
+    "stripe_ns": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_stripe_ns.png",
+    "stripe_ew": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_stripe_ew.png",
+    "stripe_ns_b": "assets/tilesets/transitions/glass_ground_cluster/cluster_stripe_ns.png",
+    "stripe_ew_b": "assets/tilesets/transitions/glass_ground_cluster/cluster_stripe_ew.png"
+  },
+  "extras_seed": 101,
+  "extras_band": 3,
+  "extras_scatter": 8,
+  "extras_wave": 9.0,
+  "extras_preview": "assets/tilesets/transitions/glass_ground_cluster/glass_ground_cluster_extras_preview.png"
+}

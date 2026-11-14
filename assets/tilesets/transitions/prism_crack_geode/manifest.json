@@ -1,0 +1,25 @@
+{
+  "pair": "prism_crack_geode",
+  "a": "assets/tilesets/crystal/prism_crack.png",
+  "b": "assets/tilesets/crystal/geode.png",
+  "a_side": "west",
+  "tiles": {
+    "outer_nw": "assets/tilesets/transitions/prism_crack_geode/prism_crack_outer_nw.png",
+    "inner_nw": "assets/tilesets/transitions/prism_crack_geode/prism_crack_inner_nw.png",
+    "outer_ne": "assets/tilesets/transitions/prism_crack_geode/prism_crack_outer_ne.png",
+    "inner_ne": "assets/tilesets/transitions/prism_crack_geode/prism_crack_inner_ne.png",
+    "outer_sw": "assets/tilesets/transitions/prism_crack_geode/prism_crack_outer_sw.png",
+    "inner_sw": "assets/tilesets/transitions/prism_crack_geode/prism_crack_inner_sw.png",
+    "outer_se": "assets/tilesets/transitions/prism_crack_geode/prism_crack_outer_se.png",
+    "inner_se": "assets/tilesets/transitions/prism_crack_geode/prism_crack_inner_se.png",
+    "stripe_ns": "assets/tilesets/transitions/prism_crack_geode/prism_crack_stripe_ns.png",
+    "stripe_ew": "assets/tilesets/transitions/prism_crack_geode/prism_crack_stripe_ew.png",
+    "stripe_ns_b": "assets/tilesets/transitions/prism_crack_geode/geode_stripe_ns.png",
+    "stripe_ew_b": "assets/tilesets/transitions/prism_crack_geode/geode_stripe_ew.png"
+  },
+  "extras_seed": 101,
+  "extras_band": 3,
+  "extras_scatter": 8,
+  "extras_wave": 9.0,
+  "extras_preview": "assets/tilesets/transitions/prism_crack_geode/prism_crack_geode_extras_preview.png"
+}

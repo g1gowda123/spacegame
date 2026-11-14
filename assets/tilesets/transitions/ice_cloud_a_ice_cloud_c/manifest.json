@@ -1,0 +1,25 @@
+{
+  "pair": "ice_cloud_a_ice_cloud_c",
+  "a": "assets/tilesets/cryo/ice_cloud_a.png",
+  "b": "assets/tilesets/cryo/ice_cloud_c.png",
+  "a_side": "west",
+  "tiles": {
+    "outer_nw": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_outer_nw.png",
+    "inner_nw": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_inner_nw.png",
+    "outer_ne": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_outer_ne.png",
+    "inner_ne": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_inner_ne.png",
+    "outer_sw": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_outer_sw.png",
+    "inner_sw": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_inner_sw.png",
+    "outer_se": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_outer_se.png",
+    "inner_se": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_inner_se.png",
+    "stripe_ns": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_stripe_ns.png",
+    "stripe_ew": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_stripe_ew.png",
+    "stripe_ns_b": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_c_stripe_ns.png",
+    "stripe_ew_b": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_c_stripe_ew.png"
+  },
+  "extras_seed": 101,
+  "extras_band": 3,
+  "extras_scatter": 8,
+  "extras_wave": 9.0,
+  "extras_preview": "assets/tilesets/transitions/ice_cloud_a_ice_cloud_c/ice_cloud_a_ice_cloud_c_extras_preview.png"
+}

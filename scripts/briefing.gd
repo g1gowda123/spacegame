@@ -165,14 +165,14 @@ func _build() -> void:
 
 	var tab := Panel.new()
 	tab.position = Vector2(166, 228)
-	tab.size = Vector2(88, 20)
+	tab.size = Vector2(104, 20)
 	tab.add_theme_stylebox_override("panel", _paper_style(ORANGE, INK, 1))
 	tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tab.z_index = 5
 	add_child(tab)
 	card_label = UIKit.label("01  INDUCTION", 6, NIGHT, true, HORIZONTAL_ALIGNMENT_CENTER)
 	card_label.position = Vector2(3, 4)
-	card_label.size = Vector2(82, 12)
+	card_label.size = Vector2(98, 12)
 	tab.add_child(card_label)
 
 	var tape := ColorRect.new()
@@ -209,18 +209,8 @@ func _build() -> void:
 	barcode.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue.add_child(barcode)
 
-	var id_icon := TextureRect.new()
-	id_icon.texture = load("res://assets/sprites/crew/director_icon.png")
-	id_icon.position = Vector2(9, 6)
-	id_icon.size = Vector2(16, 16)
-	id_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	id_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	id_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	id_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dialogue.add_child(id_icon)
-
 	nameplate = UIKit.label("DR. IMANI VALE  //  EXECUTIVE SECRETARY", 7, SIGNAL, true)
-	nameplate.position = Vector2(30, 8)
+	nameplate.position = Vector2(12, 8)
 	nameplate.size = Vector2(330, 14)
 	dialogue.add_child(nameplate)
 

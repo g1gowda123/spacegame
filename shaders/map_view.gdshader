@@ -17,8 +17,10 @@ uniform vec4 biome_tint : source_color = vec4(1.0);
 uniform float biome_tint_strength = 0.0;
 uniform vec2 camera_offset = vec2(0.0);
 uniform int circle_view = 1;
-uniform float circle_radius = 0.47;
-uniform float circle_soft = 0.035;
+uniform float circle_radius = 0.44;
+uniform float circle_soft = 0.045;
+uniform float circle_outer = 0.58;
+uniform float circle_outer_soft = 0.06;
 
 void fragment() {
     // Use UV rather than FRAGCOORD: UV is stable across windowed/fullscreen
@@ -26,7 +28,7 @@ void fragment() {
     // with the canvas-sized TextureRect.
     vec2 disc = (UV - 0.5) * vec2(screen_size.x / screen_size.y, 1.0);
     float disc_dist = length(disc);
-    if (circle_view == 1 && disc_dist > circle_radius + circle_soft) {
+    if (circle_view == 1 && disc_dist > circle_outer + circle_outer_soft) {
         discard;
     }
     vec2 px = (UV - 0.5) * screen_size + camera_offset;
@@ -145,11 +147,19 @@ void fragment() {
     }
 
     if (circle_view == 1) {
-        // Circular survey horizon: the square render window is only storage;
-        // the player sees an inscribed world disc with a rocky rim.
-        float alpha = 1.0 - smoothstep(circle_radius - circle_soft, circle_radius + circle_soft, disc_dist);
-        float rim = smoothstep(circle_radius - 0.030, circle_radius - 0.006, disc_dist);
-        COLOR.rgb = mix(COLOR.rgb, vec3(0.035, 0.046, 0.052), rim * 0.62);
-        COLOR.a *= alpha;
+        // Circular survey horizon with a fog skirt. The inner disc is fully
+        // lit; terrain beyond it stays visible but dims toward space so the
+        // player can see that survey space continues past the focus circle.
+        float focus = 1.0 - smoothstep(
+            circle_radius - circle_soft, circle_radius + circle_soft, disc_dist
+        );
+        float outside = 1.0 - smoothstep(
+            circle_radius + circle_soft, circle_outer, disc_dist
+        );
+        float rim = smoothstep(circle_radius - 0.030, circle_radius - 0.004, disc_dist);
+        vec3 fog = vec3(0.025, 0.034, 0.047);
+        COLOR.rgb = mix(COLOR.rgb, fog, (1.0 - focus) * 0.52);
+        COLOR.rgb = mix(COLOR.rgb, vec3(0.045, 0.058, 0.066), rim * 0.55);
+        COLOR.a *= mix(0.12, 1.0, focus) * outside;
     }
 }

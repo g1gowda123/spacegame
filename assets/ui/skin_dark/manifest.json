@@ -1,0 +1,77 @@
+{
+  "theme": "console-dark (boss-preferred look)",
+  "palette": {
+    "navy": "#101826",
+    "plate": "#172132",
+    "edge": "#3a5270",
+    "cyan": "#54e6d1",
+    "amber": "#ffc45c",
+    "red": "#de4e48",
+    "text": "#cee2eb"
+  },
+  "note": "cyan is reserved for live values, hover and the active tab; amber for caution",
+  "files": {
+    "panel": {
+      "size": [
+        50,
+        50
+      ],
+      "slice": 12,
+      "shadow": 2
+    },
+    "card": {
+      "size": [
+        34,
+        34
+      ],
+      "slice": 8,
+      "shadow": 2
+    },
+    "tab": {
+      "size": [
+        66,
+        20
+      ],
+      "slice": 6
+    },
+    "button_idle": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 2
+    },
+    "button_hover": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 2
+    },
+    "button_active": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 2
+    },
+    "button_pressed": {
+      "size": [
+        46,
+        20
+      ],
+      "slice": 5,
+      "shadow": 0
+    },
+    "gauge": {
+      "size": [
+        96,
+        10
+      ],
+      "tile_x": false
+    }
+  }
+}

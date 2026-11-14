@@ -1,0 +1,25 @@
+{
+  "pair": "water_deep_beach",
+  "a": "assets/tilesets/ocean/water_deep.png",
+  "b": "assets/tilesets/temperate/beach.png",
+  "a_side": "west",
+  "tiles": {
+    "outer_nw": "assets/tilesets/transitions/water_deep_beach/water_deep_outer_nw.png",
+    "inner_nw": "assets/tilesets/transitions/water_deep_beach/water_deep_inner_nw.png",
+    "outer_ne": "assets/tilesets/transitions/water_deep_beach/water_deep_outer_ne.png",
+    "inner_ne": "assets/tilesets/transitions/water_deep_beach/water_deep_inner_ne.png",
+    "outer_sw": "assets/tilesets/transitions/water_deep_beach/water_deep_outer_sw.png",
+    "inner_sw": "assets/tilesets/transitions/water_deep_beach/water_deep_inner_sw.png",
+    "outer_se": "assets/tilesets/transitions/water_deep_beach/water_deep_outer_se.png",
+    "inner_se": "assets/tilesets/transitions/water_deep_beach/water_deep_inner_se.png",
+    "stripe_ns": "assets/tilesets/transitions/water_deep_beach/water_deep_stripe_ns.png",
+    "stripe_ew": "assets/tilesets/transitions/water_deep_beach/water_deep_stripe_ew.png",
+    "stripe_ns_b": "assets/tilesets/transitions/water_deep_beach/beach_stripe_ns.png",
+    "stripe_ew_b": "assets/tilesets/transitions/water_deep_beach/beach_stripe_ew.png"
+  },
+  "extras_seed": 101,
+  "extras_band": 3,
+  "extras_scatter": 8,
+  "extras_wave": 9.0,
+  "extras_preview": "assets/tilesets/transitions/water_deep_beach/water_deep_beach_extras_preview.png"
+}
