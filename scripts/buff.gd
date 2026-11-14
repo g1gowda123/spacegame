@@ -62,7 +62,7 @@ func _build() -> void:
 
 	var milestone := GameState.buff_milestone_number()
 	var sub := UIKit.mono(
-		"MILESTONE %d OF %d   ·   ONE FREE UPGRADE   ·   NO GRANT SPENT" % [
+		"MILESTONE %d OF %d   ·   ONE FREE UPGRADE   ·   1 / 2 / 3 + ENTER" % [
 			milestone if milestone > 0 else 1,
 			GameState.BUFF_MILESTONES.size(),
 		], 7, UIKit.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
@@ -78,12 +78,17 @@ func _build() -> void:
 	status_label = UIKit.mono("", 8, UIKit.GREEN, HORIZONTAL_ALIGNMENT_CENTER)
 	status_label.position = Vector2(0, 296)
 	status_label.size = Vector2(640, 12)
+	status_label.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.05, 0.95))
+	status_label.add_theme_constant_override("shadow_offset_x", 1)
+	status_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(status_label)
 
-	hint_label = UIKit.mono("1   2   3   ·   CLICK A CARD   ·   ENTER TO CHOOSE", 7, UIKit.DIM,
-		HORIZONTAL_ALIGNMENT_CENTER)
+	hint_label = UIKit.mono("", 7, UIKit.DIM, HORIZONTAL_ALIGNMENT_CENTER)
 	hint_label.position = Vector2(0, 326)
 	hint_label.size = Vector2(640, 12)
+	hint_label.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.05, 0.95))
+	hint_label.add_theme_constant_override("shadow_offset_x", 1)
+	hint_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(hint_label)
 	_update_focus()
 

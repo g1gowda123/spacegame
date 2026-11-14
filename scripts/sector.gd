@@ -100,6 +100,8 @@ var hold_btn: Button
 var extract_btn: Button
 var move_btn: Button
 var lz_flag: Polygon2D
+var lz_mast: Line2D
+var lz_beam: Line2D
 
 var turn := 1
 var start_cell := Vector2i.ZERO
@@ -1110,6 +1112,8 @@ func _run_fx_demo(kind: String) -> void:
 			_world_event()
 			_meteor_event()
 			_shooting_star()
+		"devil":
+			VFX.dust_devil(vfx_layer, _cell_center(player_cell), Color(0.95, 0.85, 0.65, 0.9))
 		_:
 			_impact(player_cell, Color("#ff9c4a"), 2, 24)
 			await get_tree().create_timer(0.75).timeout
@@ -1127,7 +1131,8 @@ func _run_fx_demo(kind: String) -> void:
 			VFX.ring(vfx_layer, _cell_center(player_cell), UIKit.CYAN, 40.0, 0.55, 2.4, 8)
 
 
-func _collect_node_at(cell: Vector2i) -> void:	for i in range(objectives.size()):
+func _collect_node_at(cell: Vector2i) -> void:
+	for i in range(objectives.size()):
 		if objectives[i] == cell and not collected[i]:
 			collected[i] = true
 			var gain := 1
