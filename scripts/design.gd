@@ -113,9 +113,11 @@ func _build_left() -> void:
 			], Color(str(h["color"])).lightened(0.2))
 		hull_cards[str(h["id"])] = card
 
+	v.add_child(UIKit.vspace(2))
 	var vehicle_head := HBoxContainer.new()
+	vehicle_head.custom_minimum_size = Vector2(0, 12)
 	vehicle_head.add_theme_constant_override("separation", 4)
-	var vehicle_label := UIKit.mono("LAUNCH VEHICLE", 7, UIKit.DIM)
+	var vehicle_label := UIKit.mono("LAUNCH VEHICLE", 7, UIKit.MUTED)
 	vehicle_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vehicle_head.add_child(vehicle_label)
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)

@@ -92,9 +92,8 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	if star_type == "" or star_type == "—":
 		star_type = "UNKNOWN TYPE"
 	var type_line := UIKit.mono(
-		"%s   ·   %d K   ·   %.2fg" % [
-			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"]),
-			float(p["gravity_g"])
+		"%s   ·   %d K" % [
+			GameState.biome_name(str(p["biome"])).to_upper(), int(p["eq_temp_k"])
 		],
 		8, GameState.biome_color(str(p["biome"])).lightened(0.22), HORIZONTAL_ALIGNMENT_CENTER
 	)
