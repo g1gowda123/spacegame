@@ -157,7 +157,7 @@ with printable design worksheets.
 - **Snapshot:** 5,801 rows queried via the archive TAP service; the raw CSV is
   bundled at `data/pscomppars_raw.csv`.
 - **Curated pool:** 72 planets, 0.69-2.19 Earth radii (builder filter
-  0.35-2.2 R), selected to keep derived gravity playable and the dossier
+  0.35-2.2 R⊕), selected to keep derived gravity playable and the dossier
   readable; three archive masses were implausible for their radii and were
   replaced with the Chen & Kipping estimate, flagged `mass_est`.
 - **Fields:** `pl_eqt`, `pl_insol`, `pl_bmasse`, `pl_rade`, `pl_orbsmax`,
@@ -174,9 +174,9 @@ with printable design worksheets.
 | Quantity | Unit used |
 |---|---|
 | Equilibrium temperature | kelvin (K) |
-| Planet mass | Earth masses (M); gravity converted to m/s2 and displayed in g (9.80665 m/s2) |
-| Planet radius | Earth radii (R) |
-| Insolation | Earth flux (S); archive values in W/m2 |
+| Planet mass | Earth masses (M⊕); gravity converted to m/s² and displayed in g (9.80665 m/s²) |
+| Planet radius | Earth radii (R⊕) |
+| Insolation | Earth flux (S⊕); archive values in W/m² |
 | Distance | light-years (ly); archive `sy_dist` in parsecs (pc), converted at 3.26156 ly/pc |
 | Time | days (orbital period); sols for surface operations |
 | Energy / power | watts (W) for instrument and hull power |
