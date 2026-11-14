@@ -64,20 +64,20 @@ The single strongest artefact for a judge is the **final report screen**: grade,
 | **f** | feel | sound effects, HUD polish, overlay readability |
 | **ECHO** | music | soundtrack spec and loops (not shipped yet) |
 
-### The run, as a flowchart
+### The gameplay loop, as a flowchart
 
 ```mermaid
 flowchart TD
-    T["Title<br/>quick run · daily run · mission control"] --> MC["Mission Control<br/>crew 1–4 · difficulty · campaign code"]
-    MC --> D["Mission Design<br/>hull · vehicle · orbit · objective · 2 instruments"]
-    D --> DR["Target Draft<br/>3 real planets: mild / moderate / harsh"]
-    DR --> S["Surface Sector<br/>route · telegraphed hazards · data nodes"]
-    S -->|"data banked"| DB["Debrief<br/>science · grant · approval · refit shop"]
+    T["① Title<br/>quick run · daily run · mission control"] --> MC["Mission Control<br/>crew 1–4 · difficulty · campaign code"]
+    MC --> D["② Mission Design<br/>hull · vehicle · orbit · objective · 2 instruments"]
+    D --> DR["③ Target Draft<br/>3 real planets: mild / moderate / harsh"]
+    DR --> S["④ Surface Sector<br/>route · telegraphed hazards · data nodes"]
+    S -->|"data banked"| DB["⑤ Debrief<br/>science · grant · approval · refit shop"]
     S -->|"hull lost / sols spent"| F["Failure<br/>−24 approval"]
     DB --> Q{"sector 1 or 2?"}
     F --> Q
     Q -->|"yes"| DR
-    Q -->|"no"| R["Final Report<br/>grade C–S · score · campaign story"]
+    Q -->|"no"| R["⑥ Final Report<br/>grade C–S · score · campaign story"]
     R --> T
 ```
 
@@ -91,6 +91,25 @@ flowchart LR
     H -->|"quota met"| E["EXTRACT<br/>bank data + risk bonus"]
     W --> P
 ```
+
+### The loop on screen
+
+Every frame below is a fresh capture of the current build (`screenshots/loop/`), numbered to match the flowchart.
+
+| | |
+|---|---|
+| <img src="screenshots/loop/loop_title.png" width="460" alt="Title screen"> | <img src="screenshots/loop/loop_design.png" width="460" alt="Mission design"> |
+| **① Title.** Daily seed, best score, one obvious way in. | **② Mission design.** Six live bars; launch locks when the loadout breaks budget or fairing mass. |
+| <img src="screenshots/loop/loop_draft.png" width="460" alt="Target draft"> | <img src="screenshots/loop/loop_sector_preview.png" width="460" alt="Surface sector with a path preview"> |
+| **③ Target draft.** Three real planets, measured values on the card, mild/harsh tags. | **④ Surface.** Hover a tile and the game prices the move: path, Δv, heat, hazard crossing. |
+| <img src="screenshots/loop/loop_debrief.png" width="460" alt="Debrief and refit"> | <img src="screenshots/loop/loop_report.png" width="460" alt="Final report"> |
+| **⑤ Debrief.** Science, grant, approval, and the three-offer refit shop. | **⑥ Final report.** Grade, score breakdown, sector ledger, campaign code. |
+
+Default sector view, with survey fog on — you only see what you have scanned:
+
+<img src="screenshots/loop/loop_sector.png" width="920" alt="Surface sector with survey fog">
+
+More current frames live in `screenshots/loop/`: `loop_briefing.png` (story briefing), `loop_crew.png` (crew manifest), `loop_buff.png` (field commission), `loop_relay.png` (relay-survey sector).
 
 ### How the content is made
 
