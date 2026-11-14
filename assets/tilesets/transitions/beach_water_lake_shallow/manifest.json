@@ -1,0 +1,17 @@
+{
+  "pair": "beach_water_lake_shallow",
+  "a": "assets/tilesets/temperate/beach.png",
+  "b": "assets/tilesets/temperate/water_lake_shallow.png",
+  "a_side": "west",
+  "tiles": {
+    "west": "assets/tilesets/transitions/beach_water_lake_shallow/beach_west.png",
+    "east": "assets/tilesets/transitions/beach_water_lake_shallow/beach_east.png",
+    "north": "assets/tilesets/transitions/beach_water_lake_shallow/beach_north.png",
+    "south": "assets/tilesets/transitions/beach_water_lake_shallow/beach_south.png"
+  },
+  "preview": "assets/tilesets/transitions/beach_water_lake_shallow/beach_water_lake_shallow_preview.png",
+  "seed": 1,
+  "band": 3,
+  "scatter": 8,
+  "wave": 9.0
+}
