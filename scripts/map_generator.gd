@@ -248,7 +248,6 @@ var STRUCTURES: Dictionary = {
 # Per-biome prop density. Default 6% reads as "inhabited"; sparse worlds use
 # less so a single coral shard or shrub stays a landmark, not a lawn.
 const WATER_BANDS: Dictionary = {
-	"temperate": ["temperate/water_lake_shallow", "temperate/water_lake", "temperate/water_lake_deep"],
 	"ocean": ["ocean/water_shallow", "ocean/water_shelf", "ocean/water_deep"],
 }
 
@@ -283,6 +282,7 @@ var TRANSITION_PAIRS: Array = [
 	["temperate/grass", "temperate/dirt"],
 	["temperate/grass", "temperate/rock"],
 	["temperate/grass", "temperate/beach"],
+	["temperate/grass", "temperate/water_lake"],
 	["temperate/beach", "temperate/water_lake"],
 	["arid/sand", "arid/cracked_earth"],
 	["arid/sand", "arid/rock"],

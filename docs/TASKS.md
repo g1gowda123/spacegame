@@ -420,3 +420,5 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 | Reachability after landmark/density change | **DONE 16:56** | NOVA/b | `tools/audit_reach.gd`: 600 seeds, 2,400 objectives, **0 unreachable**. |
 | Parallax ridge wiring | **DONE 16:58** | NOVA | `parallax_ridge_a.png` on `space_layer` at y230, alpha 0.28, slow drift; evidence `qa_parallax_cryo.png`. No art edits. |
 | 4×4 grand landmarks for cryo/arid/barren | **REQUESTED — VEGA ONLY** | VEGA | `iceberg_4x4`, `mesa_4x4`, `crater_4x4` in the existing piece manifest format; only the artist gets this. |
+
+| Portrait lighting/segmentation fix (seed 4201) | **APPROVED 17:46 — VEGA** | VEGA | `--largest` + fixed head box; neutral canonical, smile/stern derived; cream + dark card check; no other art changes |

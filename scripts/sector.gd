@@ -109,7 +109,10 @@ var result_layer: Control
 
 func _ready() -> void:
 	sec = GameState.current_sector
-	var force_relay := "--relay" in OS.get_cmdline_args() or "--relay" in OS.get_cmdline_user_args()
+	var args: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
+	if "--debug-transitions" in args:
+		debug_transitions = true
+	var force_relay := "--relay" in args
 	if sec.is_empty():
 		# Recover gracefully if someone opens the scene directly.
 		GameState.new_run()
