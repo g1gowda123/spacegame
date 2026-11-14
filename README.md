@@ -409,11 +409,11 @@ The surface is one sector of a planet: a chunked 16×16-cell world streamed from
 | **Δv** | Remaining propellant | Each tile moved and some hazards spend it |
 | **Power** | Shielding and systems | Regenerates each turn; blocking a hazard costs power |
 | **Sols** | Mission clock | One per tile moved (or one HOLD); the sector fails when it runs out |
-| **Data** | Collected science nodes | Collect the quota, return to the landing zone, then press **EXTRACT**; a full 4/4 sweep does **not** auto-complete the sector |
+| **Data** | Collected science nodes | Collect the quota, return to the cyan extraction pad, then press **EXTRACT**; a full 4/4 sweep does **not** auto-complete the sector |
 
 ### The movement rule
 
-Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**; every tile on that path spends 1 Δv and 1 sol, so a three-tile move costs three of each. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Once the quota is met, return to the landing zone and press **EXTRACT** to bank the data. The landing-zone return is the second half of the route plan, not a formality; a full 4/4 sweep still requires the trip home.
+Each turn allows **one committed move** of up to 3 tiles (4 in the Hopper, +1 with the Ion Thruster). Moving the cursor over a reachable cell draws the full path and previews its **Δv cost, heat load, node count, and whether the path crosses a hazard**; every tile on that path spends 1 Δv and 1 sol, so a three-tile move costs three of each. Commit the move, then the hazard spawned for this turn resolves at the **end** of the turn. Once the quota is met, return to the cyan extraction pad and press **EXTRACT** to bank the data. The cyan-pad return is the second half of the route plan, not a formality; a full 4/4 sweep still requires the trip home.
 
 That single rule is what makes the sector a route-planning problem rather than a walking simulator: you cannot creep forward one tile at a time, and you cannot see the next threat until you have spent this turn's move.
 
