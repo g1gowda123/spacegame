@@ -115,6 +115,35 @@ are the star chart and the sector HUD.
 | U5 | Copy/voice pass | mission-control voice, consistent labels, no generic "OK/CANCEL" |
 | U6 | QA evidence | all screens at 640×360 and 1280×720, 0 console/page errors, headless clean, Web smoke |
 
+## U1 asset list (VEGA-friendly)
+
+Generate at native size, transparent RGBA, hard 1 px outlines; do not bake a
+drop shadow (the UI draws the 1–2 px offset itself). Use Pillow/procedural pixel
+geometry for the 9-slices; diffusion is only useful for the paper fibre.
+
+| Asset | Size | Nine-slice margins | Notes |
+|---|---|---|---|
+| `button_normal.png` | 64×24 | 6,6,6,6 | paper tab, ink edge, orange underline option |
+| `button_hover.png` | 64×24 | 6,6,6,6 | 1 px lighter paper + orange edge |
+| `button_pressed.png` | 64×24 | 6,6,6,6 | ink fill, paper type |
+| `button_disabled.png` | 64×24 | 6,6,6,6 | desaturated paper, dotted edge |
+| `tab_selected.png` | 96×24 | 8,8,8,8 | folder tab with a clipped corner |
+| `panel_folder.png` | 96×96 | 12,12,12,12 | manila folder, clipped corner, punched holes optional |
+| `panel_card.png` | 64×64 | 8,8,8,8 | cream index card with a ruled top line |
+| `panel_night.png` | 96×96 | 12,12,12,12 | dark star-chart surface, thin ink border |
+| `tape.png` | 64×16 | 8,8,8,8 | translucent amber tape |
+| `punch.png` | 16×16 | — | one binder hole |
+| `ruler_strip.png` | 128×16 | 8,8,8,8 | tick marks for gauges |
+| `barcode.png` | 96×16 | — | agency barcode / serial strip |
+| `stamp_approved.png` | 96×32 | — | ink stamp, 1–2° rotation in code |
+| `stamp_flagged.png` | 96×32 | — | red signal stamp |
+| `paper_texture.png` | 128×128 tile | — | very subtle fibre, ≤ 8% opacity |
+| `icon_hull/orbit/power/thermal/data/comms/crew/risk/grade.png` | 24×24 | — | single-colour stencil pictograms |
+
+Put a `manifest.json` beside them with `nine_slice` margins, intended use and
+palette; render a contact sheet on a 640×360 mock. Keep all assets in
+`assets/ui/skin/`.
+
 ## Acceptance
 
 - A blind screenshot test: someone can identify the game's subject and tone
