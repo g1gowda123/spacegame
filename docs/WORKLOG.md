@@ -1009,3 +1009,5 @@ to the lane owner.
 - **Files.** `scripts/game_state.gd`, `scripts/debrief.gd`, `scripts/sector.gd` (plus the existing uncommitted VFX-agent flare/smoke assets and tools, untouched). No push/export; ORION owns the gate.
 
 - **22:22 — Hazard fill hatching.** `hazard_field.gdshader` adds diagonal tape (armed +0.065 alpha, dark 0.55×; forming +0.022). QA hook `--arm-hazard` arms the first front for stills. Evidence `hazard_hatch.png`.
+
+- **22:26 — Local audio mute.** `GameState` now starts muted in editor runs, supports `--mute` / `--unmute`, and toggles the Master bus with `M`. Exported builds stay audible by default so the submission/demo keep their audio; press `M` once in a browser run to silence it.

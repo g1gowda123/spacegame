@@ -134,6 +134,15 @@ func _draw() -> void:
 		draw_polyline(tri + PackedVector2Array([tri[0]]),
 			accent.lightened(0.42), 0.9, true)
 	var flick := 0.7 + 0.30 * sin(_time * 21.0) + 0.12 * sin(_time * 47.0)
+	# Thrust flame: a short orange cone behind the engine, flickering at two
+	# rates. At this scale it is the clearest "the ship is moving" cue.
+	var flame := PackedVector2Array([
+		engine,
+		engine - tangent * (5.0 + 2.4 * flick) - normal * 1.7,
+		engine - tangent * (7.0 + 3.2 * flick),
+		engine - tangent * (5.0 + 2.4 * flick) + normal * 1.7,
+	])
+	draw_colored_polygon(flame, Color(1.0, 0.62, 0.24, 0.55))
 	draw_circle(engine, 1.6 + 0.9 * flick, Color(0.48, 0.95, 1.0, 0.55))
 	draw_circle(engine, 0.8, Color(1.0, 1.0, 1.0, 0.85))
 

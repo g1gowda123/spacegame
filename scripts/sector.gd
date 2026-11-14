@@ -77,6 +77,7 @@ var _last_strike_near := false
 var _world_timer := 2.4
 var _star_timer := 5.0
 var _meteor_timer := 9.0
+var _scar_timer := 1.2
 var fx_root: Control
 var _state_overlay: ColorRect
 var _state_mat: ShaderMaterial
@@ -198,6 +199,9 @@ func _ready() -> void:
 			if not hazards.is_empty():
 				player_cell = hazards[0]["cells"][0]
 				_end_turn()
+		elif arg == "--arm-hazard":
+			if not hazards.is_empty():
+				hazards[0]["age"] = 1
 		elif arg.begins_with("--select="):
 			var sp := arg.substr(9).split(",")
 			if sp.size() == 2:
@@ -1586,6 +1590,10 @@ func _process(delta: float) -> void:
 		if _meteor_timer <= 0.0:
 			_meteor_timer = rng.randf_range(7.0, 12.0)
 			_meteor_event()
+		_scar_timer -= delta
+		if _scar_timer <= 0.0:
+			_scar_timer = rng.randf_range(0.9, 1.6)
+			_smoke_scars()
 
 
 func _visible_structures() -> Array[Dictionary]:
@@ -1604,7 +1612,8 @@ func _world_event() -> void:
 	# Prefer an authored structure with a readable signature (erupting volcano,
 	# venting geyser, prism glint) over generic dust; that is what makes the
 	# board feel inhabited rather than decorated.
-	var special := ["volcano", "geyser", "crystal_outcrop", "iceberg", "coral_spire"]
+	var special := ["volcano", "geyser", "crystal_outcrop", "iceberg", "coral_spire",
+		"habitat_dome", "comms_dish", "solar_farm"]
 	var pool: Array[Dictionary] = []
 	for s in _visible_structures():
 		if str(s["key"]) in special:
@@ -1627,6 +1636,12 @@ func _world_event() -> void:
 				VFX.sparks(vfx_layer, at, Color(0.82, 0.70, 1.0, 0.85), 5, 24.0, -16.0)
 			"iceberg", "coral_spire":
 				VFX.sparks(vfx_layer, at, Color(0.75, 0.95, 1.0, 0.65), 4, 18.0, -10.0)
+			"habitat_dome":
+				VFX.sparks(vfx_layer, at + Vector2(0, -4), Color(1.0, 0.82, 0.45, 0.7), 2, 9.0, -6.0)
+			"comms_dish":
+				VFX.sparks(vfx_layer, at + Vector2(0, -6), Color(0.55, 0.95, 1.0, 0.7), 2, 10.0, -5.0)
+			"solar_farm":
+				VFX.sparks(vfx_layer, at + Vector2(0, -3), Color(0.85, 0.95, 1.0, 0.65), 2, 8.0, -4.0)
 			_:
 				VFX.dust(vfx_layer, at, Color(0.55, 0.50, 0.45, 0.30), 3, 10.0)
 		return
@@ -1659,6 +1674,19 @@ func _world_event() -> void:
 				VFX.dust_devil(vfx_layer, at, Color(0.72, 0.64, 0.52, 0.55))
 			_:
 				VFX.sparks(vfx_layer, at, Color(0.72, 0.96, 0.74, 0.55), 3, 10.0, -8.0)
+
+
+func _smoke_scars() -> void:
+	## Burned ground keeps smoking for the turns the scar survives. This is the
+	## persistent half of the disaster beat: the board remembers where it was hit.
+	if vfx_layer == null or scars.is_empty():
+		return
+	for s in scars:
+		var c: Vector2i = s["cell"]
+		if not _in_view(c.x, c.y):
+			continue
+		if rng.randf() < 0.45:
+			VFX.dust(vfx_layer, _cell_center(c), Color(0.24, 0.21, 0.19, 0.34), 2, 7.0)
 
 
 func _meteor_event() -> void:
