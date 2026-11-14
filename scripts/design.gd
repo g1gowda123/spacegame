@@ -146,6 +146,7 @@ func _build_center() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
+	v.add_child(UIKit.vspace(4))
 	v.add_child(UIKit.mono("SPACECRAFT", 8, UIKit.MUTED))
 	UIKit.hairline(v, 0, 0, 190, UIKit.LINE)
 
