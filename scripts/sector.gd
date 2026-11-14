@@ -818,11 +818,17 @@ func _refresh_status() -> void:
 	sol_label.text = str(int(sec["sols"]))
 	sol_label.add_theme_color_override("font_color",
 		UIKit.RED if int(sec["sols"]) <= 5 else UIKit.AMBER)
-	data_caption.text = "RELAYS" if _is_relay() else "DATA"
+	var data_noun := "RELAYS" if _is_relay() else "DATA"
 	var data_need := maxi(0, int(sec["quota"]) - int(sec["data"]))
-	if data_need > 0 and not done:
-		data_caption.text += " · NEED %d" % data_need
-	data_label.text = "%d/%d" % [int(sec["data"]), int(sec["quota"])]
+	data_caption.text = "%s %d/%d" % [
+		data_noun, int(sec["data"]), int(sec["quota"])
+	]
+	if done:
+		data_label.text = "READY"
+	elif data_need > 0:
+		data_label.text = "NEED %d" % data_need
+	else:
+		data_label.text = "READY"
 
 	UIKit.set_bar(heat_bar, float(sec["thermal"]), 100.0)
 	heat_val.text = "%d" % int(sec["thermal"])
