@@ -173,4 +173,9 @@ Used by `draft.gd::_show_mission_review()` in the 270×112 transfer panel.
 - emits `progress_changed(u)`; the review shows `IN TRANSIT  N%`, then `ORBIT
   INSERTION`.
 
-Test: `godot --path . -- --screen=draft --review`.
+The same ship powers the **commit transition**: pressing COMMIT MISSION runs
+`draft.gd::_play_commit_transit()` — a full-screen starfield with Earth, the
+target, the transfer arc and the ship — then changes to the sector after 1.85 s.
+
+Test: `godot --path . -- --screen=draft --review` (panel) and
+`godot --path . -- --screen=draft --review --commit` (full transit).

@@ -1033,3 +1033,7 @@ to the lane owner.
 - Paper/ink/orange binder on title, design, draft and report; `UIKit.sheet()` margins 6/6/3/3; design headers/stat labels explicit; report header moved clear of the top edge.
 - Draft capture path hides the hover dossier (`UITip.hide_tip()` + pointer warp) and the card stat rows were re-fitted (`SET COURSE` at x470).
 - Acceptance evidence `/tmp/opencode/binder_final/` at 640×360 and 1280×720; commit `4bf534d`.
+
+## 22:50 — VFX lane: full-screen mission transit
+- `draft.gd::_commit_route()` no longer hard-cuts to the sector. Pressing COMMIT MISSION (or ENTER) starts `_play_commit_transit(planet)`: a 640×360 CanvasLayer over a starfield with Earth, the target planet, the same quadratic transfer arc, the selected hull flying the arc (~1.35 s) and a `TRANSIT · <PLANET>` / `15.8 LY · 18.6 YR @0.85c` header, then the sector scene after 1.85 s. `_committing` guards double-commits. QA: `--screen=draft --review --commit` (captures the transit; no fake input).
+- Evidence: `/tmp/opencode/vfx/transit_20.png`, `transit_40.png`; also `arc5.png` for the in-panel version.
