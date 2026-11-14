@@ -86,11 +86,12 @@ void fragment() {
         vec3 mx = texture(terrain_mask, muv + vec2(1.5 / terrain_mask_size.x, 0.0)).rgb;
         vec3 my = texture(terrain_mask, muv + vec2(0.0, 1.5 / terrain_mask_size.y)).rgb;
         float mask_edge = max(distance(m0, mx), distance(m0, my));
-        float edge_amt = smoothstep(0.012, 0.075, mask_edge);
-        float dither = fract(sin(dot(floor(UV * screen_size * 0.5), vec2(12.9898, 78.233))) * 43758.5453);
-        if (edge_amt > dither) {
-            COLOR.rgb = mix(COLOR.rgb, (mx + my) * 0.5, 0.34 * edge_amt);
-        }
+        float edge_amt = smoothstep(0.008, 0.055, mask_edge);
+        // Sub-cell blend: a narrow, noise-free gradient across the material
+        // boundary. The old per-fragment dither read as salt-and-pepper at 2x
+        // and fought the 64px tile grid; a continuous tint keeps the edge soft
+        // without adding a second texture frequency.
+        COLOR.rgb = mix(COLOR.rgb, (mx + my) * 0.5, 0.42 * edge_amt);
 
         // Biome tint, hue-only. Multiplying by the raw tint colour darkened the
         // board (barren measured 40 % of its source luma); normalising the tint

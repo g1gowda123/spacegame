@@ -107,7 +107,7 @@ func _build_left() -> void:
 		card["button"].pressed.connect(_pick_hull.bind(str(h["id"])))
 		hull_cards[str(h["id"])] = card
 		if "--uidbg" in OS.get_cmdline_user_args():
-			print("UIDBG hull ", card["root"].size, " title ", card["title"].size, " min ", card["title"].get_minimum_size(), " fh ", card["title"].get_theme_font("font").get_height(8), " sub ", card["sub"].size if card["sub"] != null else "none")
+			print("UIDBG hull ", card["root"].size, " panelcls ", card["panel"].get_class(), " titlesz ", card["title"].size, " min ", card["title"].get_minimum_size(), " subsz ", card["sub"].size if card["sub"] != null else "none", " submin ", card["sub"].get_minimum_size() if card["sub"] != null else "none")
 
 	_subhead(v, "LAUNCH VEHICLE")
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)

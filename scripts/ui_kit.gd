@@ -349,25 +349,25 @@ static func option_card(
 	# Absolute children, not a VBox: rows must keep the exact height the screen
 	# asked for or a long perk wraps and the column overflows its sheet.
 	var t := label(title, maxi(8, title_size), TEXT, true)
-	t.position = Vector2(8, 2 if subtitle != "" else maxf(2.0, (rect.size.y - 12.0) * 0.5))
-	t.size = Vector2(rect.size.x - (78.0 if meta != "" else 14.0), 12)
 	t.clip_text = true
 	p.add_child(t)
+	t.position = Vector2(8, 2 if subtitle != "" else maxf(2.0, (rect.size.y - 12.0) * 0.5))
+	t.size = Vector2(rect.size.x - (78.0 if meta != "" else 14.0), 12)
 	if meta != "":
 		var m := label(meta, 7, DIM, false, HORIZONTAL_ALIGNMENT_RIGHT)
-		m.position = Vector2(rect.size.x - 70.0, 3)
-		m.size = Vector2(62, 10)
 		m.clip_text = true
 		p.add_child(m)
+		m.position = Vector2(rect.size.x - 70.0, 3)
+		m.size = Vector2(62, 10)
 	var s: Label = null
 	if subtitle != "":
 		s = label(subtitle, sub_size, MUTED, false)
-		s.position = Vector2(8, 14)
-		s.size = Vector2(rect.size.x - 14.0, maxf(2.0, rect.size.y - 16.0))
 		s.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		s.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		s.clip_text = true
 		p.add_child(s)
+		s.position = Vector2(8, 14)
+		s.size = Vector2(rect.size.x - 14.0, maxf(2.0, rect.size.y - 16.0))
 
 	var btn := Button.new()
 	btn.flat = true
