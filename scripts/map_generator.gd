@@ -199,6 +199,39 @@ var STRUCTURES: Dictionary = {
 		"path": "res://assets/tilesets/structures/ridge_wide.png",
 		"w": 3, "h": 2, "occludes": true, "sprite_scale": 1.0,
 	},
+	"ridge_mid": {
+		"path": "res://assets/tilesets/structures/ridge/ridge_mid_temperate.png",
+		"path_by_biome": {
+			"temperate": "res://assets/tilesets/structures/ridge/ridge_mid_temperate.png",
+			"arid": "res://assets/tilesets/structures/ridge/ridge_mid_arid.png",
+			"cryo": "res://assets/tilesets/structures/ridge/ridge_mid_cryo.png",
+			"volcanic": "res://assets/tilesets/structures/ridge/ridge_mid_volcanic.png",
+			"barren": "res://assets/tilesets/structures/ridge/ridge_mid_barren.png",
+		},
+		"w": 3, "h": 2, "occludes": true, "sprite_scale": 1.0,
+	},
+	"ridge_cap_l": {
+		"path": "res://assets/tilesets/structures/ridge/ridge_cap_l_temperate.png",
+		"path_by_biome": {
+			"temperate": "res://assets/tilesets/structures/ridge/ridge_cap_l_temperate.png",
+			"arid": "res://assets/tilesets/structures/ridge/ridge_cap_l_arid.png",
+			"cryo": "res://assets/tilesets/structures/ridge/ridge_cap_l_cryo.png",
+			"volcanic": "res://assets/tilesets/structures/ridge/ridge_cap_l_volcanic.png",
+			"barren": "res://assets/tilesets/structures/ridge/ridge_cap_l_barren.png",
+		},
+		"w": 3, "h": 2, "occludes": true, "sprite_scale": 1.0,
+	},
+	"ridge_cap_r": {
+		"path": "res://assets/tilesets/structures/ridge/ridge_cap_r_temperate.png",
+		"path_by_biome": {
+			"temperate": "res://assets/tilesets/structures/ridge/ridge_cap_r_temperate.png",
+			"arid": "res://assets/tilesets/structures/ridge/ridge_cap_r_arid.png",
+			"cryo": "res://assets/tilesets/structures/ridge/ridge_cap_r_cryo.png",
+			"volcanic": "res://assets/tilesets/structures/ridge/ridge_cap_r_volcanic.png",
+			"barren": "res://assets/tilesets/structures/ridge/ridge_cap_r_barren.png",
+		},
+		"w": 3, "h": 2, "occludes": true, "sprite_scale": 1.0,
+	},
 	"mountain_massif": {
 		"path": "res://assets/tilesets/structures/mountain_massif.png",
 		"w": 4, "h": 4, "occludes": true, "sprite_scale": 1.0,
@@ -2057,6 +2090,8 @@ func _append_structure(
 	var h: int = info["h"]
 	if not _structure_fits(arr, allowed, occupied, lx, ly, w, h):
 		return false
+	if OS.get_cmdline_user_args().has("--dump-structures"):
+		print("STRUCT key=", key, " gx=", coord.x * CHUNK + lx, " gy=", coord.y * CHUNK + ly, " player=", player_cell)
 	# One silhouette repeated eight times reads as a rubber stamp. Give each
 	# instance a small deterministic size/tint offset; the footprint and
 	# collision stay identical, so this is purely visual de-duplication.
@@ -2081,14 +2116,16 @@ func _ridge_key(biome_id: String) -> String:
 	match biome_id:
 		"volcanic", "sulfur", "obsidian":
 			return "volcano"
-		"arid", "iron":
+		"arid":
+			return "ridge"
+		"iron":
 			return "mesa"
 		"cryo", "methane", "ammonia":
 			return "iceberg"
-		"barren":
-			return "ridge_wide"
-		"temperate", "carbon":
-			return "ridge_wide"
+		"barren", "temperate":
+			return "ridge"
+		"carbon":
+			return "mountain_range"
 		"crystal":
 			return "crystal_outcrop"
 	return "mountain_range"
@@ -2127,6 +2164,48 @@ func _feature_key(biome_id: String, roll: float) -> String:
 	return "mountain_range"
 
 
+func _place_ridge_chain(
+	out: Array, occupied: Array, arr: Array, allowed: Array,
+	coord: Vector2i, biome_id: String, rng: RandomNumberGenerator
+) -> void:
+	# A 3×2 cap + N×3×2 mids + cap. All segments share the same height and
+	# the mid crest is periodic, so they meet without a vertical seam. Only
+	# east-west chains are emitted; the art is authored horizontally.
+	var count := rng.randi_range(2, 4)
+	var span := count * 3
+	for attempt in range(16):
+		var lx := rng.randi_range(2, maxi(2, CHUNK - span - 2))
+		var ly := rng.randi_range(2, maxi(2, CHUNK - 4))
+		var trial: Array = occupied.duplicate()
+		var tx := lx
+		var ok := true
+		for i in range(count):
+			if not _structure_fits(arr, allowed, trial, tx, ly, 3, 2):
+				ok = false
+				break
+			trial.append(Rect2i(tx, ly, 3, 2))
+			tx += 3
+		if not ok:
+			continue
+		tx = lx
+		for i in range(count):
+			var key := "ridge_mid"
+			if i == 0:
+				key = "ridge_cap_l"
+			elif i == count - 1:
+				key = "ridge_cap_r"
+			if not _append_structure(out, occupied, arr, allowed, coord, key, tx, ly):
+				return
+			tx += 3
+		return
+	# Fallback: single wide strip is better than an empty ridge.
+	for attempt in range(6):
+		var sx := rng.randi_range(2, maxi(2, CHUNK - 5))
+		var sy := rng.randi_range(2, maxi(2, CHUNK - 4))
+		if _append_structure(out, occupied, arr, allowed, coord, "ridge_wide", sx, sy):
+			return
+
+
 func _place_ridge(
 	out: Array, occupied: Array, arr: Array, allowed: Array,
 	coord: Vector2i, biome_id: String, rng: RandomNumberGenerator
@@ -2144,6 +2223,9 @@ func _place_ridge(
 		return
 
 	var key := _ridge_key(biome_id)
+	if key == "ridge":
+		_place_ridge_chain(out, occupied, arr, allowed, coord, biome_id, rng)
+		return
 	var info: Dictionary = STRUCTURES[key]
 	var w: int = info["w"]
 	var h: int = info["h"]
@@ -3234,9 +3316,15 @@ func _load_structure_variants() -> void:
 
 func _add_structure_sprite(s: Dictionary) -> void:
 	var info: Dictionary = STRUCTURES[s["key"]]
+	if str(s["key"]) == "volcano" and OS.get_cmdline_args().has("--dump-structures"):
+		print("VOLCANO gx=", s["gx"], " gy=", s["gy"], " w=", s["w"], " player=", player_cell)
 	var gx: int = s["gx"]
 	var gy: int = s["gy"]
 	var tex_path := str(info["path"])
+	var by_biome: Dictionary = info.get("path_by_biome", {})
+	if not by_biome.is_empty():
+		var biome_id := str(BIOMES[biome_index]["id"])
+		tex_path = str(by_biome.get(biome_id, tex_path))
 	var variant_paths: Array = structure_variants.get(str(s["key"]), [])
 	if not variant_paths.is_empty():
 		var vi := _decal_hash(gx, gy, 0x51a7) % variant_paths.size()

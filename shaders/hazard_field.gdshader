@@ -65,10 +65,13 @@ void fragment() {
 		float outline = 1.0 - smoothstep(0.03, 0.075, border);
 		float scan_y = fract(t * 0.32 + hash21(cell + 4.1));
 		float scan = 1.0 - smoothstep(0.0, 0.045, abs(f.y - scan_y));
-		float fill = (0.045 + 0.06 * scan) + tape * 0.040;
-		a = (outline * 0.62 * dash + fill) * intensity;
-		col = mix(col, vec3(1.0), 0.15);
-		col = mix(col, col * 0.55, tape * 0.22);
+		// Forming should read as a dashed boundary with a scan/tape hint, not
+		// as a solid pale diamond sitting on the map. Keep the fill below the
+		// perceptual floor; the outline carries the telegraph.
+		float fill = (0.018 + 0.025 * scan) + tape * 0.018;
+		a = (outline * 0.78 * dash + fill) * intensity;
+		col = mix(col, vec3(1.0), 0.10);
+		col = mix(col, col * 0.62, tape * 0.18);
 	} else {
 		// Armed: hazard-type signature + a pulsing warning border.
 		float pulse = 0.5 + 0.5 * sin(t * 4.2 + phase);
