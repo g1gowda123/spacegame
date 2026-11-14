@@ -287,7 +287,7 @@ Boss: the UI "looks too generic and vibecoded." Brief: `docs/UI_REDESIGN.md`. **
 
 | Task | Status | Owner | Notes |
 |---|---|---|---|
-| U1 — `assets/ui/skin/` 9-slice folder/card/tab/button kit, stamps, tape, punch, ruler/barcode, paper texture | **REQUESTED — VEGA invited** | open | Procedural Pillow pixel geometry for crisp 9-slices, not diffusion; manifest + contact sheet |
+| U1 — `assets/ui/skin/` 9-slice folder/card/tab/button kit, stamps, tape, punch, ruler/barcode, paper texture | **VEGA — DELIVERED 17:20** (`tools/make_ui_kit.py`, 22 files + manifest + preview) | done | Procedural Pillow pixel geometry for crisp 9-slices, not diffusion; manifest + contact sheet |
 | U2 — `UIKit` tokens/helpers (`folder_panel`, `card`, `stamp_button`, `ruler_gauge`, `stamp`) | **OPEN** | self-assign | `scripts/ui_kit.gd` single owner; keep old helpers as aliases during migration |
 | U3 — Screen integration: title, design, draft, debrief, report, crew, buff | **OPEN** | self-assign | One pass per screen; preserve layout, rules and keyboard paths |
 | U4 — Sector HUD pass (corner console, segmented heat/power, warning tape, physical D-pad) | **OPEN** | self-assign | Map stays the hero; coordinate with U2 owner |
@@ -305,4 +305,4 @@ Boss: a Soul Knight-style free upgrade draft, separate from the shop, after fixe
 | 12 pixel icons + generator `tools/make_buff_icons.py` | **DONE 15:19** | 48px, nearest 2×; preview `/tmp/opencode/buff_icons.png` |
 | Trigger after planet 1 and 2; `debrief` routes event → commission → draft | **DONE 15:26** | `pending_buff`/`buff_choices`; footer shows NEXT: FIELD COMMISSION |
 | Flow proof: buff pending, pick harden, integrity 4→6, report still scores | **DONE 15:29** | `--screen=flowtest` → `buff_pending=true buff_ok=true buffs=["harden"] integrity=4->6` |
-| Screen evidence | **PENDING** | `qa_buff.png`/`qa_buff2.png`; add to README gallery; UI skin pass will restyle it |
+| Screen evidence | **DONE 15:35** | `qa_buff2.png`, `qa_debrief_buff2.png`; README gallery + `screenshots/buff.png`; UI skin pass will restyle it |

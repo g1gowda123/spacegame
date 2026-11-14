@@ -29,7 +29,14 @@ func _ready() -> void:
 	r = GameState.last_result
 	if GameState.shop_offers.is_empty():
 		GameState.make_shop()
+	var cli: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
+	if "--skip-event" in cli:
+		GameState.run["event_resolved"] = true
+		GameState.run["event_card"] = {}
+		GameState.event_card = {}
 	_build()
+	if "--next" in cli:
+		call_deferred("_on_next", false)
 	if "--event" in OS.get_cmdline_args() or "--event" in OS.get_cmdline_user_args():
 		call_deferred("_show_event")
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
