@@ -55,7 +55,7 @@ var BLOCKED: Array[String] = [
 var BIOMES: Array = [
 	{
 		"id": "temperate", "name": "Temperate", "profile": "temperate", "generator": "continents",
-		"life": "rare biosphere", "shore_ring": true,
+		"life": "rare biosphere", "shore_ring": false,
 		"tint": "#ffffff", "tint_strength": 0.0,
 		"base": "temperate/grass",
 		"base_variants": [
@@ -2182,6 +2182,9 @@ func _flip_alt(key: String, wx: int, wy: int) -> int:
 
 func _render_window() -> void:
 	view_origin = player_cell - Vector2i(VIEW_W / 2, VIEW_H / 2)
+	if debug_layer != null and not debug_transitions:
+		for child in debug_layer.get_children():
+			child.free()
 	tilemap.clear()
 	underlay.clear()
 	rockmap.clear()
@@ -2566,7 +2569,6 @@ func _draw_transition_debug() -> void:
 	for child in debug_layer.get_children():
 		child.free()
 	var b: Dictionary = BIOMES[biome_index]
-	var base_key := str(b["base"])
 	var colors := {
 		"straight": Color(0.10, 0.35, 1.0, 0.70),
 		"outer": Color(1.0, 0.05, 0.05, 0.78),
@@ -2583,6 +2585,9 @@ func _draw_transition_debug() -> void:
 			var t := _render_terrain_world(wx, wy)
 			var prio := _priority_map(b)
 			var key := _transition_choice(t, wx, wy, prio)
+			# Compare against the cell's own material, not the biome base:
+			# water/sand/rock cells are valid bases too, and treating every
+			# non-grass cell as a transition painted the whole board.
 			var kind := _transition_kind(key, t)
 			counts[kind] = int(counts.get(kind, 0)) + 1
 			if kind == "base":
