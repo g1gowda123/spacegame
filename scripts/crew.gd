@@ -37,6 +37,21 @@ func _ready() -> void:
 	var bg := SpaceBackdrop.new()
 	add_child(bg)
 	bg.configure({"planet_on": false, "dim": 0.48})
+	if OS.get_cmdline_user_args().has("--seedrepro"):
+		for t in ["NASA-2026", "12345", "hello world"]:
+			var a: Dictionary = CrewDirector.parse_code(t)
+			CrewDirector.begin_run("campaign", 1, "standard", int(a["seed"]), a.get("loadout", {}), str(a.get("seed_label", "")))
+			var ids1: Array = []
+			for p in GameState.draft:
+				ids1.append(str(p.get("id", "")))
+			var seed1: int = int(GameState.run.get("seed", 0))
+			CrewDirector.begin_run("campaign", 1, "standard", int(a["seed"]), a.get("loadout", {}), str(a.get("seed_label", "")))
+			var ids2: Array = []
+			for p in GameState.draft:
+				ids2.append(str(p.get("id", "")))
+			print("SEEDREPRO ", t, " seed=", seed1, " same=", ids1 == ids2, " ids=", ids1)
+		get_tree().quit()
+		return
 	_build()
 	_refresh()
 
@@ -86,7 +101,7 @@ func _build_left() -> void:
 		size_cards[n] = card
 	mode_note = UIKit.mono("2-4 players share one console. 1 is solo.", 7, UIKit.DIM)
 	mode_note.position = Vector2(10, 96)
-	mode_note.size = Vector2(174, 12)
+	mode_note.size = Vector2(174, 14)
 	c.add_child(mode_note)
 
 	c.add_child(_label_at("DIFFICULTY", Vector2(10, 114), 8, UIKit.MUTED))
@@ -179,7 +194,7 @@ func _panel(x: float, y: float, w: float, h: float,
 func _label_at(text: String, pos: Vector2, size: int, color: Color) -> Label:
 	var l := UIKit.mono(text, size, color)
 	l.position = pos
-	l.size = Vector2(400, 12)
+	l.size = Vector2(400, 16)
 	return l
 
 

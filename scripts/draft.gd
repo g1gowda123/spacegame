@@ -231,14 +231,6 @@ func _build_footer() -> void:
 	)
 	c.add_child(back)
 
-	var note := UIKit.mono(
-		"TEQ = starlight-only temperature · gravity drives ΔV · distance drives comms loss · source: NASA Exoplanet Archive",
-		6, UIKit.DIM
-	)
-	note.position = Vector2(88, 50)
-	note.size = Vector2(380, 12)
-	c.add_child(note)
-
 
 
 func _select_first() -> void:
@@ -385,12 +377,18 @@ func _show_mission_review() -> void:
 		var d := Vector2(238, 34)
 		pts.append(a.lerp(b, t).lerp(b.lerp(d, t), t))
 	arc.points = pts
+	arc.modulate.a = 0.0
 	traj.add_child(arc)
-	var moving := Polygon2D.new()
-	moving.polygon = PackedVector2Array([Vector2(0, -3), Vector2(3, 0), Vector2(0, 3), Vector2(-3, 0)])
-	moving.position = pts[15]
-	moving.color = Color(1.0, 0.78, 0.30, 0.95)
-	traj.add_child(moving)
+	# Live transfer: the ship actually flies the arc instead of a frozen
+	# diamond at the midpoint. One-way loop with launch/arrival beats.
+	var flyer := TransferShip.new()
+	flyer.points = pts
+	flyer.accent = Color(1.0, 0.78, 0.30)
+	flyer.size = traj.size
+	flyer.position = Vector2.ZERO
+	traj.add_child(flyer)
+	var arc_tw := flyer.create_tween()
+	arc_tw.tween_property(arc, "modulate:a", 1.0, 0.45)
 	var e1 := UIKit.label("EARTH", 5, UIKit.DIM, true)
 	e1.position = Vector2(8, 96)
 	e1.size = Vector2(46, 10)
