@@ -1889,7 +1889,7 @@ func _feature_key(biome_id: String, roll: float) -> String:
 		"volcanic":
 			return "volcano" if roll < 0.40 else "geyser"
 		"arid":
-			return "mesa"
+			return "mesa" if roll < 0.55 else "mesa_b"
 		"cryo":
 			return "iceberg" if roll < 0.50 else "crystal_outcrop"
 		"ocean":
@@ -1897,7 +1897,9 @@ func _feature_key(biome_id: String, roll: float) -> String:
 			# water so every ocean chunk is not the same spire.
 			return "coral_spire" if roll < 0.55 else "islet"
 		"barren":
-			return "impact_crater"
+			# Keep impact_crater as the one hero landmark; alternate the two
+			# broad mesa silhouettes between chunks instead of stamping craters.
+			return "mesa" if roll < 0.55 else "mesa_b"
 		"methane":
 			return "iceberg" if roll < 0.55 else "crystal_outcrop"
 		"iron":
@@ -2055,7 +2057,10 @@ func _generate_chunk_structures(coord: Vector2i, arr: Array, b: Dictionary) -> A
 		_place_outpost(out, occupied, arr, allowed, coord, crng)
 
 	# One additional natural feature keeps chunks from having a single motif.
-	if crng.randf() < 0.44:
+	# Barren is deliberately sparser: impact_crater is the hero, and mesas are
+	# punctuation, not a field of stamps.
+	var feature_chance := 0.24 if biome_id == "barren" else 0.44
+	if crng.randf() < feature_chance:
 		var key := _feature_key(biome_id, crng.randf())
 		var info: Dictionary = STRUCTURES[key]
 		var w: int = info["w"]
