@@ -494,6 +494,19 @@ func _unhandled_input(event: InputEvent) -> void:
 			_confirm()
 
 
+func _input(event: InputEvent) -> void:
+	# While the review is open it owns the keyboard. Handled in _input rather
+	# than _unhandled_input so a focused button cannot swallow the key first.
+	if review_layer == null or not (event is InputEventKey) or not event.pressed:
+		return
+	if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+		get_viewport().set_input_as_handled()
+		_commit_route()
+	elif event.keycode == KEY_ESCAPE:
+		get_viewport().set_input_as_handled()
+		_close_review()
+
+
 func _close_review() -> void:
 	if review_layer != null:
 		review_layer.queue_free()
