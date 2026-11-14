@@ -28,6 +28,17 @@ Each run is three planets. At every stop you draft one of three real archive wor
 
 The loop is deliberately short: **build → draft → survive → refit → repeat**, three times, then a final grade. A run takes about 10–15 minutes.
 
+### Worlds you'll visit
+
+Every sector is drawn from a different archive world. The surface generator switches landform algorithms per biome, so an ocean world, an ice sheet, a volcanic caldera, and a cratered iron desert each ask for a different route.
+
+| | |
+|---|---|
+| <img src="screenshots/world-ocean.png" width="480" alt="Ocean world surface"> | <img src="screenshots/world-ice.png" width="480" alt="Frozen world surface"> |
+| **Ocean worlds.** Island chains, shallow reefs, and long water crossings. | **Frozen worlds.** Fractured ice plates, open cracks, and little cover. |
+| <img src="screenshots/world-volcanic.png" width="480" alt="Volcanic world surface"> | <img src="screenshots/world-iron.png" width="480" alt="Iron desert surface"> |
+| **Volcanic worlds.** Lava fields, ash, and thermal vents that punish a slow route. | **Iron deserts.** Crater rims, dust, and long exposed approaches. |
+
 ---
 
 ## Contents
