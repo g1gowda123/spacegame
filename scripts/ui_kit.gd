@@ -2,29 +2,30 @@ class_name UIKit
 extends RefCounted
 ## Shared visual language for every screen.
 ##
-## MISSION OPERATIONS // 2026 — a machined night console that belongs to the
-# pixel-art survey: hard 1 px bevels, deep blue-black glass, agency orange for
-# action, cream for reading, live cyan reserved for telemetry.
-const VOID := Color("#050a10")
-const HULL := Color("#0b1721")
-const HULL_2 := Color("#08121a")
-const HULL_HI := Color("#122732")
-const HULL_EDGE := Color("#1d3540")
-const STEEL := Color("#33505a")
-const STEEL_HI := Color("#5b7a80")
-const CREAM := Color("#e8e3d1")
-const MUTED_C := Color("#a3b4b1")
-const DIM_C := Color("#6f8586")
-const ORANGE := Color("#ff7a2f")
-const ORANGE_DARK := Color("#c94b1f")
-const ORANGE_HI := Color("#ffad78")
-const LIVE := Color("#5ce1d0")
-const TEAL := Color("#4f9b93")
-const SIGNAL := Color("#ef5d62")
-const CAUTION := Color("#ffc45c")
+## MISSION OPERATIONS // 2026 — a layered console, not a single colour wash.
+# Blue-green hulls, cream names, sage only for selection/live state, amber for
+# caution. Primary actions are bone/cream; no neon fill.
+const VOID := Color("#0a1115")
+const HULL := Color("#101b1e")
+const HULL_2 := Color("#0c1518")
+const HULL_HI := Color("#17282a")
+const HULL_EDGE := Color("#263b3c")
+const STEEL := Color("#3b4d4d")
+const STEEL_HI := Color("#6b7e79")
+const CREAM := Color("#e9e3d2")
+const NAME := Color("#f7f1df")
+const ON_LIGHT := Color("#191a15")
+const ON_LIGHT_SOFT := Color("#4c4a40")
+const MUTED_C := Color("#a2b0aa")
+const DIM_C := Color("#6d7d79")
+const SAGE := Color("#7fa98b")
+const SAGE_DARK := Color("#557864")
+const SAGE_HI := Color("#b5d0b7")
+const AMBER := Color("#d6ad68")
+const SIGNAL := Color("#cf7a72")
+const LIVE := Color("#9ccfbd")
 
-# Legacy names used across the screens. The paper-era names now resolve to the
-# console palette so the whole UI shifts together.
+# Legacy names used across the screens.
 const NIGHT := VOID
 const NIGHT_2 := HULL_2
 const NIGHT_PANEL := HULL
@@ -46,18 +47,22 @@ const LINE := STEEL
 const TEXT := CREAM
 const MUTED := MUTED_C
 const DIM := DIM_C
-const CYAN := ORANGE
-const CYAN_DARK := ORANGE_DARK
-const AMBER := CAUTION
+const ORANGE := SAGE
+const ORANGE_DARK := SAGE_DARK
+const ORANGE_HI := SAGE_HI
+const CYAN := SAGE
+const CYAN_DARK := SAGE_DARK
+const CAUTION := AMBER
 const RED := SIGNAL
-const GREEN := LIVE
-const PURPLE := Color("#8e6f9e")
-const BLUE := TEAL
+const GREEN := SAGE
+const TEAL := Color("#6f9e8a")
+const BLUE := Color("#8fb3bf")
+const PURPLE := Color("#8e7f9e")
 const SHEET := HULL
 const SHEET_LINE := STEEL
 const ROW_BG := Color(0, 0, 0, 0)
-const ROW_HOVER := Color(0.55, 0.80, 0.80, 0.07)
-const ROW_SELECTED := Color("#261a13")
+const ROW_HOVER := Color(0.94, 0.88, 0.76, 0.055)
+const ROW_SELECTED := Color("#e9e3d2")
 const CRT := LIVE
 const NIGHT_SHEET := NIGHT_2
 
@@ -124,7 +129,7 @@ static func _ops_skin(name: String, margin: int = 4) -> StyleBoxTexture:
 	return sb
 
 
-static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> PanelContainer:
+static func sheet(parent: Control, x: float, y: float, w: float, h: float, with_grid: bool = false) -> PanelContainer:
 	## A major decision surface: a machined console bay with a 1 px bevel,
 	## a faint blueprint grid and a hard drop shadow. No paper, no glow.
 	var shadow := ColorRect.new()
@@ -135,21 +140,22 @@ static func sheet(parent: Control, x: float, y: float, w: float, h: float) -> Pa
 	parent.add_child(shadow)
 
 	var fill := ColorRect.new()
-	fill.color = Color(HULL.r, HULL.g, HULL.b, 0.94)
+	fill.color = Color(HULL.r, HULL.g, HULL.b, 0.96)
 	fill.position = Vector2(x, y)
 	fill.size = Vector2(w, h)
 	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(fill)
 
-	var grid := TextureRect.new()
-	grid.texture = load("res://assets/ui/skin_ops/grid.png")
-	grid.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	grid.stretch_mode = TextureRect.STRETCH_TILE
-	grid.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	grid.position = Vector2(x, y)
-	grid.size = Vector2(w, h)
-	parent.add_child(grid)
+	if with_grid:
+		var grid := TextureRect.new()
+		grid.texture = load("res://assets/ui/skin_ops/grid.png")
+		grid.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		grid.stretch_mode = TextureRect.STRETCH_TILE
+		grid.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		grid.position = Vector2(x, y)
+		grid.size = Vector2(w, h)
+		parent.add_child(grid)
 
 	var p := PanelContainer.new()
 	var sb := _ops_skin("panel", 7)
@@ -179,13 +185,13 @@ static func _corner_ticks(parent: Control, x: float, y: float, w: float, h: floa
 		var sx := 1.0 if i % 2 == 0 else -1.0
 		var sy := 1.0 if i < 2 else -1.0
 		var hbar := ColorRect.new()
-		hbar.color = Color(1.0, 0.48, 0.18, 0.62)
+		hbar.color = Color(0.62, 0.68, 0.64, 0.42)
 		hbar.position = Vector2(p.x if sx > 0 else p.x - 7.0, p.y)
 		hbar.size = Vector2(8, 1)
 		hbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		parent.add_child(hbar)
 		var vbar := ColorRect.new()
-		vbar.color = Color(1.0, 0.48, 0.18, 0.62)
+		vbar.color = Color(0.62, 0.68, 0.64, 0.42)
 		vbar.position = Vector2(p.x, p.y if sy > 0 else p.y - 7.0)
 		vbar.size = Vector2(1, 8)
 		vbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -325,9 +331,9 @@ static func button(
 	b.add_theme_stylebox_override("pressed", press)
 	b.add_theme_stylebox_override("disabled", disabled)
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.add_theme_color_override("font_color", Color("#160b07"))
-	b.add_theme_color_override("font_hover_color", Color("#160b07"))
-	b.add_theme_color_override("font_pressed_color", Color("#160b07"))
+	b.add_theme_color_override("font_color", Color("#0b160f"))
+	b.add_theme_color_override("font_hover_color", Color("#0b160f"))
+	b.add_theme_color_override("font_pressed_color", Color("#0b160f"))
 	b.add_theme_color_override("font_disabled_color", DIM)
 	b.pressed.connect(func(): if GameState: GameState.sfx("click"))
 	return b
@@ -463,14 +469,15 @@ static func option_card(
 
 	# Absolute children, not a VBox: rows must keep the exact height the screen
 	# asked for or a long perk wraps and the column overflows its sheet.
-	var t := label(title, maxi(8, title_size), TEXT, pixel_title)
+	var t := label(title, maxi(8, title_size), NAME, pixel_title)
 	t.clip_text = true
 	t.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	p.add_child(t)
 	t.position = Vector2(8, 2 if subtitle != "" else maxf(2.0, (rect.size.y - 13.0) * 0.5))
 	t.size = Vector2(rect.size.x - (78.0 if meta != "" else 14.0), 13)
+	var m: Label = null
 	if meta != "":
-		var m := label(meta, 7, DIM, false, HORIZONTAL_ALIGNMENT_RIGHT)
+		m = label(meta, 7, DIM, false, HORIZONTAL_ALIGNMENT_RIGHT)
 		m.clip_text = true
 		p.add_child(m)
 		m.position = Vector2(rect.size.x - 70.0, 3)
@@ -496,7 +503,7 @@ static func option_card(
 	root.add_child(btn)
 
 	var card := {
-		"root": root, "panel": p, "title": t, "sub": s, "button": btn,
+		"root": root, "panel": p, "title": t, "sub": s, "meta": m, "button": btn,
 		"accent": accent, "selected": false, "enabled": true,
 		"base_rect": rect,
 	}
@@ -520,7 +527,13 @@ static func select_card(card: Dictionary, on: bool) -> void:
 	var title: Label = card["title"]
 	if on:
 		p.add_theme_stylebox_override("panel", row_style(true, false, accent))
-		title.add_theme_color_override("font_color", INK)
+		title.add_theme_color_override("font_color", ON_LIGHT)
 	else:
 		p.add_theme_stylebox_override("panel", row_style(false, false, accent))
-		title.add_theme_color_override("font_color", TEXT)
+		title.add_theme_color_override("font_color", NAME)
+	var sub: Label = card.get("sub")
+	if sub != null:
+		sub.add_theme_color_override("font_color", ON_LIGHT_SOFT if on else MUTED)
+	var meta: Label = card.get("meta")
+	if meta != null:
+		meta.add_theme_color_override("font_color", ON_LIGHT_SOFT if on else DIM)

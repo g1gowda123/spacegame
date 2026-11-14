@@ -26,6 +26,9 @@ func _ready() -> void:
 		call_deferred("_hide_tips_for_capture")
 	if "--review" in OS.get_cmdline_args() or "--review" in OS.get_cmdline_user_args():
 		_show_mission_review()
+	if "--auto-commit" in OS.get_cmdline_args() or "--auto-commit" in OS.get_cmdline_user_args():
+		await get_tree().create_timer(0.35).timeout
+		_commit_route()
 	if "--commit" in OS.get_cmdline_args() or "--commit" in OS.get_cmdline_user_args():
 		_commit_route.call_deferred()
 
@@ -94,7 +97,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		"planet_asset": SpaceBackdrop.asset_for_planet(p),
 	})
 
-	var name := UIKit.label(str(p["name"]), 9, UIKit.INK, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var name := UIKit.label(str(p["name"]), 9, UIKit.NAME, true, HORIZONTAL_ALIGNMENT_CENTER)
 	name.position = Vector2(4, 72)
 	name.size = Vector2(180, 13)
 	c.add_child(name)
@@ -256,9 +259,9 @@ func _select(id: String, play_sound: bool = true) -> void:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 				Color(0, 0, 0, 0), UIKit.ORANGE, 0, 2
 			))
-			title.add_theme_color_override("font_color", UIKit.ORANGE_DARK)
+			title.add_theme_color_override("font_color", UIKit.NAME)
 			mark.text = "●  TARGET MARKED"
-			mark.add_theme_color_override("font_color", UIKit.ORANGE_DARK)
+			mark.add_theme_color_override("font_color", UIKit.ORANGE_HI)
 			selected_planet = c["planet"]
 		else:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
@@ -480,13 +483,32 @@ func _commit_route() -> void:
 		return
 	_committing = true
 	var planet := selected_planet
+	var sector_path := "res://scenes/sector.tscn"
 	GameState.begin_sector(planet)
 	GameState.sfx("confirm")
-	# The review's mini-viz becomes a full-screen transfer before the sector
-	# loads: the ship leaves Earth, crosses, and the cut lands on the surface.
+	# The transit IS the loading screen. Start the scene load in parallel, let
+	# the ship reach the target, then cut the moment both are ready. The old
+	# fixed 1.85 s hold left a blank beat after the ship had already arrived.
+	ResourceLoader.load_threaded_request(sector_path)
 	_play_commit_transit(planet)
-	await get_tree().create_timer(1.85).timeout
-	get_tree().change_scene_to_file("res://scenes/sector.tscn")
+	await get_tree().create_timer(1.42).timeout
+	while ResourceLoader.load_threaded_get_status(sector_path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+	var packed := ResourceLoader.load_threaded_get(sector_path) as PackedScene
+	if packed != null:
+		# Build the sector while the transit card still covers the screen. The
+		# map generation is synchronous, so this is the real loading work; doing
+		# it here means the cut lands on a finished board instead of a blank beat.
+		var next := packed.instantiate()
+		next.process_mode = Node.PROCESS_MODE_DISABLED
+		get_tree().root.add_child(next)
+		var old := get_tree().current_scene
+		get_tree().current_scene = next
+		if old != null:
+			old.queue_free()
+		next.process_mode = Node.PROCESS_MODE_INHERIT
+	else:
+		get_tree().change_scene_to_file(sector_path)
 
 
 func _play_commit_transit(p: Dictionary) -> void:
@@ -538,7 +560,9 @@ func _play_commit_transit(p: Dictionary) -> void:
 	flyer.points = pts
 	flyer.size = Vector2(640, 360)
 	flyer.travel_seconds = 1.35
-	flyer.hold_seconds = 0.30
+	# Hold at the target while the sector finishes loading; this screen is the
+	# loading state, so the ship must not loop back to Earth mid-load.
+	flyer.hold_seconds = 8.0
 	flyer.accent = Color(1.0, 0.78, 0.30)
 	var hp := "res://assets/sprites/ships/%s.png" % str(GameState.hull().get("id", "pathfinder"))
 	if ResourceLoader.exists(hp):

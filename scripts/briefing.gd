@@ -34,13 +34,14 @@ const BEATS := [
 	},
 ]
 
-const PAPER := Color("#0b1721")
-const INK := Color("#e8e3d1")
-const INK_SOFT := Color("#a3b4b1")
-const ORANGE := Color("#ff7a2f")
-const SIGNAL := Color("#ef5d62")
-const NIGHT := Color("#050a10")
-const TEAL := Color("#4f9b93")
+const PAPER := Color("#111d17")
+const INK := Color("#e7e1cf")
+const INK_SOFT := Color("#a9b7a6")
+const ORANGE := Color("#7eae87")
+const PRIMARY := Color("#e9e3d2")
+const SIGNAL := Color("#d17a72")
+const NIGHT := Color("#0b1410")
+const TEAL := Color("#6f9e8a")
 const SHIP_DIR := "res://assets/sprites/crew/"
 
 var beat := 0
@@ -176,7 +177,7 @@ func _build() -> void:
 	var tab := Panel.new()
 	tab.position = Vector2(166, 228)
 	tab.size = Vector2(104, 20)
-	tab.add_theme_stylebox_override("panel", _paper_style(ORANGE, INK, 1))
+	tab.add_theme_stylebox_override("panel", _paper_style(PRIMARY, NIGHT, 1))
 	tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tab.z_index = 5
 	add_child(tab)
@@ -199,7 +200,7 @@ func _build() -> void:
 	paper_tex.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	paper_tex.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	paper_tex.stretch_mode = TextureRect.STRETCH_TILE
-	paper_tex.modulate = Color(1, 1, 1, 0.55)
+	paper_tex.visible = false
 	paper_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue.add_child(paper_tex)
 
@@ -356,14 +357,14 @@ func _paper_button(text: String, size: Vector2, primary: bool) -> Button:
 	b.size = size
 	b.add_theme_font_override("font", UIKit.pixel_font)
 	b.add_theme_font_size_override("font_size", 6)
-	b.add_theme_color_override("font_color", PAPER if primary else INK)
-	b.add_theme_color_override("font_hover_color", PAPER)
-	b.add_theme_color_override("font_pressed_color", PAPER)
+	b.add_theme_color_override("font_color", NIGHT if primary else INK)
+	b.add_theme_color_override("font_hover_color", NIGHT if primary else INK)
+	b.add_theme_color_override("font_pressed_color", NIGHT if primary else INK)
 	b.add_theme_color_override("font_focus_color", INK)
-	b.add_theme_stylebox_override("normal", _paper_style(ORANGE if primary else PAPER, INK, 1))
-	b.add_theme_stylebox_override("hover", _paper_style(INK, INK, 1))
-	b.add_theme_stylebox_override("pressed", _paper_style(SIGNAL, INK, 1))
-	b.add_theme_stylebox_override("focus", _paper_style(ORANGE if primary else PAPER, INK, 2))
+	b.add_theme_stylebox_override("normal", _paper_style(PRIMARY if primary else PAPER, NIGHT if primary else INK, 1))
+	b.add_theme_stylebox_override("hover", _paper_style(PRIMARY if primary else INK, NIGHT if primary else INK, 1))
+	b.add_theme_stylebox_override("pressed", _paper_style(SIGNAL, NIGHT, 1))
+	b.add_theme_stylebox_override("focus", _paper_style(PRIMARY if primary else PAPER, NIGHT if primary else INK, 2))
 	return b
 
 

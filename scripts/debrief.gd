@@ -173,7 +173,7 @@ func _build_summary() -> void:
 func _build_shop() -> void:
 	var p := UIKit.sheet(self, 326, 39, 304, 256)
 	var c := UIKit.fill(p)
-	var head := UIKit.head("FIELD REFIT", 9, UIKit.INK)
+	var head := UIKit.head("FIELD REFIT", 9, UIKit.NAME)
 	head.position = Vector2(12, 9)
 	head.size = Vector2(160, 12)
 	c.add_child(head)
@@ -246,7 +246,7 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		icon_frame.add_child(icon)
 
-	var nm := UIKit.label(str(up["name"]), 9, UIKit.INK, true)
+	var nm := UIKit.label(str(up["name"]), 9, UIKit.NAME, true)
 	nm.position = Vector2(58, 7)
 	nm.size = Vector2(136, 13)
 	card.add_child(nm)

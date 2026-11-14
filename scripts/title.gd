@@ -30,9 +30,9 @@ func _ready() -> void:
 func _build_ui() -> void:
 	# A manila program poster taped over the star chart. The planet stays the
 	# hero on the right; the left is the agency's filed mission cover.
-	UIKit.sheet(self, 18, 10, 456, 338)
+	UIKit.sheet(self, 18, 10, 456, 338, true)
 	var margin_rule := ColorRect.new()
-	margin_rule.color = Color(1.0, 0.48, 0.18, 0.45)
+	margin_rule.color = Color(0.62, 0.82, 0.64, 0.45)
 	margin_rule.position = Vector2(34, 18)
 	margin_rule.size = Vector2(1, 322)
 	add_child(margin_rule)
@@ -45,13 +45,13 @@ func _build_ui() -> void:
 	add_child(plot_label)
 
 	var stamp := TextureRect.new()
-	stamp.texture = load("res://assets/ui/skin/stamp_approved.png")
+	stamp.texture = load("res://assets/ui/skin_ops/stamp_approved.png")
 	stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stamp.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	stamp.position = Vector2(366, 26)
 	stamp.size = Vector2(92, 30)
 	stamp.rotation = -0.06
-	stamp.modulate = Color(1.18, 1.08, 0.98, 0.92)
+	stamp.modulate = Color(1, 1, 1, 0.92)
 	add_child(stamp)
 
 	var kicker := UIKit.mono("NASA SPACE APPS CHALLENGE 2026", 8, UIKit.ORANGE)
@@ -68,7 +68,7 @@ func _build_ui() -> void:
 	amp.position = Vector2(40, 110)
 	amp.size = Vector2(22, 34)
 	add_child(amp)
-	var outplay := UIKit.label("OUTPLAY", 30, UIKit.ORANGE, true)
+	var outplay := UIKit.label("OUTPLAY", 30, UIKit.TEXT, true)
 	outplay.position = Vector2(64, 112)
 	add_child(outplay)
 

@@ -91,7 +91,7 @@ func _init() -> void:
 
 func _style(accent: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.031, 0.075, 0.106, 0.98)
+	s.bg_color = Color(0.051, 0.090, 0.071, 0.98)
 	var edge := accent
 	if edge.get_luminance() < 0.18:
 		edge = UIKit.ORANGE

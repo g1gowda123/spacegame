@@ -9,8 +9,8 @@ const CARD_GAP := 15.0
 const CARD_Y := 72.0
 
 const RARITY_COLORS := {
-	"common": Color("#5f8f8a"),
-	"rare": Color("#e4572e"),
+	"common": Color("#7fa98b"),
+	"rare": Color("#d6ad68"),
 	"epic": Color("#6f5a8a"),
 }
 
@@ -115,7 +115,7 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(strip)
 
-	var title_label := UIKit.head(str(buff.get("name", "COMMISSION")), 9, UIKit.INK,
+	var title_label := UIKit.head(str(buff.get("name", "COMMISSION")), 9, UIKit.NAME,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	title_label.position = Vector2(4, 10)
 	title_label.size = Vector2(CARD_W - 8, 13)

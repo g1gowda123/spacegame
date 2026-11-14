@@ -119,7 +119,7 @@ func _build_left() -> void:
 	var vehicle_head := HBoxContainer.new()
 	vehicle_head.custom_minimum_size = Vector2(0, 12)
 	vehicle_head.add_theme_constant_override("separation", 4)
-	var vehicle_label := UIKit.head("LAUNCH VEHICLE", 9, UIKit.INK)
+	var vehicle_label := UIKit.head("LAUNCH VEHICLE", 9, UIKit.NAME)
 	vehicle_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vehicle_head.add_child(vehicle_label)
 	vehicle_requirement = UIKit.mono("REQUIRED", 7, UIKit.AMBER)
