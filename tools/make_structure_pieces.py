@@ -23,6 +23,7 @@ Usage:
 
 from __future__ import annotations
 
+import math
 import json
 import sys
 from pathlib import Path
@@ -31,6 +32,7 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
+TEX = ROOT / "assets" / "raw" / "textures"
 sys.path.insert(0, str(ROOT / "tools"))
 
 from pixelize import apply_palette  # noqa: E402
@@ -68,6 +70,27 @@ def contact_fringe(img: Image.Image, rows: int = 3, factor: float = 0.76) -> Ima
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
+def albedo(img: Image.Image, tex_path: Path, gain: float = 1.18, keep_lava: bool = False) -> Image.Image:
+    """Map a generated surface texture through the sprite's own shading.
+
+    The shape stays procedural (crisp silhouette, no plinth); only the albedo
+    comes from diffusion, which is where the flat-colour look came from.
+    """
+    tex = Image.open(tex_path).convert("RGB").resize(img.size, Image.Resampling.LANCZOS)
+    c = np.asarray(img).astype(np.float32)
+    t = np.asarray(tex).astype(np.float32)
+    a = c[..., 3]
+    lum = 0.3 * c[..., 0] + 0.59 * c[..., 1] + 0.11 * c[..., 2]
+    mean = max(1.0, float(lum[a > 0].mean())) if (a > 0).any() else 1.0
+    light = np.clip(lum / mean, 0.45, 1.7)[..., None]
+    out = np.clip(t * light * gain, 0, 255)
+    if keep_lava:
+        r, g, b = c[..., 0], c[..., 1], c[..., 2]
+        lava = (r > 90) & (r > g + 30) & (r > b + 30)
+        out[lava] = c[lava][:, :3]
+    return Image.fromarray(np.dstack([out, a]).astype(np.uint8), "RGBA")
+
+
 def assemble_massif() -> Image.Image:
     """Six jittered copies of the mountain sprite into a 256x256 massif.
 
@@ -85,6 +108,23 @@ def assemble_massif() -> Image.Image:
         (16, 1.06, 0.90, False, 60),
         (168, 1.10, 0.94, True, 56),
     ]
+    from PIL import ImageDraw
+    rng = np.random.default_rng(31)
+    apron = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ad = ImageDraw.Draw(apron)
+    # talus apron: ring of lobes plus four corner plugs, so the 4x4 set has
+    # no empty corner and the foot never ends on a straight row
+    for i in range(20):
+        a = 2 * math.pi * i / 20
+        x = 128 + math.cos(a) * 118 * rng.uniform(0.9, 1.05)
+        y = 240 - abs(math.sin(a)) * rng.uniform(4, 16)
+        w, hgt = rng.uniform(24, 42), rng.uniform(10, 18)
+        c = int(rng.integers(64, 92))
+        ad.ellipse([x - w, y - hgt, x + w, y + hgt], fill=(c, c + 2, c - 6, 255))
+    for (x, y) in ((14, 244), (242, 244), (8, 216), (248, 216)):
+        ad.ellipse([x - 34, y - 20, x + 34, y + 20], fill=(74, 76, 66, 255))
+    apron = apron.filter(ImageFilter.GaussianBlur(0.8))
+
     for dx, sc, br, flip, dy in plan:
         im = src.resize((int(128 * sc), int(128 * sc)), Image.Resampling.LANCZOS)
         if flip:
@@ -98,31 +138,118 @@ def assemble_massif() -> Image.Image:
     ramp = np.linspace(1.14, 0.66, h, dtype=np.float32)[:, None, None]
     a[..., :3] = np.clip(a[..., :3] * ramp, 0, 255)
     canvas = Image.fromarray(a.astype(np.uint8), "RGBA")
+
+    # foreground scree: breaks the sprites' own straight bases
+    fore = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    fd = ImageDraw.Draw(fore)
+    for _ in range(18):
+        x, y = rng.uniform(10, 246), rng.uniform(226, 252)
+        w, hgt = rng.uniform(14, 32), rng.uniform(6, 12)
+        c = int(rng.integers(52, 82))
+        fd.ellipse([x - w, y - hgt, x + w, y + hgt], fill=(c, c + 3, c - 6, 255))
+    canvas.alpha_composite(fore)
+
     base = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     from PIL import ImageDraw
     ImageDraw.Draw(base).ellipse([18, 206, 238, 254], fill=(10, 14, 12, 60))
     base = base.filter(ImageFilter.GaussianBlur(4.0))
+    base.alpha_composite(apron)
     base.alpha_composite(canvas)
-    return contact_fringe(apply_palette(base, spec("temperate")))
+    out = apply_palette(base, spec("temperate"))
+    return contact_fringe(albedo(out, TEX / "granite.png", 1.10))
 
 
 def assemble_volcano() -> Image.Image:
-    """Volcano cone on a 256 canvas: no painted terrace, scree only.
+    """Volcano cone on a 256 canvas: cone + scalloped ash apron to all corners.
 
-    The source sprite is itself disc-free (tools/make_cone.py), so the ground
-    contact is the rock's own ragged foot plus a little talus.
+    The apron is a union of overlapping lobes rather than one cut ellipse, so
+    the 4x4 set has no empty corners and no straight edge at the foot.
     """
+    from PIL import ImageDraw
     cone = load("volcano.png")
     canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
-    cone = cone.resize((226, 226), Image.Resampling.LANCZOS)
-    canvas.alpha_composite(cone, (15, 22))
+    cone = cone.resize((214, 214), Image.Resampling.LANCZOS).crop((0, 0, 214, 198))
 
-    for dx, sc, br in [(6, 0.42, 0.92), (190, 0.40, 0.96)]:
-        src = load("mesa.png")
-        im = src.resize((int(128 * sc), int(128 * sc)), Image.Resampling.LANCZOS)
-        im = ImageEnhance.Brightness(im).enhance(br)
-        canvas.alpha_composite(im, (dx, 254 - im.size[1]))
-    return contact_fringe(apply_palette(canvas, spec("volcanic")))
+    rng = np.random.default_rng(23)
+    apron = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    d = ImageDraw.Draw(apron)
+    cx, cy = 128, 238
+    # ring of lobes: wide at the sides, filling the four corners
+    for i in range(22):
+        a = 2 * math.pi * i / 22
+        rx = 118 * rng.uniform(0.92, 1.06)
+        x = cx + math.cos(a) * rx
+        y = cy - abs(math.sin(a)) * rng.uniform(6, 22)
+        w = rng.uniform(26, 44)
+        h = rng.uniform(12, 20)
+        shade = int(rng.integers(38, 58))
+        d.ellipse([x - w, y - h, x + w, y + h], fill=(shade, shade - 3, shade - 5, 255))
+    # talus climbing the flanks: hides the cone's own straight base line
+    for _ in range(14):
+        x = rng.uniform(24, 232)
+        y = rng.uniform(198, 244)
+        w = rng.uniform(16, 34)
+        h = rng.uniform(7, 13)
+        shade = int(rng.integers(52, 82))
+        d.ellipse([x - w, y - h, x + w, y + h], fill=(shade, shade - 4, shade - 8, 255))
+
+    # explicit corner plugs so the piece set never shows sky in a corner
+    for (x, y) in ((14, 246), (242, 246), (10, 222), (246, 222)):
+        d.ellipse([x - 30, y - 18, x + 30, y + 18], fill=(52, 48, 44, 255))
+    # a few cooled blocks sitting on the apron so it does not read as a band
+    for _ in range(7):
+        bx, by = int(rng.uniform(24, 232)), int(rng.uniform(222, 246))
+        bw, bh = int(rng.uniform(7, 16)), int(rng.uniform(4, 9))
+        c = int(rng.integers(70, 104))
+        d.ellipse([bx - bw, by - bh, bx + bw, by + bh], fill=(c, c - 4, c - 12, 255))
+    apron = apron.filter(ImageFilter.GaussianBlur(0.7))
+
+    # lava spills crossing the apron to the rim
+    for ang, ln in ((-0.5, 96), (0.35, 88), (2.7, 78)):
+        x0, y0 = cx + math.cos(ang) * 26, cy - 34
+        pts = []
+        for t in range(0, ln, 4):
+            pts.append((x0 + math.cos(ang) * t + math.sin(t * 0.3) * 3,
+                        y0 + abs(math.sin(ang)) * t * 0.35 + t * 0.16))
+        for px, py in pts:
+            d.ellipse([px - 3, py - 2, px + 3, py + 2], fill=(206, 78, 20, 255))
+            d.ellipse([px - 1, py - 1, px + 1, py + 1], fill=(255, 168, 56, 255))
+
+    canvas.alpha_composite(apron)
+    canvas.alpha_composite(cone, (21, 26))
+
+    # foreground spray of cooled lobes: breaks the cone's own straight foot
+    fore = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(fore)
+    for _ in range(18):
+        x = rng.uniform(18, 238)
+        y = rng.uniform(228, 252)
+        w = rng.uniform(14, 30)
+        h = rng.uniform(6, 12)
+        shade = int(rng.integers(44, 76))
+        fd.ellipse([x - w, y - h, x + w, y + h], fill=(shade, shade - 4, shade - 8, 255))
+    canvas.alpha_composite(fore)
+
+    # lava dribbles over the cone/apron seam so the joint never reads as a line
+    jd = ImageDraw.Draw(canvas)
+    for (jx, jl) in ((92, 16), (146, 20), (182, 13)):
+        for t in range(jl):
+            x = jx + int(math.sin(t * 0.35) * 2)
+            y = 206 + t
+            w = 5 if t < jl * 0.5 else 3
+            jd.ellipse([x - w, y - 1, x + w, y + 1], fill=(198, 74, 20, 255))
+            if t % 3 == 0:
+                jd.ellipse([x - 1, y - 1, x + 1, y], fill=(255, 176, 58, 255))
+
+    # 1 px contour around the whole apron so it reads as rock, not paint
+    arr = np.asarray(canvas).copy()
+    solid = arr[..., 3] > 0
+    pad = np.pad(solid, 1)
+    edge = solid & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    arr[edge, :3] = (18, 18, 22)
+    canvas = Image.fromarray(arr, "RGBA")
+    out = apply_palette(canvas, spec("volcanic"))
+    return contact_fringe(albedo(out, TEX / "basalt.png", 1.18, keep_lava=True))
 
 
 def slice_set(canvas: Image.Image, prefix: str) -> list[dict]:

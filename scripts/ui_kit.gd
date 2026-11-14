@@ -18,6 +18,18 @@ const GREEN := Color("#7fe08a")
 const PURPLE := Color("#b692ff")
 const BLUE := Color("#7cc8ff")
 
+# Aliases used by the briefing/title cards; keep them on the original palette.
+const PAPER := PANEL
+const INK := TEXT
+const ORANGE := CYAN
+const SIGNAL := RED
+const NIGHT := BG
+const BOARD := PANEL
+const RAIL := LINE
+const STRIP := PANEL_2
+const STRIP_DIM := PANEL
+const CRT := GREEN
+
 static var pixel_font: Font
 static var body_font: Font
 

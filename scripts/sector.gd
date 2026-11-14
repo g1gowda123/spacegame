@@ -177,6 +177,7 @@ func _ready() -> void:
 				_collect_node_at(objectives[0])
 
 
+
 func _configure_map() -> void:
 	var p: Dictionary = sec["planet"]
 	var h: int = absi(int(hash(str(p["id"])))) % 90000 + 1000
@@ -885,6 +886,7 @@ func _execute_path() -> void:
 	moved = true
 	GameState.sfx("move")
 	var steps: Array[Vector2i] = path_cells.duplicate()
+	var remaining: Array[Vector2i] = steps.duplicate()
 	for c in steps:
 		if done:
 			break
@@ -894,6 +896,7 @@ func _execute_path() -> void:
 		if int(sec["delta_v"]) <= 0:
 			_end(false, "DELTA-V EXHAUSTED")
 			return
+		var step_from := player_cell
 		player_cell = c
 		sec["delta_v"] = int(sec["delta_v"]) - 1
 		sec["sols"] = int(sec["sols"]) - 1
@@ -906,8 +909,27 @@ func _execute_path() -> void:
 		if int(sec["data"]) >= _objective_cap():
 			_end(true, "SURVEY COMPLETE")
 			return
+		# Render each cell and pan one step, so committing a 2-3 tile route
+		# follows the preview instead of collapsing the whole path into a cut.
+		_update_chunks()
+		_render_window()
+		_refresh_status()
+		_pan_camera(step_from)
+		await camera_tween.finished
+		remaining.pop_front()
+		path_cells = remaining.duplicate()
+		path_valid = not path_cells.is_empty()
+		path_cost = path_cells.size()
+		_draw_move_preview()
 	if not done:
 		_end_turn()
+
+
+func _camera_world_layers() -> Array:
+	var out: Array = super._camera_world_layers()
+	out.append(fx_layer)
+	out.append(move_layer)
+	return out
 
 
 func _end_turn() -> void:

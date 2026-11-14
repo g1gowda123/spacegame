@@ -1,6 +1,7 @@
 extends Control
 
 var howto_layer: Control
+var ranks_layer: Control
 
 
 func _ready() -> void:
@@ -14,6 +15,7 @@ func _ready() -> void:
 	})
 	_build_ui()
 	_build_howto()
+	_build_ranks()
 	if "--howto" in OS.get_cmdline_args() or "--howto" in OS.get_cmdline_user_args():
 		howto_layer.visible = true
 	GameState.sfx("confirm")
@@ -77,7 +79,12 @@ func _build_ui() -> void:
 	story.pressed.connect(_open_briefing)
 	add_child(story)
 
-	var daily_note := "BEST RUN  %s" % _fmt(GameState.best_score)
+	var ranks := UIKit.button("RANKS", Vector2(80, 26))
+	ranks.position = Vector2(450, 264)
+	ranks.pressed.connect(func(): ranks_layer.visible = true)
+	add_child(ranks)
+
+	var daily_note := "BEST RUN  %s   ·   CMD %s" % [_fmt(GameState.best_score), GameState.player_name]
 	var today := CrewDirector.today_key()
 	if CrewDirector.daily_key == today and CrewDirector.daily_best > 0:
 		daily_note += "   ·   DAILY %s  %d" % [today, CrewDirector.daily_best]
@@ -162,6 +169,83 @@ func _build_howto() -> void:
 	howto_layer.add_child(close)
 
 
+func _build_ranks() -> void:
+	ranks_layer = Control.new()
+	ranks_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ranks_layer.visible = false
+	add_child(ranks_layer)
+
+	var shade := ColorRect.new()
+	shade.color = Color(0.01, 0.02, 0.04, 0.80)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ranks_layer.add_child(shade)
+
+	var sheet := Panel.new()
+	sheet.position = Vector2(92, 44)
+	sheet.size = Vector2(456, 272)
+	var paper := StyleBoxFlat.new()
+	paper.bg_color = UIKit.PAPER
+	paper.border_color = UIKit.INK
+	paper.set_border_width_all(1)
+	paper.set_corner_radius_all(0)
+	sheet.add_theme_stylebox_override("panel", paper)
+	ranks_layer.add_child(sheet)
+
+	var kicker := UIKit.label("AGENCY HONOURS BOARD  //  LOCAL RECORDS", 7, UIKit.ORANGE, true)
+	kicker.position = Vector2(18, 16)
+	kicker.size = Vector2(420, 10)
+	sheet.add_child(kicker)
+	var title := UIKit.label("WHO SAVED THE AGENCY?", 12, UIKit.INK, true)
+	title.position = Vector2(18, 32)
+	title.size = Vector2(420, 14)
+	sheet.add_child(title)
+	var note := UIKit.label("BEST RUN PER CALLSIGN  ·  STORED ON THIS TERMINAL", 5, Color("#4a4438"), true)
+	note.position = Vector2(18, 48)
+	note.size = Vector2(420, 8)
+	sheet.add_child(note)
+
+	var rows := GameState.leaderboard_top(5)
+	if rows.is_empty():
+		var empty := UIKit.label("NO FLIGHTS FILED YET. BE THE FIRST.", 8, Color("#4a4438"), true)
+		empty.position = Vector2(18, 92)
+		empty.size = Vector2(420, 14)
+		sheet.add_child(empty)
+	else:
+		for i in range(rows.size()):
+			var row: Dictionary = rows[i]
+			var y := 76 + i * 28
+			var rank := UIKit.label("%02d" % (i + 1), 9, UIKit.ORANGE, true)
+			rank.position = Vector2(18, y)
+			rank.size = Vector2(28, 12)
+			sheet.add_child(rank)
+			var who := UIKit.label(str(row.get("name", "CHIEF")), 9, UIKit.INK, true)
+			who.position = Vector2(50, y)
+			who.size = Vector2(120, 12)
+			sheet.add_child(who)
+			var score := UIKit.label("%d" % int(row.get("score", 0)), 9, UIKit.INK, true, HORIZONTAL_ALIGNMENT_RIGHT)
+			score.position = Vector2(170, y)
+			score.size = Vector2(64, 12)
+			sheet.add_child(score)
+			var grade := UIKit.label(str(row.get("grade", "C")), 9, UIKit.SIGNAL, true)
+			grade.position = Vector2(242, y)
+			grade.size = Vector2(20, 12)
+			sheet.add_child(grade)
+			var meta := UIKit.label("%s  ·  %s" % [str(row.get("date", "")), str(row.get("difficulty", "standard")).to_upper()], 5, Color("#4a4438"), true)
+			meta.position = Vector2(270, y + 2)
+			meta.size = Vector2(168, 8)
+			sheet.add_child(meta)
+			var rule := ColorRect.new()
+			rule.color = Color(0.11, 0.10, 0.09, 0.18)
+			rule.position = Vector2(18, y + 22)
+			rule.size = Vector2(420, 1)
+			sheet.add_child(rule)
+
+	var close := UIKit.button("CLOSE", Vector2(88, 22))
+	close.position = Vector2(350, 236)
+	close.pressed.connect(func(): ranks_layer.visible = false)
+	sheet.add_child(close)
+
+
 func _dev_screen() -> bool:
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 		var arg := str(raw)
@@ -196,11 +280,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ENTER or event.keycode == KEY_SPACE:
 			if howto_layer.visible:
 				howto_layer.visible = false
+			elif ranks_layer.visible:
+				ranks_layer.visible = false
 			else:
 				_start()
 		elif event.keycode == KEY_H:
+			ranks_layer.visible = false
 			howto_layer.visible = not howto_layer.visible
+		elif event.keycode == KEY_R:
+			howto_layer.visible = false
+			ranks_layer.visible = not ranks_layer.visible
 		elif event.keycode == KEY_C:
 			get_tree().change_scene_to_file("res://scenes/crew.tscn")
 		elif event.keycode == KEY_ESCAPE:
 			howto_layer.visible = false
+			ranks_layer.visible = false

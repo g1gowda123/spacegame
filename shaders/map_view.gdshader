@@ -15,12 +15,21 @@ uniform float brightness = 0.93;
 uniform vec3 tint = vec3(0.94, 1.0, 0.97);
 uniform vec4 biome_tint : source_color = vec4(1.0);
 uniform float biome_tint_strength = 0.0;
+uniform vec2 camera_offset = vec2(0.0);
+uniform int circle_view = 1;
+uniform float circle_radius = 0.47;
+uniform float circle_soft = 0.035;
 
 void fragment() {
     // Use UV rather than FRAGCOORD: UV is stable across windowed/fullscreen
     // scaling and HiDPI, while FRAGCOORD is in physical pixels and can disagree
     // with the canvas-sized TextureRect.
-    vec2 px = (UV - 0.5) * screen_size;
+    vec2 disc = (UV - 0.5) * vec2(screen_size.x / screen_size.y, 1.0);
+    float disc_dist = length(disc);
+    if (circle_view == 1 && disc_dist > circle_radius + circle_soft) {
+        discard;
+    }
+    vec2 px = (UV - 0.5) * screen_size + camera_offset;
     vec2 src_px;
 
     if (view_mode == 0) {
@@ -133,5 +142,14 @@ void fragment() {
             float line = (g.x < 0.022 || g.y < 0.022) ? 0.14 : 0.0;
             COLOR.rgb = mix(COLOR.rgb, vec3(0.02, 0.03, 0.04), line);
         }
+    }
+
+    if (circle_view == 1) {
+        // Circular survey horizon: the square render window is only storage;
+        // the player sees an inscribed world disc with a rocky rim.
+        float alpha = 1.0 - smoothstep(circle_radius - circle_soft, circle_radius + circle_soft, disc_dist);
+        float rim = smoothstep(circle_radius - 0.030, circle_radius - 0.006, disc_dist);
+        COLOR.rgb = mix(COLOR.rgb, vec3(0.035, 0.046, 0.052), rim * 0.62);
+        COLOR.a *= alpha;
     }
 }

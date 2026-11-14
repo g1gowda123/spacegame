@@ -259,6 +259,9 @@ var shop_offers: Array = []
 var event_card: Dictionary = {}
 var best_score: int = 0
 var briefing_seen: bool = false
+var player_name: String = "CHIEF"
+var player_named: bool = false
+var leaderboard: Array = []
 
 var rng := RandomNumberGenerator.new()
 
@@ -364,6 +367,13 @@ func _load_best() -> void:
 	if cfg.load("user://orbit_save.cfg") == OK:
 		best_score = int(cfg.get_value("score", "best", 0))
 		briefing_seen = bool(cfg.get_value("briefing", "seen", false))
+		player_name = str(cfg.get_value("pilot", "name", "CHIEF"))
+		player_named = bool(cfg.get_value("pilot", "named", false))
+		var raw_lb := str(cfg.get_value("leaderboard", "entries", ""))
+		if raw_lb != "":
+			var parsed = JSON.parse_string(raw_lb)
+			if parsed is Array:
+				leaderboard = parsed
 
 
 func _save_best(score: int) -> void:
@@ -374,6 +384,8 @@ func _save_best(score: int) -> void:
 	cfg.load("user://orbit_save.cfg")
 	cfg.set_value("score", "best", best_score)
 	cfg.set_value("briefing", "seen", briefing_seen)
+	cfg.set_value("pilot", "name", player_name)
+	cfg.set_value("pilot", "named", player_named)
 	cfg.save("user://orbit_save.cfg")
 
 
@@ -383,6 +395,64 @@ func mark_briefing_seen() -> void:
 	cfg.load("user://orbit_save.cfg")
 	cfg.set_value("briefing", "seen", true)
 	cfg.set_value("score", "best", best_score)
+	cfg.set_value("pilot", "name", player_name)
+	cfg.set_value("pilot", "named", player_named)
+	cfg.save("user://orbit_save.cfg")
+
+
+func has_player_name() -> bool:
+	return player_named
+
+
+func set_player_name(raw: String) -> void:
+	var clean := raw.strip_edges().to_upper()
+	clean = clean.substr(0, 12)
+	player_name = clean if clean != "" else "CHIEF"
+	player_named = true
+	var cfg := ConfigFile.new()
+	cfg.load("user://orbit_save.cfg")
+	cfg.set_value("pilot", "name", player_name)
+	cfg.set_value("pilot", "named", true)
+	cfg.set_value("score", "best", best_score)
+	cfg.set_value("briefing", "seen", briefing_seen)
+	cfg.save("user://orbit_save.cfg")
+
+
+func leaderboard_top(count: int = 5) -> Array:
+	var rows := leaderboard.duplicate()
+	rows.sort_custom(func(a, b): return int(a.get("score", 0)) > int(b.get("score", 0)))
+	return rows.slice(0, maxi(0, count))
+
+
+func record_run(total: int, grade: String) -> void:
+	if bool(run.get("score_recorded", false)):
+		return
+	run["score_recorded"] = true
+	_save_best(total)
+	var entry := {
+		"name": player_name if player_name != "" else "CHIEF",
+		"score": total,
+		"grade": grade,
+		"date": Time.get_date_string_from_system(),
+		"mode": str(run.get("mode", "campaign")),
+		"difficulty": str(run.get("difficulty", "standard")),
+		"successes": int(run.get("sector", 1)) - 1,
+	}
+	leaderboard.append(entry)
+	# Keep the best row per callsign, then the global top eight.
+	var best_by_name := {}
+	for row in leaderboard:
+		var key := str(row.get("name", "CHIEF"))
+		if not best_by_name.has(key) or int(row.get("score", 0)) > int(best_by_name[key].get("score", 0)):
+			best_by_name[key] = row
+	var rows: Array = best_by_name.values()
+	rows.sort_custom(func(a, b): return int(a.get("score", 0)) > int(b.get("score", 0)))
+	leaderboard = rows.slice(0, 8)
+	var cfg := ConfigFile.new()
+	cfg.load("user://orbit_save.cfg")
+	cfg.set_value("leaderboard", "entries", JSON.stringify(leaderboard))
+	cfg.set_value("pilot", "name", player_name)
+	cfg.set_value("pilot", "named", player_named)
 	cfg.save("user://orbit_save.cfg")
 
 
@@ -399,6 +469,7 @@ func new_run() -> void:
 		"objective": "",
 		"sector": 1,
 		"seed": rng.randi_range(1000, 99999),
+		"score_recorded": false,
 		"event_card": {},
 		"event_resolved": true,
 		"events_seen": [],
@@ -1280,7 +1351,7 @@ func calculate_score() -> Dictionary:
 		grade = "B"
 		next_grade = "A"
 		next_gap = 4000 - total
-	_save_best(total)
+	record_run(total, grade)
 	return {
 		"total": total,
 		"science": int(round(science + bonus_science)),

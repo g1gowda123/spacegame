@@ -633,3 +633,24 @@ Newest entries at the bottom. Every agent should append an entry after a meaning
   - **`docs/MAP_GENERATOR.md` current-state block corrected:** project main scene is `scenes/title.tscn`; the map scene is the generator's direct-launch dev entry (`godot --path . scenes/map_generator.tscn`), not the main scene.
   - **Verification:** `python tools/qa/audit_project.py --check` -> 28 pass, 0 fail, 3 warn, exit 0; `godot --headless --path . --quit-after 8` -> exit 0 with no `SCRIPT ERROR`/parse/load lines (after one `--import` for the crew/briefing art that was not in this clone's cache); `python tools/qa/native_screens.py --godot ...` -> 10/10 pass, 996-21,464 colours per frame.
   - `docs/QA_REPORT.md` regenerated and its handwritten findings block annotated with the two resolutions and the post-QA verification commands. Docs + two label-face changes + one QA-tool exception; no gameplay, scoring, art or build changes.
+- **16:10 — circular horizon + movement pan.** Added `circle_view` masking and `camera_offset` to `shaders/map_view.gdshader`; `_pan_camera()` shifts terrain/structures/markers and eases back over 0.18 s. The lander remains centred during the roll. No export.
+
+- **18:25 — UI stencil icons.** `tools/make_icons.py` writes `assets/ui/icons/` (hull, orbit, power, thermal, data, comms, crew, risk, target, cost at 16 and 24 px, single ink, transparent bg) plus manifest and contact sheet — the pictogram row the UI redesign asks for, kept separate from the 9-slice skin so each can be tinted independently.
+
+- **16:20 — volcano go + map-source status.** Authorized VEGA’s one-pass 4×4 corner-fill/scalloped-apron rebuild, no code or export. Circular horizon and panning remain source-only pending ORION’s gate call.
+
+- **16:24 — sector pan + UIKit parse fix.** `_execute_path()` now pans from the pre-move cell after `_end_turn`; sector camera layers include FX and move-preview layers. Captured mid-pan and settled frames. Removed duplicate `const AMBER` from `ui_kit.gd` that broke `sector.gd` parsing. No export.
+
+- **16:30 — per-tile path movement.** `_execute_path()` now pans one cell at a time, awaits each tween, trims `path_cells` to the remaining route, and redraws the preview after each step. No export.
+
+- **16:29 — Reverted the olive/amber UI experiment (NOVA).** Boss rejected the console palette. Restored `scripts/ui_kit.gd` from HEAD (`fa6bd63`) so the old dark-blue/cyan palette and classic button/option-card styles are back; `qa_design_old.png` confirms the design screen is identical to the known-good version. Briefing colors returned to dark blue/cyan, portrait remains on a cream photo card to avoid the transparent-jacket darkness. No more art generation/editing in NOVA's lane: all portrait/UI-skin work is assigned to VEGA (m01603), with the executive-secretary brief and hackathon-safe constraints. Title restore and required-text prompts remain code work.
+
+- **16:34 — Old title restored + required-field prompts (NOVA).** Restored the pre-experiment starfield title from `47b162f`, keeping RANKS and the callsign in the best line. `scripts/design.gd` now shows required-field state in-place: `HULL BUS // REQUIRED`, `MISSION OBJECTIVE // REQUIRED`, `CAPACITY OK` / `OVER CAPACITY`, `2 / 2 SELECTED`, a top `ALL REQUIRED FIELDS SET` / `REQUIRED: …` line, and a shake/flash on an invalid confirm. Evidence `qa_title_restored.png`, `qa_design_required2.png`, `qa_brief_name_old3.png`. No palette or art changes.
+
+- **16:42 — volcano texture review.** Accepted VEGA’s basalt/ash albedo texture with a gain bump to 1.18; still rejected for silhouette (straight base, empty corners). Shape pass remains required.
+
+- **16:45 — volcano/vent art accepted.** Shape + basalt texture resolve the plinth/empty-corner issue; map capture clean. Massif pending ORION. No export.
+
+- **16:47 — massif review.** Granite texture is an improvement, but the 4×4 silhouette still has a flat-cut base and empty corners; rejected for gate. Ships/planets deferred to post-gate.
+
+- **16:49 — massif accepted.** Corner plugs/talus apron resolve the silhouette; granite texture reads. All gate structures accepted; ships/planets deferred.

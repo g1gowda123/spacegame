@@ -184,7 +184,7 @@ const TERRAIN_ARCHETYPES: Array = [
 var STRUCTURES: Dictionary = {
 	"mountain_range": {
 		"path": "res://assets/tilesets/structures/mountain_range.png",
-		"w": 2, "h": 2, "occludes": true, "sprite_scale": 2.40,
+		"w": 2, "h": 2, "occludes": true, "sprite_scale": 1.75,
 	},
 	"mountain_massif": {
 		"path": "res://assets/tilesets/structures/mountain_massif.png",
@@ -333,6 +333,7 @@ var archetype_name: String = "Open Plains"
 
 var view_mode: int = 1  # 0 = 3/4 tilt, 1 = isometric, 2 = top-down
 var show_grid: bool = false
+var circle_view: bool = true
 var zoom: float = 0.88
 var tilt: float = 0.75
 var map_scale: float = 0.92
@@ -354,8 +355,12 @@ var space_layer: CanvasLayer
 var space_rect: TextureRect
 var player_tex: Texture2D
 var player_sprite: Sprite2D
+var ambient_layer: Node2D
+var ambient_texture: Texture2D
+var anim_time := 0.0
 var player_shadow: Polygon2D
 var player_tween: Tween
+var camera_tween: Tween
 var node_tex: Texture2D
 var relay_tex: Texture2D
 var piece_sets: Dictionary = {}
@@ -469,6 +474,11 @@ func _parse_cli() -> void:
 
 
 func _process(delta: float) -> void:
+	anim_time += delta
+	if player_sprite != null:
+		player_sprite.offset = Vector2(0.0, sin(anim_time * 2.2) * 1.25)
+	if player_shadow != null:
+		player_shadow.scale = Vector2(1.0, 1.0 + sin(anim_time * 2.2 + 1.0) * 0.035)
 	if capture_requested:
 		capture_elapsed += delta
 		if capture_elapsed >= 1.2:
@@ -479,6 +489,63 @@ func _process(delta: float) -> void:
 		if debug_elapsed >= 0.25:
 			debug_elapsed = 0.0
 			_refresh_debug()
+
+
+func _dot_texture() -> Texture2D:
+	if ambient_texture != null:
+		return ambient_texture
+	var img := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	ambient_texture = ImageTexture.create_from_image(img)
+	return ambient_texture
+
+
+func _build_ambient() -> void:
+	if ambient_layer == null:
+		return
+	var dust := CPUParticles2D.new()
+	dust.amount = 34
+	dust.lifetime = 12.0
+	dust.preprocess = 10.0
+	dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	dust.emission_rect_extents = Vector2(340, 200)
+	dust.position = Vector2(320, 180)
+	dust.direction = Vector2(0.35, -1.0)
+	dust.spread = 38.0
+	dust.gravity = Vector2.ZERO
+	dust.initial_velocity_min = 3.0
+	dust.initial_velocity_max = 10.0
+	dust.scale_amount_min = 0.35
+	dust.scale_amount_max = 1.1
+	dust.color = Color(0.68, 0.92, 0.86, 0.22)
+	dust.texture = _dot_texture()
+	dust.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	ambient_layer.add_child(dust)
+
+
+
+func _move_puff(at: Vector2) -> void:
+	if ambient_layer == null:
+		return
+	var puff := CPUParticles2D.new()
+	puff.texture = _dot_texture()
+	puff.amount = 8
+	puff.lifetime = 0.5
+	puff.one_shot = true
+	puff.explosiveness = 1.0
+	puff.direction = Vector2(0, -1)
+	puff.spread = 75.0
+	puff.gravity = Vector2(0, 26)
+	puff.initial_velocity_min = 7.0
+	puff.initial_velocity_max = 18.0
+	puff.scale_amount_min = 0.3
+	puff.scale_amount_max = 0.9
+	puff.color = Color(0.78, 0.92, 0.86, 0.30)
+	puff.position = at
+	puff.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	ambient_layer.add_child(puff)
+	puff.emitting = true
+	get_tree().create_timer(0.9).timeout.connect(puff.queue_free)
 
 
 func _save_capture(path: String) -> void:
@@ -673,6 +740,11 @@ func _build_view() -> void:
 	actor_layer = Node2D.new()
 	actor_layer.z_index = 25
 	add_child(actor_layer)
+
+	ambient_layer = Node2D.new()
+	ambient_layer.z_index = 30
+	add_child(ambient_layer)
+	_build_ambient()
 
 	# Veil drawn above actors so a ridge really hides the tile behind it.
 	# Toggleable: F6 turns line-of-sight masking off for clarity.
@@ -1218,7 +1290,7 @@ func _try_move(dir: Vector2i) -> void:
 
 	_update_chunks()
 	_render_window()
-	_animate_player(from_cell)
+	_pan_camera(from_cell)
 	_refresh_status()
 
 
@@ -1648,7 +1720,7 @@ func _ridge_key(biome_id: String) -> String:
 		"barren":
 			return "impact_crater"
 		"temperate", "carbon":
-			return "mountain_massif"
+			return "mountain_range"
 		"crystal":
 			return "crystal_outcrop"
 	return "mountain_range"
@@ -2640,6 +2712,9 @@ func _rebuild_actors() -> void:
 					hazard_color.r, hazard_color.g, hazard_color.b, 0.55
 				)
 				overlay_layer.add_child(hz_line)
+				var hz_tw := hz_fill.create_tween().set_loops()
+				hz_tw.tween_property(hz_fill, "modulate:a", 0.45, 0.75)
+				hz_tw.tween_property(hz_fill, "modulate:a", 1.0, 0.75)
 
 	# Lander.
 	var player_screen := _project(Vector2(
@@ -2648,7 +2723,7 @@ func _rebuild_actors() -> void:
 	))
 	player_shadow = Polygon2D.new()
 	player_shadow.polygon = _ellipse_points(
-		Vector2.ZERO, TILE * map_scale * 0.30, TILE * map_scale * 0.09
+		Vector2.ZERO, TILE * map_scale * 0.38, TILE * map_scale * 0.11
 	)
 	player_shadow.color = Color(0.0, 0.0, 0.0, 0.42)
 	player_shadow.position = player_screen
@@ -2658,7 +2733,7 @@ func _rebuild_actors() -> void:
 	if player_tex != null:
 		# The lander is a small vehicle, not a building: keep it clearly below
 		# one tile wide so mountains and craters read as landscape-scale.
-		var ps := map_scale * 0.66
+		var ps := map_scale * 0.82
 		var pb := _texture_bounds(player_tex)
 		player_sprite = Sprite2D.new()
 		player_sprite.texture = player_tex
@@ -2738,6 +2813,9 @@ func _rebuild_actors() -> void:
 			outline.default_color = Color(0.10, 0.06, 0.01) if relay else Color(0.02, 0.15, 0.15)
 			marker.add_child(outline)
 		actor_layer.add_child(marker)
+		var pulse := marker.create_tween().set_loops()
+		pulse.tween_property(marker, "modulate:a", 0.55, 0.85).set_delay(0.35)
+		pulse.tween_property(marker, "modulate:a", 1.0, 0.85)
 
 
 func _diamond_points(radius: float) -> PackedVector2Array:
@@ -2783,12 +2861,52 @@ func _animate_player(from_cell: Vector2i) -> void:
 	var delta := from_screen - to_screen
 	var sprite_target := player_sprite.position
 	var shadow_target := player_shadow.position
+	_move_puff(from_screen)
 	player_sprite.position = sprite_target + delta
 	player_shadow.position = shadow_target + delta
 	player_tween = create_tween().set_parallel(true)
 	player_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	player_tween.tween_property(player_sprite, "position", sprite_target, 0.16)
 	player_tween.tween_property(player_shadow, "position", shadow_target, 0.16)
+
+
+func _camera_world_layers() -> Array:
+	return [cliff_layer, overlay_layer, structure_layer, occlusion_layer]
+
+
+func _pan_camera(from_cell: Vector2i) -> void:
+	if shader_mat == null:
+		return
+	var from_screen := _project(Vector2(
+		(from_cell.x + 0.5) * TILE,
+		(from_cell.y + 0.5) * TILE
+	))
+	var to_screen := _project(Vector2(
+		(player_cell.x + 0.5) * TILE,
+		(player_cell.y + 0.5) * TILE
+	))
+	if camera_tween != null and camera_tween.is_valid():
+		camera_tween.kill()
+	# The map was re-rendered around the new cell. Start the shader sample one
+	# step behind, then slide the whole board under the lander instead of
+	# snapping the window. One cell stays inside the rendered 20x16 window.
+	var delta := from_screen - to_screen
+	shader_mat.set_shader_parameter("camera_offset", delta)
+	# Shift the world layers with the shader so terrain, structures and markers
+	# pan together. The actor layer is deliberately left alone: the lander holds
+	# the centre of the new view while the ground rolls under it.
+	for layer in _camera_world_layers():
+		if layer != null:
+			layer.position = -delta
+	camera_tween = create_tween().set_parallel(true)
+	camera_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	camera_tween.tween_method(
+		func(v: Vector2) -> void: shader_mat.set_shader_parameter("camera_offset", v),
+		delta, Vector2.ZERO, 0.18
+	)
+	for layer in _camera_world_layers():
+		if layer != null:
+			camera_tween.tween_property(layer, "position", Vector2.ZERO, 0.18)
 
 
 func _project(world: Vector2) -> Vector2:
@@ -2846,6 +2964,9 @@ func _update_view() -> void:
 	shader_mat.set_shader_parameter("map_size", VIEW_PX)
 	shader_mat.set_shader_parameter("map_tiles", Vector2(VIEW_W, VIEW_H))
 	shader_mat.set_shader_parameter("camera_center", VIEW_PX * 0.5)
+	shader_mat.set_shader_parameter("camera_offset", Vector2.ZERO)
+	shader_mat.set_shader_parameter("circle_view", 1 if circle_view else 0)
+	shader_mat.set_shader_parameter("circle_radius", 0.47)
 	shader_mat.set_shader_parameter("show_grid", 1 if show_grid else 0)
 	_rebuild_structure_sprites()
 	_rebuild_actors()

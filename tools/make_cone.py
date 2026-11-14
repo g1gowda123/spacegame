@@ -134,6 +134,22 @@ def build(name, size, seed, pal_name, summit=0.16, foot=0.90, base_half=0.44, to
     img[edge] = (16, 16, 20, 255)
 
     out = Image.fromarray(img, "RGBA")
+    # albedo pass: diffuse texture through the sprite's own shading
+    tex_name = "basalt" if pal_name == "volcanic" else "mineral"
+    tex_path = ROOT / "assets" / "raw" / "textures" / f"{tex_name}.png"
+    if tex_path.exists():
+        from PIL import Image as _I
+        c = np.asarray(out).astype(np.float32)
+        t = np.asarray(_I.open(tex_path).convert("RGB").resize(out.size, _I.Resampling.LANCZOS)).astype(np.float32)
+        a2 = c[..., 3]
+        lum = 0.3 * c[..., 0] + 0.59 * c[..., 1] + 0.11 * c[..., 2]
+        mean = max(1.0, float(lum[a2 > 0].mean())) if (a2 > 0).any() else 1.0
+        light = np.clip(lum / mean, 0.45, 1.7)[..., None]
+        o = np.clip(t * light * 1.12, 0, 255)
+        r, g, b = c[..., 0], c[..., 1], c[..., 2]
+        lava = (r > 90) & (r > g + 30) & (r > b + 30)
+        o[lava] = c[lava][:, :3]
+        out = _I.fromarray(np.dstack([o, a2]).astype(np.uint8), "RGBA")
     out.save(OUT / f"{name}.png")
     prev = Image.new("RGBA", out.size, (22, 26, 34, 255))
     prev.alpha_composite(out)

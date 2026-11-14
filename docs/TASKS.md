@@ -247,12 +247,12 @@ Boss: "big mountains are almost the same size as the craft… make the world fee
 | Task | Status | Owner | Notes |
 |---|---|---|---|
 | Stopgap scale hierarchy: lander 1.15→0.66, mountain/mesa/volcano/iceberg scale up, overlay z 12→22 | **DONE 13:36** | NOVA | `scripts/map_generator.gd`; evidence `scale_*_grand.png`; provisional, ATLAS owns final tuning |
-| 64 px structure piece set (peak/shoulder/foot, volcano cone/flank/apron, ridge crest/foot) + previews | **REQUESTED** | VEGA | `assets/tilesets/structures/pieces/`, palette-locked, no plinth/shadow, manifest offsets |
+| 64 px structure piece set (peak/shoulder/foot, volcano cone/flank/apron, ridge crest/foot) + previews | **DONE 18:55 — VEGA** (`pieces/massif_*`, `pieces/volcano_*`, `ridge_crest_a/b`, `ridge_foot`, `assembled_*_4x4.png`, `manifest.json`) | VEGA | `assets/tilesets/structures/pieces/`, palette-locked, no plinth/shadow, manifest offsets |
 | Multi-tile `pieces` schema + alpha-bbox footprint fit + per-piece z-sort | **REQUESTED** | ATLAS | Collision must match visible base; overhang ≤1 tile |
 | Wire the 60 existing cliff tiles to raised terrain edges | **REQUESTED** | ATLAS | Cheapest verticality win; `cliff_<height>_<dir>` already on disk |
 | Density retune for bigger footprints (fewer, larger landforms) | **REQUESTED** | ATLAS / b | Suggested: major landforms ≤25% of walkable cells per chunk |
 | Connectivity guarantee after structure placement (flood fill to objectives/extract, carve a pass) | **REQUESTED** | b / ATLAS | Must hold over 100 seeds per biome |
-| Optional parallax ridge silhouettes behind the diamond | **REQUESTED** | VEGA | 640×120 transparent, dark, low contrast |
+| Optional parallax ridge silhouettes behind the diamond | **DONE 12:40 — VEGA** (`pieces/parallax_ridge_a/b.png`, 640×120, transparent) | VEGA | 640×120 transparent, dark, low contrast |
 | Acceptance review: lander ≤1 tile, mountain ≥4× craft, no walkable cell under a solid peak | **PENDING** | NOVA | Full frames per biome + headless smoke |
 
 ## Dynamic ship build (NOVA, 15:03)
@@ -385,3 +385,12 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 | Static audit fails: `res://demo/capture` + transition count | **DONE** | `tools/qa/audit_project.py` treats `res://demo/*` as runtime output; README/TASKS corrected 98 -> 100 pairs to match `tools/transitions.json` |
 | `MAP_GENERATOR.md` main-scene claim | **DONE** | Doc now says `scenes/title.tscn` is the project main scene; map scene is the direct-launch dev entry |
 | Verification | **DONE** | `audit_project.py --check` 28 pass / 0 fail / 3 warn, exit 0; headless `--quit-after 8` exit 0; native screens 10/10 |
+## VEGA — ACTIVE ART TASK (NOVA, 16:33)
+
+**DELIVERED 19:10 by VEGA** — portraits rebuilt to this brief (seed 4101, `raw2_neutral_4101.png` canonical, smile/stern derived; contact sheet `/tmp/opencode/crew3.png`). UI skin in the dark-blue/cyan language deliberately **not** taken: the boss preferred the old look, so `assets/ui/skin/` (paper kit) stays out of the build unless asked for.
+
+- **Character:** Dr. Imani Vale, executive secretary (not deputy director). Age ~30, professional and warm, light or navy agency uniform, fully covered, non-sexualised — hackathon-safe. She calls the player “Chief”.
+- **Files:** `assets/sprites/crew/director_neutral.png`, `director_smile.png`, `director_stern.png` at 160×240 RGBA, same face across all three; `director_icon.png` 64×64; update `manifest.json`. Keep the transparent/cream-card readability that currently makes the jacket read white, not black. Raws under `assets/raw/crew/`; workflow/seed/prompt notes in the manifest or `assets/raw/crew/README.md`.
+- **Creative freedom:** face, hair, uniform, badge, headset, silhouette, expression nuance. New ComfyUI workflows may be created at any time; if you use one, regenerate all three expressions from one reference so the face does not drift.
+- **Optional UI skin:** `assets/ui/skin/` buttons/tabs/strips in the old dark-blue/cyan palette; do not recolor the game to olive/amber.
+- **Acceptance:** three expressions + icon load in `scenes/briefing.tscn`; no black jacket block on the cream card; nameplate reads `EXECUTIVE SECRETARY`; no sexualised framing.

@@ -1,0 +1,142 @@
+{
+  "set": "flight-binder stencil pictograms",
+  "colour": "single ink channel (#1b1a17); modulate in code",
+  "sizes": [
+    16,
+    24
+  ],
+  "names": [
+    "hull",
+    "orbit",
+    "power",
+    "thermal",
+    "data",
+    "comms",
+    "crew",
+    "risk",
+    "target",
+    "cost"
+  ],
+  "files": {
+    "hull_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "hull_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "orbit_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "orbit_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "power_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "power_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "thermal_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "thermal_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "data_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "data_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "comms_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "comms_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "crew_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "crew_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "risk_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "risk_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "target_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "target_24": {
+      "size": [
+        24,
+        24
+      ]
+    },
+    "cost_16": {
+      "size": [
+        16,
+        16
+      ]
+    },
+    "cost_24": {
+      "size": [
+        24,
+        24
+      ]
+    }
+  }
+}

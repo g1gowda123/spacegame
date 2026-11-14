@@ -25,6 +25,9 @@ var cost_label: Label
 var confirm_btn: Button
 var orbit_buttons: Dictionary = {}
 var orbit_desc_label: Label
+var requirement_label: Label
+var instrument_requirement: Label
+var vehicle_requirement: Label
 
 
 func _ready() -> void:
@@ -80,7 +83,7 @@ func _subhead(v: VBoxContainer, text: String) -> void:
 
 
 func _build_left() -> void:
-	var v := _column(10, 198, "HULL BUS")
+	var v := _column(10, 198, "HULL BUS  //  REQUIRED")
 	for h in GameState.HULLS:
 		var card := UIKit.option_card(
 			v, Rect2(0, 0, 184, 38), str(h["name"]),
@@ -93,6 +96,8 @@ func _build_left() -> void:
 		hull_cards[str(h["id"])] = card
 
 	_subhead(v, "LAUNCH VEHICLE")
+	vehicle_requirement = UIKit.label("REQUIRED", 6, UIKit.AMBER, true)
+	v.add_child(vehicle_requirement)
 	for veh in GameState.VEHICLES:
 		var card := UIKit.option_card(
 			v, Rect2(0, 0, 184, 26), str(veh["name"]),
@@ -191,7 +196,7 @@ func _stat_value(pb: ProgressBar) -> Label:
 
 
 func _build_right() -> void:
-	var v := _column(428, 202, "MISSION OBJECTIVE")
+	var v := _column(428, 202, "MISSION OBJECTIVE  //  REQUIRED")
 	for o in GameState.OBJECTIVES:
 		var card := UIKit.option_card(
 			v, Rect2(0, 0, 188, 25), str(o["name"]), str(o["perk"]),
@@ -202,6 +207,8 @@ func _build_right() -> void:
 		card["button"].tooltip_text = str(o["perk"])
 
 	_subhead(v, "INSTRUMENTS  (PICK 2)")
+	instrument_requirement = UIKit.label("0 / 2 SELECTED", 6, UIKit.AMBER, true)
+	v.add_child(instrument_requirement)
 	var short_names := {
 		"camera": "MULTISPECTRAL", "spectrometer": "SPECTROMETER",
 		"radar": "RADAR SOUNDER", "thermal": "THERMAL IMAGER",
@@ -233,6 +240,12 @@ func _build_footer() -> void:
 		GameState.sfx("confirm")
 	)
 	add_child(quick)
+
+	requirement_label = UIKit.label("REQUIRED: SELECT A HULL", 6, UIKit.AMBER, true)
+	requirement_label.position = Vector2(216, 22)
+	requirement_label.size = Vector2(156, 10)
+	requirement_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(requirement_label)
 
 	cost_label = UIKit.label("MISSION COST  $0M", 7, UIKit.DIM, true)
 	cost_label.position = Vector2(226, 331)
@@ -269,6 +282,7 @@ func _toggle_instrument(id: String) -> void:
 func _confirm() -> void:
 	if not GameState.commit_design():
 		GameState.sfx("alarm")
+		_flash_requirement()
 		return
 	GameState.sfx("confirm")
 	get_tree().change_scene_to_file("res://scenes/draft.tscn")
@@ -314,18 +328,42 @@ func _refresh() -> void:
 	var cost := float(s.get("cost", 0))
 	cost_label.text = "MISSION COST  $%dM" % int(cost)
 	budget_label.text = "BUDGET  $%dM" % int(GameState.run.get("budget", 0))
+	var chosen_count: int = chosen.size()
+	instrument_requirement.text = "%d / 2 SELECTED" % chosen_count
+	instrument_requirement.add_theme_color_override(
+		"font_color", UIKit.GREEN if chosen_count == 2 else UIKit.AMBER
+	)
+	var capacity := float(s.get("capacity", 0.0))
+	if float(s.get("mass", 0.0)) > capacity:
+		vehicle_requirement.text = "OVER CAPACITY"
+		vehicle_requirement.add_theme_color_override("font_color", UIKit.RED)
+	else:
+		vehicle_requirement.text = "CAPACITY OK"
+		vehicle_requirement.add_theme_color_override("font_color", UIKit.GREEN)
 	if bool(s.get("valid", false)):
 		var cm := GameState.cml()
 		warning_label.text = "CML %d %s  ·  READY TO DRAFT" % [int(cm["level"]), str(cm["label"])]
 		if bool(s.get("science_fit", false)):
 			warning_label.text += "\nSCIENCE FIT +10%"
 		warning_label.add_theme_color_override("font_color", UIKit.GREEN)
+		requirement_label.text = "ALL REQUIRED FIELDS SET"
+		requirement_label.add_theme_color_override("font_color", UIKit.GREEN)
 		confirm_btn.disabled = false
 	else:
 		var warns: Array = s.get("warnings", [])
 		warning_label.text = "\n".join(warns)
 		warning_label.add_theme_color_override("font_color", UIKit.AMBER)
+		requirement_label.text = "REQUIRED: " + str(warns[0] if warns.size() > 0 else "CHECK MISSION")
+		requirement_label.add_theme_color_override("font_color", UIKit.AMBER)
 		confirm_btn.disabled = true
+
+
+func _flash_requirement() -> void:
+	if requirement_label == null:
+		return
+	requirement_label.modulate = Color(1.35, 0.8, 0.7)
+	var tw := create_tween()
+	tw.tween_property(requirement_label, "modulate", Color.WHITE, 0.45)
 
 
 func _unhandled_input(event: InputEvent) -> void:

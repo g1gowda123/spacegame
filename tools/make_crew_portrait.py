@@ -134,7 +134,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     sheets = []
     # one canonical render; the other two are derived so the face cannot drift
-    base = to_sprite(retune_uniform(key_background(Image.open(RAW / "raw_smile_4001.png"))))
+    base = to_sprite(retune_uniform(key_background(Image.open(RAW / "raw2_neutral_4101.png"))))
     for name in ("neutral", "smile", "stern"):
         img = base if name == "smile" else expression_variant(base, name)
         img.save(OUT / f"director_{name}.png")
@@ -169,7 +169,7 @@ def main():
     combo.save("/tmp/opencode/crew_sheet.png")
 
     manifest = {
-        "character": "Chief Engineer's deputy director (mission control briefing)",
+        "character": "Dr. Imani Vale — executive secretary, Mission Control briefing",
         "files": {n: f"res://assets/sprites/crew/director_{n}.png" for n in ("neutral", "smile", "stern")},
         "icon": "res://assets/sprites/crew/director_icon.png",
         "size": [160, 240],
@@ -180,10 +180,10 @@ def main():
                     "hair": ["#2e2628", "#463a3a", "#625450"]},
         "generation": {
             "workflow": "tools/gen_asset.py (SDXL base 1.0 + pixel-art-xl 0.45), --no-pixelize",
-            "seed": 4001, "gen_size": [768, 1152], "samples": 24, "cfg": 7.0,
-            "prompt_face": "female space agency deputy director, age 40, short practical dark hair, professional flight jacket with mission patch and headset, three-quarter view",
+            "seed": 4101, "gen_size": [768, 1152], "samples": 24, "cfg": 7.0,
+            "prompt_face": "female space agency executive secretary, age 30, shoulder-length dark hair tied back, light grey uniform jacket with navy trim, ID badge and headset, three-quarter view",
             "expression_prompts": {"neutral": "serious competent expression", "smile": "gentle confident smile", "stern": "stern serious frown, concerned"},
-            "raws": "assets/raw/crew/raw_<expression>_4001.png",
+            "raws": "assets/raw/crew/raw2_neutral_4101.png (canonical); raw2_{smile,stern}_4101.png are unused drift samples",
         },
         "postprocess": "edge flood-fill key (magenta bg also sits in the jacket), magenta->navy uniform retune, blur 0.6, palette lock, hard alpha at 110, 1 px ink contour",
     }
