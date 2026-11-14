@@ -283,6 +283,41 @@ async function clickLogical(lx, ly) {
   console.log(`click (${lx}, ${ly}) -> page (${x.toFixed(0)}, ${y.toFixed(0)})`);
 }
 
+/** Mean brightness of a signature (used to spot the dimmed result overlay). */
+function meanLuma(sig) {
+  let sum = 0;
+  for (let i = 0; i < sig.length; i += 3) sum += sig[i] + sig[i + 1] + sig[i + 2];
+  return sum / (sig.length / 3);
+}
+
+/**
+ * End a sector without playing it well.
+ *
+ * EXTRACT now refuses until the data quota is met AND the ship is back on the
+ * landing zone (sector.gd:_extract), so the old "extract immediately" path is
+ * gone. Every step costs one delta-v and one sol and the mission ends when
+ * either runs out, so a four-way circuit (net drift zero, so the ship stays on
+ * the map) is a legal way to reach the result overlay on the all-failure path
+ * this check wants. 34 steps covers the worst case (sols 31) with margin; once
+ * the mission is done the remaining clicks are inert because sector.gd guards
+ * move/extract with `if done: return`.
+ */
+const ARROWS = {
+  ArrowRight: 39, ArrowLeft: 37, ArrowUp: 38, ArrowDown: 40,
+};
+
+async function endSectorByAttrition(tag, steps = 34) {
+  const dirs = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"];
+  for (let i = 0; i < steps; i += 1) {
+    const dir = dirs[i % dirs.length];
+    await key(dir, dir, ARROWS[dir]);
+    await clickLogical(...HIT.move);
+    await sleep(350);
+  }
+  console.log(`ok   ${tag}: ${steps} moves walked (delta-v / sols should be gone)`);
+  return true;
+}
+
 async function key(keyName, code, vk) {
   await send("Input.dispatchKeyEvent", {
     type: "keyDown", key: keyName, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk,
@@ -357,6 +392,7 @@ await sleep(12000);
 
 // --- Screen coordinates (logical 640x360) -------------------------------
 const HIT = {
+  callsignFile: [210, 204], // briefing.gd callsign sheet (110,82)+(18,110) 164x24
   briefingSkip: [576, 42],  // briefing.gd SKIP [ESC] (530,32) 92x20
   begin: [124, 243],        // title.gd BEGIN MISSION (44,228) 160x30
   quick: [153, 338],        // design.gd QUICK LOADOUT (90,326) 126x24
@@ -378,8 +414,11 @@ const HIT = {
 // --- Flow --------------------------------------------------------------
 // 1. First run boots the Agency Induction (title.gd defers to briefing.tscn
 //    while GameState.briefing_seen is false, and a fresh profile always is).
-//    SKIP lands on the title; the loop then plays the campaign normally.
+//    The callsign sheet is a modal over the briefing, so it has to be filed
+//    before SKIP is clickable. Filing it keeps the default name CHIEF.
 await screenshot("00_briefing.png");
+await clickLogical(...HIT.callsignFile);
+await expectChange("callsign -> briefing");
 await clickLogical(...HIT.briefingSkip);
 await expectChange("briefing -> title");
 await screenshot("01_title.png");
@@ -404,16 +443,20 @@ await clickLogical(...HIT.commitMission);
 await expectChange("review -> sector", 20000);
 await screenshot("06_sector.png");
 
-// 4. Arrow keys preview a path, MOVE commits one turn, then bail out early.
+// 4. Arrow keys preview a path, then the sector is walked until the mission
+//    window closes (delta-v / sols run out) or the hull goes; EXTRACT is no
+//    longer allowed before the quota is met, so attrition is the legal way to
+//    reach the result overlay.
 await key("ArrowRight", "ArrowRight", 39);
 await key("ArrowRight", "ArrowRight", 39);
 await sleep(600);
 await screenshot("07_path_preview.png");
 await clickLogical(...HIT.move);
-await sleep(1800);
+await sleep(1200);
 await screenshot("08_turn_committed.png");
-await clickLogical(...HIT.extract);
-await expectChange("sector -> result overlay");
+if (!(await endSectorByAttrition("s1"))) {
+  throw new Error("sector 1 never ended: neither delta-v, sols nor hull ran out");
+}
 await screenshot("09_sector_result.png");
 
 // 5. Result overlay -> debrief 01.
@@ -451,8 +494,9 @@ for (let sector = 2; sector <= 3; sector += 1) {
   await clickLogical(...HIT.commitMission);
   await expectChange(`review -> sector (s${sector})`, 20000);
   await screenshot(`13_sector_s${sector}.png`);
-  await clickLogical(...HIT.extract);
-  await expectChange(`sector -> result (s${sector})`);
+  if (!(await endSectorByAttrition(`s${sector}`))) {
+    throw new Error(`sector ${sector} never ended`);
+  }
   await screenshot(`14_result_s${sector}.png`);
   await clickLogical(...HIT.continueOverlay);
   await expectChange(`result -> debrief (s${sector})`);
