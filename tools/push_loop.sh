@@ -20,6 +20,18 @@ PY
 }
 while true; do
   stamp=$(date +%H:%M:%S)
+  # pull first so the loop never fights the other agents' pushes
+  GIT_TERMINAL_PROMPT=0 git fetch -q >/dev/null 2>&1
+  if ! git rebase -q origin/main >/dev/null 2>&1; then
+    if grep -rlq "<<<<<<<" --include=*.gd --include=*.tscn --include=*.json . ; then
+      git rebase --abort >/dev/null 2>&1
+      echo "$stamp CODE CONFLICT on pull - aborted, needs lead" >> "$LOG"
+    else
+      resolve_docs >/dev/null 2>&1
+      git add docs/ >/dev/null 2>&1
+      git -c core.editor=true rebase --continue >/dev/null 2>&1 || true
+    fi
+  fi
   if [ -n "$(git status --porcelain)" ]; then
     git add -A >/dev/null 2>&1
     git commit -qm "checkpoint: auto $(date +%H:%M:%S)" >/dev/null 2>&1

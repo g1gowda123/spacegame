@@ -815,11 +815,14 @@ func _refresh_status() -> void:
 		var shield := int(sec["shield_cost"])
 		var sweep := false
 		var forming := false
+		var major := false
 		for h in hazards:
 			if int(h["speed"]) > 0:
 				sweep = true
 			if int(h.get("age", 1)) < 1:
 				forming = true
+			if bool(h.get("major", false)):
+				major = true
 		var names: Array[String] = []
 		for h in hazards:
 			names.append(str(h["info"]["name"]).split(" ")[0])
@@ -827,7 +830,10 @@ func _refresh_status() -> void:
 		var tail := "SWEEP" if sweep else ("SHIELD %d PWR OR -%d INT" % [shield, int(first["integrity"])] if bool(first["block"]) else "UNBLOCKABLE")
 		if forming:
 			tail = ("SWEEP · " if sweep else "") + "ARMS NEXT TURN"
-		threat_label.text = "%s: %s  ·  %s" % ["FORMING" if forming else "INCOMING", tag, tail]
+		var state := "FORMING" if forming else "INCOMING"
+		if major:
+			state = "MAJOR " + state
+		threat_label.text = "%s: %s  ·  %s" % [state, tag, tail]
 		threat_label.add_theme_color_override("font_color", first["color"])
 	else:
 		threat_label.text = "—"
@@ -943,7 +949,7 @@ func _roll_hazard() -> Dictionary:
 		major = true
 	if OS.get_cmdline_user_args().has("--major-hazard"):
 		# QA: force the large footprint so it can be framed and inspected.
-		shape = "great"
+		shape = "ring" if OS.get_cmdline_user_args().has("--major-ring") else "great"
 		dir = Vector2i.ZERO
 		sweep = false
 		major = true
@@ -1012,8 +1018,6 @@ func _roll_hazard() -> Dictionary:
 			continue
 		if major:
 			_major_hazard_seen = true
-			if OS.get_cmdline_user_args().has("--major-hazard"):
-				print("MAJOR_HAZARD kind=", kind, " shape=", shape, " cells=", cells.size())
 		var life := 4 if sweep else 1
 		return {
 			"kind": kind, "info": info, "cells": cells,
@@ -1909,6 +1913,9 @@ func _hazard_quad(cell: Vector2i) -> PackedVector2Array:
 const HAZARD_KIND := {
 	"flare": 1, "thermal": 2, "dust": 3, "quake": 4, "radiation": 5,
 	"eclipse": 6, "cryo": 7, "wind": 8, "meteor": 9,
+	# Major variants reuse an existing visual family; their palette and the
+	# MAJOR label carry the difference, not a new shader branch.
+	"superflare": 1, "tidal": 4, "ion": 5,
 }
 
 var _hazard_shader: Shader
