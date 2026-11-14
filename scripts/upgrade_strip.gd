@@ -350,13 +350,6 @@ func _open_arsenal() -> void:
 	sb.border_color = UIKit.STEEL_HI
 	panel.add_theme_stylebox_override("panel", sb)
 	_arsenal.add_child(panel)
-	panel.gui_input.connect(func(ev: InputEvent):
-		if ev is InputEventMouseButton:
-			var mb := ev as InputEventMouseButton
-			if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
-				# Clicks inside the sheet must not fall through to the map.
-				pass
-	)
 
 	var title := UIKit.head("ARSENAL // INSTALLED SYSTEMS", 10, UIKit.CREAM)
 	title.position = Vector2(14, 10)
@@ -474,11 +467,4 @@ func _close_arsenal() -> void:
 	_arsenal = null
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not arsenal_open:
-		return
-	if event is InputEventKey:
-		var key := event as InputEventKey
-		if key.pressed and not key.echo and (key.keycode == KEY_ESCAPE or key.keycode == KEY_TAB):
-			_close_arsenal()
-			get_viewport().set_input_as_handled()
+

@@ -118,6 +118,12 @@ var hold_btn: Button
 var extract_btn: Button
 var move_btn: Button
 var lz_flag: Polygon2D
+var upgrade_strip: UpgradeStrip
+var _last_hull := -1
+var _last_dv := -1
+var _last_heat := -1
+var _last_data := -1
+var _last_power := -1
 var lz_mast: Line2D
 var lz_beam: Line2D
 var extract_beam: Line2D
@@ -691,6 +697,15 @@ func _build_hud() -> void:
 	extract_btn.pressed.connect(_extract)
 	root.add_child(extract_btn)
 
+	# ----- installed hardware rack
+	# Icons stay visible for the whole run so a refit or commission cannot be
+	# forgotten the moment the debrief closes. Hover reads the dossier; TAB
+	# opens the full arsenal sheet.
+	upgrade_strip = UpgradeStrip.new()
+	upgrade_strip.position = Vector2(10, 52)
+	root.add_child(upgrade_strip)
+	upgrade_strip.refresh()
+
 
 func _hover_cell(parent: Control, rect: Rect2, title: String, body: String,
 	accent: Color = UIKit.CYAN) -> void:
@@ -806,6 +821,37 @@ func _refresh_status() -> void:
 		var beyond := i >= int(sec["power_max"])
 		pip.visible = not beyond
 		pip.color = UIKit.LIVE if on else Color("#263646")
+
+	# Trace every stat change back to the hardware that governs it: the rack
+	# chip for hull, fuel, heat, data or power pops when that number moves.
+	if upgrade_strip != null:
+		var hull_now := int(sec["integrity"])
+		var dv_now := int(sec["delta_v"])
+		var heat_now := int(sec["thermal"])
+		var data_now := int(sec["data"])
+		var power_now := int(sec["power"])
+		if _last_hull >= 0:
+			if hull_now < _last_hull:
+				upgrade_strip.pulse("integrity", UIKit.RED)
+			elif hull_now > _last_hull:
+				upgrade_strip.pulse("integrity", UIKit.GREEN)
+			if dv_now < _last_dv:
+				upgrade_strip.pulse("dv", UIKit.CYAN)
+			if heat_now > _last_heat:
+				upgrade_strip.pulse("thermal_res", UIKit.AMBER)
+			elif heat_now < _last_heat:
+				upgrade_strip.pulse("vent_power", UIKit.CYAN)
+			if data_now > _last_data:
+				upgrade_strip.pulse("data_cap", UIKit.GREEN)
+			if power_now > _last_power:
+				upgrade_strip.pulse("power_regen", UIKit.CYAN)
+			elif power_now < _last_power:
+				upgrade_strip.pulse("shield", UIKit.CYAN)
+		_last_hull = hull_now
+		_last_dv = dv_now
+		_last_heat = heat_now
+		_last_data = data_now
+		_last_power = power_now
 
 	# The bed drops ~6 dB while a telegraph is on screen so the alarm/thud cues
 	# sit above it; it comes back up as soon as the sector is clear or closed.
@@ -2629,7 +2675,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	if not key.pressed or key.echo:
 		return
+	if upgrade_strip != null and upgrade_strip.arsenal_open:
+		if key.keycode == KEY_ESCAPE:
+			upgrade_strip.toggle_arsenal()
+		return
 	match key.keycode:
+		KEY_TAB, KEY_I:
+			if upgrade_strip != null:
+				upgrade_strip.toggle_arsenal()
+				get_viewport().set_input_as_handled()
 		KEY_UP, KEY_W:
 			_move_cursor(_screen_to_grid(Vector2i(0, -1)))
 		KEY_DOWN, KEY_S:
