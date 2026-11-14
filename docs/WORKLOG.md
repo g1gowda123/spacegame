@@ -1046,3 +1046,13 @@ to the lane owner.
 - Nits from ORION's 23:05 gate addressed: design hull-table header is 9 px ink, draft mark moved to y210, sector HUD kept night.
 - Evidence `/tmp/opencode/binder_final2/` (640×360) and `/tmp/opencode/binder_gate/` (native 1280 captures + post 0.45 previews). Headless `--quit-after 40` clean; `flowtest` completed clean (seed-dependent: 5118/A–5340/S).
 - Commit `a1b6739`. No push/export; `scripts/map_generator.gd` worktree change belongs to ATLAS.
+
+- **00:26 — Video-scale hazard + crystal clutter.** Armed hazard tape `+0.14`/`0.42×`, per-cell rim, inner `.16`; crystal `PROP_DENSITY` `.024`. Commit `baaf5f7`; evidence `hazard_gate.png`, `crystal_sparse.png`.
+
+## 2026-11-15 00:34 — Mission Operations console replaces the binder (NOVA)
+
+- Boss verdict on the binder: it read as a generic print skin forced onto the pixel space game. Replaced the shared grammar with a diegetic **MISSION OPERATIONS** console: deep blue-black hull panels, 1 px stepped bevels, 32 px blueprint grid, agency orange for action, cream for reading, live cyan only for telemetry.
+- `UIKit` tokens + `skin_ops/` frames; title is a mission terminal with a transfer plot and agency stamp; design/draft/debrief/report/crew/buff/briefing converted; sector HUD stays night.
+- Fixed the real refit-hover bug: `sheet()` returned a `PanelContainer` that swallowed mouse input, so the dossier only worked when emitted in tests. It is now input-transparent; the hover is bound to the whole card and the BUY button.
+- Title ranks modal fixed (absolute labels were being sorted by PanelContainer; content now sits in a `UIKit.fill` root).
+- Verification: headless clean; `flowtest` 5384/S; 640×360 + 1280 captures under `/tmp/opencode/ops640/` and `/tmp/opencode/ops_*.png`; web zip repacked at `141a9e4`. Deck/demo still binder-era; regenerate if the direction is approved.

@@ -1,9 +1,11 @@
 # UI Identity Pass — OPEN BRIEF
 
-Status: **DELIVERED 2026-11-14 23:35 — commit `a1b6739`.** FLIGHT BINDER 1975
-(paper/ink/agency orange, night sector HUD) is wired across the flow. U1–U4, U7,
-U8 and U9 are done; U5 copy/voice and U6 web QA remain partial. Post is off by
-default (`F8` / `--post=` A/B).
+Status: **BINDER SUPERSEDED — 2026-11-15 00:34, `141a9e4`.** The boss rejected
+the paper/ink binder as a print skin pasted over a pixel space game. Current
+direction: **MISSION OPERATIONS**, a diegetic console — deep hull panels, 1 px
+machined bevels, a 32 px blueprint grid, agency orange for action, cream type,
+live cyan only for telemetry. The sector HUD stays night. The web build is
+repacked; deck/demo still need re-rendering after the direction is confirmed.
 
 ## The problem, concretely
 
