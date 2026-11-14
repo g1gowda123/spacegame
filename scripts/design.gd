@@ -27,7 +27,6 @@ var orbit_buttons: Dictionary = {}
 var orbit_desc_label: Label
 var requirement_label: Label
 var instrument_requirement: Label
-var objective_note: Label
 var vehicle_requirement: Label
 
 
@@ -44,6 +43,16 @@ func _ready() -> void:
 	_build()
 	GameState.changed.connect(_refresh)
 	_refresh()
+	for raw in OS.get_cmdline_user_args():
+		if str(raw).begins_with("--hover="):
+			var parts := str(raw).substr(8).split(",")
+			call_deferred("_dev_hover", Vector2(float(parts[0]), float(parts[1])))
+
+
+func _dev_hover(p: Vector2) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	Input.warp_mouse(p)
 
 
 func _build() -> void:
@@ -101,12 +110,17 @@ func _build_left() -> void:
 	var v := _column(10, 198, "HULL BUS")
 	for h in GameState.HULLS:
 		var card := UIKit.option_card(
-			v, Rect2(0, 0, 184, 40), str(h["name"]),
-			"%s · %s" % [str(h["class"]), str(h["perk"])],
+			v, Rect2(0, 0, 184, 32), str(h["name"]), str(h["class"]),
 			UIKit.CYAN, 9, 7,
 			"%dKG · $%dM" % [int(h["mass"]), int(h["cost"])], false
 		)
 		card["button"].pressed.connect(_pick_hull.bind(str(h["id"])))
+		UIKit.hover_info(card["button"], str(h["name"]),
+			"HULL CLASS  %s\nMASS %dKG · COST $%dM\nBASE  ΔV %d · HULL %d · DATA %d · RANGE %d\nPOWER %dW\n\n%s" % [
+				str(h["class"]).to_upper(), int(h["mass"]), int(h["cost"]),
+				int(h["delta_v"]), int(h["integrity"]), int(h["data_cap"]),
+				int(h["move_range"]), int(h["power_gen"]), str(h["perk"])
+			], Color(str(h["color"])).lightened(0.2))
 		hull_cards[str(h["id"])] = card
 
 	_subhead(v, "LAUNCH VEHICLE")
@@ -119,8 +133,13 @@ func _build_left() -> void:
 			"%.0fKG CAP" % float(veh["capacity"]), false
 		)
 		card["button"].pressed.connect(_pick_vehicle.bind(str(veh["id"])))
+		UIKit.hover_info(card["button"], str(veh["name"]),
+			"CAPACITY %.0fKG · COST $%.0fM\n\n%s" % [
+				float(veh["capacity"]), float(veh["cost"]), str(veh["note"])
+			])
 		vehicle_cards[str(veh["id"])] = card
-		card["button"].tooltip_text = str(veh["note"])
+	v.add_child(UIKit.vspace(5))
+	v.add_child(UIKit.mono("HOVER A ROW FOR FULL SPECS", 6, UIKit.DIM))
 
 
 func _build_center() -> void:
@@ -169,6 +188,12 @@ func _build_center() -> void:
 		b.toggle_mode = true
 		b.add_theme_font_size_override("font_size", 8)
 		b.pressed.connect(_pick_orbit.bind(str(o["id"])))
+		UIKit.hover_info(b, str(o["name"]),
+			"%s\nHEAT x%.2f · SCIENCE %+d%%\nALT %dKM · %d%% ECLIPSE · %d PASSES/DAY" % [
+				str(o["desc"]), float(o["heat_mult"]),
+				int(round(float(o["science"]) * 100.0)),
+				int(o["alt_km"]), int(o["eclipse"]), int(o["passes"])
+			])
 		orbit_buttons[str(o["id"])] = b
 		orbit_row.add_child(b)
 	v.add_child(orbit_row)
@@ -212,13 +237,12 @@ func _build_right() -> void:
 			UIKit.CYAN, 9, 7, "", false
 		)
 		card["button"].pressed.connect(_pick_objective.bind(str(o["id"])))
+		UIKit.hover_info(card["button"], str(o["name"]),
+			"QUOTA %d NODES\nΔV %+d · INTEGRITY %+d · POWER CAP %+d\n\n%s" % [
+				int(o["quota"]), int(o["dv"]), int(o["integrity"]),
+				int(o["power_cap"]), str(o["perk"])
+			])
 		objective_cards[str(o["id"])] = card
-		card["button"].tooltip_text = str(o["perk"])
-	objective_note = UIKit.mono("", 7, UIKit.DIM)
-	objective_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	objective_note.custom_minimum_size = Vector2(188, 22)
-	objective_note.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	v.add_child(objective_note)
 
 	_subhead(v, "INSTRUMENTS  ·  PICK 2")
 	instrument_requirement = UIKit.mono("0 / 2 SELECTED", 7, UIKit.AMBER)
@@ -236,7 +260,13 @@ func _build_right() -> void:
 			"%.0fKG · $%.0fM" % [float(inst["mass"]), float(inst["cost"])], false
 		)
 		card["button"].pressed.connect(_toggle_instrument.bind(str(inst["id"])))
-		card["button"].tooltip_text = str(inst["perk"])
+		UIKit.hover_info(card["button"],
+			str(short_names.get(str(inst["id"]), str(inst["name"]))),
+			"MASS %.0fKG · COST $%.0fM · DRAW %.0fW\nDATA CAP %+d · SCIENCE %+d%%\n\n%s" % [
+				float(inst["mass"]), float(inst["cost"]), float(inst["power"]),
+				int(inst["data_cap"]), int(round(float(inst["science"]) * 100.0)),
+				str(inst["perk"])
+			])
 		instrument_cards[str(inst["id"])] = card
 
 
@@ -308,11 +338,6 @@ func _refresh() -> void:
 	var chosen_objective := str(GameState.run.get("objective", ""))
 	for id in objective_cards:
 		UIKit.select_card(objective_cards[id], chosen_objective == id)
-	if objective_note != null:
-		var ob := GameState.objective()
-		objective_note.text = str(ob.get("perk", ""))
-		objective_note.add_theme_color_override("font_color",
-			UIKit.MUTED if not chosen_objective.is_empty() else UIKit.DIM)
 	var chosen: Array = GameState.run.get("instruments", [])
 	for id in instrument_cards:
 		UIKit.select_card(instrument_cards[id], id in chosen)
