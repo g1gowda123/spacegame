@@ -359,6 +359,9 @@ var map_scale: float = 0.92
 @export_group("Fog / Survey")
 @export var fog_enabled: bool = true
 @export_range(0, 6, 1) var fog_reveal_radius: int = 2
+@export_range(0.0, 1.0, 0.01) var fog_alpha_inner: float = 0.88
+@export_range(0.0, 1.0, 0.01) var fog_alpha_mid: float = 0.76
+@export_range(0.0, 1.0, 0.01) var fog_alpha_outer: float = 0.62
 
 @export_group("Decals")
 @export_range(0.0, 0.5, 0.01) var decal_density: float = 0.15
@@ -2427,11 +2430,11 @@ func _draw_fog() -> void:
 					var d := absi(nx) + absi(ny)
 					if d < near and revealed.has(c + Vector2i(nx, ny)):
 						near = d
-			var fog_alpha := 0.88
+			var fog_alpha := fog_alpha_inner
 			if near == 1:
-				fog_alpha = 0.62
+				fog_alpha = fog_alpha_outer
 			elif near == 2:
-				fog_alpha = 0.76
+				fog_alpha = fog_alpha_mid
 			var poly := Polygon2D.new()
 			poly.polygon = quad
 			poly.color = Color(0.008, 0.014, 0.024, fog_alpha)

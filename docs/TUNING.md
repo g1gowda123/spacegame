@@ -11,7 +11,7 @@ instances it), select the root, and use the exported groups.
 | **Render Window** | `view_w`, `view_h` | Tiles rendered around the lander. Bigger = more survey visible, more SubViewport work. Defaults are WebGL-friendly. |
 | **Map / Seed** | `randomize_seed`, `seed_value`, `biome_index` | Turn `randomize_seed` off to reproduce the inspector seed. `biome_index` selects the biome directly. |
 | **Camera / View** | `view_mode`, `circle_view`, `zoom`, `tilt`, `circle_radius`, `circle_soft`, `circle_outer` | Dimetric/isometric/top view, zoom, and the circular survey horizon/fog skirt. |
-| **Fog / Survey** | `fog_enabled`, `fog_reveal_radius` | Toggle the default fog of war and its reveal radius. CLI `--no-fog` still wins. |
+| **Fog / Survey** | `fog_enabled`, `fog_reveal_radius`, `fog_alpha_inner/mid/outer` | Toggle the default fog of war, its reveal radius, and the three readability bands. CLI `--no-fog` still wins. |
 | **Decals** | `decal_density`, `decal_cluster_threshold`, `decal_scale_min/max`, `decal_alpha` | W4 scatter. Density is a candidate rate; the noise gate forms clusters. |
 | **Terrain Shader** | `edge_mode`, `relief_enabled` | `0` off, `1` accepted W1 dither, `2` smooth-tint A/B; `relief` is the W3 prototype and is off by default. |
 

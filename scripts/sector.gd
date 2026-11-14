@@ -1380,6 +1380,13 @@ func _draw_hazards() -> void:
 			tip.position = to
 			tip.color = Color(col.r, col.g, col.b, 0.95 if armed else 0.35)
 			fx_layer.add_child(tip)
+			# Marching pulse along the sweep vector: the arrow reads as motion
+			# even before the front actually advances.
+			var march := arrow.create_tween().set_loops()
+			march.tween_property(arrow, "modulate:a", 0.35, 0.35) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			march.tween_property(arrow, "modulate:a", 1.0, 0.35) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _hold() -> void:
