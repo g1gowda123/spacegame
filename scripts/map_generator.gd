@@ -388,6 +388,8 @@ var debug_elapsed: float = 0.0
 var nav_label: Label
 var debug_label: Label
 var minimap: Control
+var minimap_img: Image
+var minimap_tex: ImageTexture
 
 var player_cell := Vector2i.ZERO
 var objectives: Array[Vector2i] = []
@@ -3380,28 +3382,50 @@ func _draw_minimap() -> void:
 		"crystal": land = Color(0.42, 0.34, 0.55, 0.96)
 		"ocean": land = Color(0.33, 0.48, 0.35, 0.96)
 
-	for coord in mapped_chunks:
-		var data: Dictionary = mapped_chunks[coord]
-		var arr: Array = data["terrain"]
-		var ox: int = int(coord.x) * CHUNK
-		var oy: int = int(coord.y) * CHUNK
-		for ly in CHUNK:
-			for lx in CHUNK:
-				var gx := ox + lx
-				var gy := oy + ly
-				var rel := (Vector2(float(gx), float(gy)) - world_center) * step
-				if rel.length() > radius_px - maxf(step, 1.0):
-					continue
-				var raw := str(arr[ly * CHUNK + lx])
-				var col := land
-				if water != "" and (raw == water or raw.begins_with(water + "_")):
-					col = Color(0.07, 0.24, 0.32, 0.96)
-				elif shore != "" and raw == shore:
-					col = Color(0.55, 0.47, 0.30, 0.96)
-				elif rock != "" and raw == rock:
-					col = Color(0.40, 0.43, 0.46, 0.96)
-				var p := center + rel - Vector2(step, step) * 0.5
-				minimap.draw_rect(Rect2(p, Vector2(step, step)), col)
+	# Render the surveyed terrain into a small image and mask it by radius at
+	# pixel resolution. Drawing one rectangle per cell left 64px chunk-shaped
+	# bites out of the minimap edge; this gives the exact circular silhouette
+	# the user asked for without a SubViewport or a shader pass.
+	var map_px := 76
+	if minimap_img == null:
+		minimap_img = Image.create(map_px, map_px, false, Image.FORMAT_RGBA8)
+	else:
+		minimap_img.fill(Color(0, 0, 0, 0))
+	var img_center := Vector2(map_px, map_px) * 0.5
+	var img_radius := float(map_px) * 0.47
+	for py in map_px:
+		for px in map_px:
+			var irel := Vector2(float(px) + 0.5, float(py) + 0.5) - img_center
+			if irel.length() > img_radius:
+				continue
+			var world := world_center + irel / step
+			var gx := int(floor(world.x))
+			var gy := int(floor(world.y))
+			var coord := Vector2i(floori(float(gx) / float(CHUNK)), floori(float(gy) / float(CHUNK)))
+			if not mapped_chunks.has(coord):
+				continue
+			var data: Dictionary = mapped_chunks[coord]
+			var arr: Array = data["terrain"]
+			var lx := posmod(gx, CHUNK)
+			var ly := posmod(gy, CHUNK)
+			var raw := str(arr[ly * CHUNK + lx])
+			var col := land
+			if water != "" and (raw == water or raw.begins_with(water + "_")):
+				col = Color(0.07, 0.24, 0.32, 0.96)
+			elif shore != "" and raw == shore:
+				col = Color(0.55, 0.47, 0.30, 0.96)
+			elif rock != "" and raw == rock:
+				col = Color(0.40, 0.43, 0.46, 0.96)
+			minimap_img.set_pixel(px, py, col)
+	if minimap_tex == null:
+		minimap_tex = ImageTexture.create_from_image(minimap_img)
+	else:
+		minimap_tex.update(minimap_img)
+	minimap.draw_texture_rect(
+		minimap_tex,
+		Rect2(center - Vector2(float(map_px), float(map_px)) * 0.5, Vector2(map_px, map_px)),
+		false
+	)
 
 	for coord in mapped_chunks:
 		var data: Dictionary = mapped_chunks[coord]
