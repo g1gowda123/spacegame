@@ -1042,9 +1042,16 @@ func begin_sector(planet: Dictionary) -> void:
 	var rad := int(planet["game"]["radiation"])
 	var base_dv := int(planet["game"]["delta_v"])
 	var dv := int(round(base_dv * (float(s["delta_v"]) / 30.0))) + int(run.get("next_dv", 0)) + int(run.get("crew_dv", 0))
-	var sols := int(planet["game"]["sols"]) - (int(run.get("sector", 1)) - 1) * 2
+	var sector_no := int(run.get("sector", 1))
+	var sols := int(planet["game"]["sols"]) - (sector_no - 1) * 2
 	sols = max(18, sols + int(run.get("next_sol", 0)))
 	var integrity := maxi(1, int(s["integrity"]) + int(run.get("next_integrity", 0)) + int(run.get("crew_integrity", 0)) + _buff_int("sector_integrity"))
+	# Sector 1 is a shakedown: a little more hull, a little more time, one extra
+	# range so the first signal is reachable without a perfect route.
+	var shakedown := sector_no == 1
+	if shakedown:
+		integrity += 2
+		sols += 4
 
 	var heat_mult := float(s["heat_mult"])
 	if str(hull().get("id", "")) == "cryo":
@@ -1081,7 +1088,8 @@ func begin_sector(planet: Dictionary) -> void:
 		"power": power_max,
 		"power_max": power_max,
 		"power_regen": int(s["power_regen"]),
-		"move_range": int(s.get("move_range", hull().get("move_range", 3))),
+		"move_range": int(s.get("move_range", hull().get("move_range", 3))) + (1 if shakedown else 0),
+		"shakedown": shakedown,
 		"shield_cost": int(s["shield_cost"]),
 		"vent_power_extra": _upgrade_int("vent_power"),
 		"comms_loss": comms_loss,

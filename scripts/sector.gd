@@ -94,6 +94,10 @@ var dpad: Control
 var hold_btn: Button
 var extract_btn: Button
 var move_btn: Button
+var lz_hud: Control
+var lz_arrow: Polygon2D
+var lz_label: Label
+var lz_tag: Label
 
 var turn := 1
 var start_cell := Vector2i.ZERO
@@ -282,6 +286,8 @@ func _start_sector() -> void:
 	_draw_move_preview()
 	_spawn_pad_beacon()
 	_play_landing()
+	if bool(sec.get("shakedown", false)):
+		_show_toast("SHAKEDOWN // +2 HULL · RANGE %d" % move_range, UIKit.CYAN)
 
 
 func _play_landing() -> void:
@@ -301,6 +307,18 @@ func _spawn_pad_beacon() -> void:
 		return
 	if pad_beacon != null and is_instance_valid(pad_beacon):
 		pad_beacon.queue_free()
+	if lz_tag != null and is_instance_valid(lz_tag):
+		lz_tag.queue_free()
+	var mast := Line2D.new()
+	mast.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -28)])
+	mast.width = 2.0
+	mast.default_color = Color(0.33, 0.90, 0.82, 0.62)
+	mast.position = _cell_center(start_cell)
+	vfx_layer.add_child(mast)
+	lz_tag = UIKit.mono("LZ", 7, UIKit.CYAN)
+	lz_tag.position = _cell_center(start_cell) + Vector2(-9, -42)
+	lz_tag.size = Vector2(22, 12)
+	vfx_layer.add_child(lz_tag)
 	var ring := VFX.RingNode.new()
 	ring.position = _cell_center(start_cell)
 	ring.z_index = 2
@@ -443,6 +461,19 @@ func _build_hud() -> void:
 	extract_btn.add_theme_font_size_override("font_size", 8)
 	extract_btn.pressed.connect(_extract)
 	root.add_child(extract_btn)
+	# Landing-zone pointer: the pad is easy to lose once the board opens up.
+	# On-screen the world tag marks it; off-screen this edge arrow says where.
+	lz_hud = Control.new()
+	lz_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(lz_hud)
+	lz_arrow = Polygon2D.new()
+	lz_arrow.polygon = PackedVector2Array([Vector2(11, 0), Vector2(-5, -6), Vector2(-5, 6)])
+	lz_arrow.color = UIKit.CYAN
+	lz_hud.add_child(lz_arrow)
+	lz_label = UIKit.mono("LZ", 7, UIKit.CYAN)
+	lz_label.position = Vector2(14, -7)
+	lz_label.size = Vector2(54, 12)
+	lz_hud.add_child(lz_label)
 
 
 func _top_stat(parent: Control, x: float, name: String, color: Color, w: float = 52.0) -> Label:
@@ -641,6 +672,12 @@ func _spawn_hazard() -> void:
 
 func _hazard_budget() -> int:
 	var b := 1
+	if int(sec.get("sector", 1)) == 1:
+		# Shakedown board: one front, then a second at turn 5. Never three.
+		if turn >= 5:
+			b = 2
+		b += int(sec.get("hazard_mod", 0))
+		return clampi(b, 1, 2)
 	if turn >= 3:
 		b += 1
 	if turn >= 6:
@@ -1265,6 +1302,7 @@ func _draw_move_preview() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_lz_hud()
 	if fx_layer != null and not done:
 		# The hazard shader owns the pulse now; keep only a faint breath here so
 		# the footprint never doubles up two conflicting rhythms.
@@ -1299,6 +1337,28 @@ func _draw_minimap() -> void:
 		var a := ang - float(i) * 0.10
 		minimap.draw_line(c, c + Vector2(cos(a), sin(a)) * r,
 			Color(col.r, col.g, col.b, col.a * (1.0 - float(i) / 4.0)), 1.0, true)
+
+
+func _update_lz_hud() -> void:
+	if lz_hud == null or start_cell == Vector2i.ZERO:
+		return
+	var screen := get_viewport_rect().size
+	var p := _cell_center(start_cell)
+	var margin := 26.0
+	var on_screen := p.x > margin and p.x < screen.x - margin and p.y > margin and p.y < screen.y - margin
+	lz_hud.visible = not on_screen
+	if on_screen:
+		return
+	var center := screen * 0.5
+	var d := p - center
+	if d.length() < 0.01:
+		return
+	var dir := d.normalized()
+	var tx := (screen.x * 0.5 - margin) / maxf(absf(dir.x), 0.001)
+	var ty := (screen.y * 0.5 - margin) / maxf(absf(dir.y), 0.001)
+	lz_hud.position = center + dir * minf(tx, ty)
+	lz_arrow.rotation = dir.angle()
+	lz_label.text = "LZ %d" % int(round(player_cell.distance_to(start_cell)))
 
 
 func _render_window() -> void:
@@ -1459,6 +1519,9 @@ func _resolve_hazard() -> void:
 		total_dv += int(info["dv"])
 		total_p += int(info["power"])
 		_add_scar(player_cell, info["color"])
+	if int(sec.get("sector", 1)) == 1 and total_i > 1:
+		# First board: a single hit can never take more than one hull box.
+		total_i = 1
 	sec["integrity"] = maxi(0, int(sec["integrity"]) - total_i)
 	sec["thermal"] = clampi(int(sec["thermal"]) + total_t, 0, 100)
 	sec["delta_v"] = maxi(0, int(sec["delta_v"]) - total_dv)

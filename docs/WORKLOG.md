@@ -959,3 +959,5 @@ to the lane owner.
 - Softer impact flash: peak 0.20/0.22 s → 0.14/0.20 s; pickup 0.10. The full-screen wash was defeating the sprite effects in movie captures.
 - `screenshots/vfx_effects.png`: 8-frame evidence strip (impact, flare, shockwave, sparks/debris, shield, hex shield, pickup, extract beam) from a 30 fps `--fx=all` capture on a temperate board.
 - Playback notes for review: `--fx=all` (reel), `--hurt` (front hit), `--collect` (pickup), `--result=success|fail` (review panel).
+
+- **18:53 — Fog/structure parity.** `_draw_fog()` was defined but never invoked; added it to `_render_window()`, and made structures/pieces/props/shadows honor `_structure_visibility()` (fog bands + circular/edge fade). Evidence `dimvolc2.png`, `dimsec2.png`; no export.
