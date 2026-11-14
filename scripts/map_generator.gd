@@ -63,7 +63,7 @@ var BIOMES: Array = [
 	},
 	{
 		"id": "cryo", "name": "Cryo", "profile": "cryo", "life": "lifeless", "generator": "fractured",
-		"cliffs": false, "tint": "#ffffff", "tint_strength": 0.0,
+		"cliffs": false, "occlusion": false, "tint": "#ffffff", "tint_strength": 0.0,
 		"base": "cryo/ice_flat_a",
 		"detail": "cryo/ice_cloud_a",
 		"detail_alt": "cryo/ice_cloud_b", "detail_alt2": "cryo/ice_cloud_c",
@@ -240,12 +240,12 @@ const PROP_DENSITY: Dictionary = {
 # Small non-blocking set dressing. These sit on top of the terrain but never
 # affect movement, so they add life without turning the board into clutter.
 const PROPS: Dictionary = {
-	"temperate": ["boulder", "shrub"],
-	"arid": ["dead_bush"],
-	"cryo": ["ice_chunk", "ice_teeth"],
-	"volcanic": ["lava_rock", "sulfur_nodule"],
+	"temperate": ["boulder", "shrub", "accent_temperate_tuft", "accent_temperate_crack", "accent_temperate_bones"],
+	"arid": ["dead_bush", "accent_arid_crack", "accent_arid_bones", "accent_arid_tuft"],
+	"cryo": ["ice_chunk", "ice_teeth", "accent_cryo_crack", "accent_cryo_ice_teeth"],
+	"volcanic": ["lava_rock", "sulfur_nodule", "accent_volcanic_vent", "accent_volcanic_crack"],
 	"ocean": ["coral_shard"],
-	"barren": ["barren_rock"],
+	"barren": ["barren_rock", "accent_barren_bones", "accent_barren_crack"],
 	"methane": ["ice_chunk", "barren_rock"],
 	"iron": ["dead_bush", "barren_rock", "obsidian_shard"],
 	"sulfur": ["lava_rock", "sulfur_nodule"],
@@ -1920,7 +1920,17 @@ func _rebuild_cliffs() -> void:
 				q[0], q[1],
 				q[1] + Vector2(0, drop), q[0] + Vector2(0, drop),
 			])
-			face.color = Color(0.025, 0.035, 0.03, 0.55)
+			var face_path := "res://assets/tilesets/cliffs/face_%s.png" % str(b.get("id", "temperate"))
+			if ResourceLoader.exists(face_path):
+				face.texture = load(face_path) as Texture2D
+				face.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+				face.uv = PackedVector2Array([
+					Vector2(0, 0), Vector2(64, 0),
+					Vector2(64, drop), Vector2(0, drop),
+				])
+				face.color = Color(1.0, 1.0, 1.0, 0.9)
+			else:
+				face.color = Color(0.025, 0.035, 0.03, 0.55)
 			cliff_layer.add_child(face)
 			var lip := Line2D.new()
 			lip.points = PackedVector2Array([q[0], q[1]])
@@ -2286,6 +2296,9 @@ func _add_occlusion(s: Dictionary) -> void:
 	F6 toggles it off for clarity.
 	"""
 	if occlusion_layer == null or not bool(feature_toggles["occlusion"]):
+		return
+	var b: Dictionary = BIOMES[biome_index]
+	if not bool(b.get("occlusion", true)):
 		return
 	var info: Dictionary = STRUCTURES[s["key"]]
 	if not bool(info.get("occludes", false)):

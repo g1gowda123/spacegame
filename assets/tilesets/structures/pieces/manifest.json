@@ -1,0 +1,294 @@
+{
+  "unit_px": 64,
+  "anchor": "Each piece is drawn with its bottom edge at the south edge of its tile and its left edge at the tile's west edge. Place at (base_cell + tile) * TILE in world space; z_index from the piece's own bottom row.",
+  "shadow": "none \u2014 the renderer owns the contact ellipse",
+  "sets": {
+    "massif_4x4": {
+      "footprint": [
+        4,
+        4
+      ],
+      "pieces": [
+        {
+          "path": "pieces/massif_r0c0.png",
+          "tile": [
+            0,
+            0
+          ]
+        },
+        {
+          "path": "pieces/massif_r0c1.png",
+          "tile": [
+            1,
+            0
+          ]
+        },
+        {
+          "path": "pieces/massif_r0c2.png",
+          "tile": [
+            2,
+            0
+          ]
+        },
+        {
+          "path": "pieces/massif_r0c3.png",
+          "tile": [
+            3,
+            0
+          ]
+        },
+        {
+          "path": "pieces/massif_r1c0.png",
+          "tile": [
+            0,
+            1
+          ]
+        },
+        {
+          "path": "pieces/massif_r1c1.png",
+          "tile": [
+            1,
+            1
+          ]
+        },
+        {
+          "path": "pieces/massif_r1c2.png",
+          "tile": [
+            2,
+            1
+          ]
+        },
+        {
+          "path": "pieces/massif_r1c3.png",
+          "tile": [
+            3,
+            1
+          ]
+        },
+        {
+          "path": "pieces/massif_r2c0.png",
+          "tile": [
+            0,
+            2
+          ]
+        },
+        {
+          "path": "pieces/massif_r2c1.png",
+          "tile": [
+            1,
+            2
+          ]
+        },
+        {
+          "path": "pieces/massif_r2c2.png",
+          "tile": [
+            2,
+            2
+          ]
+        },
+        {
+          "path": "pieces/massif_r2c3.png",
+          "tile": [
+            3,
+            2
+          ]
+        },
+        {
+          "path": "pieces/massif_r3c0.png",
+          "tile": [
+            0,
+            3
+          ]
+        },
+        {
+          "path": "pieces/massif_r3c1.png",
+          "tile": [
+            1,
+            3
+          ]
+        },
+        {
+          "path": "pieces/massif_r3c2.png",
+          "tile": [
+            2,
+            3
+          ]
+        },
+        {
+          "path": "pieces/massif_r3c3.png",
+          "tile": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    "volcano_4x4": {
+      "footprint": [
+        4,
+        4
+      ],
+      "pieces": [
+        {
+          "path": "pieces/volcano_r0c0.png",
+          "tile": [
+            0,
+            0
+          ]
+        },
+        {
+          "path": "pieces/volcano_r0c1.png",
+          "tile": [
+            1,
+            0
+          ]
+        },
+        {
+          "path": "pieces/volcano_r0c2.png",
+          "tile": [
+            2,
+            0
+          ]
+        },
+        {
+          "path": "pieces/volcano_r0c3.png",
+          "tile": [
+            3,
+            0
+          ]
+        },
+        {
+          "path": "pieces/volcano_r1c0.png",
+          "tile": [
+            0,
+            1
+          ]
+        },
+        {
+          "path": "pieces/volcano_r1c1.png",
+          "tile": [
+            1,
+            1
+          ]
+        },
+        {
+          "path": "pieces/volcano_r1c2.png",
+          "tile": [
+            2,
+            1
+          ]
+        },
+        {
+          "path": "pieces/volcano_r1c3.png",
+          "tile": [
+            3,
+            1
+          ]
+        },
+        {
+          "path": "pieces/volcano_r2c0.png",
+          "tile": [
+            0,
+            2
+          ]
+        },
+        {
+          "path": "pieces/volcano_r2c1.png",
+          "tile": [
+            1,
+            2
+          ]
+        },
+        {
+          "path": "pieces/volcano_r2c2.png",
+          "tile": [
+            2,
+            2
+          ]
+        },
+        {
+          "path": "pieces/volcano_r2c3.png",
+          "tile": [
+            3,
+            2
+          ]
+        },
+        {
+          "path": "pieces/volcano_r3c0.png",
+          "tile": [
+            0,
+            3
+          ]
+        },
+        {
+          "path": "pieces/volcano_r3c1.png",
+          "tile": [
+            1,
+            3
+          ]
+        },
+        {
+          "path": "pieces/volcano_r3c2.png",
+          "tile": [
+            2,
+            3
+          ]
+        },
+        {
+          "path": "pieces/volcano_r3c3.png",
+          "tile": [
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    "ridge_2x1": {
+      "footprint": [
+        2,
+        1
+      ],
+      "pieces": [
+        {
+          "path": "pieces/ridge_crest_a.png",
+          "tile": [
+            0,
+            0
+          ]
+        },
+        {
+          "path": "pieces/ridge_crest_b.png",
+          "tile": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    "ridge_foot_2x1": {
+      "footprint": [
+        2,
+        1
+      ],
+      "pieces": [
+        {
+          "path": "pieces/ridge_foot.png",
+          "tile": [
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "parallax": [
+    "pieces/parallax_ridge_a.png",
+    "pieces/parallax_ridge_b.png"
+  ],
+  "fallback": "single-sprite structures (mountain_range/ridge_wide/volcano) stay valid",
+  "notes": [
+    "massif_4x4 is 6 jittered mountain_range copies; volcano_4x4 is volcano + lava apron + mesa rubble.",
+    "Pieces are palette-locked to temperate / volcanic respectively; tint per biome at draw time.",
+    "Collision should cover the visible base, not the transparent canvas."
+  ]
+}
