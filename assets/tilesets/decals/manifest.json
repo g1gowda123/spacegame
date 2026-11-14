@@ -1,0 +1,124 @@
+{
+  "layer": "decal (W4)",
+  "size_px": {
+    "pebbles": 24,
+    "shards": 24,
+    "flakes": 24,
+    "crack": 32,
+    "tuft": 32,
+    "bush": 32
+  },
+  "anchor": "bottom-centre, offset inside the cell by \u00b110 px",
+  "rules": {
+    "scatter_p": [
+      0.06,
+      0.09
+    ],
+    "cluster": "2-4 cells, low-frequency noise seed+6103",
+    "rotation": [
+      "crack",
+      "shards"
+    ],
+    "luma_jitter": 0.03,
+    "no_shadow": true,
+    "palette": "per biome"
+  },
+  "biomes": {
+    "temperate": {
+      "shapes": [
+        "pebbles",
+        "tuft",
+        "bush",
+        "crack"
+      ],
+      "files": [
+        "temperate/pebbles_a.png",
+        "temperate/pebbles_b.png",
+        "temperate/tuft_a.png",
+        "temperate/tuft_b.png",
+        "temperate/bush_a.png",
+        "temperate/bush_b.png",
+        "temperate/crack_a.png",
+        "temperate/crack_b.png"
+      ]
+    },
+    "arid": {
+      "shapes": [
+        "pebbles",
+        "crack",
+        "flakes",
+        "tuft"
+      ],
+      "files": [
+        "arid/pebbles_a.png",
+        "arid/pebbles_b.png",
+        "arid/crack_a.png",
+        "arid/crack_b.png",
+        "arid/flakes_a.png",
+        "arid/flakes_b.png",
+        "arid/tuft_a.png",
+        "arid/tuft_b.png"
+      ]
+    },
+    "volcanic": {
+      "shapes": [
+        "flakes",
+        "pebbles",
+        "crack"
+      ],
+      "files": [
+        "volcanic/flakes_a.png",
+        "volcanic/flakes_b.png",
+        "volcanic/pebbles_a.png",
+        "volcanic/pebbles_b.png",
+        "volcanic/crack_a.png",
+        "volcanic/crack_b.png"
+      ]
+    },
+    "cryo": {
+      "shapes": [
+        "shards",
+        "pebbles",
+        "crack"
+      ],
+      "files": [
+        "cryo/shards_a.png",
+        "cryo/shards_b.png",
+        "cryo/pebbles_a.png",
+        "cryo/pebbles_b.png",
+        "cryo/crack_a.png",
+        "cryo/crack_b.png"
+      ]
+    },
+    "ocean": {
+      "shapes": [
+        "pebbles",
+        "shards"
+      ],
+      "files": [
+        "ocean/pebbles_a.png",
+        "ocean/pebbles_b.png",
+        "ocean/shards_a.png",
+        "ocean/shards_b.png"
+      ]
+    },
+    "barren": {
+      "shapes": [
+        "pebbles",
+        "flakes",
+        "crack",
+        "tuft"
+      ],
+      "files": [
+        "barren/pebbles_a.png",
+        "barren/pebbles_b.png",
+        "barren/flakes_a.png",
+        "barren/flakes_b.png",
+        "barren/crack_a.png",
+        "barren/crack_b.png",
+        "barren/tuft_a.png",
+        "barren/tuft_b.png"
+      ]
+    }
+  }
+}
