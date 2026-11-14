@@ -910,7 +910,7 @@ func _build_ui() -> void:
 	dpad.add_child(_blank_cell())
 
 	var hint := Label.new()
-	hint.text = "WASD move • B biome • V view • F4 mountains • F5 outposts • F6 sight • F7 props • F8 sky • H UI"
+	hint.text = "WASD move • B biome • V view • F4 mountains • F5 outposts • F6 sight • F7 props • F8 sky • F9 debug • H UI"
 	hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	hint.offset_left = 10.0
 	hint.offset_right = 500.0
@@ -2188,6 +2188,9 @@ func _render_window() -> void:
 	tilemap.clear()
 	underlay.clear()
 	rockmap.clear()
+	if debug_layer != null:
+		for child in debug_layer.get_children():
+			child.free()
 	var b: Dictionary = BIOMES[biome_index]
 	var rock := str(b.get("rock", ""))
 	var base_key := str(b["base"])
