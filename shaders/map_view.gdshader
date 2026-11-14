@@ -17,9 +17,9 @@ uniform vec4 biome_tint : source_color = vec4(1.0);
 uniform float biome_tint_strength = 0.0;
 uniform vec2 camera_offset = vec2(0.0);
 uniform int circle_view = 1;
-uniform float circle_radius = 0.44;
+uniform float circle_radius = 0.34;
 uniform float circle_soft = 0.045;
-uniform float circle_outer = 0.58;
+uniform float circle_outer = 0.43;
 uniform float circle_outer_soft = 0.06;
 
 void fragment() {

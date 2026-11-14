@@ -408,3 +408,15 @@ Direct follow-up to d's 16:05 report. Supersedes Q5's "2 open bugs" line: both a
 | Density regression | **DONE** | 28 / 1,064 chunks over 25% (unchanged) |
 | Water diagnostics | **DONE** | `water_probe --diagcheck`: `diag_missing_by_key {}`, `tiny_water_cells 0` |
 | Residual seam-straddling 2-cell holes | **NOTE** | 8 total; require a 2-cell smoothed halo (raw pad 3); not worth the cost at 0.001/chunk |
+
+## Autonomous pass (NOVA, 16:56)
+
+| Task | Status | Owner | Notes |
+|---|---|---|---|
+| U2 — wire VEGA's `skin_dark` buttons | **PARTIAL DONE 16:56** | NOVA | Secondary buttons use `button_idle/hover/pressed`; primary teal buttons and layout unchanged. No art edits. Evidence `qa_title_skin.png`, `qa_design_skin.png`, `qa_skin_crew.png`. |
+| Density/scale retune + unique 4×4 landmark | **DONE 16:56** | NOVA | Temperate gets one 4×4 massif; other ridges use `mountain_range` at 1.75; volcanic/sulfur/obsidian start with a 4×4 volcano (Lake District no longer swaps it for a geyser); lander 0.82. |
+| Biome-specific ambient life | **DONE 16:56** | NOVA | Dust motes tinted/directed per biome (snow in cryo, embers in volcanic, dust in arid, spores in temperate); lander hover, breathing shadow, pulsing beacons/hazard, movement puff. |
+| Cliff face height | **DONE 16:56** | NOVA | Existing `face_*` plateau rims raised 6→12 px; no new art. |
+| Reachability after landmark/density change | **DONE 16:56** | NOVA/b | `tools/audit_reach.gd`: 600 seeds, 2,400 objectives, **0 unreachable**. |
+| Parallax ridge wiring | **BLOCKED / not visible** | ATLAS | `parallax_ridge_a/b.png` exist, but a TextureRect on `space_layer` did not read in capture; needs ATLAS to choose the correct layer. Removed from NOVA's code. |
+| 4×4 grand landmarks for cryo/arid/barren | **REQUESTED — VEGA ONLY** | VEGA | `iceberg_4x4`, `mesa_4x4`, `crater_4x4` in the existing piece manifest format; only the artist gets this. |
