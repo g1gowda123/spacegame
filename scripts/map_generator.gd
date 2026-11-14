@@ -1098,7 +1098,7 @@ func _place_start_landmark() -> void:
 	var key := "mountain_massif" if biome_id == "temperate" else "mountain_range"
 	match biome_id:
 		"volcanic":
-			key = "geyser"
+			key = "volcano"
 		"arid":
 			key = "mesa" if randf() < 0.55 else "mesa_b"
 		"cryo":
@@ -1112,11 +1112,11 @@ func _place_start_landmark() -> void:
 		"iron":
 			key = "mesa" if randf() < 0.55 else "mesa_b"
 		"sulfur":
-			key = "geyser"
+			key = "volcano"
 		"crystal":
 			key = "crystal_outcrop"
 		"obsidian":
-			key = "geyser"
+			key = "volcano"
 		"ammonia":
 			key = "iceberg"
 		"carbon":

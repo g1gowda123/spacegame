@@ -209,8 +209,18 @@ func _build() -> void:
 	barcode.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue.add_child(barcode)
 
+	var id_icon := TextureRect.new()
+	id_icon.texture = load("res://assets/sprites/crew/director_icon.png")
+	id_icon.position = Vector2(9, 6)
+	id_icon.size = Vector2(16, 16)
+	id_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	id_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	id_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	id_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue.add_child(id_icon)
+
 	nameplate = UIKit.label("DR. IMANI VALE  //  EXECUTIVE SECRETARY", 7, SIGNAL, true)
-	nameplate.position = Vector2(12, 8)
+	nameplate.position = Vector2(30, 8)
 	nameplate.size = Vector2(330, 14)
 	dialogue.add_child(nameplate)
 
