@@ -1357,3 +1357,9 @@ than a screen from another build.
     5. Clean separation of over 110 pixels between plaque and spacecraft with zero overlap.
   - Verification: Live native capture `launch_side_left_sub.png` verified, headless smoke exit 0, audit_data 49/49 PASS.
   - Git: Committed locally, not pushed.
+
+## 15:04 — VFX — star columns fixed (baked into the plate)
+- The vertical dotted columns in the title/launch RHS were **not** the shader or a UI grid: they were in `assets/backgrounds/space.png`. The AI-generated plate had stars clustered on repeated x positions; upscaled 3× they read as vertical lines. Hiding the star rect removed them only because it removed the plate.
+- Rebuilt the plate at the same 640×360 size: median-filtered the baked stars out, kept the nebula/background, then stamped 260 deterministic random stars (plus a few 4-way cross stars) at `params seed 20261115`. Original saved at `/tmp/opencode/vfx/space_orig.png`; the project backup `nasa_copy_20261115` also has it.
+- Also hardened `star_drift.gdshader`: Hoskins 2D hash (the old one repeated every ~50 cells), twinkle is a continuous two-axis sine instead of per-cell hash, the stepped spark gate is gone, and `resolution` is pinned to the source plate size rather than the window size.
+- Verified title/launch/sector at 640 and 1920: pure-sky bright-pixel x histogram is flat, no columns. Launch subsequent-phase RHS and title RHS both clean.
