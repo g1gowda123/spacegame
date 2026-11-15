@@ -1357,3 +1357,13 @@ than a screen from another build.
 - `debrief.gd`: the sector report's ship slides in 7 px from the panel edge over 0.36 s while fading up; the flame is already running when it lands.
 - `report.gd`: grade lands with a 1.42→1.0 back-ease stamp and the total counts 0→score over 0.72 s. Captures at 1.6 s settle on the final value.
 - Verified: title at 2 s and 12 s (planet weather/turn differs, no backface holes), draft/debrief/design/report captures at 640 and 1920, flowtest 5369/S. No push.
+
+## 14:40 — VEGA — upgrade sprites regenerated through Pixel Art XL (styles + subjects)
+- Problem reported twice: shop portraits "out of place compared to other art ingame", then "search what the component is before creating it". Both were true — the set used LoRA 0.55 and generic prompts, so a loop heat pipe looked like a shuttle.
+- `tools/gen_module_art.py` now: LoRA **1.0**, style suffix "chunky flat shading, thick dark outline, limited desaturated palette, teal and orange accents … simple bold silhouette, two or three large shapes, readable at small size", background `flat magenta … no backdrop`, negatives for backing shapes/haloes.
+- Every prompt rewritten from the component the shop name actually names (`scripts/game_state.gd` ids): RW gyrodyne → reaction wheel disc in a square housing; HALL → ceramic cylinder with a glowing discharge ring; MMRTG → finned canister; RFC → spherical tanks around a cell stack; LHP → pipe loop with evaporator + condenser; CRYO → cryocooler coil; Whipple → bumper plate on standoffs; COMPOSITE SHELL → hull cross-section slab; X-BAND/KA-BAND → dish on a gimbal; SSR → recorder rack with slots; MASS SPEC → vacuum chamber with magnet ring + inlet; MULTI-SENSOR → three-aperture turret; CONTRACT RIDER → data chit in a reader; FIELD KIT → tool case.
+- Pixel grid: after the fit, the icon is halved and nearest-upscaled 2× so its pixels match tile density instead of being smooth at 128 px.
+- Keying hardened: bright studio cards (keyed by whiteness), magenta sheets (hue), and any large pale plate that reaches the frame edge is dropped.
+- Regenerated all 26 `assets/sprites/modules/<id>.png` + 26 `ship/<id>.png` (64×48) + 12 `buffs_hd/` icons (four buff prompts rewritten: senate token, gravity-assist arc, traverse pack, flight recorder). Contact sheet `assets/sprites/modules/preview.png`.
+- Still weak and worth a second pass: `whipple2` (reads as debris), `armor2` (busy), `wheel2`/`coolant2`/`radiator2` (pale backing plate survives), `ranger` (pale backdrop).
+- `tools/ensure_comfy.sh` added: ComfyUI gets OOM-killed while `effectcraft-cli` holds 3.7 GB; the script restarts it with `--lowvram` before a batch.
