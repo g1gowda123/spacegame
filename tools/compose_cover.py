@@ -70,8 +70,9 @@ def main() -> None:
     # 1280x1024 -> 630x500 (1.26:1). A small crop, never a screenshot crop.
     im = ImageOps.fit(im, (630, 500), method=Image.Resampling.LANCZOS,
                       centering=(0.52, 0.50))
-    im = ImageEnhance.Contrast(im).enhance(1.035)
-    im = ImageEnhance.Color(im).enhance(1.04)
+    im = ImageEnhance.Brightness(im).enhance(1.06)
+    im = ImageEnhance.Contrast(im).enhance(1.07)
+    im = ImageEnhance.Color(im).enhance(1.12)
     im = im.convert("RGBA")
 
     top_gradient(im, 200, 246)

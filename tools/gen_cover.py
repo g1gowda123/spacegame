@@ -34,6 +34,17 @@ BASE_W, BASE_H = 1280, 1024
 HIRES_W, HIRES_H = 1920, 1536
 
 PROMPTS = {
+    "e": (
+        "store cover art for a turn-based exoplanet survey game, "
+        "isometric tactical map diorama floating in a dark sky, alien tidal marsh: "
+        "pale violet and mauve mineral ground, shallow teal channels full of flat water, "
+        "black basalt spires with thin cyan beacon lights, scattered reeds and shell crust, "
+        "a boxy survey lander with a high-gain dish on a raised shelf and a trail of glowing data nodes, "
+        "a large ringed planet and two small moons above the diorama, soft fog at the edges, "
+        "bright rose, violet and emerald palette with burnt-orange accents, "
+        "even lighting, crisp pixel-art edges, wide composition with calm dark sky at the top, "
+        "16-bit pixel-art illustration, no text, no letters, no UI, no frame"
+    ),
     "d": (
         "cover illustration for a turn-based exoplanet survey game, "
         "alien tidal marsh under a teal and heliotrope sky, shallow reflective water broken by "
