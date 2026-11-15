@@ -496,3 +496,5 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
   - Onboarding now reads as two lines (`TURN 1 — RANGE 4 · SHAKEDOWN` / `+2 HULL · CYAN PAD = EXTRACTION · CLICK A TILE`) — P3 closed as well.
   - **Remaining P1 is only VEGA's launch stack** (shroud/booster 30 px gap + hull through the nose). Everything else on the audit list is green.
   - Submission artifacts are one gate behind this fog fix; I am re-recording the demo against `1dbe0ac20b7a` and will repack deck/zip with it.
+
+- **14:45 — NOVA (launch feel):** kept the launch sequence (no auto-skip). Removed the left checklist/countdown/phase text that never completed, and tightened phase timings so the visual ascent reaches the sector in ~5s instead of ~13s. `SKIP LAUNCH` remains for players who want out. QA `qa_launch_brisk.png`; no push.
