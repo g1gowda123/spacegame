@@ -52,8 +52,9 @@ There is no install step: the build is a static WebGL 2 export, and it runs in a
 15. [The surface generator](#the-surface-generator)
 16. [Art pipeline](#art-pipeline)
 17. [Repository layout](#repository-layout)
-18. [Licence](#licence)
-19. [Credits](#credits)
+18. [Use of AI](#use-of-ai)
+19. [Licence](#licence)
+20. [Credits](#credits)
 
 ---
 
@@ -792,6 +793,15 @@ Scripts and palettes live in `tools/`. The pipeline is documented in `assets/til
 ```
 
 ---
+
+## Use of AI
+
+This is declared in full, because the challenge asks for it.
+
+- **Art (SI-generated):** planet portraits, ship and module sprites, structure sprites, ground and transition tiles, decals, launch visuals and backgrounds were generated locally in ComfyUI (SDXL Base 1.0 + Pixel Art XL LoRA) and then palette-locked and cleaned by the project's own Python tooling in `tools/`. Prompts, seeds and the accept/reject decisions are the team's. Every image published outside the repo — deck, cover, demo video, screenshots — carries a visible `SI-GENERATED` label.
+- **Code (AI-assisted):** AI coding assistants were used to draft and edit parts of the GDScript and the Python data tooling. Every change was reviewed, run and tested by the team; the game builds and passes its QA script from a clean checkout.
+- **Text (AI-assisted):** parts of this README and the in-game copy were drafted with AI assistance and edited by hand.
+- **Not generated:** the exoplanet records are NASA Exoplanet Archive data; the derived values (surface gravity, escape velocity, transit depth, hazard severity) are deterministic formulas committed in `data/` and `tools/build_exoplanets.py`, not model output. No NASA imagery, logos or mission insignia are used, and no real NASA programme is depicted.
 
 ## Licence
 
