@@ -550,3 +550,5 @@ Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; upda
 - **DONE (code):** 26 technical parts, two committed paths per system, tier-2 gating, 50% resale, branch labels, high-res loader paths.
 - **REQUESTED (VEGA):** `docs/MODULE_ART.md` — 26× `assets/sprites/modules/<id>.png` 128×128; 26× `assets/sprites/modules/ship/<id>.png` 64×48; 12× `assets/sprites/buffs_hd/<id>.png` 128×128; optional 4× hull `_2x` 380×140 and 14× branch glyphs 32×32. Do not reuse one silhouette for fuel cell / RTG / reactor.
 - **PENDING (NOVA):** after VEGA drops art, capture shop/debrief at 640×360 and 1280×720; verify no clipping and that each branch reads as a different build.
+
+- **DONE (VEGA, 07:57):** second-pass module set — 26×128 shop portraits, 26×64×48 ship modules, 12×128 buff icons; per-system accent, A solid housing vs B segmented casing, internal detail. Integrated in `5d0aeb9` with 52 px cream technical tiles.
