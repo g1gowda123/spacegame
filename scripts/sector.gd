@@ -260,6 +260,14 @@ func _ready() -> void:
 			player_cell = extract_cell
 			sec["data"] = int(sec["quota"])
 			_extract()
+		elif arg == "--cache-test":
+			# QA hook: walk onto the first optional cache and credit it.
+			print("CACHE_TEST n=", data_caches.size(), " data=", int(sec["data"]))
+			if not data_caches.is_empty():
+				player_cell = data_caches[0]
+				_collect_node_at(player_cell)
+				_refresh_status()
+				print("CACHE_AFTER data=", int(sec["data"]), " taken=", cache_taken)
 		elif arg == "--partial-extract-test":
 			# QA hook: confirm the two-step partial bailout path.
 			player_cell = extract_cell

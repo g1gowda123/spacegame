@@ -124,7 +124,7 @@ The 2026 rubric: **Impact, Creativity, Validity, Relevance, Presentation**.
 | **A Learning Game About Telescopes** | Instruments should answer the science question | `SCIENCE FIT +10%` when the payload matches the objective | `scripts/game_state.gd` |
 | **CubeSat 101** | A compressed ConOps with mass, power, thermal, data and budget lines | The whole run: design → launch → surface ops → downlink → end of mission | final report |
 | **CSA digital games and activities** | Short, readable, pick-up-and-play browser games | 640×360, 10–15 minute run, mouse/touch, no install | `project.godot`, `build/web/` |
-| **Chen & Kipping (2017)** *(external paper, not NASA)* | Mass–radius relation for missing or implausible masses | Flagged `mass_est: true` in the data and on the card | `tools/build_exoplanets.py` |
+| **Chen & Kipping (2017)** *(external paper, not NASA)* | Mass–radius relation for missing or implausible masses | Flagged `mass_est: true` in `data/exoplanets.json`; the raw archive CSV is unchanged | `tools/build_exoplanets.py` |
 
 **What we do not use:** no NASA logos, flags, mission identifiers or NASA imagery — the event name appears only as plain text. All in-game art is original, AI-generated art, disclosed in [Credits](#credits).
 

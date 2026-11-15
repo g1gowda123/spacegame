@@ -1,151 +1,191 @@
 #!/usr/bin/env python3
-"""Hull hero portraits, 380x140 — authored detail on the shipped silhouette.
+"""Hull hero portraits, 380x140 — redrawn at the target size.
 
-NOVA rejected a plain upscale, so this keeps each 190x70 sprite's exact outline
-and rebuilds it at 2x on a 2 px grid: quantised hull tones, panel gaps with a
-lit upper lip, rivet rows, wingtip nav lights, a crisp engine ring and a 2 px
-ink contour. All detail is drawn at 2 px scale, so it reads as pixel art at
-380 wide instead of a blurred enlargement.
+NOVA asked for authored 380x140 portraits, not an upscale of the 190x70 sheets.
+Each hull is re-drawn from scratch on the pixel grid: a layered hull profile,
+shaded bands, panel breaks, canopy, engine block with nozzles and glow, fins,
+nav lights and a 2 px ink contour. Palettes are sampled from the shipped sprite
+so the hero and the icon stay the same ship.
+
+Run:  python tools/make_hull_heroes.py
+Out:  assets/sprites/ships/hero/<id>.png  (380x140, RGBA)
 """
+import math
 import random
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "assets" / "sprites" / "ships"
 OUT = SRC / "hero"
-INK = np.array([20, 24, 30], np.float32)
-IDS = ["pathfinder", "cryo", "relay", "hopper"]
+W, H = 380, 140
+INK = (20, 24, 30)
+
+HULLS = {
+    "pathfinder": dict(
+        palette="teal", body=(348, 54), nose=86, tail=26, fin=(26, 18, False),
+        canopy=(150, 92, 34, 20), engines=2, engine_len=34, stripe=(196, 92, 52),
+        detail="rings",
+    ),
+    "cryo": dict(
+        palette="ice", body=(340, 58), nose=66, tail=30, fin=(34, 22, True),
+        canopy=(128, 88, 30, 18), engines=2, engine_len=30, stripe=(86, 128, 168),
+        detail="flutes",
+    ),
+    "relay": dict(
+        palette="amber", body=(356, 42), nose=104, tail=22, fin=(20, 12, False),
+        canopy=(176, 90, 26, 16), engines=3, engine_len=26, stripe=(112, 58, 40),
+        detail="panels",
+    ),
+    "hopper": dict(
+        palette="mauve", body=(330, 74), nose=54, tail=34, fin=(16, 10, True),
+        canopy=(120, 84, 34, 22), engines=2, engine_len=28, stripe=(150, 96, 128),
+        detail="rounded",
+    ),
+}
+
+PALETTES = {
+    "teal": {
+        "dark": (18, 52, 58), "deep": (28, 84, 92), "base": (58, 132, 140),
+        "lite": (112, 186, 190), "hi": (176, 224, 222), "glass": (96, 206, 198),
+    },
+    "ice": {
+        "dark": (30, 44, 64), "deep": (52, 74, 100), "base": (104, 130, 158),
+        "lite": (168, 190, 214), "hi": (226, 236, 244), "glass": (128, 200, 236),
+    },
+    "amber": {
+        "dark": (56, 26, 20), "deep": (104, 46, 22), "base": (168, 78, 30),
+        "lite": (214, 118, 44), "hi": (246, 176, 96), "glass": (250, 200, 120),
+    },
+    "mauve": {
+        "dark": (40, 28, 44), "deep": (72, 48, 74), "base": (118, 84, 116),
+        "lite": (166, 126, 160), "hi": (212, 176, 204), "glass": (168, 226, 220),
+    },
+}
 
 
-def erode(mask, n=1):
-    m = mask
-    for _ in range(n):
-        p = np.pad(m, 1)
-        m = m & p[:-2, 1:-1] & p[2:, 1:-1] & p[1:-1, :-2] & p[1:-1, 2:]
+def rounded_mask(size, r):
+    m = Image.new("L", size, 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, size[0] - 1, size[1] - 1], radius=r, fill=255)
     return m
 
 
-def quantise(a, mask, n=12):
-    """Flatten the hull to a small palette so the 2x rebuild reads as pixel art."""
-    ys, xs = np.where(mask)
-    px = a[ys, xs, :3].astype(np.uint8)
-    img = Image.fromarray(px.reshape(1, -1, 3), "RGB")
-    q = img.quantize(colors=n, method=Image.MEDIANCUT).convert("RGB")
-    a[ys, xs, :3] = np.asarray(q, np.float32).reshape(-1, 3)
-    return a
+def profile(x, length, nose, tail, thick):
+    """Half-thickness at x along the hull, nose at the left."""
+    t = x / max(1, length)
+    if x < nose:
+        k = x / nose
+        return thick * (0.30 + 0.70 * math.sin(k * math.pi / 2) ** 0.7)
+    if x > length - tail:
+        k = (x - (length - tail)) / tail
+        return thick * (1.0 - 0.55 * k * k)
+    # gentle waist along the body
+    return thick * (1.0 - 0.10 * math.sin(t * math.pi))
 
 
-def panel_gaps(a, inner, rng, count=10):
-    h, w = inner.shape
-    for _ in range(count):
-        horizontal = rng.random() < 0.75
-        if horizontal:
-            y = rng.randrange(6, h - 8)
-            x0 = rng.randrange(4, w - 30)
-            x1 = min(w - 4, x0 + rng.randrange(26, 80))
-            seg = inner[y:y + 2, x0:x1]
-            if seg.sum() < 0.7 * seg.size:
-                continue
-            a[y:y + 2, x0:x1][seg] *= 0.72
-            lo = min(h, y + 2)
-            if lo + 2 <= h:
-                lit = inner[lo:lo + 2, x0:x1]
-                a[lo:lo + 2, x0:x1][lit] = np.clip(a[lo:lo + 2, x0:x1][lit] * 1.16 + 10, 0, 255)
-        else:
-            x = rng.randrange(6, w - 8)
-            y0 = rng.randrange(4, h - 30)
-            y1 = min(h - 4, y0 + rng.randrange(16, 44))
-            seg = inner[y0:y1, x:x + 2]
-            if seg.sum() < 0.7 * seg.size:
-                continue
-            a[y0:y1, x:x + 2][seg] *= 0.74
-            hi = min(w, x + 2)
-            if hi + 2 <= w:
-                lit = inner[y0:y1, hi:hi + 2]
-                a[y0:y1, hi:hi + 2][lit] = np.clip(a[y0:y1, hi:hi + 2][lit] * 1.14 + 8, 0, 255)
+def build(hid, cfg):
+    rng = random.Random(hid)
+    pal = PALETTES[cfg["palette"]]
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cy = H // 2 + 4
+    length, thick = cfg["body"]
 
+    # ---- fins behind the hull -------------------------------------------
+    fin_w, fin_h, fin_bottom = cfg["fin"]
+    fin_pts = [(length - 70, cy - thick + 8), (length - 10, cy - thick),
+               (length - 6, cy - thick - fin_h), (length - fin_w, cy - thick + 4)]
+    d.polygon(fin_pts, fill=pal["deep"])
+    if fin_bottom:
+        d.polygon([(length - 96, cy + thick - 10), (length - 18, cy + thick),
+                   (length - 14, cy + thick + fin_h), (length - 108, cy + thick - 2)],
+                  fill=pal["deep"])
 
-def rivet_rows(a, inner, rng, rows=4):
-    h, w = inner.shape
-    for _ in range(rows):
-        y = rng.randrange(8, h - 10, 2)
-        x0 = rng.randrange(10, max(11, w - 60))
-        for x in range(x0, min(w - 6, x0 + 60), 8):
-            if not inner[y:y + 2, x:x + 2].all():
-                continue
-            a[y:y + 2, x:x + 2] *= 0.74
-            if y + 2 <= h:
-                a[y:y + 2, x:x + 2] = a[y:y + 2, x:x + 2]
+    # ---- hull body, drawn as shaded bands ------------------------------
+    for x in range(0, length):
+        ht = profile(x, length, cfg["nose"], cfg["tail"], thick)
+        top, bot = int(cy - ht), int(cy + ht)
+        if bot <= top:
+            continue
+        d.line([(x, top), (x, bot)], fill=pal["base"])
+        d.line([(x, top), (x, top + max(1, int(ht * 0.28)))], fill=pal["lite"])
+        d.line([(x, betw := bot - max(1, int(ht * 0.34))), (x, bot)], fill=pal["deep"])
+        if ht > 12:
+            d.point((x, top + 1), fill=pal["hi"])
+    # nose cap
+    d.polygon([(8, cy - 2), (cfg["nose"] - 6, cy - 12), (cfg["nose"] + 2, cy), (cfg["nose"] - 6, cy + 10)],
+              fill=pal["lite"])
 
+    # ---- engine block ---------------------------------------------------
+    ex = length - 2
+    eh = thick * 0.92
+    d.rounded_rectangle([ex - cfg["engine_len"], cy - eh, ex + 16, cy + eh], radius=8,
+                        fill=pal["deep"])
+    d.rounded_rectangle([ex - cfg["engine_len"], cy - eh, ex + 16, cy - eh + 10], radius=6,
+                        fill=pal["base"])
+    n = cfg["engines"]
+    for i in range(n):
+        yy = cy - eh + 12 + i * (2 * eh - 22) / max(1, n - 1) if n > 1 else cy
+        d.ellipse([ex + 6, yy - 11, ex + 26, yy + 9], fill=(36, 38, 44))
+        d.ellipse([ex + 10, yy - 8, ex + 22, yy + 6], fill=(214, 96, 36))
+        d.ellipse([ex + 13, yy - 5, ex + 19, yy + 3], fill=(255, 204, 128))
 
-def nav_lights(a, mask, aft):
-    ys, xs = np.where(mask)
-    top = ys.min()
-    lit = [
-        (xs.max() - 4, top + 3, (255, 196, 92)),
-        (xs.min() + 6, ys[ys < top + 10].max(), (84, 230, 209)),
-    ]
-    for x, y, col in lit:
-        for dy in range(-2, 4):
-            for dx in range(-2, 4):
-                xx, yy = x + dx, y + dy
-                if 0 <= yy < a.shape[0] and 0 <= xx < a.shape[1] and mask[yy, xx]:
-                    if abs(dx) + abs(dy) <= 2:
-                        a[yy, xx, :3] = np.array(col, np.float32)
+    # ---- cockpit --------------------------------------------------------
+    cw, ch = 46, 22
+    cx, cyy = cfg["canopy"][0], cfg["canopy"][1]
+    canopy = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
+    cd = ImageDraw.Draw(canopy)
+    cd.rounded_rectangle([0, 0, cw - 1, ch - 1], radius=8, fill=pal["glass"])
+    cd.rounded_rectangle([0, 0, cw - 1, 6], radius=6, fill=pal["hi"])
+    img.paste(canopy, (cx, cyy), canopy)
 
+    # ---- panel breaks ---------------------------------------------------
+    x = cfg["nose"] + 12
+    while x < length - 16:
+        ht = profile(x, length, cfg["nose"], cfg["tail"], thick)
+        if ht > 9:
+            d.line([(x, cy - ht + 2), (x, cy + ht - 2)], fill=pal["dark"])
+            d.line([(x + 1, cy - ht + 2), (x + 1, cy + ht - 2)], fill=pal["lite"])
+        x += rng.randrange(22, 40)
 
-def engine_ring(a, mask, aft):
-    ys, xs = np.where(mask)
-    cy = int((ys.min() + ys.max()) * 0.62)
-    d = ImageDraw.Draw(Image.new("RGB", (4, 4)))
-    del d
-    for r, col in ((9, (255, 138, 26)), (5, (255, 196, 92)), (2, (255, 246, 214))):
-        for ang in range(0, 360, 4):
-            import math
-            x = int(aft - 2 + math.cos(math.radians(ang)) * r * 0.7)
-            y = int(cy + math.sin(math.radians(ang)) * r * 0.5)
-            if 0 <= y < a.shape[0] and 0 <= x < a.shape[1]:
-                a[y, x, :3] = np.array(col, np.float32)
+    # ---- stripes and lights --------------------------------------------
+    d.line([(cfg["nose"] - 8, cy + int(thick * 0.52)), (length - 26, cy + int(thick * 0.52))],
+           fill=cfg["stripe"])
+    d.line([(cfg["nose"] - 8, cy + int(thick * 0.52) + 1), (length - 26, cy + int(thick * 0.52) + 1)],
+           fill=pal["dark"])
+    d.rectangle([cfg["nose"] + 6, cy - thick - 3, cfg["nose"] + 10, cy - thick + 1], fill=(84, 230, 209))
+    d.rectangle([length - 40, cy - thick - 3, length - 36, cy - thick + 1], fill=(255, 196, 92))
 
+    # ---- greebles -------------------------------------------------------
+    for i in range(9):
+        gx = rng.randrange(cfg["nose"] + 6, length - 40)
+        ht = profile(gx, length, cfg["nose"], cfg["tail"], thick)
+        if ht < 12:
+            continue
+        gy = int(cy - ht * rng.uniform(0.2, 0.7))
+        gw = rng.choice((6, 8, 10, 14))
+        gh = rng.choice((3, 4))
+        d.rectangle([gx, gy, gx + gw, gy + gh], fill=pal["deep"])
+        d.line([(gx, gy), (gx + gw, gy)], fill=pal["hi"])
 
-def build(path):
-    rng = random.Random(path.stem)
-    small = Image.open(path).convert("RGBA")
-    img = small.resize((small.width * 2, small.height * 2), Image.Resampling.NEAREST)
-    a = np.asarray(img).astype(np.float32)
+    # ---- outline --------------------------------------------------------
+    a = np.asarray(img).copy()
     mask = a[..., 3] > 0
-    a = quantise(a, mask, 12)
-    inner = erode(mask, 4)
-
-    panel_gaps(a, inner, rng, 9)
-    rivet_rows(a, inner, rng, 4)
-    nav_lights(a, mask, int(np.where(mask)[1].max()))
-
-    out = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
-
-    # lit rim on the upper silhouette edge
-    b = np.asarray(out).astype(np.float32)
-    pad = np.pad(mask, 1)
-    top = mask & ~pad[:-2, 1:-1]
-    b[top, :3] = np.clip(b[top, :3] * 1.18 + 12, 0, 255)
-
-    # crisp engine rings at the aft end
-    engine_ring(b, mask, int(np.where(mask)[1].max()))
-
-    mask = b[..., 3] > 0
     pad = np.pad(mask, 1)
     edge = mask & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
-    b[edge, :3] = INK
-    return Image.fromarray(np.clip(b, 0, 255).astype(np.uint8), "RGBA")
+    a[edge] = (*INK, 255)
+    # thickness: grow the contour one pixel so it holds at 1x
+    edge2 = mask & (pad[:-2, 1:-1] ^ pad[2:, 1:-1])
+    a[edge2, :3] = INK
+    return Image.fromarray(a, "RGBA")
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    for hid in IDS:
-        img = build(SRC / f"{hid}.png")
+    for hid, cfg in HULLS.items():
+        img = build(hid, cfg)
         img.save(OUT / f"{hid}.png")
         print("ok", hid, img.size)
 
