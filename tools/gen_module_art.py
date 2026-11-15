@@ -78,8 +78,8 @@ def gen(prompt, out, seed):
     cmd = [PY, str(GEN), prompt + ", single piece of spacecraft hardware, engineering part, " + style,
            "--out", str(out), "--size", "1024", "--gen-size", "1024",
            "--seed", str(seed), "--lora", "1.0", "--no-pixelize", "--bg", "magenta",
-           "--view", "product shot, three-quarter view, centred, isolated on flat magenta, flat even lighting",
-           "--negative-extra", "text, watermark, logo, frame, border, hands, person, multiple objects, blurry, photo, landscape, terrain"]
+           "--view", "product shot, three-quarter view, centred, one isolated object on a flat magenta background that fills the frame, nothing behind it, no backing shape, flat even lighting",
+           "--negative-extra", "text, watermark, logo, frame, border, hands, person, multiple objects, blurry, photo, landscape, terrain, background shape, circle behind, ring, halo, badge, emblem behind, glow, gradient background, vignette"]
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
