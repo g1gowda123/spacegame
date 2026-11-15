@@ -96,14 +96,6 @@ func configure(opts: Dictionary) -> void:
 	if opts.has("planet_asset"):
 		_planet_asset = str(opts["planet_asset"])
 		_load_planet(_planet_asset)
-	if opts.has("planet_light") and _planet_mat != null:
-		_planet_mat.set_shader_parameter("light_angle", float(opts["planet_light"]))
-	if opts.has("atmosphere") and _planet_mat != null:
-		_planet_mat.set_shader_parameter("atmosphere", float(opts["atmosphere"]))
-	if opts.has("bright") and _star_mat != null:
-		_star_mat.set_shader_parameter("bright", float(opts["bright"]))
-	if opts.has("nebula") and _star_mat != null:
-		_star_mat.set_shader_parameter("nebula", float(opts["nebula"]))
 	if opts.has("motion"):
 		_motion = bool(opts["motion"])
 		set_process(_motion)
