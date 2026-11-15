@@ -449,7 +449,9 @@ func _build_scene_layers() -> void:
 	for i in range(3):
 		var cloud_path := "res://assets/sprites/vehicles/cloud_band_%d.png" % i
 		if ResourceLoader.exists(cloud_path):
-			_cloud_textures.append(load(cloud_path) as Texture2D)
+			var ct := load(cloud_path) as Texture2D
+			if ct != null:
+				_cloud_textures.append(ct)
 
 	# 4. Ground & Launch Pad
 	_ground_root = Control.new()
@@ -463,13 +465,15 @@ func _build_scene_layers() -> void:
 
 	var pad_art := "res://assets/sprites/vehicles/launch_pad.png"
 	if ResourceLoader.exists(pad_art):
-		_pad_sprite = Sprite2D.new()
-		_pad_sprite.texture = load(pad_art) as Texture2D
-		_pad_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_pad_sprite.centered = false
-		_pad_sprite.scale = Vector2(0.5, 0.5)
-		_pad_sprite.position = Vector2(-70, 0)
-		_pad_mount.add_child(_pad_sprite)
+		var pad_tex := load(pad_art) as Texture2D
+		if pad_tex != null:
+			_pad_sprite = Sprite2D.new()
+			_pad_sprite.texture = pad_tex
+			_pad_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_pad_sprite.centered = false
+			_pad_sprite.scale = Vector2(0.5, 0.5)
+			_pad_sprite.position = Vector2(-70, 0)
+			_pad_mount.add_child(_pad_sprite)
 
 	_gantry_tower = Control.new()
 	_gantry_tower.position = Vector2(380, 160)
@@ -478,13 +482,15 @@ func _build_scene_layers() -> void:
 
 	var gantry_art := "res://assets/sprites/vehicles/launch_gantry.png"
 	if ResourceLoader.exists(gantry_art):
-		_gantry_sprite = Sprite2D.new()
-		_gantry_sprite.texture = load(gantry_art) as Texture2D
-		_gantry_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_gantry_sprite.centered = false
-		_gantry_sprite.scale = Vector2(0.5, 0.5)
-		_gantry_sprite.position = Vector2(0, -160)
-		_gantry_tower.add_child(_gantry_sprite)
+		var gantry_tex := load(gantry_art) as Texture2D
+		if gantry_tex != null:
+			_gantry_sprite = Sprite2D.new()
+			_gantry_sprite.texture = gantry_tex
+			_gantry_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_gantry_sprite.centered = false
+			_gantry_sprite.scale = Vector2(0.5, 0.5)
+			_gantry_sprite.position = Vector2(0, -160)
+			_gantry_tower.add_child(_gantry_sprite)
 
 	_gantry_arm_node = Node2D.new()
 	_gantry_arm_node.name = "GantryArms"
@@ -590,7 +596,9 @@ func _build_rocket_assembly() -> void:
 	for i in range(3):
 		var frame_path := "res://assets/sprites/vehicles/exhaust_plume_%d.png" % i
 		if ResourceLoader.exists(frame_path):
-			_plume_frames.append(load(frame_path) as Texture2D)
+			var pf := load(frame_path) as Texture2D
+			if pf != null:
+				_plume_frames.append(pf)
 	if not _plume_frames.is_empty():
 		for side in [-1.0, 1.0]:
 			var b := Sprite2D.new()
@@ -665,19 +673,24 @@ func _build_rocket_assembly() -> void:
 
 	var fairing_left_art := "res://assets/sprites/vehicles/fairing_left.png"
 	var fairing_right_art := "res://assets/sprites/vehicles/fairing_right.png"
+	var fairing_sprites_loaded := false
 	if ResourceLoader.exists(fairing_left_art) and ResourceLoader.exists(fairing_right_art):
-		for pair in [[_fairing_left, fairing_left_art, -14.0], [_fairing_right, fairing_right_art, 0.0]]:
-			var host: Node2D = pair[0]
-			var tex := load(str(pair[1])) as Texture2D
-			var spr := Sprite2D.new()
-			spr.texture = tex
-			spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			spr.centered = false
-			var sc := 0.5 if tex.get_width() > 20 else 1.0
-			spr.scale = Vector2(sc, sc)
-			spr.position = Vector2(float(pair[2]), -98.0)
-			host.add_child(spr)
-	elif _vector_fairing:
+		var t_left := load(fairing_left_art) as Texture2D
+		var t_right := load(fairing_right_art) as Texture2D
+		if t_left != null and t_right != null:
+			fairing_sprites_loaded = true
+			for pair in [[_fairing_left, t_left, -14.0], [_fairing_right, t_right, 0.0]]:
+				var host: Node2D = pair[0]
+				var tex: Texture2D = pair[1]
+				var spr := Sprite2D.new()
+				spr.texture = tex
+				spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				spr.centered = false
+				var sc := 0.5 if tex.get_width() > 20 else 1.0
+				spr.scale = Vector2(sc, sc)
+				spr.position = Vector2(float(pair[2]), -98.0)
+				host.add_child(spr)
+	if not fairing_sprites_loaded and _vector_fairing:
 		var pl := Polygon2D.new()
 		pl.color = Color(0.90, 0.92, 0.96)
 		pl.polygon = PackedVector2Array([
@@ -691,7 +704,7 @@ func _build_rocket_assembly() -> void:
 		])
 		_fairing_right.add_child(pr)
 	
-	if _no_fairing or (not ResourceLoader.exists(fairing_left_art) and not _vector_fairing):
+	if _no_fairing or (not fairing_sprites_loaded and not _vector_fairing):
 		_fairing_left.visible = false
 		_fairing_right.visible = false
 

@@ -13,12 +13,12 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | logical viewport 640x360 |  |
 | PASS | all .tscn ext_resources resolve |  |
 | PASS | literal res:// refs resolve | scripts/*.gd |
-| PASS | map tile keys resolve at 64x64 | 43 keys |
-| PASS | structure files + footprints | 14 structures |
+| PASS | map tile keys resolve at 64x64 | 87 keys |
+| PASS | structure files + footprints | 18 structures |
 | PASS | biome props resolve (32-64 px) | 13 biomes |
 | PASS | transition sets complete | 125 pairs x 4 edge tiles |
 | PASS | diagonal split sets complete | 17 pairs |
-| WARN | art wiring (code references) | INERT: river autotile (art), ridge_wide, sandstone_arch, glacier_wall, crystal_spire, canyon_bridge, ash_mound, crystal_nub, shell_spiral, arid/dunes_ripple, crystal/shard_field, barren/ejecta, sulfur/acid_pool, ammonia/slush, obsidian/glass_plate, ocean/reef_chain, cryo/ice_plate, water_foam, lava_crust, lava_glow,... |
+| WARN | art wiring (code references) | INERT: river autotile (art), sandstone_arch, glacier_wall, crystal_spire, canyon_bridge, ash_mound, crystal_nub, shell_spiral, ocean/reef_chain, cryo/ice_plate, water_foam, lava_glow, ice_cracked, ice_thin \| wired: diagonal shore splits, cliff tiles (art), ridge_wide, mountain_massif, ice_teeth, coral_spire, arid/d... |
 | WARN | props on disk but not placed | accent_arid_ice_teeth, accent_arid_shell, accent_arid_vent, accent_barren_ice_teeth, accent_barren_shell, accent_barren_tuft, accent_barren_vent, accent_cryo_bones, accent_cryo_shell, accent_cryo_tuft, accent_cryo_vent, accent_temperate_ice_teeth, accent_temperate_shell, accent_temperate_vent, accent_volcanic_bones,... |
 | PASS | dataset size = 72 curated planets |  |
 | PASS | planet ids unique |  |
@@ -37,7 +37,7 @@ Web build. Browser-loop results live in `docs/BOARD.md` / the work log.
 | PASS | README hazard table matches code | 9 hazards |
 | PASS | README run constants match code |  |
 | PASS | MAP_GENERATOR.md main-scene claim |  |
-| WARN | build artifacts referenced by docs exist in this clone | 2 path(s) absent (build/ and submission/ are gitignored): docs/SUBMISSION.md: submission/orbit_outplay_demo.mp4; docs/TASKS.md: submission/project_page.md |
+| WARN | build artifacts referenced by docs exist in this clone | 3 path(s) absent (build/ and submission/ are gitignored): docs/PROJECT.md: build/web/index.html; docs/TASKS.md: build/web/index.pck; docs/TASKS.md: submission/project_page.md |
 | PASS | TASKS transition-pair count matches transitions.json | 125 |
 
 ## How to re-run

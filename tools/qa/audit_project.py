@@ -666,7 +666,7 @@ def check_readme() -> None:
     # modules / upgrades
     up_block = block_after(gs, "const UPGRADES := [")
     upgrades = {}
-    for m in re.finditer(r'"name"\s*:\s*"([A-Z -]+)"\s*,\s*"cost"\s*:\s*([\d.]+)', up_block):
+    for m in re.finditer(r'"name"\s*:\s*"([A-Za-z0-9 -]+)"\s*,\s*"cost"\s*:\s*([\d.]+)', up_block):
         upgrades[m.group(1).title()] = float(m.group(2))
     rows = table_rows(readme, "## Debrief and refit")
     bad = []
@@ -682,7 +682,7 @@ def check_readme() -> None:
         "README refit module table matches code", "; ".join(bad))
 
     # radiator description vs actual effect
-    rad = re.search(r'"name"\s*:\s*"DEPLOYABLE RADIATOR".*?"desc"\s*:\s*"([^"]+)".*?"thermal_res"\s*:\s*(\d+)', up_block, re.S)
+    rad = re.search(r'"name"\s*:\s*"(?:DEPLOYABLE RADIATOR|LHP-2 LOOP)".*?"desc"\s*:\s*"([^"]+)".*?"thermal_res"\s*:\s*(\d+)', up_block, re.S)
     if rad:
         said = rad.group(1)
         value = int(rad.group(2))

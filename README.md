@@ -497,17 +497,32 @@ After every sector you get a result screen and a **three-offer refit shop**. Mod
 
 | Module | Cost | Kind | Effect |
 |---|---|---|---|
-| **RTG Auxiliary** | $90M | Module | +1 power regeneration |
-| **Deployable Radiator** | $85M | Module | Heat gain −3 per move |
-| **Reaction Wheel** | $75M | Module | +4 Δv every sector |
-| **Ablative Armor** | $80M | Module | +2 maximum integrity |
-| **Deep Data Buffer** | $70M | Module | +4 data buffer, comms loss −4% |
-| **High-Gain Antenna** | $100M | Module | Comms loss −10% |
-| **Science Package** | $95M | Firmware | +15% science value |
-| **Salvage Protocol** | $90M | Firmware | +30% grant from every sector |
-| **Field Repair Kit** | $60M | Module | Restore 2 integrity (repeatable) |
-| **Cryo Coolant Loop** | $75M | Firmware | Venting heat also restores +1 power |
-| **Ion Thruster** | $80M | Module | +1 tile movement range per turn |
+| **Rw-4 Gyrodyne** | $75M | Module | +4 delta-v every sector. |
+| **Rw-8 Gyrodyne** | $120M | Module | +4 delta-v, +1 range. |
+| **Hall H9** | $80M | Module | +1 tile movement range. |
+| **Hall H12** | $125M | Module | +1 range, +2 delta-v. |
+| **Mmrtg-140** | $90M | Module | +1 power regeneration. |
+| **Mmrtg-280** | $130M | Module | +1 power, +2 heat resistance. |
+| **Rfc-2 Cell** | $70M | Module | +1 power, +2 data buffer. |
+| **Rfc-4 Cell** | $110M | Module | +1 power, +2 data, +2 comms. |
+| **Lhp-2 Loop** | $85M | Module | Heat gain -3 per move. |
+| **Lhp-4 Loop** | $125M | Module | Heat gain -3, +1 power. |
+| **Cryo Loop** | $75M | Firmware | Venting also restores 1 power. |
+| **Cryo Loop Ii** | $115M | Firmware | +1 vent power, +2 heat res. |
+| **Whipple Mk-I** | $80M | Module | +2 maximum integrity. |
+| **Whipple Mk-Ii** | $120M | Module | +2 maximum integrity. |
+| **Composite Shell** | $65M | Module | +1 hull, +1 heat resistance. |
+| **Composite Mk-Ii** | $105M | Module | +2 maximum integrity. |
+| **X-Band Hga** | $100M | Module | Comms loss -10%. |
+| **Ka-Band Dsn** | $130M | Module | Comms loss -8%, +2 data. |
+| **Ssr-4 Recorder** | $70M | Module | +4 data buffer, -4% comms loss. |
+| **Ssr-8 Recorder** | $110M | Module | +4 data, -4% comms loss. |
+| **Mass Spec Lab** | $95M | Firmware | +15% science value. |
+| **Lab Mk-Ii** | $130M | Firmware | +15% science, +2 data. |
+| **Multi-Sensor Bay** | $70M | Firmware | +8% science, +2 data. |
+| **Sensor Bay Ii** | $105M | Firmware | +12% science, +2 data. |
+| **Contract Rider** | $90M | Firmware | +30% grant from every sector. |
+| **Field Kit** | $60M | Module | Restore 2 integrity next sector. |
 
 Grants are `(30 + 15 × delivered data) × grant multiplier`, plus $20M for a full four-node sweep and a further 1.25× for geology objectives on rocky worlds. The higher module prices mean a shop visit is a choice, not a clearance sale.
 
