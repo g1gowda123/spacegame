@@ -1,11 +1,5 @@
 {
-  "character": "Dr. Imani Vale \u2014 executive secretary, Mission Control briefing",
-  "files": {
-    "neutral": "res://assets/sprites/crew/director_neutral.png",
-    "smile": "res://assets/sprites/crew/director_smile.png",
-    "stern": "res://assets/sprites/crew/director_stern.png"
-  },
-  "icon": "res://assets/sprites/crew/director_icon.png",
+  "character": "Dr. Imani Vale \u2014 executive secretary",
   "size": [
     160,
     240
@@ -15,40 +9,22 @@
     "smile",
     "stern"
   ],
+  "method": "hand-built pixel portrait (tools/make_portrait_proc.py); expression is a parameter, so the face cannot drift",
   "palette": {
-    "ink": "#1b1a17",
-    "navy": "#101826",
-    "orange": "#e4572e",
-    "paper": "#e8dfc8",
-    "teal": "#5f8f8a",
+    "ink": "#1a181e",
     "skin": [
-      "#eec8ac",
-      "#d6a888",
-      "#b07e64",
-      "#845846"
+      "#e8c8ac",
+      "#ceaa8e",
+      "#aa826a"
     ],
     "hair": [
-      "#2e2628",
-      "#463a3a",
-      "#625450"
-    ]
-  },
-  "generation": {
-    "workflow": "tools/gen_asset.py (SDXL base 1.0 + pixel-art-xl 0.45), --no-pixelize",
-    "seed": 4101,
-    "gen_size": [
-      768,
-      1152
+      "#262028",
+      "#3e3642"
     ],
-    "samples": 24,
-    "cfg": 7.0,
-    "prompt_face": "female space agency executive secretary, age 30, shoulder-length dark hair tied back, light grey uniform jacket with navy trim, ID badge and headset, three-quarter view",
-    "expression_prompts": {
-      "neutral": "serious competent expression",
-      "smile": "gentle confident smile",
-      "stern": "stern serious frown, concerned"
-    },
-    "raws": "assets/raw/crew/raw2_neutral_4101.png (canonical); raw2_{smile,stern}_4101.png are unused drift samples"
+    "navy": "#16202f",
+    "cream": "#e8dfc8",
+    "orange": "#e4572e",
+    "cyan": "#54e6d1"
   },
-  "postprocess": "edge flood-fill key (magenta bg also sits in the jacket), magenta->navy uniform retune, blur 0.6, palette lock, hard alpha at 110, 1 px ink contour"
+  "usage": "transparent, 18 px bottom fade, drawn under the dialogue card"
 }
