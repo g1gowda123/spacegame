@@ -276,6 +276,15 @@ func _build_scene_layers() -> void:
 	_build_rocket_assembly()
 
 
+const SMOKE_PUFF_TEX := "res://assets/sprites/vehicles/smoke_puff.png"
+
+func _soft_smoke_texture() -> Texture2D:
+	# Square quad particles read as blocks at 640x360; a soft radial puff keeps
+	# the billows readable as smoke at every scale.
+	if ResourceLoader.exists(SMOKE_PUFF_TEX):
+		return load(SMOKE_PUFF_TEX) as Texture2D
+	return null
+
 func _create_pad_smoke_emitter(direction: float) -> CPUParticles2D:
 	var p := CPUParticles2D.new()
 	p.emitting = false
@@ -288,8 +297,10 @@ func _create_pad_smoke_emitter(direction: float) -> CPUParticles2D:
 	p.gravity = Vector2(direction * 15.0, -12.0)
 	p.initial_velocity_min = 45.0
 	p.initial_velocity_max = 95.0
-	p.scale_amount_min = 6.0
-	p.scale_amount_max = 18.0
+	# The soft puff texture is 64 px; keep the on-screen puff small enough that
+	# billows stay individual shapes instead of washing the frame.
+	p.scale_amount_min = 0.30
+	p.scale_amount_max = 0.80
 	var grad := Gradient.new()
 	grad.colors = PackedColorArray([
 		Color(1.0, 0.72, 0.35, 0.85),
@@ -298,6 +309,9 @@ func _create_pad_smoke_emitter(direction: float) -> CPUParticles2D:
 		Color(0.20, 0.22, 0.30, 0.0)
 	])
 	p.color_ramp = grad
+	var puff := _soft_smoke_texture()
+	if puff != null:
+		p.texture = puff
 	return p
 
 
@@ -360,7 +374,8 @@ func _build_rocket_assembly() -> void:
 	_smoke_particles.initial_velocity_min = 80.0
 	_smoke_particles.initial_velocity_max = 140.0
 	_smoke_particles.scale_amount_min = 4.0
-	_smoke_particles.scale_amount_max = 14.0
+	_smoke_particles.scale_amount_max = 0.55
+	_smoke_particles.scale_amount_min = 0.20
 	var grad := Gradient.new()
 	grad.colors = PackedColorArray([
 		Color(1.0, 0.85, 0.40, 0.90),
@@ -471,25 +486,31 @@ func _draw_gantry_arms() -> void:
 
 
 func _draw_spotlights() -> void:
-	# High intensity pad floodlights cutting through ground mist
-	var col_beam := Color(0.85, 0.95, 1.0, 0.12 if not _phase == Phase.IGNITION else 0.24)
-	# Left ground spotlight
-	var pts_left := PackedVector2Array([
-		Vector2(180, 290),
-		Vector2(310, 160),
-		Vector2(335, 175)
-	])
-	_spotlights.draw_colored_polygon(pts_left, col_beam)
-	_spotlights.draw_circle(Vector2(180, 290), 4.0, Color(0.9, 0.98, 1.0, 0.9))
-
-	# Right ground spotlight
-	var pts_right := PackedVector2Array([
-		Vector2(460, 290),
-		Vector2(330, 160),
-		Vector2(305, 175)
-	])
-	_spotlights.draw_colored_polygon(pts_right, col_beam)
-	_spotlights.draw_circle(Vector2(460, 290), 4.0, Color(0.9, 0.98, 1.0, 0.9))
+	# Pad floodlights. The beam used to be one hard triangle per light, which
+	# read as a grey wedge glued to the vehicle. It is now three nested cones per
+	# light (wide+faint, mid, narrow+warm) so the edge falls off instead of
+	# cutting, and both cones stop short of the booster body at x 300..340.
+	var base_a := 0.055 if _phase < Phase.IGNITION else 0.085
+	for side in [-1.0, 1.0]:
+		var foot := Vector2(320.0 + side * 140.0, 290)
+		var aim := Vector2(320.0, 236)
+		for layer in 3:
+			var widen := 1.0 - layer * 0.30
+			var col := Color(0.85, 0.95, 1.0, base_a * (0.55 + layer * 0.35))
+			if layer == 2:
+				col = Color(1.0, 0.92, 0.78, base_a * 1.25)
+			var near_w := 5.0 * widen
+			var far_w := 13.0 * widen
+			var dir := (aim - foot).normalized()
+			var perp := Vector2(-dir.y, dir.x)
+			_spotlights.draw_colored_polygon(PackedVector2Array([
+				foot - perp * near_w,
+				foot + perp * near_w,
+				aim + perp * far_w,
+				aim - perp * far_w
+			]), col)
+		_spotlights.draw_circle(foot, 3.6, Color(0.9, 0.98, 1.0, 0.85))
+		_spotlights.draw_circle(foot, 1.6, Color(1.0, 0.96, 0.86, 0.95))
 
 
 func _draw_booster() -> void:
@@ -718,8 +739,9 @@ func _build_hud() -> void:
 
 	# Big Digital Countdown Clock (Top Center)
 	_countdown_label = UIKit.label("T-10.0s", 16, UIKit.AMBER, true, HORIZONTAL_ALIGNMENT_CENTER)
-	_countdown_label.position = Vector2(240, 16)
-	_countdown_label.size = Vector2(160, 24)
+	_countdown_label.position = Vector2(236, 14)
+	_countdown_label.size = Vector2(180, 28)
+	_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	root.add_child(_countdown_label)
 	# Phase word on its own row. Appending it to the clock made the ignition
 	# string wider than its slot and it wrote over the agency header.
@@ -917,6 +939,11 @@ func _enter_liftoff_phase() -> void:
 	print("LAUNCH PHASE 3: LIFTOFF & GANTRY RELEASE")
 	if _countdown_label != null:
 		_countdown_label.text = "LIFTOFF!"
+		# Countdown sits at x236..416; "LIFTOFF!" is wider than "T-10.0s" and used
+		# to start inside the mission header panel and clip at the top edge.
+		_countdown_label.position = Vector2(300, 16)
+		_countdown_label.size = Vector2(210, 28)
+		_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_countdown_label.add_theme_color_override("font_color", UIKit.LIVE)
 	if _phase_label != null:
 		_phase_label.text = ""
