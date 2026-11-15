@@ -533,3 +533,14 @@ Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; upda
 - **Shipped:** sector-1 fuel/time floor in `scripts/game_state.gd` — `Δv ≥ 26` (plus +6 on the shakedown), `sols ≥ 26`; later sectors floor at 22/20. It only raises stats, so it cannot make a run harder.
 - **Still needed (ATLAS / NOVA):** route-aware budget. After node placement, compute the cheapest route that collects the quota and returns to the pad, then top up Δv to ~1.25× that and print `ROUTE NEEDS ≈N ΔV` on the HUD at sector start. The floor prevents the worst cases but cannot know the actual layout.
 - **Follow-up:** if the quota is 3 and the sector only affords 2, fail *at sector start* with a clear `ROUTE BUDGET` message instead of at the last node.
+
+## Trailer kit (07:16)
+
+| # | Task | Owner | Acceptance |
+|---|---|---|---|
+| T1 | **Shipped** — three masters + template | ECHO | `trailer/out/*.mp4`, `trailer/README.md`, `edl.json`, deck |
+| T2 | Re-capture after the UI identity overhaul lands | UI owner | `trailer/capture.sh all && trailer/render.sh all`, same shot names |
+| T3 | Refresh deck embeds after any re-export | whoever renders | re-insert the mp4 on slides 1 and 2–4 |
+| T4 | Vertical 9:16 cut for socials | unclaimed | 1080×1920 from the same `.fcproj` clips, supers re-placed inside safe area |
+| T5 | Burned-in captions / subtitle track | unclaimed | SRT matching the supers, <42 chars/line, no overlap |
+| T6 | Optional voiceover pass | unclaimed | 60–75 s read over cut A; duck bed to −18 dB under VO |
