@@ -799,11 +799,13 @@ func _build_hud() -> void:
 	var veh_lbl := UIKit.label("VEHICLE: %s  |  PAYLOAD: %s" % [_veh_name, _hull_name], 7, UIKit.MUTED_C, true)
 	hb.add_child(veh_lbl)
 
-	# Readiness Telemetry Checklist (Top Left under Header)
+	# Readiness Telemetry Checklist (Top Left under Header) — kept for data,
+	# never shown: the launch is a short transition, not a pre-flight sim.
 	_status_vbox = VBoxContainer.new()
 	_status_vbox.position = Vector2(18, 72)
 	_status_vbox.add_theme_constant_override("separation", 3)
 	root.add_child(_status_vbox)
+	_status_vbox.visible = false
 
 	var check_items := [
 		"PAD INTEGRITY: NOMINAL",
@@ -827,12 +829,14 @@ func _build_hud() -> void:
 	_countdown_label.size = Vector2(180, 28)
 	_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	root.add_child(_countdown_label)
+	_countdown_label.visible = false
 	# Phase word on its own row. Appending it to the clock made the ignition
 	# string wider than its slot and it wrote over the agency header.
 	_phase_label = UIKit.label("", 7, UIKit.ORANGE, true, HORIZONTAL_ALIGNMENT_CENTER)
 	_phase_label.position = Vector2(240, 39)
 	_phase_label.size = Vector2(160, 10)
 	root.add_child(_phase_label)
+	_phase_label.visible = false
 
 	# Skip Launch Button (Bottom Right)
 	_skip_button = UIKit.button("SKIP LAUNCH  >", Vector2(100, 22))
@@ -963,7 +967,7 @@ func _process_ground_launch(delta: float) -> void:
 
 func _update_preparation_phase() -> void:
 	# 0.0s to 4.5s: Countdown from T-10s down to T-2s
-	var remaining := maxf(2.0, 10.0 - (_time * 1.8))
+	var remaining := maxf(1.0, 10.0 - (_time * 6.0))
 	var c_int := int(ceil(remaining))
 	_countdown_label.text = "T-%d.0s" % c_int
 
@@ -982,7 +986,7 @@ func _update_preparation_phase() -> void:
 			(item["dot"] as Label).add_theme_color_override("font_color", UIKit.LIVE)
 			(item["label"] as Label).add_theme_color_override("font_color", UIKit.CREAM)
 
-	if _time >= 4.5:
+	if _time >= 0.8:
 		_enter_ignition_phase()
 
 
@@ -1014,7 +1018,7 @@ func _update_ignition_phase() -> void:
 	if _phase_time >= 1.2 and _audio_rumble != null and not _audio_rumble.playing:
 		_play_sfx(_audio_rumble)
 
-	if _phase_time >= 1.6:
+	if _phase_time >= 0.4:
 		_enter_liftoff_phase()
 
 
@@ -1034,7 +1038,7 @@ func _enter_liftoff_phase() -> void:
 		_phase_label.text = ""
 	if _smoke_particles != null:
 		_smoke_particles.emitting = true
-	_acceleration = 22.0
+	_acceleration = 80.0
 	_shake_amount = 3.2 if not _reduced_fx else 0.6
 
 
@@ -1053,7 +1057,7 @@ func _update_liftoff_phase(delta: float) -> void:
 	if _gantry_tower != null:
 		_gantry_tower.queue_redraw()
 
-	if _altitude >= 180.0:
+	if _altitude >= 80.0:
 		_enter_ascent_phase()
 
 
@@ -1074,7 +1078,7 @@ func _update_ascent_phase(delta: float) -> void:
 	_altitude += _velocity * delta
 
 	# Sky transition: Dusk teal -> Royal Indigo -> Cosmic Violet -> Void Black
-	var t := clampf(_phase_time / 3.4, 0.0, 1.0)
+	var t := clampf(_phase_time / 0.8, 0.0, 1.0)
 	var col_dusk := Color(0.04, 0.07, 0.12)
 	var col_mid := Color(0.03, 0.04, 0.18)
 	var col_space := Color(0.008, 0.012, 0.024)
@@ -1106,7 +1110,7 @@ func _update_ascent_phase(delta: float) -> void:
 	if _clouds_root != null:
 		_clouds_root.queue_redraw()
 
-	if _phase_time >= 3.6:
+	if _phase_time >= 0.8:
 		_enter_space_phase()
 
 
@@ -1158,7 +1162,7 @@ func _show_space_plaque() -> void:
 	if _rocket_root != null:
 		tw.parallel().tween_property(_rocket_root, "position:x", 480.0, 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_mission_plaque, "modulate:a", 1.0, 0.45)
-	tw.tween_interval(3.2 if not _is_subsequent else 2.4)
+	tw.tween_interval(0.8 if not _is_subsequent else 0.6)
 	tw.tween_callback(_complete_and_transition)
 
 
@@ -1215,7 +1219,7 @@ func _complete_and_transition() -> void:
 		_hud_layer.add_child(fade_rect)
 
 		var tw := create_tween()
-		tw.tween_property(fade_rect, "color:a", 1.0, 0.45)
+		tw.tween_property(fade_rect, "color:a", 1.0, 0.25)
 		tw.tween_interval(0.05)
 		tw.tween_callback(func():
 			if is_inside_tree() and get_tree() != null:
