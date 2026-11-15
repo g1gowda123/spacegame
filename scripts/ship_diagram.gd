@@ -120,7 +120,9 @@ func _process(delta: float) -> void:
 
 
 func _load_texture() -> void:
-	var path := SHIP_DIR + hull_id + ".png"
+	var path := SHIP_DIR + hull_id + "_2x.png"
+	if not ResourceLoader.exists(path):
+		path = SHIP_DIR + hull_id + ".png"
 	if not ResourceLoader.exists(path):
 		path = SHIP_DIR + "pathfinder.png"
 	if ResourceLoader.exists(path):
