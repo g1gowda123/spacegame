@@ -393,7 +393,8 @@ func _on_buy(idx: int) -> void:
 		if not delta.is_empty():
 			line += "  ·  " + delta
 		_show_toast(line, UIKit.GREEN)
-		GameState.make_shop()
+		# buy_offer already removes this card. Rebuilding the shop here rerolled
+		# the other two offers after every purchase; keep the stop's inventory.
 		_refresh_shop()
 		_refresh_ship()
 		if ship_diagram != null:
