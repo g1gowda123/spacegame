@@ -1,38 +1,165 @@
 # Orbit & Outplay — Exoplanet Survey
 
-A turn-based **mission-architecture roguelite for 1–4 players**. You run a small space agency: build a spacecraft, pick a real exoplanet from the NASA Exoplanet Archive, fly a telegraphed hazard course across its surface, bring the data home, and keep the agency funded long enough to file a campaign record.
+A turn-based **mission-design roguelite for 1–4 players**. You run a small space agency: design a spacecraft under a fixed budget, draft one of three **real exoplanets** from the NASA Exoplanet Archive, fly a telegraphed hazard course across its surface, bring the data home, and keep the agency funded long enough to file a campaign record.
 
-Every destination is a real planet. Every hazard is generated from its measured properties — equilibrium temperature, host-star radiation, and the surface archetype derived from its temperature and radius — while distance from Earth drives downlink loss.
+Every destination is a real planet. Every hazard is derived from its measured properties — equilibrium temperature, host-star radiation, surface gravity, distance from Earth — and the game prints the measurement next to the abstraction it drives.
 
-- **Engine:** Godot 4.7.2 (GDScript, GL Compatibility renderer)
-- **Viewport:** 640×360, pixel art, nearest-neighbour filtering
-- **Target:** desktop and browser (WebGL 2, threadless export)
-- **Run length:** 3 sectors, roughly 10–15 minutes
+- **Engine:** Godot 4.7.2, GDScript, GL Compatibility renderer (WebGL 2)
+- **Viewport:** 640×360 logical, pixel art, nearest-neighbour filtering
+- **Platform:** desktop and browser (threadless static export)
+- **Run length:** 3 sectors, 10–15 minutes, 1–4 players local hot-seat
 
-**Status:** playable end to end in native Godot — title → mission design → target draft → three surface sectors → debrief → final report. The source, data, and art are in this repository; the web build is produced locally with the Godot 4.7.2 export templates.
+---
+
+## At a glance
+
+| | |
+|---|---|
+| **Genre** | turn-based tactical roguelite / mission-design game |
+| **You do** | build a spacecraft → draft a real planet → route across its surface → refit → repeat ×3 → graded |
+| **Core tension** | mass vs capability, heat vs schedule, power vs shielding, data vs downlink distance |
+| **The hook** | the planet's real physics is the level design |
+| **Data** | 72 curated planets from NASA Exoplanet Archive `pscomppars` (0.35–2.2 Earth radii) |
+| **Content** | 13 biomes, 4 hulls, 3 launchers, 4 objectives, 6 instruments, 11 refits, 8 event cards |
+| **Status** | playable end to end, native + web; submission package in `submission/` |
+| **Licence / attribution** | original code + AI-generated art; NASA data under its open terms; see [Credits](#credits) |
+
+---
+
+## For AI reviewers
+
+This section is the canonical machine-readable description. If you are summarising, ranking or integrating this project, read this block first; the human narrative starts at [Five-minute showcase](#five-minute-showcase).
+
+```yaml
+project: Orbit & Outplay — Exoplanet Survey
+kind: game
+genre: turn-based tactical roguelite
+challenge: "NASA Space Apps 2026 — Space Mission Design Game"
+engine: Godot 4.7.2 (GDScript, GL Compatibility / WebGL 2)
+resolution: 640x360 logical, 1280x720 window, nearest filtering, canvas_items stretch
+entry_scene: res://scenes/title.tscn
+players: 1-4 local hot-seat
+run_length: "3 sectors, 10-15 minutes"
+platforms: [linux, windows, macos, web]
+persistence: "user://orbit_save.cfg (best score, daily best)"
+server: none
+runtime_dependencies: none (static export)
+data_source: "NASA Exoplanet Archive — Planetary Systems Composite Parameters (pscomppars)"
+planets: 72
+data_files: [data/pscomppars_raw.csv, data/exoplanets.json]
+data_builder: tools/build_exoplanets.py
+tests: [headless smoke, flowtest, reachability audit, water probe, browser loop]
+```
+
+### Architecture (how the program is put together)
+
+**One source of truth.** `scripts/game_state.gd` (autoload `GameState`) owns the run: `run`, `draft`, `current_sector`, `owned`, `shop_offers`, and the rules/economy/scoring functions. Every screen reads it, mutates it through methods, and redraws on the `changed` signal. There is no database and no network.
+
+**Scene flow.**
+
+```text
+title → briefing (first run only) → crew → design → draft → [launch] → sector
+      → debrief → buff → draft … (×3) → report
+```
+
+**Autoloads** (`project.godot`): `GameState` (state + rules), `CrewDirector` (1–4 players, difficulty, daily seed, share codes), `SceneFX` (transitions), `MusicDirector` (adaptive bed), `PostFX` (full-frame grade), `DevRouter` (CLI deep links), `CaptureProbe` (screenshots), `DemoDirector` / `TrailerDirector` (deterministic capture), `MCPRuntimeProbe` (editor tooling).
+
+**Rendering.** All terrain is generated and drawn by `scripts/map_generator.gd` (4,416 lines): 16×16-cell chunks, per-biome archetypes, 64 px palette-locked tiles, 98 transition pairs, structures, fog of war, minimap. `scripts/sector.gd` (2,858 lines) owns the turn loop, pathfinding preview, hazards, HUD and VFX hooks. Shaders live in `shaders/`.
+
+**Scale.** ~20,400 lines of GDScript across 40+ scripts; the five largest are `map_generator.gd` (4,416), `sector.gd` (2,858), `game_state.gd` (1,874), `launch_cinematic.gd` (1,279), `draft.gd` (843).
+
+### Data model
+
+`data/exoplanets.json` is a two-key object: `meta` (source, URL, retrieval date, count, field list) and `planets` (72 entries). Each planet carries the **raw archive measurements** plus a derived `game` block, so every abstraction is auditable:
+
+| Group | Fields |
+|---|---|
+| Identity | `id`, `name`, `star`, `star_type`, `discovered`, `method` |
+| Orbit | `period_days`, `semi_major_au`, `eccentricity`, `distance_ly`, `insolation_earth` |
+| Planet | `radius_earth`, `mass_earth`, `mass_est`, `eq_temp_k`, `gravity_g`, `escape_kms`, `biome` |
+| Star | `star_temp_k`, `star_radius_sun`, `star_mass_sun`, `star_age_gyr`, `star_metallicity`, `system_planets` |
+| Derived (`game`) | `heat`, `radiation`, `quakes`, `comms_loss`, `science`, `delta_v`, `sols` |
+
+`mass_est: true` marks a mass derived from the Chen & Kipping (2017) mass–radius relation instead of a measured value. The formula table is in [Where the science comes from](#where-the-science-comes-from); the builder is deterministic, so the dataset can be regenerated and diffed.
+
+### Determinism and reproducibility
+
+- A campaign is defined by a seed; the **campaign code** (`OO-…`) reproduces the same planets and the same loadout.
+- Terrain seed = `hash(planet.id) % 90000 + 1000 + sector × 7919` (`sector.gd::_configure_map`), so a given planet and sector always draw the same world.
+- Daily runs use a date-derived seed; every player gets the same three planets that day.
+- `tools/audit_reach.gd`, `audit_density.gd`, `audit_islands.gd` and `water_probe.gd` are headless audits; `tools/browser_loop.mjs` drives the web build and fails unless it reaches the report.
+
+### Commands
+
+```bash
+godot --path .                                  # run the newest code
+godot --headless --path . --quit-after 8        # parse/runtime smoke test
+godot --headless --path . -- --screen=flowtest  # simulate a full campaign
+godot --path . -- --screen=sector --capture     # deep link + screenshot
+godot --headless --path . --script tools/audit_reach.gd
+python3 tools/build_exoplanets.py               # rebuild the dataset
+bash tools/release.sh                           # export + package + smoke + sha256
+cd build/web && python3 -m http.server 8060     # serve the web build
+```
+
+### Invariants (do not break)
+
+1. **640×360 logical viewport**, `stretch/aspect = keep`, nearest filtering — the pixel-art look is the product.
+2. **No server, no account, no runtime dependency**; the web build is a static threadless export.
+3. **Every derived number must trace to an archive field and a documented formula**; never invent a measurement.
+4. **Every hazard is telegraphed one turn before it resolves**; a loss must be explainable.
+5. **Palette-locked art** per biome (`tools/palettes.json`); tiles 64×64, structures 128/192.
+6. **Determinism**: same seed → same map, same draft, same code round-trip.
+
+### Where to change what
+
+| If you need to change… | Look at |
+|---|---|
+| mission rules, economy, scoring, state | `scripts/game_state.gd` |
+| one screen's layout/copy | `scenes/<name>.tscn` + `scripts/<name>.gd` |
+| terrain, biomes, structures, fog | `scripts/map_generator.gd` |
+| turn loop, path preview, hazards, HUD | `scripts/sector.gd` |
+| ship silhouette and live refit layer | `scripts/ship_build.gd`, `scripts/ship_diagram.gd` |
+| NASA dataset or derived values | `tools/build_exoplanets.py`, `data/exoplanets.json` |
+| art generation pipeline | `tools/gen_asset.py`, `tools/pixelize.py`, `docs/ART_PIPELINE.md` |
+| export, packaging, release checks | `tools/release.sh`, `tools/browser_loop.mjs` |
+| internal state, owners, next steps | `docs/STATUS.md`, `docs/TASKS.md`, `docs/WORKLOG.md` |
+
+### Known limitations (stated, not hidden)
+
+- Orbit is a **profile** (altitude, period, eclipse, passes/day), not a propagated trajectory; transfer time is a labelled c-fraction abstraction.
+- Scores are local (best + daily). There is no online leaderboard.
+- The map is procedural pixel art; at 2× some per-cell composition artifacts remain.
+- The soundtrack is adaptive but small (three cues); sound design is intentionally minimal.
+
+### Glossary
+
+`PSCompPars` — NASA Exoplanet Archive Planetary Systems Composite Parameters table · `CML` — Concept Maturity Level 1–4 · `ConOps` — concept of operations · `Δv` — delta-v, the fuel budget per move · `SOL` — one mission sol (turn) · `EXTRACT` — bank data and end the sector · `HOLD` — vent heat and recharge · `RELAY` — second sector type: plant three beacons instead of collecting nodes.
 
 ---
 
 ## Contents
 
-1. [Five-minute showcase](#five-minute-showcase)
-2. [What it looks like](#what-it-looks-like)
-3. [What you actually do](#what-you-actually-do)
-4. [A run, step by step](#a-run-step-by-step)
-5. [Mission design](#mission-design)
-6. [Surface operations](#surface-operations)
-7. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
-8. [Debrief and refit](#debrief-and-refit)
-9. [Scoring](#scoring)
-10. [Where the science comes from](#where-the-science-comes-from)
-11. [Controls](#controls)
-12. [Running the project](#running-the-project)
-13. [How the code is organised](#how-the-code-is-organised)
-14. [The surface generator](#the-surface-generator)
-15. [Art pipeline](#art-pipeline)
-16. [Working with agents](#working-with-agents)
-17. [Repository layout](#repository-layout)
-18. [Credits](#credits)
+1. [At a glance](#at-a-glance)
+2. [For AI reviewers](#for-ai-reviewers)
+3. [Five-minute showcase](#five-minute-showcase)
+4. [What it looks like](#what-it-looks-like)
+5. [What you actually do](#what-you-actually-do)
+6. [A run, step by step](#a-run-step-by-step)
+7. [Mission design](#mission-design)
+8. [Surface operations](#surface-operations)
+9. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
+10. [Debrief and refit](#debrief-and-refit)
+11. [Scoring](#scoring)
+12. [Where the science comes from](#where-the-science-comes-from)
+13. [Controls](#controls)
+14. [Running the project](#running-the-project)
+15. [How the code is organised](#how-the-code-is-organised)
+16. [The surface generator](#the-surface-generator)
+17. [Art pipeline](#art-pipeline)
+18. [Working with agents](#working-with-agents)
+19. [Repository layout](#repository-layout)
+20. [Credits](#credits)
 
 ---
 
@@ -683,19 +810,26 @@ The export is purely static, so it also runs on GitHub Pages, itch.io, or any pl
 | Path | Responsibility |
 |---|---|
 | `scenes/title.tscn`, `scripts/title.gd` | Title, how-to-play overlay, best score |
+| `scenes/briefing.tscn`, `scripts/briefing.gd` | First-run agency induction and callsign |
+| `scenes/crew.tscn`, `scripts/crew.gd` | Mission Control: 1–4 players, roles, difficulty, campaign code |
 | `scenes/design.tscn`, `scripts/design.gd` | Hull, launch vehicle, orbit, objective, instruments, live telemetry |
-| `scenes/draft.tscn`, `scripts/draft.gd` | Three-planet target draft and hazard preview |
+| `scenes/draft.tscn`, `scripts/draft.gd` | Three-planet target draft, architecture review, ConOps |
+| `scenes/launch.tscn`, `scripts/launch_cinematic.gd` | Launch sequence and transfer animation |
 | `scenes/sector.tscn`, `scripts/sector.gd` | Surface sector: path planning, hazards, HUD, extraction |
-| `scenes/debrief.tscn`, `scripts/debrief.gd` | Result review and refit shop |
+| `scenes/debrief.tscn`, `scripts/debrief.gd` | Result review, refit shop, event card |
+| `scenes/buff.tscn`, `scripts/buff.gd` | Field commissions (free upgrade draft) |
 | `scenes/report.tscn`, `scripts/report.gd` | Campaign ledger, grade, score breakdown |
 | `scripts/game_state.gd` | Run state, mission rules, economy, scoring |
-| `scripts/ui_kit.gd` | Shared pixel-UI helpers (panels, bars, labels, buttons) |
-| `scripts/ship_diagram.gd` | Procedural spacecraft diagram |
+| `scripts/crew_director.gd` | Player count, roles, difficulty, daily seed, share codes |
+| `scripts/ui_kit.gd` | Shared pixel-UI helpers (panels, bars, labels, buttons, paper skin) |
+| `scripts/ship_build.gd`, `scripts/ship_diagram.gd` | Derived ship build + live silhouette with refit layer |
 | `scripts/space_backdrop.gd` | Starfield / planet backdrop renderer |
 | `scripts/map_generator.gd` | Chunked terrain generator and renderer |
-| `shaders/` | Backdrop and map post-processing shaders |
+| `scripts/music_director.gd` | Adaptive music bed, crossfade, hazard duck |
+| `scripts/post_fx.gd`, `scripts/scene_fx.gd` | Full-frame grade and scene transitions |
+| `shaders/` | Backdrop, map, hazard-field and post-processing shaders |
 
-Autoloads: `GameState` (rules and state), `DevRouter` (CLI screen selection and capture), `CaptureProbe` (screenshot helper).
+Autoloads (`project.godot`): `GameState` (rules/state), `CrewDirector` (players/difficulty/codes), `SceneFX` (transitions), `MusicDirector` (music bed), `PostFX` (grade), `DevRouter` (CLI deep links), `CaptureProbe` (screenshots), `DemoDirector` / `TrailerDirector` (deterministic capture), `MCPRuntimeProbe` (editor tooling).
 
 **State flow.** `new_run()` seeds a campaign and rolls the first draft. Design selections mutate `run`; `ship()` folds hull, vehicle, orbit, objective, instruments, and owned modules into a single derived stats dictionary. `begin_sector()` converts a planet into sector constraints. `finish_sector()` settles data delivery, science, grants, and approval. `calculate_score()` walks the history at the end.
 
@@ -756,26 +890,31 @@ The parts that made it work: a single append-only work log, a task board agents 
 
 ```
 .
-├── project.godot          # Godot project config (640×360, GL Compatibility)
-├── scenes/                # Title, design, draft, sector, debrief, report
-├── scripts/               # GDScript: state, rules, UI, generator
-├── shaders/               # Backdrop and map shaders
+├── project.godot          # Godot config: 640×360, GL Compatibility, autoloads
+├── scenes/                # title, briefing, crew, design, draft, launch,
+│                          #   sector, debrief, buff, report
+├── scripts/               # GDScript: state, rules, UI, generator, directors
+├── shaders/               # map, hazard field, backdrop, post-processing
 ├── assets/
-│   ├── tilesets/          # 64×64 terrain tiles, transitions, and landmark structures
-│   ├── sprites/           # Ships, planets, UI art
+│   ├── tilesets/          # 64×64 terrain tiles, transitions, structures, outcrops
+│   ├── sprites/           # Ships, planets, portraits, UI art
 │   ├── props/             # Small environmental accents
 │   ├── backgrounds/       # Space plates
 │   ├── audio/             # UI, movement, hazard and deny cues
-│   ├── music/             # Three 68.6 s screen loops (OGG, generated)
-│   ├── ui/                # Fonts (SIL OFL) and UI art
+│   ├── music/             # Three screen loops (OGG, generated)
+│   ├── ui/                # Fonts (SIL OFL), paper skin, icons
 │   └── raw/               # 1024 px generation sources (local only)
 ├── data/
 │   ├── exoplanets.json    # 72 curated planets + derived game values
 │   └── pscomppars_raw.csv # Raw NASA Exoplanet Archive query snapshot
-├── docs/                  # Agent workflow, art pipeline, generator notes
-├── screenshots/           # Screenshots used by this README
+├── docs/                  # STATUS, AUDIO, DESIGN, SUBMISSION, WORKLOG,
+│                          #   BOARD (+ archive), art/generator notes
+├── screenshots/           # README captures; loop/ = one frame per screen
+├── demo/                  # 30 s video + 7-slide deck
+├── submission/            # packaged web ZIP + project-page copy
+├── build/web/             # local export output (not committed)
 ├── AGENTS.md              # Working agreement for agents
-└── tools/                 # Dataset builder and art pipeline scripts
+└── tools/                 # dataset builder, art pipeline, audits, release
 ```
 
 ---
