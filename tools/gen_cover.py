@@ -34,6 +34,17 @@ BASE_W, BASE_H = 1280, 1024
 HIRES_W, HIRES_H = 1920, 1536
 
 PROMPTS = {
+    "d": (
+        "cover illustration for a turn-based exoplanet survey game, "
+        "alien tidal marsh under a teal and heliotrope sky, shallow reflective water broken by "
+        "dark basalt plateaus and tall narrow rock spires, thin cyan beacon lights on the spires, "
+        "a small boxy survey lander on a raised rock shelf with a high-gain dish, "
+        "a winding trail of glowing data nodes leading to it, drifting low fog banks, "
+        "a huge ringed planet low on the horizon, sparse alien reeds and mineral crust, "
+        "atmospheric depth, muted violet and deep teal palette with burnt-orange accents, "
+        "wide establishing shot, subject in the lower third, large calm dark sky at the top, "
+        "16-bit pixel-art illustration, chunky readable shapes, no text, no letters, no UI, no frame"
+    ),
     "a": (
         "dramatic cover illustration for a turn-based space mission design game, "
         "lone boxy survey lander with a tall high-gain dish on a windswept alien ridge, "
