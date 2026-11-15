@@ -20,6 +20,8 @@ func _ready() -> void:
 	_build()
 	_select_first()
 	_refresh()
+	if "--hover-card" in OS.get_cmdline_args() or "--hover-card" in OS.get_cmdline_user_args():
+		call_deferred("_dev_hover")
 	if "--capture" in OS.get_cmdline_args() or "--capture" in OS.get_cmdline_user_args():
 		# Capture starts with the pointer at screen centre, which can sit on a
 		# planet card. Dismiss the dossier so the evidence frame shows the board.
@@ -31,6 +33,12 @@ func _ready() -> void:
 		_commit_route()
 	if "--commit" in OS.get_cmdline_args() or "--commit" in OS.get_cmdline_user_args():
 		_commit_route.call_deferred()
+
+
+func _dev_hover() -> void:
+	if cards.size() > 0:
+		var c: Dictionary = cards[0]
+		_hover(c["root"], c["panel"], true)
 
 
 func _hide_tips_for_capture() -> void:
@@ -71,6 +79,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var root := Control.new()
 	root.position = Vector2(x, 40)
 	root.size = Vector2(196, 238)
+	root.pivot_offset = root.size * 0.5
 	add_child(root)
 
 	var panel := UIKit.sheet(root, 0, 0, 196, 238)
@@ -79,6 +88,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.clip_contents = true
 	panel.add_child(c)
 
 	# Planet portrait.
@@ -86,6 +96,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	holder.position = Vector2(52, 4)
 	holder.size = Vector2(92, 66)
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.pivot_offset = holder.size * 0.5
 	c.add_child(holder)
 	var portrait := SpaceBackdrop.new()
 	holder.add_child(portrait)
@@ -96,6 +107,16 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		"planet_size": 0.98,
 		"planet_asset": SpaceBackdrop.asset_for_planet(p),
 	})
+
+	var plate := Panel.new()
+	plate.position = Vector2(8, 69)
+	plate.size = Vector2(180, 18)
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.add_theme_stylebox_override("panel", UIKit.style_panel(
+		UIKit.NAME, Color(0, 0, 0, 0), 0, 0
+	))
+	plate.visible = false
+	c.add_child(plate)
 
 	var name := UIKit.label(str(p["name"]), 9, UIKit.NAME, true, HORIZONTAL_ALIGNMENT_CENTER)
 	name.position = Vector2(4, 72)
@@ -154,6 +175,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	var overlay := Button.new()
 	overlay.flat = true
 	overlay.focus_mode = Control.FOCUS_NONE
+	overlay.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var empty := StyleBoxEmpty.new()
 	for s in ["normal", "hover", "pressed", "focus"]:
@@ -179,22 +201,61 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var card := {
 		"id": str(p["id"]), "planet": p, "root": root, "panel": panel,
-		"title": name, "mark": mark, "accent": GameState.biome_color(str(p["biome"])),
+		"title": name, "mark": mark, "plate": plate, "holder": holder,
+		"tw": null, "accent": GameState.biome_color(str(p["biome"])),
 		"selected": false,
 	}
 	cards.append(card)
 
 
 func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
-	var selected := false
+	var card: Dictionary = {}
 	for c in cards:
 		if c["root"] == root:
-			selected = bool(c["selected"])
-	if selected:
+			card = c
+			break
+	if card.is_empty():
 		return
-	panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-		Color(0, 0, 0, 0), UIKit.ORANGE if on else UIKit.INK, 0, 2 if on else 1
-	))
+	var selected: bool = bool(card["selected"])
+	var base_y := 34.0 if selected else 40.0
+	var target_y := base_y - (6.0 if on else 0.0)
+	var target_scale := 1.045 if on and selected else (1.035 if on else 1.0)
+	_tween_card(card, target_y, target_scale, 0.16)
+	var holder: Control = card["holder"]
+	_tween_scale(holder, 1.055 if on else 1.0, 0.18)
+	if selected:
+		# Selected cards keep the cream nameplate; hover brightens the edge.
+		panel.add_theme_stylebox_override("panel", UIKit.style_panel(
+			Color(0, 0, 0, 0), UIKit.SAGE_HI if on else UIKit.NAME, 0, 2
+		))
+	else:
+		panel.add_theme_stylebox_override("panel", UIKit.style_panel(
+			Color(0, 0, 0, 0), UIKit.SAGE if on else UIKit.INK, 0, 2 if on else 1
+		))
+		var mark: Label = card["mark"]
+		mark.text = "CLICK TO MARK" if on else "SELECT"
+		mark.add_theme_color_override("font_color", UIKit.SAGE_HI if on else UIKit.INK_FAINT)
+
+
+func _tween_card(card: Dictionary, y: float, sc: float, dur: float) -> void:
+	var old: Tween = card.get("tw")
+	if old != null:
+		old.kill()
+	var root: Control = card["root"]
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(root, "position", Vector2(root.position.x, y), dur)
+	tw.tween_property(root, "scale", Vector2(sc, sc), dur)
+	card["tw"] = tw
+
+
+func _tween_scale(ctrl: Control, sc: float, dur: float) -> void:
+	if ctrl.has_meta("tw"):
+		var old: Tween = ctrl.get_meta("tw")
+		if old != null:
+			old.kill()
+	var tw := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ctrl, "scale", Vector2(sc, sc), dur)
+	ctrl.set_meta("tw", tw)
 
 
 func _stat(c: Control, y: float, name: String, value: String, frac: float, color: Color) -> void:
@@ -255,21 +316,24 @@ func _select(id: String, play_sound: bool = true) -> void:
 		var panel: PanelContainer = c["panel"]
 		var title: Label = c["title"]
 		var mark: Label = c["mark"]
+		var plate: Panel = c["plate"]
+		plate.visible = on
 		if on:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
-				Color(0, 0, 0, 0), UIKit.ORANGE, 0, 2
+				Color(0, 0, 0, 0), UIKit.NAME, 0, 2
 			))
-			title.add_theme_color_override("font_color", UIKit.NAME)
+			title.add_theme_color_override("font_color", UIKit.ON_LIGHT)
 			mark.text = "●  TARGET MARKED"
-			mark.add_theme_color_override("font_color", UIKit.ORANGE_HI)
+			mark.add_theme_color_override("font_color", UIKit.SAGE_HI)
 			selected_planet = c["planet"]
 		else:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 				Color(0, 0, 0, 0), UIKit.INK, 0, 1
 			))
-			title.add_theme_color_override("font_color", UIKit.INK)
+			title.add_theme_color_override("font_color", UIKit.NAME)
 			mark.text = "SELECT"
 			mark.add_theme_color_override("font_color", UIKit.INK_FAINT)
+		_tween_card(c, 34.0 if on else 40.0, 1.0, 0.22)
 	if play_sound:
 		GameState.sfx("click")
 	_refresh()
@@ -331,6 +395,7 @@ func _show_mission_review() -> void:
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.clip_contents = true
 	panel.add_child(c)
 
 	var kicker := UIKit.label("MISSION ARCHITECTURE REVIEW  //  PRE-COMMIT", 7, UIKit.ORANGE, true)
