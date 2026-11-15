@@ -213,9 +213,9 @@ func _build_scene_layers() -> void:
 	_space_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_space_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_space_root.modulate.a = 0.0
-	# A full-screen star shader costs fragments even at alpha 0. Keep it out of
-	# the tree's draw pass until the ascent actually needs it.
-	_space_root.visible = false
+	# Keep the space layer in the draw pass at alpha 0 from the first frame:
+	# its shaders compile here, at the top of the launch, instead of hitching
+	# exactly when the atmosphere starts to fade.
 	_world.add_child(_space_root)
 
 	_space_backdrop = SpaceBackdrop.create({"planet_on": false, "stars_on": true, "dim": 0.20})
@@ -1101,18 +1101,15 @@ func _update_ascent_phase(delta: float) -> void:
 	# Start in the thin outer atmosphere, not a dusk-lit inner sky. The rocket
 	# is already well above the weather by the time this phase opens, so the
 	# palette begins close to the void and only the airglow changes.
-	var col_dusk := Color(0.018, 0.042, 0.085)
-	var col_mid := Color(0.014, 0.028, 0.075)
+	var col_outer := Color(0.018, 0.042, 0.085)
 	var col_space := Color(0.008, 0.012, 0.024)
 	if _sky_rect != null:
-		var sky := col_dusk.lerp(col_mid, smoothstep(0.0, 0.55, e))
-		sky = sky.lerp(col_space, smoothstep(0.45, 1.0, e))
-		_sky_rect.color = sky
+		# One eased blend for the whole handoff. Two back-to-back smoothsteps
+		# read as a visible colour step around the middle of the ascent.
+		_sky_rect.color = col_outer.lerp(col_space, e)
 	# Stars come up first and early; the Earth limb waits until the airglow
 	# has thinned, so the horizon does not pop on at the phase change.
 	if _space_root != null:
-		if t >= 0.18:
-			_space_root.visible = true
 		_space_root.modulate.a = smoothstep(0.18, 1.0, t)
 	if _earth_disc != null:
 		_earth_disc.modulate.a = smoothstep(0.48, 0.98, t)

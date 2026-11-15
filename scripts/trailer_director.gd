@@ -144,6 +144,7 @@ func _run() -> void:
 		"resale": await _shot_resale()
 		"event": await _shot_event()
 		"briefing": await _shot_briefing()
+		"hover": await _shot_hover()
 		"story": await _shot_story()
 		_:
 			push_error("trailer: unknown shot " + _shot)
@@ -332,6 +333,26 @@ func _shot_event() -> void:
 		await _wait(3.0)
 		_mark("event.chose")
 	await _wait(3.4)
+
+
+func _shot_hover() -> void:
+	var planet := _prepared_run("temperate")
+	GameState.finish_sector(true, 4, GameState.current_sector)
+	GameState.make_shop()
+	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
+	await _scene_ready()
+	await _wait(1.3)
+	_mark("hover.settled")
+	var pts := [Vector2(456, 200), Vector2(456, 392), Vector2(456, 584), Vector2(456, 392)]
+	for i in range(pts.size()):
+		Input.warp_mouse(pts[i])
+		var mv := InputEventMouseMotion.new()
+		mv.position = pts[i]
+		mv.global_position = pts[i]
+		Input.parse_input_event(mv)
+		await _wait(1.5)
+		_mark("hover.card%d" % i)
+	await _wait(2.0)
 
 
 func _shot_briefing() -> void:
