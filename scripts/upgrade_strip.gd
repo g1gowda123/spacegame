@@ -218,7 +218,13 @@ func _build_chip(e: Dictionary) -> Panel:
 	chip.mouse_filter = Control.MOUSE_FILTER_STOP
 	chip.add_theme_stylebox_override("panel", _chip_style(accent, false))
 
-	var icon_path := "res://assets/sprites/buffs/%s.png" % str(e["icon"])
+	var icon_path := "res://assets/sprites/modules/%s.png" % str(e["id"])
+	if str(e.get("kind", "")) == "BUFF":
+		icon_path = "res://assets/sprites/buffs_hd/%s.png" % str(e["icon"])
+		if not ResourceLoader.exists(icon_path):
+			icon_path = "res://assets/sprites/buffs/%s.png" % str(e["icon"])
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/sprites/buffs/%s.png" % str(e["icon"])
 	if ResourceLoader.exists(icon_path):
 		var icon := TextureRect.new()
 		# Set the expand mode before the size: TextureRect clamps its minimum
@@ -480,8 +486,8 @@ func _build_arsenal_rows(panel: Control) -> void:
 		old.queue_free()
 	var rows := Control.new()
 	rows.name = "Rows"
-	rows.position = Vector2(12, 48)
-	rows.size = Vector2(564, 166)
+	rows.position = Vector2(12, 46)
+	rows.size = Vector2(564, 174)
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(rows)
 
@@ -489,7 +495,7 @@ func _build_arsenal_rows(panel: Control) -> void:
 		"PROPULSION", "POWER", "THERMAL", "STRUCTURE",
 		"COMMS", "SCIENCE", "SUPPORT",
 	]
-	var row_h := 23.0
+	var row_h := 24.0
 	for si in range(systems.size()):
 		var system := str(systems[si])
 		var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
@@ -500,8 +506,8 @@ func _build_arsenal_rows(panel: Control) -> void:
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rows.add_child(row)
 		var label := UIKit.mono(system, 6, sys_color)
-		label.position = Vector2(0, 6)
-		label.size = Vector2(88, 10)
+		label.position = Vector2(0, 7)
+		label.size = Vector2(88, 11)
 		row.add_child(label)
 
 		var a: Array = []
@@ -547,7 +553,7 @@ func _tree_node(row: Control, parts: Array, x: float, sys_color: Color) -> void:
 		var tier := int(up.get("tier", 1))
 		var card := Panel.new()
 		card.position = Vector2(x + float(i) * 108.0, 2)
-		card.size = Vector2(104, 18)
+		card.size = Vector2(104, 19)
 		card.mouse_filter = Control.MOUSE_FILTER_STOP
 		var fill := UIKit.NIGHT_2
 		var border := sys_color
@@ -561,9 +567,9 @@ func _tree_node(row: Control, parts: Array, x: float, sys_color: Color) -> void:
 		row.add_child(card)
 		var name := str(up.get("name", id))
 		var text := "%s%d  %s" % [path, tier, name]
-		var label := UIKit.mono(text, 6, UIKit.CREAM if installed else UIKit.MUTED_C)
-		label.position = Vector2(4, 4)
-		label.size = Vector2(96, 11)
+		var label := UIKit.mono(text, 7, UIKit.CREAM if installed else UIKit.MUTED_C)
+		label.position = Vector2(4, 3)
+		label.size = Vector2(96, 13)
 		label.clip_text = true
 		card.add_child(label)
 		UIKit.hover_info(card, name, "%s\n\n%s\nCOST $%dM%s" % [

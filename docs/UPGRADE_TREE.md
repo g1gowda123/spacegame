@@ -6,11 +6,10 @@ BAY). Art brief: `docs/MODULE_ART.md`.
 
 ## Rule
 
-Every system has two mutually exclusive paths. The first paid part bought in a
-system commits that path; the other path stays out of the shop until the
-installed path is sold back. Tier 2 unlocks only after tier 1 on the same path.
-This is deliberately Bloons-like: two players can end a run with different
-machines, not the same stat stack.
+Every system has two paths. They are **not permanent**: the shop can offer
+either path, and the player can mix, sell and rebuild. Tier 2 unlocks only after
+tier 1 on the same path. The build identity comes from which branches you invest
+in, not from a lock. Bloons-style reading, but with free resale.
 
 | System | A path | A build | B path | B build |
 |---|---|---|---|---|

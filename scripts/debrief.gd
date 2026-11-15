@@ -17,6 +17,7 @@ var build_line: Label
 
 var _toast_tween: Tween
 var sell_layer: Control
+var tree_rack: UpgradeStrip
 
 
 func _ready() -> void:
@@ -51,6 +52,8 @@ func _ready() -> void:
 			call_deferred("_dev_buy_id", str(raw).substr(9))
 	if "--sell" in cli:
 		call_deferred("_open_sell_panel")
+	if "--tree" in cli:
+		call_deferred("_open_tree_panel")
 	if "--sell-first" in cli:
 		call_deferred("_dev_sell_first")
 
@@ -229,10 +232,15 @@ func _build_shop() -> void:
 	shop_root.size = Vector2(284, 216)
 	shop_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(shop_root)
-	var hover_hint := UIKit.mono("TWO PATHS · TIER 2 NEEDS TIER 1", 6, UIKit.INK_SOFT)
-	hover_hint.position = Vector2(12, 224)
-	hover_hint.size = Vector2(178, 13)
+	var hover_hint := UIKit.mono("2 PATHS · TIER 2 NEEDS 1", 6, UIKit.INK_SOFT)
+	hover_hint.position = Vector2(12, 225)
+	hover_hint.size = Vector2(94, 12)
 	c.add_child(hover_hint)
+	var tree_btn := UIKit.button("TREE", Vector2(72, 18), false)
+	tree_btn.position = Vector2(112, 220)
+	tree_btn.size = Vector2(72, 18)
+	tree_btn.pressed.connect(_open_tree_panel)
+	c.add_child(tree_btn)
 	var sell_btn := UIKit.button("SELL PARTS", Vector2(82, 18), false)
 	sell_btn.position = Vector2(198, 220)
 	sell_btn.size = Vector2(88, 18)
@@ -606,6 +614,19 @@ func _show_toast(text: String, color: Color) -> void:
 	_toast_tween = create_tween()
 	_toast_tween.tween_interval(1.4)
 	_toast_tween.tween_property(toast, "modulate:a", 0.0, 0.4)
+
+
+func _open_tree_panel() -> void:
+	if tree_rack == null or not is_instance_valid(tree_rack):
+		tree_rack = UpgradeStrip.new()
+		tree_rack.position = Vector2(-200, -200)
+		tree_rack.visible = false
+		add_child(tree_rack)
+		tree_rack.refresh()
+	if tree_rack.arsenal_open:
+		tree_rack.toggle_arsenal()
+	else:
+		tree_rack.toggle_arsenal()
 
 
 func _upgrade_info(id: String) -> Dictionary:
