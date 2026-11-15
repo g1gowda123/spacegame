@@ -32,10 +32,13 @@ def fairing(side: str):
     y=0 to the full 14 px shoulder at the bottom, with the mating edge exactly on
     the inner column and NO dark line there, so the pair closes without a slot.
     """
-    w, h = 14, 68
+    w, h = 14, 98
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    cone_h = 38                      # cone above, cylindrical adapter below
+    cone_h = 56                      # cone above, cylindrical adapter below
+    # 98 px tall so the shroud foot lands on the booster shoulder at y=0
+    # (`scripts/launch_cinematic.gd` places the halves at y=-98); the old 68 px
+    # art left a 30 px unrendered gap above the engine section.
     for y in range(h):
         t = min(1.0, y / (cone_h - 1))
         half = max(1.5, w * t)
@@ -51,7 +54,7 @@ def fairing(side: str):
         if img.getpixel((outer, y))[3]:
             d.point((outer, y), fill=SHADE)
     # agency stripe low on the shoulder, rivets along the body
-    sy = int(h * 0.62)
+    sy = int(h * 0.74)
     for y in range(sy, min(h, sy + 4)):
         for x in range(w):
             if img.getpixel((x, y))[3]:

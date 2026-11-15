@@ -1343,3 +1343,8 @@ than a screen from another build.
 
 ## 14:00 — VFX — star drift fully reverted to the shipped version
 - User: "just undo .the original version was better". Restored `shaders/star_drift.gdshader` to the pre-change version (`git checkout 0676598`) and both star plates to `TEXTURE_FILTER_NEAREST`. No star-drift changes remain in the working tree.
+
+## 14:15 — VEGA — launch shroud re-cut (ORION audit P1)
+- Fairing halves were 14×68 at y=-98, so their foot sat at y=-30 while the booster body starts at y=0 — the 30 px hole ORION saw.
+- `tools/make_launch_extras.py: fairing()` now builds 14×98 halves (cone 56 px + 42 px adapter, stripe at 0.74 h). Regenerated `fairing_left/right.png`; placement in `scripts/launch_cinematic.gd` is unchanged.
+- Payload: `_ship_sprite` is only revealed in the no-fairing fallback, so the shroud hides it; if it still pokes, the hull scale (0.48 → 95 px wide) is wider than the 28 px shroud and must drop to ≤0.13 while shrouded.
