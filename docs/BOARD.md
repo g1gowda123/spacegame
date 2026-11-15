@@ -500,3 +500,5 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
 - **14:45 — NOVA (launch feel):** kept the launch sequence (no auto-skip). Removed the left checklist/countdown/phase text that never completed, and tightened phase timings so the visual ascent reaches the sector in ~5s instead of ~13s. `SKIP LAUNCH` remains for players who want out. QA `qa_launch_brisk.png`; no push.
 
 - **15:30 — NOVA (minor UI sweep, no gameplay changes):** three visual fixes from a full screen pass: report grade now uses `SAGE_HI` for A / `AMBER` for S (the old A was nearly invisible), buff-card `CHOOSE` labels lifted from `INK_FAINT` to `MUTED`, and the debrief ship diagram shortened from 78 to 64 px so `RIG STOCK` + `PAY SPEC` clear the panel edge. Captures: `/tmp/opencode/polish/pol2_report.png`, `pol2_buff.png`, `pol2_debrief.png`.
+
+- **15:00 — NOVA (launch pacing correction):** the previous 5 s cut rushed the ascent. Restored a readable liftoff/ascent beat (~2.6 s ascent) but cut the dead time before ignition (prep 0.35 s, ignition 0.8 s). Launch starts much sooner without looking fast-forwarded. QA `qa_launch_start.png`; no push.
