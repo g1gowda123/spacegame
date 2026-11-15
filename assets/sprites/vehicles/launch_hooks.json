@@ -1,0 +1,36 @@
+{
+  "files": {
+    "fairing_left": [
+      14,
+      68
+    ],
+    "fairing_right": [
+      14,
+      68
+    ],
+    "cloud_band_0": [
+      160,
+      24
+    ],
+    "cloud_band_1": [
+      128,
+      20
+    ],
+    "cloud_band_2": [
+      96,
+      16
+    ],
+    "vector_l_booster_1x": [
+      20,
+      100
+    ],
+    "vector_m_booster_1x": [
+      28,
+      112
+    ],
+    "vector_h_booster_1x": [
+      62,
+      118
+    ]
+  }
+}
