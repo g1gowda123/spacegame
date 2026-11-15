@@ -348,6 +348,12 @@ const BRANCH_ROLE := {
 	"SUPPORT": {"A": "CONTRACT", "B": "FIELD"},
 }
 
+const SYSTEM_COLOR := {
+	"PROPULSION": "#ffb06a", "POWER": "#54e6d1", "THERMAL": "#ff9c4a",
+	"STRUCTURE": "#8ba0b6", "COMMS": "#7fe08a", "SCIENCE": "#b692ff",
+	"SUPPORT": "#e8dfc8",
+}
+
 const BUFF_MILESTONES := [1, 2]
 
 const BIOME_INFO := {

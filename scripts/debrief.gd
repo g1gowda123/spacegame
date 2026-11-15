@@ -274,8 +274,10 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	icon_frame.position = Vector2(6, 7)
 	icon_frame.size = Vector2(46, 46)
 	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sys_id := str(up.get("branch", "SUPPORT"))
+	var sys_color := Color(str(GameState.SYSTEM_COLOR.get(sys_id, "#e8dfc8")))
 	icon_frame.add_theme_stylebox_override("panel", UIKit.style_panel(
-		UIKit.NIGHT_2, UIKit.INK, 0
+		UIKit.NIGHT_2, sys_color, 0
 	))
 	card.add_child(icon_frame)
 	# Prefer a dedicated 128 px module portrait; buff icons remain the
@@ -312,7 +314,7 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var branch := UIKit.mono("%s %s%d%s" % [
 		sys, path, int(up.get("tier", 1)),
 		(" · " + role) if role != "" else ""
-	], 6, UIKit.INK_SOFT)
+	], 6, sys_color)
 	branch.position = Vector2(58, 20)
 	branch.size = Vector2(126, 9)
 	card.add_child(branch)
