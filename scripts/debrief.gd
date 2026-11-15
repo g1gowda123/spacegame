@@ -39,8 +39,6 @@ func _ready() -> void:
 	_build()
 	if "--next" in cli:
 		call_deferred("_on_next", false)
-	if "--sell" in cli:
-		call_deferred("_open_sell_panel")
 	if "--event" in OS.get_cmdline_args() or "--event" in OS.get_cmdline_user_args():
 		call_deferred("_show_event")
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
@@ -49,6 +47,8 @@ func _ready() -> void:
 			break
 		if str(raw).begins_with("--buy="):
 			call_deferred("_dev_buy", int(str(raw).substr(6)))
+	if "--sell" in cli:
+		call_deferred("_open_sell_panel")
 
 
 
