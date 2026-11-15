@@ -117,7 +117,11 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(strip)
 
-	var title_label := UIKit.head(str(buff.get("name", "COMMISSION")), 9, UIKit.NAME,
+	var title_text := str(buff.get("name", "COMMISSION"))
+	# TARGETED SPECTROSCOPY is 21 characters and touches the card edge at 9px.
+	# Step long names down one size instead of clipping the final letter.
+	var title_size := 9 if title_text.length() <= 18 else 8
+	var title_label := UIKit.head(title_text, title_size, UIKit.NAME,
 		HORIZONTAL_ALIGNMENT_CENTER)
 	title_label.position = Vector2(4, 10)
 	title_label.size = Vector2(CARD_W - 8, 13)
