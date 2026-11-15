@@ -2,7 +2,7 @@
 
 Status re-verified **after the ORION merge** (working tree on top of `32cff00`
 + `origin/main`). The event feature has **shipped**, but not from this pack:
-ATLAS wired an inline 8-card pool in `scripts/game_state.gd` (`const EVENTS`,
+ATLAS wired an inline 14-card pool in `scripts/game_state.gd` (`const EVENTS`,
 line 391) and a modal in `scripts/debrief.gd` (`_show_event`, line 301).
 
 Therefore:
@@ -52,9 +52,9 @@ appears.
 
 ---
 
-## 2. Shipped card pool (`game_state.gd:391-456`)
+## 2. Shipped card pool (`game_state.gd` `const EVENTS`)
 
-Eight cards, two trade-offs each, no obviously correct option. Effects in
+Fourteen cards, two trade-offs each, no obviously correct option. Effects in
 brackets are the exact shipped keys; the visible `desc` is the promise.
 
 | # | Title (`id`) | Body | Option A | Option B |
@@ -67,6 +67,12 @@ brackets are the exact shipped keys; the visible `desc` is the promise.
 | 6 | **CREW FATIGUE** (`crew_fatigue`) | Two flight controllers have been awake for 31 hours. | `REST ROTATION` - -1 sol next sector, +1 integrity. `[next_sol -1, next_integrity 1]` | `PUSH THROUGH` - +1 delta-v, -1 integrity next sector. `[next_dv 1, next_integrity -1]` |
 | 7 | **RIVAL AGENCY** (`rival_agency`) | A competitor wants your raw survey data before publication. | `PUBLISH FIRST` - +2 approval, -$20M. `[approval 2, budget -20]` | `SELL THE COPY` - +$35M, -1 approval. `[budget 35, approval -1]` |
 | 8 | **ANOMALOUS SIGNAL** (`anomalous_signal`) | The receiver hears a narrowband pulse during the cruise phase. | `INVESTIGATE` - -1 integrity, +180 science. `[next_integrity -1, bonus_science 180]` | `LOG AND MOVE` - +1 power next sector. `[next_power 1]` |
+| 9 | **PULSAR FIX** (`pulsar_fix`) | A millisecond pulsar gives the nav team a free timing fix, if the receiver can spare the cycles. | `LOCK THE PULSAR` - +2 data buffer, -2 sols next sector. `[next_data 2, next_sol -2]` | `STAY OPTICAL` - +1 power, +3 heat next sector. `[next_power 1, next_heat 3]` |
+| 10 | **SOLAR SAIL TRIAL** (`sail_trial`) | A piggyback solar sail can be deployed on the cruise. It is either a science headline or a thermal problem. | `DEPLOY SAIL` - +220 science, +6 heat next sector. `[bonus_science 220, next_heat 6]` | `KEEP IT STOWED` - +2 delta-v next sector. `[next_dv 2]` |
+| 11 | **DEBRIS SWEEP** (`debris_sweep`) | A tracked debris cloud crosses the approach corridor. The shield can take the hits, or the pilot can thread it. | `RUN THE SHIELD` - +1 integrity, -2 sols next sector. `[next_integrity 1, next_sol -2]` | `THREAD IT` - +2 delta-v, -1 integrity next sector. `[next_dv 2, next_integrity -1]` |
+| 12 | **HOST CITY** (`host_city`) | The launch range offers a public outreach day. The agency can open the pad or keep the schedule quiet. | `OPEN THE PAD` - +3 approval, -$20M. `[approval 3, budget -20]` | `KEEP IT QUIET` - +$30M, -1 approval. `[budget 30, approval -1]` |
+| 13 | **RADIATOR SWAP** (`radiator_swap`) | A ground-test radiator is available before the next departure. It is better hardware, or a quick sale. | `SWAP IT IN` - -$35M, -6 heat next sector. `[budget -35, next_heat -6]` | `SELL THE CORE` - +$25M, +5 heat next sector. `[budget 25, next_heat 5]` |
+| 14 | **OPEN-SOURCE FLIGHT SOFTWARE** (`open_source`) | The team can publish its scheduler as a public good, or license it to a partner agency. | `PUBLISH IT` - +2 approval, -$10M. `[approval 2, budget -10]` | `LICENSE IT` - +$35M, -1 approval. `[budget 35, approval -1]` |
 
 Tone notes for the next edit pass (E3) are in §7.
 

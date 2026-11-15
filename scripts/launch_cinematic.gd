@@ -744,7 +744,7 @@ func _draw_atmospheric_layers() -> void:
 		var cy := fmod(float(i * 55) + _time * speed, 380.0) - 20.0
 		var cw := 140.0 + sin(float(i) * 3.4) * 60.0
 		var cx := 80.0 + float(i % 3) * 190.0
-		var a := 0.18 + 0.12 * sin(float(i) + _time)
+		var a := 0.10 + 0.06 * sin(float(i) + _time)
 		if not _cloud_textures.is_empty():
 			var tex: Texture2D = _cloud_textures[i % _cloud_textures.size()]
 			var ch := tex.get_height() * (cw / maxf(1.0, tex.get_width()))
@@ -986,7 +986,7 @@ func _update_preparation_phase() -> void:
 			(item["dot"] as Label).add_theme_color_override("font_color", UIKit.LIVE)
 			(item["label"] as Label).add_theme_color_override("font_color", UIKit.CREAM)
 
-	if _time >= 0.35:
+	if _time >= 0.25:
 		_enter_ignition_phase()
 
 
@@ -1018,7 +1018,7 @@ func _update_ignition_phase() -> void:
 	if _phase_time >= 1.2 and _audio_rumble != null and not _audio_rumble.playing:
 		_play_sfx(_audio_rumble)
 
-	if _phase_time >= 0.8:
+	if _phase_time >= 0.55:
 		_enter_liftoff_phase()
 
 
@@ -1038,7 +1038,8 @@ func _enter_liftoff_phase() -> void:
 		_phase_label.text = ""
 	if _smoke_particles != null:
 		_smoke_particles.emitting = true
-	_acceleration = 26.0
+	_acceleration = 46.0
+	_velocity = 62.0
 	_shake_amount = 3.2 if not _reduced_fx else 0.6
 
 
@@ -1057,7 +1058,7 @@ func _update_liftoff_phase(delta: float) -> void:
 	if _gantry_tower != null:
 		_gantry_tower.queue_redraw()
 
-	if _altitude >= 160.0:
+	if _altitude >= 150.0:
 		_enter_ascent_phase()
 
 
@@ -1080,10 +1081,13 @@ func _update_ascent_phase(delta: float) -> void:
 	# One long, eased atmosphere -> space handoff. The old version switched
 	# colour halves in a straight line and only began the space fade at 50 %,
 	# so the star plate arrived as a block while the sky was already dark.
-	var t := clampf(_phase_time / 3.4, 0.0, 1.0)
+	var t := clampf(_phase_time / 2.4, 0.0, 1.0)
 	var e := smoothstep(0.0, 1.0, t)
-	var col_dusk := Color(0.04, 0.07, 0.12)
-	var col_mid := Color(0.025, 0.035, 0.16)
+	# Start in the thin outer atmosphere, not a dusk-lit inner sky. The rocket
+	# is already well above the weather by the time this phase opens, so the
+	# palette begins close to the void and only the airglow changes.
+	var col_dusk := Color(0.018, 0.042, 0.085)
+	var col_mid := Color(0.014, 0.028, 0.075)
 	var col_space := Color(0.008, 0.012, 0.024)
 	if _sky_rect != null:
 		var sky := col_dusk.lerp(col_mid, smoothstep(0.0, 0.55, e))
@@ -1118,7 +1122,7 @@ func _update_ascent_phase(delta: float) -> void:
 	if _clouds_root != null:
 		_clouds_root.queue_redraw()
 
-	if _phase_time >= 3.4:
+	if _phase_time >= 2.4:
 		_enter_space_phase()
 
 

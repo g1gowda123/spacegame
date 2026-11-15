@@ -127,7 +127,7 @@ with printable design worksheets.
 - Four hulls, three launch vehicles, three orbits, four science objectives,
   six instruments.
 - Three-sector campaign, survey and relay sector tasks, nine hazard types.
-- Eight seeded between-sector incidents with two trade-offs each.
+- Fourteen seeded between-sector incidents with two trade-offs each.
 - 1-4 player local hot-seat crew mode with four roles and conflicting goals.
 - Three difficulty tiers, daily challenge, and a shareable campaign code.
 - Final grade C-S with a full score breakdown and a next-grade gap.

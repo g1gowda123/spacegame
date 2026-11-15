@@ -162,7 +162,7 @@ next planet and verifies movement range 3 → 4, then scores the run
 | Simulate / manage the mission | Three-sector campaign, telegraphed hazards, HOLD, EXTRACT |
 | Single player **and team of up to four** | Mission Control: 1–4 local hot-seat, role ownership, handoff banners |
 | Distinct team responsibilities | Four roles with different buffs and personal goals |
-| Multiple scenarios / mission types | 72 real planets, 13 biomes, survey/relay alternation, 8 event cards |
+| Multiple scenarios / mission types | 72 real planets, 13 biomes, survey/relay alternation, 14 event cards |
 | Random events | Between-sector event choice (two real trade-offs) |
 | Difficulty levels | Cadet / Standard / Director with explicit modifiers |
 | Leaderboards / comparison | Local best, daily best, shareable campaign code |

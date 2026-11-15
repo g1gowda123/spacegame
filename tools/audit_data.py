@@ -283,8 +283,10 @@ def main() -> int:
     expected_ids = {
         "solar_storm", "private_donor", "salvage_cache", "cryo_leak",
         "stellar_data", "crew_fatigue", "rival_agency", "anomalous_signal",
+        "pulsar_fix", "sail_trial", "debris_sweep", "host_city",
+        "radiator_swap", "open_source",
     }
-    check("events: shipped inline pool has 8 cards", len(shipped_ids) == 8,
+    check("events: shipped inline pool has 14 cards", len(shipped_ids) == 14,
           "found %d" % len(shipped_ids))
     check("events: shipped ids match the documented pool",
           set(shipped_ids) == expected_ids,
