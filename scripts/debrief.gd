@@ -123,6 +123,10 @@ func _build() -> void:
 		"planet_size": 0.56,
 		"planet_asset": SpaceBackdrop.asset_for_planet(planet),
 		"dim": 0.22,
+		"motion": true,
+		"planet_clouds": 0.55,
+		"planet_turn": 0.3,
+		"planet_sway": 0.5,
 	})
 	bg.modulate.a = 0.22
 

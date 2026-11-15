@@ -103,6 +103,12 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		"planet_center": Vector2(0.5, 0.5),
 		"planet_size": 0.98,
 		"planet_asset": SpaceBackdrop.asset_for_planet(p),
+		# Small portrait weather: the three destination cards breathe without
+		# turning into a carousel. Cloud/turn are shader-side; sway is 2D.
+		"motion": true,
+		"planet_clouds": 0.5,
+		"planet_turn": 0.35,
+		"planet_sway": 0.6,
 	})
 
 	var name := UIKit.label(str(p["name"]), 9, UIKit.NAME, true, HORIZONTAL_ALIGNMENT_CENTER)

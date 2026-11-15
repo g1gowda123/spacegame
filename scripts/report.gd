@@ -3,6 +3,7 @@ const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## Final agency ledger and run summary.
 
 var score: Dictionary = {}
+var _total_label: Label
 var share_code := ""
 var share_line: Label
 
@@ -23,6 +24,10 @@ func _build() -> void:
 		"planet_size": 0.60,
 		"planet_asset": "ringed",
 		"dim": 0.22,
+		"motion": true,
+		"planet_clouds": 0.55,
+		"planet_turn": 0.3,
+		"planet_sway": 0.5,
 	})
 	bg.modulate.a = 0.20
 
@@ -67,10 +72,24 @@ func _build_grade() -> void:
 	gl.size = Vector2(266, 12)
 	c.add_child(gl)
 
-	var total := UIKit.label("%d" % int(score.get("total", 0)), 26, UIKit.INK, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var total := UIKit.label("0", 26, UIKit.INK, true, HORIZONTAL_ALIGNMENT_CENTER)
 	total.position = Vector2(0, 84)
 	total.size = Vector2(266, 32)
 	c.add_child(total)
+	_total_label = total
+	# The grade lands as a stamp and the total counts up. This is the one
+	# screen the player reads slowly, so the payoff gets a beat instead of
+	# appearing fully formed on the first frame.
+	grade.pivot_offset = Vector2(133, 35)
+	grade.scale = Vector2(1.42, 1.42)
+	grade.modulate.a = 0.0
+	var stamp := create_tween().set_parallel(true)
+	stamp.tween_property(grade, "modulate:a", 1.0, 0.16)
+	stamp.tween_property(grade, "scale", Vector2.ONE, 0.42) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var count := create_tween()
+	count.tween_method(_set_total, 0, int(score.get("total", 0)), 0.72) \
+		.set_delay(0.10).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	var tl := UIKit.label("TOTAL SCORE", 7, UIKit.INK_SOFT, true, HORIZONTAL_ALIGNMENT_CENTER)
 	tl.position = Vector2(0, 114)
 	tl.size = Vector2(266, 12)
@@ -114,6 +133,11 @@ func _build_grade() -> void:
 	next.position = Vector2(14, 222)
 	next.size = Vector2(238, 12)
 	c.add_child(next)
+
+
+func _set_total(v: int) -> void:
+	if _total_label != null:
+		_total_label.text = "%d" % v
 
 
 func _build_ledger() -> void:

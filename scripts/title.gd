@@ -117,8 +117,8 @@ func _ready() -> void:
 		# The menu is the shop window: a brighter plate than the consoles, with
 		# a visible sky, a lit limb and slow ambient motion.
 		"dim": 0.12,
-		"bright": 1.16,
-		"nebula": 0.045,
+		"bright": 1.05,
+		"nebula": 0.030,
 		"planet_light": 0.52,
 		# The disc edge is nearest-filtered, so a strong rim reads as a dotted
 		# outline. Keep it low and let the halo carry the atmosphere.
@@ -128,6 +128,9 @@ func _ready() -> void:
 		"halo": 0.9,
 		"motion": true,
 		"spin_speed": TAU / 90.0,
+		"planet_clouds": 1.0,
+		"planet_turn": 1.0,
+		"planet_sway": 1.0,
 	})
 	_build_ui()
 	_build_howto()

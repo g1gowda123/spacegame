@@ -90,6 +90,10 @@ func _build() -> void:
 		"planet_size": 0.58,
 		"planet_asset": "rocky",
 		"dim": 0.68,
+		"motion": true,
+		"planet_clouds": 0.6,
+		"planet_turn": 0.3,
+		"planet_sway": 0.5,
 	})
 	bg.modulate.a = 0.52
 

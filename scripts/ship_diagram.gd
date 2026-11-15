@@ -218,6 +218,19 @@ func _draw_live_lights() -> void:
 	var flick := 0.55 + 0.30 * sin(_time * 7.3) + 0.15 * sin(_time * 23.0)
 	var ec := Color(accent.r, accent.g, accent.b, 0.16 + 0.20 * flick)
 	var rear := Vector2(_bbox.position.x - 2.0, cy + 1.0)
+	# A small pixel flame behind the engine bell. The circles alone read as a
+	# lamp; the tapered cone gives the portrait an exhaust direction.
+	var flame := 3.0 + 3.0 * flick
+	var exhaust := PackedVector2Array([
+		rear + Vector2(0.5, -1.5),
+		rear + Vector2(0.5, 1.5),
+		rear + Vector2(-flame, 0.0),
+	])
+	draw_colored_polygon(exhaust, Color(accent.r, accent.g, accent.b, 0.18 + 0.20 * flick))
+	draw_line(rear + Vector2(-1.0, -1.1), rear + Vector2(-flame * 0.72, 0.0),
+		Color(accent.r, accent.g, accent.b, 0.55), 1.0)
+	draw_line(rear + Vector2(-1.0, 1.1), rear + Vector2(-flame * 0.72, 0.0),
+		Color(accent.r, accent.g, accent.b, 0.55), 1.0)
 	draw_circle(rear, 3.4 + flick * 1.8, ec)
 	draw_circle(rear, 1.3, Color(1.0, 1.0, 1.0, 0.20 + 0.30 * flick))
 	# Navigation strobe: two short red/green blinks per 1.6 s cycle. This is the

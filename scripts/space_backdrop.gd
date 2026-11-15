@@ -23,6 +23,16 @@ var _shade: ColorRect
 var _motion := false
 var _spin_speed := 0.0
 var _spin := 0.0
+var _t := 0.0
+# Per-screen portrait finish. Defaults reproduce the flat working-console
+# look; only screens that opt in get a lit, turning, weather-bearing planet.
+var _bright := 1.0
+var _nebula := 0.012
+var _planet_light := -1.0
+var _atmosphere := -1.0
+var _clouds := 0.0
+var _turn := 0.0
+var _sway := 0.0
 
 
 func _ready() -> void:
@@ -73,6 +83,7 @@ func _build() -> void:
 	_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_shade.visible = _bg_on
 	add_child(_shade)
+	_apply_shader_params()
 	_layout()
 
 
@@ -101,13 +112,45 @@ func configure(opts: Dictionary) -> void:
 		set_process(_motion)
 	if opts.has("spin_speed"):
 		_spin_speed = float(opts["spin_speed"])
+	if opts.has("bright"):
+		_bright = float(opts["bright"])
+	if opts.has("nebula"):
+		_nebula = float(opts["nebula"])
+	if opts.has("planet_light"):
+		_planet_light = float(opts["planet_light"])
+	if opts.has("atmosphere"):
+		_atmosphere = float(opts["atmosphere"])
+	if opts.has("planet_clouds"):
+		_clouds = float(opts["planet_clouds"])
+	if opts.has("planet_turn"):
+		_turn = float(opts["planet_turn"])
+	if opts.has("planet_sway"):
+		_sway = float(opts["planet_sway"])
+		if _sway > 0.0:
+			_motion = true
+			set_process(true)
 	if opts.has("dim"):
 		_dim = clampf(float(opts["dim"]), 0.0, 1.0)
 		if _shade != null:
 			_shade.color = Color(0.03, 0.05, 0.08, _dim)
+	_apply_shader_params()
 	if planet_rect != null:
 		planet_rect.visible = _planet_on
 	_layout()
+
+
+func _apply_shader_params() -> void:
+	if _star_mat != null:
+		_star_mat.set_shader_parameter("bright", _bright)
+		_star_mat.set_shader_parameter("nebula", _nebula)
+	if _planet_mat == null:
+		return
+	if _planet_light >= 0.0:
+		_planet_mat.set_shader_parameter("base_light", _planet_light)
+	if _atmosphere >= 0.0:
+		_planet_mat.set_shader_parameter("atmosphere", _atmosphere)
+	_planet_mat.set_shader_parameter("cloud_amount", _clouds)
+	_planet_mat.set_shader_parameter("turn_amount", _turn)
 
 
 func _load_planet(asset: String) -> void:
@@ -170,10 +213,12 @@ func _layout() -> void:
 func _process(delta: float) -> void:
 	if not _motion or planet_rect == null:
 		return
+	_t += delta
 	_spin += delta * _spin_speed
-	planet_rect.rotation = _spin
+	var sway := sin(_t * 0.085) * 0.026 * _sway
+	planet_rect.rotation = _spin + sway
 	if _planet_mat != null:
-		_planet_mat.set_shader_parameter("spin", _spin)
+		_planet_mat.set_shader_parameter("spin", _spin + sway)
 
 
 static func planet_path(name: String) -> String:
