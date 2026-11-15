@@ -3909,7 +3909,7 @@ func _animate_player(from_cell: Vector2i) -> void:
 
 
 func _camera_world_layers() -> Array:
-	return [cliff_layer, decal_layer, overlay_layer, structure_layer, occlusion_layer]
+	return [cliff_layer, decal_layer, overlay_layer, fog_layer, structure_layer, occlusion_layer]
 
 
 func _pan_camera(from_cell: Vector2i) -> void:
