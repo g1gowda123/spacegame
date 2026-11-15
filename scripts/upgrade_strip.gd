@@ -594,8 +594,15 @@ func _tree_block_lane(tree: Control, parts: Array, x: float, y: float,
 		var tag_text := "%s%d %s" % [path, tier, role if role != "" else short]
 		var tag_color := UIKit.CREAM if installed else (UIKit.AMBER if next_up else UIKit.MUTED_C)
 		var tag := UIKit.mono(tag_text, 6, tag_color)
-		tag.position = Vector2(x - 6.0, ny + 24.0)
-		tag.size = Vector2(56.0, 9.0)
+		# Label beside the icon, not under it: the old under-label touched the
+		# next tier's frame at this density. A/B get different widths so the
+		# B label stays inside this system's 204 px block.
+		tag.position = Vector2(x + 24.0, ny + 6.0)
+		tag.size = Vector2(54.0 if path == "A" else 38.0, 11.0)
+		tag.clip_text = true
+		tag.add_theme_color_override("font_shadow_color", Color(0.03, 0.05, 0.06, 0.95))
+		tag.add_theme_constant_override("shadow_offset_x", 0)
+		tag.add_theme_constant_override("shadow_offset_y", 1)
 		tree.add_child(tag)
 
 
