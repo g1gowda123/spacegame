@@ -24,7 +24,7 @@
  "3": {
   "class_type": "CLIPTextEncode",
   "inputs": {
-   "text": "dramatic cover illustration for a turn-based space mission design game, lone boxy survey lander with a tall high-gain dish on a windswept alien ridge, giant ringed exoplanet rising over the horizon, two small moons, winding trail of glowing cyan data nodes leading toward the lander, amber solar-storm front sweeping across the right side, thin lightning, deep navy and teal sky, bone-white highlights, burnt-orange hazard accents, low horizon, subject in the lower third, large clean dark negative space at the top, cinematic low-angle composition, 16-bit pixel-art illustration, crisp silhouette, high contrast, atmospheric perspective, no text, no letters, no UI, no HUD, no frame",
+   "text": "hero cover illustration for a space survey game, lone astronaut in a bone-white suit kneeling on a black basalt ridge, holding a glowing cyan data core in both hands, a compact four-legged lunar lander with a gold-foil body and tall dish behind them, enormous banded exoplanet rising in the deep teal sky, orange solar storm ribbons on the right, dust blowing off the ridge, large clean dark negative space across the top third, cinematic low-angle composition, 16-bit pixel-art illustration, high contrast, warm bone and amber accents, no text, no letters, no UI, no HUD, no frame",
    "clip": [
     "2",
     1
@@ -52,7 +52,7 @@
  "6": {
   "class_type": "KSampler",
   "inputs": {
-   "seed": 7101,
+   "seed": 7501,
    "steps": 28,
    "cfg": 5.5,
    "sampler_name": "dpmpp_2m",
@@ -92,10 +92,76 @@
  "8": {
   "class_type": "SaveImage",
   "inputs": {
-   "filename_prefix": "cover",
+   "filename_prefix": "cover_hires",
    "images": [
+    "12",
+    0
+   ]
+  }
+ },
+ "9": {
+  "class_type": "ImageScale",
+  "inputs": {
+   "image": [
     "7",
     0
+   ],
+   "upscale_method": "lanczos",
+   "width": 1920,
+   "height": 1536,
+   "crop": "disabled"
+  }
+ },
+ "10": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "9",
+    0
+   ],
+   "vae": [
+    "1",
+    2
+   ]
+  }
+ },
+ "11": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 7502,
+   "steps": 14,
+   "cfg": 5.5,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.32,
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "10",
+    0
+   ]
+  }
+ },
+ "12": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "11",
+    0
+   ],
+   "vae": [
+    "1",
+    2
    ]
   }
  }
