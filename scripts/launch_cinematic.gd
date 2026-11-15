@@ -432,6 +432,7 @@ func _build_rocket_assembly() -> void:
 	_ship_sprite.rotation = -PI * 0.5 # Point nose UP
 	_ship_sprite.scale = Vector2(0.48, 0.48)
 	_ship_sprite.position = Vector2(0, -56)
+	_ship_sprite.visible = false
 	_rocket_body.add_child(_ship_sprite)
 
 	# Aerodynamic Fairing Halves (Shroud payload during atmospheric ascent)
@@ -474,6 +475,7 @@ func _build_rocket_assembly() -> void:
 		# polygon. `--vector-fairing` restores the old shroud for comparison.
 		_fairing_left.visible = false
 		_fairing_right.visible = false
+		_ship_sprite.visible = true
 
 	# Transonic Condensation Shock Collar (Max-Q cone)
 	_shock_cone = Polygon2D.new()
@@ -906,6 +908,7 @@ func _start_subsequent_sequence() -> void:
 	_booster_dropped = true
 	_fairing_left.visible = false
 	_fairing_right.visible = false
+	_ship_sprite.visible = true
 	_ship_sprite.position = Vector2(0, 0)
 	_ship_sprite.scale = Vector2(0.55, 0.55)
 	_rocket_root.position = Vector2(320, 180)
@@ -1118,7 +1121,9 @@ func _enter_space_phase() -> void:
 	if _space_root != null:
 		_space_root.modulate.a = 1.0
 
-	# Stage Separation: Booster drops away, fairings split!
+	# Stage Separation: Booster drops away, fairings split, payload is revealed.
+	if _ship_sprite != null:
+		_ship_sprite.visible = true
 	_play_sfx(_audio_staging)
 	_separate_stages()
 	_show_space_plaque()
