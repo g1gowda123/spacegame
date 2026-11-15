@@ -707,9 +707,13 @@ func _commit_route() -> void:
 	var planet := selected_planet
 	GameState.begin_sector(planet)
 	GameState.sfx("confirm")
-	# Launch cinematic removed on request: the review commits straight into the
-	# sector. `--screen=launch` still plays the sequence for trailers.
-	get_tree().change_scene_to_file("res://scenes/sector.tscn")
+	# The launch sequence plays on the way down to the surface: review -> launch
+	# -> sector. The scene itself shortens the sequence for sectors 2+ (the full
+	# ascent is forced with --full-launch), and the QA harness clicks SKIP LAUNCH.
+	if ResourceLoader.exists("res://scenes/launch.tscn"):
+		get_tree().change_scene_to_file("res://scenes/launch.tscn")
+	else:
+		get_tree().change_scene_to_file("res://scenes/sector.tscn")
 
 
 func _play_commit_transit(p: Dictionary) -> void:
