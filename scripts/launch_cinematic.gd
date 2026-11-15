@@ -97,6 +97,8 @@ var _current_sector_no: int = 1
 
 # --- Motion Parameters ---
 var _altitude: float = 0.0
+var _cloud_scroll: float = 0.0
+var _rng := RandomNumberGenerator.new()
 var _velocity: float = 0.0
 var _acceleration: float = 0.0
 var _countdown_val: int = 10
@@ -107,6 +109,7 @@ var _booster_offset_y: float = 0.0
 
 
 func _ready() -> void:
+	_rng.seed = 0x5EED
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	
@@ -210,6 +213,9 @@ func _build_scene_layers() -> void:
 	_space_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_space_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_space_root.modulate.a = 0.0
+	# A full-screen star shader costs fragments even at alpha 0. Keep it out of
+	# the tree's draw pass until the ascent actually needs it.
+	_space_root.visible = false
 	_world.add_child(_space_root)
 
 	_space_backdrop = SpaceBackdrop.create({"planet_on": false, "stars_on": true, "dim": 0.20})
@@ -739,9 +745,8 @@ func _draw_atmospheric_layers() -> void:
 	if _phase != Phase.ASCENT:
 		return
 	# Fast passing horizontal stratus clouds rushing downwards
-	var speed := _velocity * 3.2
 	for i in range(7):
-		var cy := fmod(float(i * 55) + _time * speed, 380.0) - 20.0
+		var cy := fmod(float(i * 55) + _cloud_scroll, 420.0) - 40.0
 		var cw := 140.0 + sin(float(i) * 3.4) * 60.0
 		var cx := 80.0 + float(i % 3) * 190.0
 		var a := 0.10 + 0.06 * sin(float(i) + _time)
@@ -906,6 +911,7 @@ func _start_subsequent_sequence() -> void:
 	# Shorter, high-energy trans-planetary injection sequence for subsequent sectors
 	_phase = Phase.SPACE
 	_sky_rect.color = Color(0.008, 0.012, 0.024)
+	_space_root.visible = true
 	_space_root.modulate.a = 1.0
 	_ground_root.visible = false
 	_countdown_label.visible = false
@@ -932,11 +938,11 @@ func _process(delta: float) -> void:
 
 	# Screen Shake application
 	if _shake_amount > 0.0 and not _reduced_fx:
-		var rng := RandomNumberGenerator.new()
-		rng.randomize()
+		# One persistent RNG: constructing + randomize() every frame during
+		# ignition was a measurable hitch in the middle of the busiest phase.
 		_world.position = Vector2(
-			rng.randf_range(-_shake_amount, _shake_amount),
-			rng.randf_range(-_shake_amount, _shake_amount)
+			_rng.randf_range(-_shake_amount, _shake_amount),
+			_rng.randf_range(-_shake_amount, _shake_amount)
 		)
 	else:
 		_world.position = Vector2.ZERO
@@ -1072,11 +1078,20 @@ func _enter_ascent_phase() -> void:
 		_status_vbox.visible = false
 	if _ground_root != null:
 		_ground_root.visible = false
+	# Clouds are a continuous curtain for this phase: start them above the
+	# frame, scroll them down by accumulated velocity, and fade the whole layer
+	# in/out. Using TIME * velocity made their position jump every frame the
+	# speed changed, so they looked like they were teleporting in.
+	_cloud_scroll = 0.0
+	if _clouds_root != null:
+		_clouds_root.visible = true
+		_clouds_root.modulate.a = 0.0
 
 
 func _update_ascent_phase(delta: float) -> void:
 	_velocity += (_acceleration + 18.0) * delta
 	_altitude += _velocity * delta
+	_cloud_scroll += (34.0 + _velocity * 2.1) * delta
 
 	# One long, eased atmosphere -> space handoff. The old version switched
 	# colour halves in a straight line and only began the space fade at 50 %,
@@ -1096,11 +1111,15 @@ func _update_ascent_phase(delta: float) -> void:
 	# Stars come up first and early; the Earth limb waits until the airglow
 	# has thinned, so the horizon does not pop on at the phase change.
 	if _space_root != null:
+		if t >= 0.18:
+			_space_root.visible = true
 		_space_root.modulate.a = smoothstep(0.18, 1.0, t)
 	if _earth_disc != null:
 		_earth_disc.modulate.a = smoothstep(0.48, 0.98, t)
 	if _clouds_root != null:
-		_clouds_root.modulate.a = 1.0 - smoothstep(0.30, 0.86, t)
+		var cloud_in := smoothstep(0.0, 0.14, t)
+		var cloud_out := 1.0 - smoothstep(0.48, 0.92, t)
+		_clouds_root.modulate.a = cloud_in * cloud_out
 
 	# Max-Q Condensation Cone (flares at t between 0.35 and 0.65)
 	if _shock_cone != null:
@@ -1136,6 +1155,7 @@ func _enter_space_phase() -> void:
 	if _shock_cone != null:
 		_shock_cone.visible = false
 	if _space_root != null:
+		_space_root.visible = true
 		_space_root.modulate.a = 1.0
 	if _earth_disc != null:
 		_earth_disc.modulate.a = 1.0
