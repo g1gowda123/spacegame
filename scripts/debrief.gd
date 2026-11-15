@@ -39,6 +39,8 @@ func _ready() -> void:
 	_build()
 	if "--next" in cli:
 		call_deferred("_on_next", false)
+	if "--sell" in cli:
+		call_deferred("_open_sell_panel")
 	if "--event" in OS.get_cmdline_args() or "--event" in OS.get_cmdline_user_args():
 		call_deferred("_show_event")
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
@@ -535,3 +537,108 @@ func _show_toast(text: String, color: Color) -> void:
 	_toast_tween = create_tween()
 	_toast_tween.tween_interval(1.4)
 	_toast_tween.tween_property(toast, "modulate:a", 0.0, 0.4)
+
+
+func _upgrade_info(id: String) -> Dictionary:
+	for up in GameState.UPGRADES:
+		if str(up.get("id", "")) == id:
+			return up
+	return {}
+
+
+func _open_sell_panel() -> void:
+	if sell_layer != null and is_instance_valid(sell_layer):
+		sell_layer.queue_free()
+	sell_layer = Control.new()
+	sell_layer.position = Vector2(326, 39)
+	sell_layer.size = Vector2(304, 256)
+	sell_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	sell_layer.z_index = 60
+	add_child(sell_layer)
+	var p := UIKit.sheet(sell_layer, 0, 0, 304, 256)
+	var c := UIKit.fill(p)
+	var head := UIKit.head("RESALE BAY", 9, UIKit.NAME)
+	head.position = Vector2(12, 8)
+	head.size = Vector2(160, 12)
+	c.add_child(head)
+	var sub := UIKit.mono("50% RECOVERY  ·  PULL A PART", 6, UIKit.INK_SOFT)
+	sub.position = Vector2(12, 22)
+	c.add_child(sub)
+	var close := UIKit.button("CLOSE", Vector2(58, 17), false)
+	close.position = Vector2(232, 6)
+	close.size = Vector2(58, 17)
+	close.pressed.connect(_close_sell_panel)
+	c.add_child(close)
+	UIKit.hairline(c, 12, 36, 280, UIKit.LINE)
+
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(10, 42)
+	scroll.size = Vector2(284, 202)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	c.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.custom_minimum_size = Vector2(280, 0)
+	list.add_theme_constant_override("separation", 3)
+	scroll.add_child(list)
+	if GameState.owned.is_empty():
+		var none := UIKit.label("NO PAID PARTS INSTALLED", 8, UIKit.DIM, true,
+			HORIZONTAL_ALIGNMENT_CENTER)
+		none.custom_minimum_size = Vector2(280, 30)
+		list.add_child(none)
+		return
+	for raw in GameState.owned:
+		var id := str(raw)
+		var up := _upgrade_info(id)
+		if up.is_empty():
+			continue
+		list.add_child(_sell_row(up))
+
+
+func _sell_row(up: Dictionary) -> Control:
+	var id := str(up["id"])
+	var row := Control.new()
+	row.custom_minimum_size = Vector2(280, 24)
+	var nm := UIKit.mono(str(up.get("name", id)), 7, UIKit.INK, true)
+	nm.position = Vector2(2, 2)
+	nm.size = Vector2(152, 11)
+	nm.clip_text = true
+	row.add_child(nm)
+	var branch := UIKit.mono("%s %s%d" % [
+		str(up.get("branch", "SUPPORT")), str(up.get("path", "A")),
+		int(up.get("tier", 1))
+	], 6, UIKit.INK_FAINT)
+	branch.position = Vector2(2, 13)
+	branch.size = Vector2(130, 9)
+	row.add_child(branch)
+	var refund := int(floor(float(up.get("cost", 0.0)) * 0.5))
+	var price := UIKit.mono("+$%dM" % refund, 7, UIKit.GREEN,
+		HORIZONTAL_ALIGNMENT_RIGHT)
+	price.position = Vector2(156, 3)
+	price.size = Vector2(62, 12)
+	row.add_child(price)
+	var sell := UIKit.button("SELL", Vector2(52, 17), false)
+	sell.position = Vector2(222, 2)
+	sell.size = Vector2(52, 17)
+	sell.pressed.connect(_sell_part.bind(id))
+	row.add_child(sell)
+	UIKit.hairline(row, 0, 23, 278, UIKit.LINE)
+	return row
+
+
+func _sell_part(id: String) -> void:
+	var res := GameState.sell_upgrade(id)
+	if bool(res.get("ok", false)):
+		_show_toast("PULLED %s  ·  +$%dM" % [
+			str(res.get("name", id)), int(res.get("refund", 0))
+		], UIKit.GREEN)
+		_refresh_ship()
+		_refresh_shop()
+		_open_sell_panel()
+	else:
+		_show_toast("CANNOT SELL  ·  %s" % str(res.get("reason", "?")), UIKit.RED)
+
+
+func _close_sell_panel() -> void:
+	if sell_layer != null and is_instance_valid(sell_layer):
+		sell_layer.queue_free()
+	sell_layer = null
