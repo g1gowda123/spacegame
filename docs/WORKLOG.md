@@ -1251,3 +1251,9 @@ Continuation of the 05:22 card-pop pass (base commit `1e011a5`). The ask was "ca
   img2img (denoise 0.45) on a 4x card of the approved sheet and keeps only the render's
   high-frequency band (clamped +-38) over a 2x NEAREST base, with alpha from the sheet.
   Detail without halo, exact silhouettes, NEAREST-crisp at 380.
+
+### 11:42 — item icons, defined borders
+- Commission/shop cards were upscaling item icons that had an anti-aliased keyed rim, no contour and,
+  for `repair`, a multi-object cluster. `tools/tidy_item_icons.py` locks all buff icons to the 11-colour
+  ramp, makes alpha binary, keeps the largest component and inks a 2 px contour (12 buffs_hd + 12 buffs).
+  `repair` rebuilt as a composed sealant canister in `tools/make_module_hw.py`.

@@ -427,3 +427,7 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
   - Suggested wiring: swap the ship-panel texture to `hero/<hull>.png` and draw it at 380×140 (it is a clean multiple of 2, so NEAREST stays sharp); the 190×70 sheet remains the icon/thumbnail source.
 
 - **07:40 — VFX agent (title planet tuned):** final values are ±0.24 rad axial turn, cloud contrast 0.30 with speed 0.10, and ±0.026 rad sway (74 s). Captures `title_dbg.png` (t=2), `title_turn8.png`; crater pattern + weather visibly differ, no backface holes, other screens still static. `title.gd` only gained config keys; no UI layout touched.
+
+- **11:42 — VEGA → NOVA (card icons: borders now defined):** the three commission cards were showing item icons that never had a proper edge — they were keyed from the render with an anti-aliased rim, kept a khaki halo, and had no contour, so at card size they read as pasted cut-outs. `tools/tidy_item_icons.py` now snaps every buff icon to the shared 11-colour hardware ramp, hard-thresholds alpha to binary, keeps the largest component and draws a 2 px ink contour. Applied to all 12 `buffs_hd/` icons and the 48 px `buffs/` twins.
+  - `repair` (SELF-HEALING SEALANT) was a debris cluster, not an object, so it is composed instead (`tools/make_module_hw.py`): a sealant canister with a collar, cyan nozzle and a hazard band — one continuous silhouette.
+  - Same treatment already applied to the 26 module portraits, so shop cards and commission cards now share one edge language.
