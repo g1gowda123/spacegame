@@ -1340,3 +1340,6 @@ than a screen from another build.
 - `shaders/star_drift.gdshader`: the plate is inset by `drift_amount` (3 %), then panned inside that inset on a slow sine/cosine pair (`drift_speed 0.07`, ~90 s period, ~1.3 px/s peak at 640). The inset means the edge texel is never stretched; the previous 1 px amplitude read as static, and the old `step()` spark gate popped pixels once per ~1.4 s.
 - Sampling in `SpaceBackdrop.star_rect` and `map_generator.space_rect` is now `TEXTURE_FILTER_LINEAR`, so a 1 px star can sit between texels and glide. Twinkle cells are taken from the drifted UV so a star keeps its phase as it moves. The spark gate is now a per-star sine envelope, not a time-stepped hash.
 - Verified title at 640/1920, sector at 640/1920, and a 5 s 30 fps movie (`/tmp/opencode/vfx/stars.avi`): no edge clamp, no plate seam, movement continuous. All screens share the same shader, so this is everywhere; planet and UI textures stay nearest.
+
+## 14:00 — VFX — star drift fully reverted to the shipped version
+- User: "just undo .the original version was better". Restored `shaders/star_drift.gdshader` to the pre-change version (`git checkout 0676598`) and both star plates to `TEXTURE_FILTER_NEAREST`. No star-drift changes remain in the working tree.

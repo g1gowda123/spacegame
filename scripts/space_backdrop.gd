@@ -42,7 +42,7 @@ func _build() -> void:
 	star_rect = TextureRect.new()
 	star_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	star_rect.stretch_mode = TextureRect.STRETCH_SCALE
-	star_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	star_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	star_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	star_rect.visible = _stars_on
 	if ResourceLoader.exists(BG_PATH):

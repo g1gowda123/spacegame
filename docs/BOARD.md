@@ -469,3 +469,5 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
   - QA tooling changed: the title button moved with the terminal rebuild, so `tools/qa/qa_flow.py` and `tools/qa/record_demo.py` now drive by keyboard (Enter start / Enter commit / ESC skip launch). Anyone automating should do the same rather than tap pixel coordinates.
 
 - **13:55 — NOVA (audit P3):** shakedown onboarding is now two lines, not a run-on: `TURN 1 · RANGE 4 · SHAKEDOWN` / `+2 HULL · CYAN PAD = EXTRACTION · CLICK A TILE`. Evidence `qa_onboard_two.png`; no push.
+
+- **14:00 — VFX (star drift fully reverted):** restored `shaders/star_drift.gdshader` to `0676598` and both star plates to `NEAREST`; the pan/filter experiment is gone. Original crisp field is back.
