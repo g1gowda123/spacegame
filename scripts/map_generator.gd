@@ -514,6 +514,8 @@ var minimap_tex: ImageTexture
 
 var player_cell := Vector2i.ZERO
 var objectives: Array[Vector2i] = []
+var data_caches: Array[Vector2i] = []
+var cache_taken: Array[bool] = []
 var collected: Array[bool] = []
 var objective_tiers: Array[int] = []
 var objective_values: Array[int] = []
@@ -1489,6 +1491,8 @@ func _place_objectives() -> void:
 	collected.clear()
 	objective_tiers.clear()
 	objective_values.clear()
+	data_caches.clear()
+	cache_taken.clear()
 	for i in range(OBJECTIVE_COUNT):
 		var placed := false
 		var tier := 1 + mini(1, i / 2)
@@ -1540,6 +1544,37 @@ func _place_objectives() -> void:
 					objective_tiers.append(tier)
 					objective_values.append(value)
 					break
+
+
+	# Optional data caches. They are not part of the quota: they reward a
+	# detour and make the player choose a route instead of beelining one node.
+	for cache_i in range(3):
+		var band := 6.0 + float(cache_i) * 3.0
+		for attempt in range(900):
+			var ang := rng.randf() * TAU
+			var dist := rng.randf_range(maxf(4.0, band - 1.0), band + 1.0)
+			var cc := Vector2i(
+				int(round(player_cell.x + cos(ang) * dist)),
+				int(round(player_cell.y + sin(ang) * dist))
+			)
+			if not reach.has(cc) or not _is_walkable_world(cc) or cc == player_cell:
+				continue
+			if objectives.has(cc) or data_caches.has(cc):
+				continue
+			var too_close := false
+			for o in objectives:
+				if abs(o.x - cc.x) + abs(o.y - cc.y) < 2:
+					too_close = true
+					break
+			for o in data_caches:
+				if abs(o.x - cc.x) + abs(o.y - cc.y) < 3:
+					too_close = true
+					break
+			if too_close:
+				continue
+			data_caches.append(cc)
+			cache_taken.append(false)
+			break
 
 
 func _spawn_hazard() -> void:
