@@ -4,6 +4,11 @@ A turn-based **mission-design roguelite for 1–4 players**. You run a small spa
 
 Every destination is a real planet. Every hazard is derived from its measured properties — equilibrium temperature, host-star radiation, surface gravity, distance from Earth — and the game prints the measurement next to the abstraction it drives.
 
+<a href="https://g110.itch.io/orbit-and-outplay"><img src="screenshots/cover_630x500.png" alt="Play Orbit &amp; Outplay in the browser" width="630"></a>
+
+**▶ Play in the browser:** https://g110.itch.io/orbit-and-outplay  
+**⬇ Judged build, demo video and deck:** [release v1.0-submission](https://github.com/g1gowda123/spacegame/releases/tag/v1.0-submission)
+
 - **Engine:** Godot 4.7.2, GDScript, GL Compatibility renderer (WebGL 2)
 - **Viewport:** 640×360 logical, pixel art, nearest-neighbour filtering
 - **Platform:** desktop and browser (threadless static export)
