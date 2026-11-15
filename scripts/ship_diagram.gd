@@ -120,7 +120,12 @@ func _process(delta: float) -> void:
 
 
 func _load_texture() -> void:
-	var path := SHIP_DIR + hull_id + "_2x.png"
+	# `hero/` is the clean authored 2x pass. The older `<hull>_2x.png` sheets
+	# carry a baked blueprint grid (visible as scanlines over the hull), so they
+	# are only a fallback for hulls the hero pass has not covered yet.
+	var path := SHIP_DIR + "hero/" + hull_id + ".png"
+	if not ResourceLoader.exists(path):
+		path = SHIP_DIR + hull_id + "_2x.png"
 	if not ResourceLoader.exists(path):
 		path = SHIP_DIR + hull_id + ".png"
 	if not ResourceLoader.exists(path):
@@ -133,7 +138,10 @@ func _load_texture() -> void:
 	if img != null:
 		var used := img.get_used_rect()
 		if used.size.x > 0 and used.size.y > 0:
-			_bbox = Rect2(used)
+			# All drawing below works in the authored 190x70 logical space; the
+			# hero texture is 2x, so normalise its bbox back down once.
+			var u := _tex.get_width() / 190.0
+			_bbox = Rect2(Vector2(used.position) / u, Vector2(used.size) / u)
 
 
 func _draw() -> void:
@@ -142,17 +150,18 @@ func _draw() -> void:
 	var ts := _tex.get_size()
 	if ts.x <= 0.0 or ts.y <= 0.0:
 		return
-	# Uniform scale only: the old per-axis fit squashed a 190x70 hull into a
-	# 190x60 control (y = 0.857), so every 1 px horizontal panel line dropped a
-	# row intermittently and read as stray scanlines across the sprite.
-	var sf := minf(size.x / ts.x, size.y / ts.y)
-	var draw_size := ts * sf
+	# Draw in the authored 190x70 logical space and scale the whole diagram
+	# uniformly. The old fit used size/ts per axis, which squashed a 190x70 hull
+	# into a 190x60 control and made 1 px panel lines drop rows as scanlines.
+	var base := Vector2(190.0, 70.0)
+	var sf := minf(size.x / base.x, size.y / base.y)
+	var draw_size := base * sf
 	var origin := (size - draw_size) * 0.5
 	draw_set_transform(origin, 0.0, Vector2(sf, sf))
-	draw_texture(_tex, Vector2.ZERO)
+	draw_texture_rect(_tex, Rect2(Vector2.ZERO, base), false)
 	_draw_live_lights()
 	for m in _modules:
-		_draw_module(m, _slot_rect(str(m["slot"]), ts))
+		_draw_module(m, _slot_rect(str(m["slot"]), base))
 	_draw_install_pulse()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
