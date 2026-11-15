@@ -15,6 +15,13 @@ There is no install step: the build is a static WebGL 2 export, and it runs in a
 - **Platform:** desktop and browser (threadless static export)
 - **Run length:** 3 sectors, 10–15 minutes, 1–4 players local hot-seat
 
+**Challenge fit — *Space Mission Design Game*:**
+
+- **Mission architecture is the loop, not the dressing.** Budgeted spacecraft design → target selection → surface CONOPS → launch / cruise / orbit insertion / surface / downlink timeline → refit and repeat.
+- **NASA data drives the numbers.** 72 exoplanets from the Exoplanet Archive (PSCompPars): equilibrium temperature sets heat load, mass and radius set surface gravity and Δv cost, distance sets downlink loss, stellar type and activity set radiation severity.
+- **Legible to a non-specialist in under a minute.** Static WebGL 2 build, no install, no account; 1–4 players on one keyboard; every abstraction is printed next to the measurement it comes from so the science can be audited in-game.
+- **Runs on the judged artifact and on the repo.** The release ships the exact build, the 23.5 s demo and the 7-slide deck; `godot --path .` runs the same game from source.
+
 ---
 
 ## At a glance
