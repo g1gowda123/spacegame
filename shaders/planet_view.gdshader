@@ -15,7 +15,8 @@ uniform vec2 planet_res = vec2(256.0, 256.0);
 // Title-screen life: slow drifting cloud bands over the baked surface. Zero on
 // every other screen so the design/draft portraits stay still.
 uniform float cloud_amount = 0.0;
-uniform float cloud_speed = 0.06;
+uniform float cloud_speed = 0.10;
+uniform float turn_amount = 0.0;
 
 float pv_hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -74,7 +75,29 @@ void fragment() {
 			float band = 0.55 + 0.45 * sin(p.y * 8.0 + TIME * 0.025);
 			float inside = smoothstep(1.0, 0.80, length(p));
 			float cl = n * band * inside;
-			col = mix(col, vec3(0.84, 0.89, 0.96), cl * 0.17 * cloud_amount);
+			col = mix(col, vec3(0.84, 0.89, 0.96), cl * 0.26 * cloud_amount);
+		}
+
+		// Axial turn: rotate the planet normal around Y and reproject, so the
+		// baked surface markings slide across the disc while the terminator
+		// stays put. Oscillates instead of wrapping, because the source PNG
+		// only has the near hemisphere.
+		if (turn_amount > 0.001) {
+			float turn = sin(TIME * 0.11) * 0.18 * turn_amount;
+			vec3 n2 = vec3(
+				n.x * cos(turn) + n.z * sin(turn),
+				n.y,
+				-n.x * sin(turn) + n.z * cos(turn)
+			);
+			float front = smoothstep(0.04, 0.32, n2.z);
+			float core = smoothstep(1.0, 0.86, length(p));
+			float m = front * core;
+			if (m > 0.01) {
+				vec2 uv2 = vec2(0.5) + n2.xy * disc_radius * 0.5;
+				vec3 alt = texture(TEXTURE, uv2).rgb;
+				alt *= mix(vec3(0.80, 0.86, 1.0), vec3(1.06, 1.02, 0.97), lit);
+				col = mix(col, alt, m * 0.88);
+			}
 		}
 
 		// Specular sheen on the lit shoulder.

@@ -16,6 +16,7 @@ var _planet_size := 0.62
 var _planet_on := true
 var _planet_asset := ""
 var _planet_clouds := 0.0
+var _planet_turn := 0.0
 var _planet_sway := 0.0
 var _anim_t := 0.0
 var _stars_on := true
@@ -101,6 +102,10 @@ func configure(opts: Dictionary) -> void:
 		_planet_clouds = float(opts["planet_clouds"])
 		if _planet_mat != null:
 			_planet_mat.set_shader_parameter("cloud_amount", _planet_clouds)
+	if opts.has("planet_turn"):
+		_planet_turn = float(opts["planet_turn"])
+		if _planet_mat != null:
+			_planet_mat.set_shader_parameter("turn_amount", _planet_turn)
 	if opts.has("planet_sway"):
 		_planet_sway = float(opts["planet_sway"])
 	if opts.has("dim"):

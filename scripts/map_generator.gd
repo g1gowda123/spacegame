@@ -3801,6 +3801,38 @@ func _rebuild_actors() -> void:
 		pulse.tween_property(marker, "modulate:a", 1.0, 0.85)
 
 
+	# Optional caches: smaller than an objective, brighter than terrain. They
+	# are route choices, so they deliberately sit away from the quota line.
+	for i in range(data_caches.size()):
+		if cache_taken[i]:
+			continue
+		var cc := data_caches[i]
+		if not _in_view(cc.x, cc.y):
+			continue
+		var cpos := _project(Vector2((cc.x + 0.5) * TILE, (cc.y + 0.5) * TILE))
+		var cm := Node2D.new()
+		cm.position = cpos
+		cm.scale = Vector2(0.32, 0.32)
+		var cglow := Polygon2D.new()
+		cglow.polygon = _diamond_points(19.0)
+		cglow.color = Color(0.20, 1.0, 0.90, 0.22)
+		cm.add_child(cglow)
+		var ccore := Polygon2D.new()
+		ccore.polygon = _diamond_points(8.0)
+		ccore.color = Color(0.30, 1.0, 0.92, 0.95)
+		cm.add_child(ccore)
+		var cout := Line2D.new()
+		cout.points = _diamond_points(9.0)
+		cout.closed = true
+		cout.width = 1.2
+		cout.default_color = Color(0.02, 0.20, 0.18, 0.95)
+		cm.add_child(cout)
+		actor_layer.add_child(cm)
+		var cpulse := cm.create_tween().set_loops()
+		cpulse.tween_property(cm, "modulate:a", 0.55, 0.70).set_delay(0.20)
+		cpulse.tween_property(cm, "modulate:a", 1.0, 0.90)
+
+
 func _diamond_points(radius: float) -> PackedVector2Array:
 	return PackedVector2Array([
 		Vector2(0, -radius), Vector2(radius, 0),

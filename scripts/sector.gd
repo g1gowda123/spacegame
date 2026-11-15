@@ -1520,6 +1520,20 @@ func _run_fx_demo(kind: String) -> void:
 
 
 func _collect_node_at(cell: Vector2i) -> void:
+	for i in range(data_caches.size()):
+		if data_caches[i] == cell and not cache_taken[i]:
+			cache_taken[i] = true
+			var before_cache := int(sec["data"])
+			sec["data"] = mini(_objective_cap(), before_cache + 1)
+			data_collected = int(sec["data"])
+			var credited_cache := int(sec["data"]) - before_cache
+			GameState.sfx("confirm")
+			message_text = "DATA CACHE  +%d" % credited_cache
+			message_color = UIKit.CYAN
+			_show_toast(message_text, message_color)
+			_pickup_flash(cell, message_color)
+			_pulse(data_label, message_color)
+			return
 	for i in range(objectives.size()):
 		if objectives[i] == cell and not collected[i]:
 			collected[i] = true
