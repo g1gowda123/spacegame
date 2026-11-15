@@ -18,32 +18,39 @@ OUT = ROOT / "assets" / "backgrounds" / "painted"
 RAW = ROOT / "assets" / "raw" / "painted"
 PY = "/home/g1/ComfyUI/.venv/bin/python"
 
-STYLE = ("whimsical children's storybook illustration, gouache on textured paper, visible brush strokes, "
-         "playful rounded shapes, limited flat colour blocks with a single accent hue, soft chalky edges, "
-         "charming hand-painted look, slightly naive, no text, no letters")
+STYLE = ("flat vector space illustration, bold simple geometric shapes, clean silhouettes, smooth soft gradients, "
+         "minimal shading, the look of a modern science explainer animation, printed like a 1970s sci-fi poster: "
+         "slight halftone grain, slightly faded inks, limited retro palette, no text, no letters")
 
 NEG = ("text, letters, words, watermark, signature, frame, border, ui, interface, hud, photo, "
        "photorealistic, anime character, person, face, logo, purple gradient, violet glow, magenta haze, "
        "neon, glossy 3d render, airbrush, smooth digital gradient, generic ai art, oversaturated, "
+       "cute, childish, storybook, pastel, candy colours, painterly, brush strokes, oil painting, "
+       "photorealistic texture, dense detail, gritty, dark mud, purple haze, "
        "ground, terrain, landscape, trees, plants, mountains, silhouette, figure, horizon")
 
 SCENES = {
-    "dispatch": ("a small teal spacecraft leaving a rose-gold planet, a long mint comet trail",
-                 "palette: mint green, rose gold, warm cream, slate teal"),
-    "nebula": ("a towering wall of nebula clouds parting around a distant star",
-               "palette: sea green, coral pink, butter yellow, deep petrol blue"),
-    "blackhole": ("a black hole ringed by a thin swirling accretion ring, stars bending around it",
-                  "palette: pale gold, sky blue, ivory white, ink navy"),
-    "sunrise": ("a blazing star cresting a bank of dark cosmic dust clouds, beams through the gap",
-                "palette: marigold, peach, dusty lilac, charcoal plum"),
-    "moon": ("a pale moon in a deep cloud sea, one slow meteor crossing the sky",
-             "palette: pale blue-white, slate blue, soft coral, near-black teal"),
-    "star": ("a single four-pointed star burning in a wide nebula field",
-             "palette: peach, sage green, cream, midnight plum"),
-    "galaxy": ("a spiral galaxy seen at an angle, its arms lit in white and ember, dust lanes dark against it",
-               "palette: dusty rose, clotted cream, warm grey, midnight blue"),
-    "ember": ("a rust-red gas giant with soft banded clouds and a faint dust ring",
-              "palette: burnt sienna, lime green, pale sand, charcoal"),
+    # one planet type per plate: the point is that they read as *different worlds*
+    "world_ocean": ("a deep teal ocean world with pale cloud swirls and a thin bright airglow, seen from orbit",
+                    "palette: deep teal, sea green, ivory cloud, slate blue"),
+    "world_desert": ("an ochre desert world with long wind-carved dune bands and dark canyon scars, seen from orbit",
+                     "palette: ochre, burnt sienna, dusty rose, dark umber"),
+    "world_ice": ("a pale ice world with cracked white plates and frost-blue fissures, seen from orbit",
+                  "palette: pale blue-white, glacier blue, steel grey, deep navy"),
+    "world_volcanic": ("a dark volcanic world with glowing lava fissures and ash plains, seen from orbit",
+                       "palette: charcoal, ember orange, dim red, smoke grey"),
+    "world_gas": ("a banded gas giant with amber and olive cloud belts and one storm oval",
+                  "palette: amber, olive, cream, warm brown"),
+    "world_ringed": ("a ringed world, its rings catching light as they pass behind it",
+                     "palette: pale sand, dusty violet-grey, warm gold, ink blue"),
+    "world_moon": ("a cratered grey moon in the foreground with a larger blue planet rising behind it",
+                   "palette: gunmetal grey, pale blue, bone white, near-black"),
+    "world_crystal": ("a crystalline world of faceted mint and lilac mineral plains, seen from orbit",
+                      "palette: mint, lilac, glacier white, charcoal"),
+    "dispatch": ("a small ship leaving orbit of a ringed world, long engine trail, the planet filling half the frame",
+                 "palette: steel blue, copper, cream, deep teal"),
+    "sun": ("a huge amber star with a seething surface and a thin corona, a dark planet crossing in front",
+            "palette: marigold, peach, rust, near-black"),
 }
 
 
