@@ -1189,3 +1189,24 @@ must not sound like an mp3 starting.
   - `python tools/qa/native_screens.py` -> **10/10 screens pass** (title, crew, design, draft, sector, relay, sector_success, sector_fail, debrief, report) exit 0, zero errors.
   - `python tools/audit_data.py` -> 49 checks, 0 failed.
 
+## 2026-11-15 05:22 — UI Agent: Card Pop Across Title & Pre-Commit Review
+
+- **Universal Button Hover Pop (`scripts/ui_kit.gd`):**
+  - Added `UIKit.attach_hover_pop(ctrl, scale_mult, lift_y)` and integrated directly into `UIKit.button(...)`.
+  - Automatically handles centered `pivot_offset`, raises `z_index = 2` on hover, applies cubic ease-out scale pop (`1.045` for accent buttons, `1.035` standard) and `position:y` lift (`-2px`) for non-container elements.
+  - Adds a tactile spring punch (`scale 1.055` relaxing back over `0.18s`) on button press for physical arcade responsiveness.
+
+- **Title Screen (`scripts/title.gd`):**
+  - All primary and secondary buttons (`BEGIN MISSION`, `MISSION CONTROL`, `DAILY RUN`, `HOW TO PLAY`, `STORY`, `RANKS`, and `QUIT`) now lift and pop up with smooth hover response and pointer hand cursor.
+  - Re-added `QUIT` button with `Q` hotkey cleanly aligned on the secondary command strip.
+
+- **Mission Architecture Review Cards (`scripts/draft.gd`):**
+  - Transformed the 4 static pre-commit review segment rows (`LAUNCH`, `SPACE`, `GROUND`, `USER`) into interactive architecture cards with cyan accent border styling and highlight wash.
+  - On hover, each segment card smoothly pops up (`scale 1.03`, `y - 1.5px`, `z_index = 2`), brightens its text, and displays a detailed NASA architecture dossier tooltip explaining payload capacities, bus power/integrity, orbital passes/downlink geometry, and science fit bonus.
+  - Ensured draft planet switcher cards lift with `root.z_index = 3` so expanded cards never render beneath adjacent cards.
+
+- **Verification:**
+  - `python tools/qa/native_screens.py` -> **10/10 screens pass**, exit 0, zero errors.
+  - `python tools/audit_data.py` -> 49 checks, 0 failed.
+
+

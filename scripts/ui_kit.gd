@@ -307,6 +307,7 @@ static func button(
 	b.text = text
 	b.custom_minimum_size = min_size
 	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.add_theme_font_override("font", _font(pixel))
 	b.add_theme_font_size_override("font_size", 10 if pixel else 9)
 	if not accent:
@@ -319,24 +320,67 @@ static func button(
 		b.add_theme_color_override("font_hover_color", CREAM)
 		b.add_theme_color_override("font_pressed_color", ORANGE)
 		b.add_theme_color_override("font_disabled_color", DIM)
-		b.pressed.connect(func(): if GameState: GameState.sfx("click"))
-		return b
-	# Primary action: an orange machined key with dark ink and a hard shadow.
-	var base := _ops_skin("button_primary", 4)
-	var hover := _ops_skin("button_primary_hover", 4)
-	var press := _ops_skin("button_primary_pressed", 4)
-	var disabled := style_panel(HULL_2, STEEL, 0, 1)
-	b.add_theme_stylebox_override("normal", base)
-	b.add_theme_stylebox_override("hover", hover)
-	b.add_theme_stylebox_override("pressed", press)
-	b.add_theme_stylebox_override("disabled", disabled)
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	b.add_theme_color_override("font_color", Color("#0b160f"))
-	b.add_theme_color_override("font_hover_color", Color("#0b160f"))
-	b.add_theme_color_override("font_pressed_color", Color("#0b160f"))
-	b.add_theme_color_override("font_disabled_color", DIM)
-	b.pressed.connect(func(): if GameState: GameState.sfx("click"))
+	else:
+		# Primary action: an orange machined key with dark ink and a hard shadow.
+		var base := _ops_skin("button_primary", 4)
+		var hover := _ops_skin("button_primary_hover", 4)
+		var press := _ops_skin("button_primary_pressed", 4)
+		var disabled := style_panel(HULL_2, STEEL, 0, 1)
+		b.add_theme_stylebox_override("normal", base)
+		b.add_theme_stylebox_override("hover", hover)
+		b.add_theme_stylebox_override("pressed", press)
+		b.add_theme_stylebox_override("disabled", disabled)
+		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		b.add_theme_color_override("font_color", Color("#0b160f"))
+		b.add_theme_color_override("font_hover_color", Color("#0b160f"))
+		b.add_theme_color_override("font_pressed_color", Color("#0b160f"))
+		b.add_theme_color_override("font_disabled_color", DIM)
+
+	b.pressed.connect(func():
+		if GameState:
+			GameState.sfx("click")
+		if not b.disabled:
+			var ptw: Tween = b.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			ptw.tween_property(b, "scale", Vector2(1.055 if accent else 1.045, 1.055 if accent else 1.045), 0.08)
+			ptw.tween_property(b, "scale", Vector2(1.045 if accent else 1.035, 1.045 if accent else 1.035), 0.10)
+	)
+	attach_hover_pop(b, 1.045 if accent else 1.035, 2.0)
 	return b
+
+
+static func attach_hover_pop(
+	ctrl: Control, scale_mult: float = 1.035, lift_y: float = 2.0
+) -> void:
+	ctrl.mouse_entered.connect(func():
+		if ctrl is Button and ctrl.disabled:
+			return
+		ctrl.z_index = 2
+		if ctrl.size.x > 0 and ctrl.size.y > 0:
+			ctrl.pivot_offset = ctrl.size * 0.5
+		var old: Tween = ctrl.get_meta("pop_tw", null)
+		if old != null and old.is_valid():
+			old.kill()
+		if not ctrl.has_meta("base_y") or ctrl.scale == Vector2.ONE:
+			ctrl.set_meta("base_y", ctrl.position.y)
+		var base_y: float = float(ctrl.get_meta("base_y"))
+		var tw: Tween = ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(ctrl, "scale", Vector2(scale_mult, scale_mult), 0.14)
+		if ctrl.get_parent() != null and ctrl.get_parent() is not Container:
+			tw.tween_property(ctrl, "position:y", base_y - lift_y, 0.14)
+		ctrl.set_meta("pop_tw", tw)
+	)
+	ctrl.mouse_exited.connect(func():
+		ctrl.z_index = 0
+		var old: Tween = ctrl.get_meta("pop_tw", null)
+		if old != null and old.is_valid():
+			old.kill()
+		var base_y: float = float(ctrl.get_meta("base_y", ctrl.position.y))
+		var tw: Tween = ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(ctrl, "scale", Vector2.ONE, 0.14)
+		if ctrl.get_parent() != null and ctrl.get_parent() is not Container:
+			tw.tween_property(ctrl, "position:y", base_y, 0.14)
+		ctrl.set_meta("pop_tw", tw)
+	)
 
 
 static func bar(width: float, height: float, color: Color) -> UIGauge:

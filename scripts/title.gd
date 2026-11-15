@@ -103,6 +103,12 @@ func _build_ui() -> void:
 	ranks.pressed.connect(func(): ranks_layer.visible = true)
 	add_child(ranks)
 
+	var quit := UIKit.button("QUIT", Vector2(56, 26))
+	quit.position = Vector2(428, 222)
+	quit.add_theme_font_size_override("font_size", 9)
+	quit.pressed.connect(_quit_game)
+	add_child(quit)
+
 	var daily_note := "BEST RUN  %s   ·   CMD %s" % [_fmt(GameState.best_score), GameState.player_name]
 	var best := UIKit.mono(daily_note, 7, UIKit.INK_SOFT)
 	best.position = Vector2(44, 318)
@@ -277,6 +283,12 @@ func _fmt(n: int) -> String:
 	return str(n)
 
 
+func _quit_game() -> void:
+	if GameState:
+		GameState.sfx("confirm")
+	get_tree().quit()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ENTER or event.keycode == KEY_SPACE:
@@ -294,6 +306,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			ranks_layer.visible = not ranks_layer.visible
 		elif event.keycode == KEY_C:
 			get_tree().change_scene_to_file("res://scenes/crew.tscn")
+		elif event.keycode == KEY_Q and not howto_layer.visible and not ranks_layer.visible:
+			_quit_game()
 		elif event.keycode == KEY_ESCAPE:
 			howto_layer.visible = false
 			ranks_layer.visible = false

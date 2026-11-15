@@ -209,6 +209,7 @@ func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
 	if card.is_empty():
 		return
 	var selected: bool = bool(card["selected"])
+	root.z_index = 3 if on else (1 if selected else 0)
 	var base_y := 34.0 if selected else 40.0
 	var target_y := base_y - (6.0 if on else 0.0)
 	var target_scale := 1.045 if on and selected else (1.035 if on else 1.0)
@@ -497,21 +498,83 @@ func _show_mission_review() -> void:
 		["GROUND", "-%d%% DOWNLINK · %d PASSES/DAY" % [int(g["comms_loss"]), int(orbit["passes"])], UIKit.TEXT],
 		["USER", "%s%s" % [str(obj.get("name", "—")).to_upper(), " · FIT +10%" if bool(ship.get("science_fit", false)) else ""], UIKit.TEXT],
 	]
+	var seg_tooltips := [
+		"LAUNCH VEHICLE  %s\nPAYLOAD CAPACITY  %d KG\nCOST  $%dM\n\n%s" % [
+			str(veh.get("name", "—")).to_upper(), int(veh.get("capacity", 0)),
+			int(veh.get("cost", 0)), str(veh.get("note", "Primary ascent stage."))
+		],
+		"HULL BUS  %s\nMASS  %d KG · DRAW  %d W\nBASE INTEGRITY  %d · MOVE RANGE  %d\n\n%s" % [
+			str(GameState.hull().get("name", "—")).to_upper(), int(ship.get("mass", 0)),
+			int(ship.get("power_draw", 0)), int(ship.get("integrity", 0)),
+			int(ship.get("move_range", 1)), str(GameState.hull().get("perk", "Spacecraft bus configuration."))
+		],
+		"ORBIT REGIME  %s\nALTITUDE  %d KM · ECLIPSE  %d%%\nGROUND PASSES  %d/DAY · COMMS PENALTY  -%d%%\n\n%s" % [
+			str(GameState.orbit().get("name", "LOW")).to_upper(), int(orbit["alt_km"]),
+			int(orbit["eclipse"]), int(orbit["passes"]), int(g["comms_loss"]),
+			str(GameState.orbit().get("desc", "Orbital coverage and downlink geometry."))
+		],
+		"MISSION OBJECTIVE  %s\nQUOTA  %d NODES\nDELTA-V BONUS  %+d · INTEGRITY  %+d\nSCIENCE FIT  %s\n\n%s" % [
+			str(obj.get("name", "SURVEY")).to_upper(), int(obj.get("quota", 3)),
+			int(obj.get("dv", 0)), int(obj.get("integrity", 0)),
+			"+10% BONUS" if bool(ship.get("science_fit", false)) else "STANDARD",
+			str(obj.get("perk", "Primary scientific directive."))
+		],
+	]
 	for i in range(segs.size()):
-		var y := 44.0 + i * 27.0
-		var lab := UIKit.label(str(segs[i][0]), 6, UIKit.INK, true)
-		lab.position = Vector2(seg_x, y)
-		lab.size = Vector2(38, 12)
-		c.add_child(lab)
-		var val := UIKit.label(str(segs[i][1]), 7, UIKit.INK, true)
-		val.position = Vector2(seg_x + 42, y - 1)
-		val.size = Vector2(248, 12)
-		c.add_child(val)
-		var line := Line2D.new()
-		line.points = PackedVector2Array([Vector2(seg_x, y + 14), Vector2(seg_x + 286, y + 14)])
-		line.width = 1.0
-		line.default_color = UIKit.SHEET_LINE
-		c.add_child(line)
+		var y := 42.0 + i * 27.0
+		var card_w := 288.0
+		var card_h := 23.0
+		var card := Control.new()
+		card.position = Vector2(seg_x, y)
+		card.size = Vector2(card_w, card_h)
+		card.pivot_offset = Vector2(card_w * 0.5, card_h * 0.5)
+		c.add_child(card)
+
+		var bg := Panel.new()
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bg.add_theme_stylebox_override("panel", UIKit.row_style(false, false, UIKit.CYAN))
+		card.add_child(bg)
+
+		var lab := UIKit.label(str(segs[i][0]), 6, UIKit.SAGE, true)
+		lab.position = Vector2(8, 4)
+		lab.size = Vector2(46, 14)
+		card.add_child(lab)
+
+		var val := UIKit.label(str(segs[i][1]), 7, UIKit.CREAM, true)
+		val.position = Vector2(56, 3)
+		val.size = Vector2(card_w - 62, 14)
+		card.add_child(val)
+
+		var btn := Button.new()
+		btn.flat = true
+		btn.focus_mode = Control.FOCUS_NONE
+		btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var empty := StyleBoxEmpty.new()
+		for st in ["normal", "hover", "pressed", "focus"]:
+			btn.add_theme_stylebox_override(st, empty)
+		card.add_child(btn)
+
+		UIKit.hover_info(btn, str(segs[i][0]) + " SEGMENT", seg_tooltips[i], UIKit.CYAN)
+
+		var base_y := y
+		btn.mouse_entered.connect(func():
+			card.z_index = 2
+			bg.add_theme_stylebox_override("panel", UIKit.row_style(false, true, UIKit.CYAN))
+			val.add_theme_color_override("font_color", Color.WHITE)
+			var tw: Tween = card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.14)
+			tw.tween_property(card, "position:y", base_y - 1.5, 0.14)
+		)
+		btn.mouse_exited.connect(func():
+			card.z_index = 0
+			bg.add_theme_stylebox_override("panel", UIKit.row_style(false, false, UIKit.CYAN))
+			val.add_theme_color_override("font_color", UIKit.CREAM)
+			var tw: Tween = card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(card, "scale", Vector2.ONE, 0.14)
+			tw.tween_property(card, "position:y", base_y, 0.14)
+		)
 
 	var cml := UIKit.label("CML %d %s  ·  %s" % [
 		int(cm["level"]), str(cm["label"]),
