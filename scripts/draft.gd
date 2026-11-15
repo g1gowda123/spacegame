@@ -707,8 +707,9 @@ func _commit_route() -> void:
 	var planet := selected_planet
 	GameState.begin_sector(planet)
 	GameState.sfx("confirm")
-	# Seamless cinematic launch sequence between mission architecture review and sector.
-	get_tree().change_scene_to_file("res://scenes/launch.tscn")
+	# Launch cinematic removed on request: the review commits straight into the
+	# sector. `--screen=launch` still plays the sequence for trailers.
+	get_tree().change_scene_to_file("res://scenes/sector.tscn")
 
 
 func _play_commit_transit(p: Dictionary) -> void:
