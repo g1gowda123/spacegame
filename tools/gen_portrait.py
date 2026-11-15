@@ -80,34 +80,56 @@ def pixelate(img: Image.Image) -> Image.Image:
 
 
 def cutout(img: Image.Image) -> Image.Image:
-    """Fight the flat backdrop: flood-fill the border-connected background to alpha
-    and give the silhouette a 1 px ink contour, like every other sprite."""
-    from PIL import ImageDraw
-    rgb = img.convert("RGB")
-    w, h = rgb.size
-    marker = (255, 0, 255)
-    corners = [rgb.getpixel((2, 2)), rgb.getpixel((w - 3, 2)), rgb.getpixel((2, h - 3)),
-               rgb.getpixel((w - 3, h - 3)), rgb.getpixel((w // 2, 2))]
-    px = rgb.load()
-    for x in range(w):
-        for y in (0, h - 1):
-            if min(max(abs(c - m) for c, m in zip(px[x, y], bg)) for bg in corners) < 26:
-                ImageDraw.floodfill(rgb, (x, y), marker, thresh=22)
-    for y in range(h):
-        for x in (0, w - 1):
-            if min(max(abs(c - m) for c, m in zip(px[x, y], bg)) for bg in corners) < 26:
-                ImageDraw.floodfill(rgb, (x, y), marker, thresh=22)
-    a = np.asarray(rgb)
-    mask = ~np.all(a == np.array(marker), axis=2)
+    """Drop the flat backdrop and ink the silhouette.
+
+    After the palette lock the background is one or two flat colours, so the
+    reliable way in is: take the dominant border colour, mask everything within
+    tolerance of it, keep only the region connected to the border, and clear it.
+    """
+    from scipy import ndimage
+    a = np.asarray(img.convert("RGB"))
+    h, w, _ = a.shape
+    # the backdrop is usually two or three flat tones (gradient banded by the
+    # palette lock): clear border-connected regions tone by tone until stable
+    bgmask = np.zeros((h, w), dtype=bool)
+    for _ in range(8):
+        visible = ~bgmask
+        border = np.concatenate([a[0][visible[0]], a[-1][visible[-1]],
+                                 a[:, 0][visible[:, 0]], a[:, -1][visible[:, -1]]])
+        if len(border) == 0:
+            break
+        cols, counts = np.unique(border, axis=0, return_counts=True)
+        if counts.max() < 0.06 * len(border):
+            break
+        tone = cols[counts.argmax()]
+        near = (np.linalg.norm(a.astype(np.float32) - tone.astype(np.float32), axis=2) < 26) & visible
+        lab, n = ndimage.label(near)
+        ids = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+        add = np.isin(lab, ids[ids > 0])
+        if not add.any():
+            break
+        bgmask |= add
+    fg = ~bgmask
+    # keep the largest component (the bust) and fill any pinholes
+    lab2, n2 = ndimage.label(fg)
+    if n2 > 1:
+        sizes = ndimage.sum(fg, lab2, range(1, n2 + 1))
+        fg = np.isin(lab2, [i + 1 for i, sz in enumerate(sizes) if sz > 0.25 * sizes.max()])
+    fg = ndimage.binary_fill_holes(fg)
     out = Image.fromarray(a).convert("RGBA")
-    out.putalpha(Image.fromarray((mask * 255).astype(np.uint8)))
-    # 1 px ink contour on the inside edge
-    edge = mask & ~np.pad(mask, 1, constant_values=True)[1:-1, 1:-1]
-    edge = mask & ~(
-        np.roll(mask, 1, 0) & np.roll(mask, -1, 0) & np.roll(mask, 1, 1) & np.roll(mask, -1, 1)
-    )
-    arr = np.asarray(out).copy()
-    arr[edge] = [18, 22, 30, 255]
+    out.putalpha(Image.fromarray((fg * 255).astype(np.uint8)))
+    bb = out.getbbox()
+    if bb:
+        out = out.crop(bb)
+    # centre in the 160x160 slot without resampling (keeps the pixel grid)
+    canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    ox = (SIZE - out.width) // 2
+    oy = SIZE - out.height - 2
+    canvas.alpha_composite(out, (max(0, ox), max(0, oy)))
+    arr = np.asarray(canvas).copy()
+    mask = arr[..., 3] > 0
+    inner = mask & ~ndimage.binary_erosion(mask, iterations=1)
+    arr[inner] = [18, 22, 30, 255]
     return Image.fromarray(arr)
 
 
