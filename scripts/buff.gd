@@ -6,7 +6,7 @@ extends Control
 const CARD_W := 154.0
 const CARD_H := 212.0
 const CARD_GAP := 15.0
-const CARD_Y := 72.0
+const CARD_Y := 75.0
 
 const RARITY_COLORS := {
 	"common": Color("#7fa98b"),
@@ -16,6 +16,7 @@ const RARITY_COLORS := {
 
 var cards: Array = []
 var card_nodes: Array = []
+var card_data: Array = []
 var focus := 0
 var picked := false
 var status_label: Label
@@ -35,6 +36,8 @@ func _ready() -> void:
 		var arg := str(raw)
 		if arg.begins_with("--buff-pick="):
 			call_deferred("_pick", int(arg.substr(12)))
+		elif arg.begins_with("--hover-card="):
+			call_deferred("_qa_hover_card", int(arg.substr(13)))
 
 
 func _build() -> void:
@@ -92,7 +95,7 @@ func _build() -> void:
 	hint_label.add_theme_constant_override("shadow_offset_x", 1)
 	hint_label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(hint_label)
-	_update_focus()
+	_set_focus(0, false)
 
 
 func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
@@ -102,7 +105,9 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	card.position = Vector2(x, y)
 	card.size = Vector2(CARD_W, CARD_H)
 	card.custom_minimum_size = Vector2(CARD_W, CARD_H)
+	card.pivot_offset = Vector2(CARD_W * 0.5, CARD_H * 0.5)
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	card.add_theme_stylebox_override("panel", _card_style(color, false))
 	card.gui_input.connect(_card_input.bind(index))
 	card.mouse_entered.connect(_on_hover.bind(index, true))
@@ -126,11 +131,13 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	title_label.position = Vector2(4, 10)
 	title_label.size = Vector2(CARD_W - 8, 13)
 	title_label.clip_text = true
+	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(title_label)
 
 	var tag := UIKit.mono(rarity.to_upper(), 6, color.darkened(0.18), HORIZONTAL_ALIGNMENT_CENTER)
 	tag.position = Vector2(4, 26)
 	tag.size = Vector2(CARD_W - 8, 11)
+	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(tag)
 
 	# The commission art is monochrome technical line work. A cream
@@ -139,6 +146,7 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	var icon_tile := Panel.new()
 	icon_tile.position = Vector2(15, 36)
 	icon_tile.size = Vector2(124, 104)
+	icon_tile.pivot_offset = Vector2(62, 52)
 	icon_tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon_tile.add_theme_stylebox_override("panel", UIKit.style_panel(
 		UIKit.CREAM, color, 0, 1
@@ -146,10 +154,10 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	card.add_child(icon_tile)
 
 	var icon_panel := Control.new()
-	icon_panel.position = Vector2(19, 40)
+	icon_panel.position = Vector2(4, 4)
 	icon_panel.size = Vector2(116, 96)
 	icon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(icon_panel)
+	icon_tile.add_child(icon_panel)
 
 	var icon := TextureRect.new()
 	icon.position = Vector2(0, 0)
@@ -185,18 +193,46 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	var num := UIKit.mono(str(index + 1), 7, UIKit.INK_FAINT)
 	num.position = Vector2(10, 192)
 	num.size = Vector2(20, 12)
+	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(num)
+
 	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
 	pick_hint.position = Vector2(CARD_W - 68, 192)
 	pick_hint.size = Vector2(54, 12)
+	pick_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(pick_hint)
+
+	card_data.append({
+		"index": index,
+		"buff": buff,
+		"card": card,
+		"base_x": x,
+		"base_y": y,
+		"color": color,
+		"strip": strip,
+		"title_label": title_label,
+		"tag": tag,
+		"icon_tile": icon_tile,
+		"icon_panel": icon_panel,
+		"desc": desc,
+		"num": num,
+		"pick_hint": pick_hint,
+		"tw": null,
+		"hovered": false,
+	})
 
 
 func _card_style(color: Color, hover: bool) -> StyleBoxFlat:
-	var s := UIKit.style_panel(UIKit.PAPER, UIKit.ORANGE if hover else UIKit.INK, 0, 2 if hover else 1)
-	s.shadow_color = Color(0.04, 0.03, 0.02, 0.46)
-	s.shadow_size = 2
-	s.shadow_offset = Vector2(2, 2)
+	var border_col: Color = color.lightened(0.35) if hover else color.darkened(0.25)
+	var s := UIKit.style_panel(UIKit.PAPER, border_col, 0, 2 if hover else 1)
+	if hover:
+		s.shadow_color = Color(0.01, 0.02, 0.04, 0.65)
+		s.shadow_size = 7
+		s.shadow_offset = Vector2(0, 6)
+	else:
+		s.shadow_color = Color(0.04, 0.03, 0.02, 0.46)
+		s.shadow_size = 2
+		s.shadow_offset = Vector2(2, 2)
 	s.content_margin_left = 0
 	s.content_margin_right = 0
 	s.content_margin_top = 0
@@ -204,19 +240,105 @@ func _card_style(color: Color, hover: bool) -> StyleBoxFlat:
 	return s
 
 
+func _hover_card(index: int, on: bool) -> void:
+	if picked or index < 0 or index >= card_data.size():
+		return
+	var c: Dictionary = card_data[index]
+	c["hovered"] = on
+	var card: Control = c["card"]
+	var icon_tile: Control = c["icon_tile"]
+	var strip: ColorRect = c["strip"]
+	var title_label: Label = c["title_label"]
+	var pick_hint: Label = c["pick_hint"]
+	var color: Color = c["color"]
+
+	# Layering: popped card lifts and renders above neighbors
+	card.z_index = 4 if on else 0
+
+	# Smooth vertical lift and cubic-out scale pop matching the planet draft
+	var base_y: float = float(c["base_y"])
+	var target_y := base_y - (6.0 if on else 0.0)
+	var target_scale := 1.04 if on else 1.0
+	_tween_card(c, target_y, target_scale, 0.16)
+
+	# Inner artwork plate breathes slightly on hover
+	_tween_scale(icon_tile, 1.045 if on else 1.0, 0.18)
+
+	# Dynamic border and shadow styling
+	card.add_theme_stylebox_override("panel", _card_style(color, on))
+	icon_tile.add_theme_stylebox_override("panel", UIKit.style_panel(
+		UIKit.CREAM, color.lightened(0.2) if on else color, 0, 2 if on else 1
+	))
+
+	# Accent strip and responsive label highlights
+	strip.size.y = 3.0 if on else 2.0
+	strip.color = color.lightened(0.25) if on else color
+	title_label.add_theme_color_override("font_color", UIKit.CREAM if on else UIKit.NAME)
+	pick_hint.text = "CLAIM [ENTER]" if on else "CHOOSE"
+	pick_hint.add_theme_color_override("font_color", color.lightened(0.30) if on else UIKit.MUTED)
+
+
+func _tween_card(c: Dictionary, target_y: float, target_scale: float, dur: float) -> void:
+	var old: Tween = c.get("tw")
+	if old != null and old.is_valid():
+		old.kill()
+	var card: Control = c["card"]
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(card, "position:y", target_y, dur)
+	tw.tween_property(card, "scale", Vector2(target_scale, target_scale), dur)
+	c["tw"] = tw
+
+
+func _tween_scale(ctrl: Control, sc: float, dur: float) -> void:
+	if ctrl.has_meta("tw"):
+		var old: Tween = ctrl.get_meta("tw")
+		if old != null and old.is_valid():
+			old.kill()
+	var tw := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ctrl, "scale", Vector2(sc, sc), dur)
+	ctrl.set_meta("tw", tw)
+
+
+func _set_focus(index: int, play_sound: bool = true) -> void:
+	if picked:
+		return
+	var old_focus := focus
+	focus = index
+	if play_sound and old_focus != focus:
+		GameState.sfx("click")
+
+	for i in range(card_data.size()):
+		_hover_card(i, i == focus)
+
+	if focus >= 0 and focus < cards.size():
+		var buff: Dictionary = cards[focus]
+		var rarity := str(buff.get("rarity", "common")).to_upper()
+		var title_text := str(buff.get("name", "COMMISSION")).to_upper()
+		var color: Color = RARITY_COLORS.get(rarity.to_lower(), UIKit.MUTED)
+		status_label.text = "FIELD COMMISSION  ·  %s  [%s]" % [title_text, rarity]
+		status_label.add_theme_color_override("font_color", color.lightened(0.15))
+		hint_label.text = "CLICK CARD OR PRESS [%d / ENTER] TO COMMISSION" % (focus + 1)
+
+
 func _update_focus() -> void:
-	for i in range(card_nodes.size()):
-		var buff: Dictionary = cards[i]
-		var color: Color = RARITY_COLORS.get(str(buff.get("rarity", "common")), UIKit.MUTED)
-		card_nodes[i].add_theme_stylebox_override("panel", _card_style(color, i == focus))
+	_set_focus(focus, false)
 
 
 func _on_hover(index: int, entered: bool) -> void:
 	if picked:
 		return
 	if entered:
-		focus = index
-	_update_focus()
+		_set_focus(index, true)
+	else:
+		if focus == index:
+			_hover_card(index, false)
+			focus = -1
+			status_label.text = ""
+			hint_label.text = "HOVER A CARD OR PRESS 1 / 2 / 3 TO PREVIEW"
+
+
+func _qa_hover_card(index: int) -> void:
+	_set_focus(index, false)
 
 
 func _card_input(event: InputEvent, index: int) -> void:
@@ -229,32 +351,55 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match event.keycode:
 		KEY_1:
+			_set_focus(0)
 			_pick(0)
 		KEY_2:
+			_set_focus(1)
 			_pick(1)
 		KEY_3:
+			_set_focus(2)
 			_pick(2)
 		KEY_LEFT:
-			focus = maxi(0, focus - 1)
-			_update_focus()
+			var target := maxi(0, (focus if focus >= 0 else 1) - 1)
+			_set_focus(target)
 		KEY_RIGHT:
-			focus = mini(cards.size() - 1, focus + 1)
-			_update_focus()
+			var target := mini(cards.size() - 1, (focus if focus >= 0 else -1) + 1)
+			_set_focus(target)
 		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-			_pick(focus)
+			if focus >= 0:
+				_pick(focus)
 
 
 func _pick(index: int) -> void:
 	if picked or index < 0 or index >= cards.size():
 		return
 	picked = true
+	GameState.sfx("confirm")
 	var chosen: Dictionary = cards[index]
 	if not GameState.choose_buff(index):
 		picked = false
 		return
+
+	# Tactile punch animation on the chosen card
+	if index < card_data.size():
+		var c: Dictionary = card_data[index]
+		var card: Control = c["card"]
+		var old_tw: Tween = c.get("tw")
+		if old_tw != null and old_tw.is_valid():
+			old_tw.kill()
+		var punch_tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		punch_tw.tween_property(card, "scale", Vector2(1.08, 1.08), 0.12)
+		punch_tw.tween_property(card, "scale", Vector2(1.04, 1.04), 0.16)
+
 	for i in range(card_nodes.size()):
-		card_nodes[i].modulate = Color(1, 1, 1, 0.42) if i != index else Color.WHITE
-	status_label.text = "COMMISSION ACCEPTED  ·  %s" % str(chosen.get("name", "UPGRADE"))
+		if i != index:
+			var tw_fade := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw_fade.tween_property(card_nodes[i], "modulate", Color(1, 1, 1, 0.35), 0.25)
+			tw_fade.tween_property(card_nodes[i], "position:y", CARD_Y + 6.0, 0.25)
+		else:
+			card_nodes[i].modulate = Color.WHITE
+
+	status_label.text = "COMMISSION ACCEPTED  ·  %s" % str(chosen.get("name", "UPGRADE")).to_upper()
 	status_label.add_theme_color_override("font_color", UIKit.CYAN)
 	hint_label.text = "INSTALLING BEFORE NEXT TARGET..."
 	await get_tree().create_timer(0.55).timeout

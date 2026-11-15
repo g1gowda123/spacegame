@@ -1380,3 +1380,15 @@ than a screen from another build.
 - Clouds use an accumulated downward scroll (no more `TIME * velocity` teleporting), fade in over the first 14 % of ascent and out through the last half.
 - Sky colour is one eased blend from the captured start to void; stars fade in from 18 %, Earth limb waits until 48 %, and the launch uses the static star plate (no full-screen animated star shader) to remove the fade hitch.
 - Initial phases shortened: prep 0.25 s, ignition 0.55 s, stronger liftoff velocity/acceleration, ascent 2.4 s. No push.
+
+- **16:10 — UI Polish: Field Commission cards pop-up hover animation (`scripts/buff.gd`).**
+  - User requested: "you take role of ui agent. make the cards pop up when hovered just like in the planet switicher tab . remember the game must feel alive and must be reponsive to the user".
+  - Implemented rich responsive card interaction on `scripts/buff.gd` matching the destination draft standard:
+    - **Physical Lift & Scale Pop**: Hovered/focused card lifts 6px (`position:y = CARD_Y - 6.0`) with 1.04x cubic-out scale (`Tween.TRANS_CUBIC`, `Tween.EASE_OUT`) and floats above neighboring cards (`z_index = 4`).
+    - **Art Tile Breathing Zoom**: Inner cream technical-drawing tile smoothly breathes to 1.045x on hover with its icon perfectly centered.
+    - **Glow & Shadow Projection**: Hover adds a 2px glowing rarity border (`color.lightened(0.35)`) and deep 7px shadow projection (`Vector2(0, 6)`), establishing realistic physical height off the sheet.
+    - **Responsive Label & Micro-Interactions**: Title illuminates to cream, footer prompt toggles to `CLAIM [ENTER]`, and bottom readouts update with the hovered commission name and hotkeys.
+    - **Audio & Cursor Feedback**: Plays `GameState.sfx("click")` on focus change and `GameState.sfx("confirm")` on choice; card pointer cursor enabled (`CURSOR_POINTING_HAND`).
+    - **Full Keyboard Navigation**: Arrow keys Left/Right and numeric 1/2/3 keys seamlessly update focus with matching pop animations.
+    - **Juicy Selection Punch**: Chosen card performs an elastic punch (`TRANS_BACK`, 1.08x) while unselected cards fade smoothly to 0.35 alpha.
+  - Verification: Engine captures `qa_buff_hover_mid2.png`, `qa_buff_hover_card0.png`, `qa_buff_hover_card2.png` verified; headless smoke test exit 0; `python tools/audit_data.py` 49/49 PASS.
