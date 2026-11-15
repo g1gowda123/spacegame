@@ -274,8 +274,8 @@ func _draw_module(m: Dictionary, r: Rect2) -> void:
 	if tex != null:
 		# High-resolution module portraits replace the old 10×8 vector blocks;
 		# the source art is authored at 64×48 and downsampled with nearest.
-		draw_texture_rect(tex, Rect2(r.position - Vector2(2, 2),
-			r.size + Vector2(4, 4)), false)
+		draw_texture_rect(tex, Rect2(r.position - Vector2(4, 4),
+			r.size + Vector2(8, 8)), false)
 		if _flash > 0.0:
 			draw_rect(r.grow(3.0), Color(1, 1, 1, 0.35 * _flash), false, 1.0)
 		return

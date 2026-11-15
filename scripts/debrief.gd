@@ -197,12 +197,12 @@ func _build_summary() -> void:
 	build_label.size = Vector2(144, 12)
 	c.add_child(build_label)
 	ship_diagram = ShipDiagram.new()
-	ship_diagram.position = Vector2(58, 170)
-	ship_diagram.size = Vector2(190, 62)
+	ship_diagram.position = Vector2(38, 166)
+	ship_diagram.size = Vector2(232, 78)
 	c.add_child(ship_diagram)
 	build_line = UIKit.mono("", 7, UIKit.INK_SOFT, HORIZONTAL_ALIGNMENT_CENTER)
 	build_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	build_line.position = Vector2(12, 226)
+	build_line.position = Vector2(12, 248)
 	build_line.size = Vector2(282, 18)
 	c.add_child(build_line)
 	_refresh_ship()
@@ -286,8 +286,11 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	if ResourceLoader.exists(icon_path):
 		var icon := TextureRect.new()
 		icon.texture = load(icon_path) as Texture2D
-		icon.position = Vector2(3, 3)
-		icon.size = Vector2(40, 40)
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon.offset_left = 3
+		icon.offset_top = 3
+		icon.offset_right = -3
+		icon.offset_bottom = -3
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
