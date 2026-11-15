@@ -114,7 +114,7 @@ func configure(opts: Dictionary) -> void:
 			_shade.color = Color(0.03, 0.05, 0.08, _dim)
 	if planet_rect != null:
 		planet_rect.pivot_offset = planet_rect.size * 0.5
-	planet_rect.visible = _planet_on
+		planet_rect.visible = _planet_on
 	_layout()
 
 
