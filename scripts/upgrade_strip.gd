@@ -457,10 +457,20 @@ func _open_arsenal() -> void:
 	title.position = Vector2(14, 10)
 	title.size = Vector2(440, 16)
 	panel.add_child(title)
-	var sub := UIKit.mono("7 SYSTEMS · 2 PATHS EACH · TIER 2 NEEDS TIER 1 · %d INSTALLED · TAB / ESC CLOSE" % GameState.owned.size(), 7, UIKit.MUTED_C)
+	var syns: Array = GameState.active_synergies()
+	var sub := UIKit.mono("7 SYSTEMS · 2 PATHS · TIER 2 NEEDS 1 · %d INSTALLED · %d SYNERGY · TAB / ESC CLOSE" % [
+		GameState.owned.size(), syns.size()
+	], 7, UIKit.MUTED_C)
 	sub.position = Vector2(14, 27)
 	sub.size = Vector2(570, 12)
 	panel.add_child(sub)
+	var syn_text := "No cross-system pair active."
+	if not syns.is_empty():
+		var names: Array[String] = []
+		for syn in syns:
+			names.append("%s — %s" % [str(syn.get("name", "")), str(syn.get("desc", ""))])
+		syn_text = "\n".join(names)
+	UIKit.hover_info(sub, "CROSS-SYSTEM SYNERGY", syn_text, UIKit.AMBER)
 	UIKit.hairline(panel, 12, 44, 608, Color(0.33, 0.39, 0.46, 0.55))
 
 	_build_arsenal_rows(panel)
