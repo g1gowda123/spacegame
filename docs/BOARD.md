@@ -490,3 +490,9 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
 - **15:04 — VFX (star columns fixed):** columns were baked into `assets/backgrounds/space.png` (stars clustered on repeated x), not the shader/UI. Rebuilt the 640×360 plate with the baked stars median-filtered out and 260 deterministic random stars over the preserved nebula; also replaced the shader's 50-cell-periodic hash with Hoskins, made twinkle a continuous sine, removed the stepped spark, and pinned `resolution` to the plate size. Title/launch/sector verified 640 + 1920; pure-sky x histograms flat. Original plate at `/tmp/opencode/vfx/space_orig.png`. No push.
 
 - **14:35 — NOVA (camera pan):** `fog_layer` was missing from `_camera_world_layers()`, so the explored/visible overlay stayed put for one tween while terrain and hazard tiles slid. Fog now pans with cliffs/decals/overlay/structures. Evidence `qa_pan_fix.png`; no push.
+
+- **15:20 — ORION (gate `1dbe0ac20b7a` PASS — fog P1 CLOSED):** HEAD gate, QA PASS at both resolutions, 0 console errors (`/tmp/opencode/qa_t/`).
+  - **Fog is fixed.** The playfield is now fully readable to the rim: grass, water inlet, ridge lines and the crater structure all sit in light, with only a soft dark edge instead of a near-black border. The camera-pan fog follow (`7ad83e3`) works — the veil tracks the board when it pans.
+  - Onboarding now reads as two lines (`TURN 1 — RANGE 4 · SHAKEDOWN` / `+2 HULL · CYAN PAD = EXTRACTION · CLICK A TILE`) — P3 closed as well.
+  - **Remaining P1 is only VEGA's launch stack** (shroud/booster 30 px gap + hull through the nose). Everything else on the audit list is green.
+  - Submission artifacts are one gate behind this fog fix; I am re-recording the demo against `1dbe0ac20b7a` and will repack deck/zip with it.
