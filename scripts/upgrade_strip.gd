@@ -444,8 +444,8 @@ func _open_arsenal() -> void:
 	)
 
 	var panel := Panel.new()
-	panel.position = Vector2(12, 8)
-	panel.size = Vector2(616, 344)
+	panel.position = Vector2(4, 4)
+	panel.size = Vector2(632, 352)
 	panel.pivot_offset = panel.size * 0.5
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var sb := UIKit.style_panel(Color(0.039, 0.075, 0.078, 0.98), UIKit.STEEL, 0, 1)
@@ -454,19 +454,19 @@ func _open_arsenal() -> void:
 	_arsenal.add_child(panel)
 
 	var title := UIKit.head("ARSENAL // UPGRADE TREE", 10, UIKit.CREAM)
-	title.position = Vector2(14, 12)
+	title.position = Vector2(14, 10)
 	title.size = Vector2(440, 16)
 	panel.add_child(title)
 	var sub := UIKit.mono("7 SYSTEMS · 2 PATHS EACH · TIER 2 NEEDS TIER 1 · %d INSTALLED · TAB / ESC CLOSE" % GameState.owned.size(), 7, UIKit.MUTED_C)
-	sub.position = Vector2(14, 29)
-	sub.size = Vector2(560, 12)
+	sub.position = Vector2(14, 27)
+	sub.size = Vector2(570, 12)
 	panel.add_child(sub)
-	UIKit.hairline(panel, 12, 46, 592, Color(0.33, 0.39, 0.46, 0.55))
+	UIKit.hairline(panel, 12, 44, 608, Color(0.33, 0.39, 0.46, 0.55))
 
 	_build_arsenal_rows(panel)
 
 	var close := UIKit.button("CLOSE", Vector2(58, 18))
-	close.position = Vector2(544, 12)
+	close.position = Vector2(560, 10)
 	close.add_theme_font_size_override("font_size", 8)
 	close.pressed.connect(_close_arsenal)
 	panel.add_child(close)
@@ -486,8 +486,8 @@ func _build_arsenal_rows(panel: Control) -> void:
 		old.queue_free()
 	var tree := Control.new()
 	tree.name = "Rows"
-	tree.position = Vector2(12, 52)
-	tree.size = Vector2(592, 282)
+	tree.position = Vector2(12, 48)
+	tree.size = Vector2(608, 302)
 	tree.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(tree)
 
@@ -495,13 +495,13 @@ func _build_arsenal_rows(panel: Control) -> void:
 		"PROPULSION", "POWER", "THERMAL", "STRUCTURE",
 		"COMMS", "SCIENCE", "SUPPORT",
 	]
-	var row_h := 39.0
+	var row_h := 43.0
 	for si in range(systems.size()):
 		var system := str(systems[si])
 		var y := float(si) * row_h
 		var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
 		var label := UIKit.mono(system, 6, sys_color)
-		label.position = Vector2(0, y + 14)
+		label.position = Vector2(0, y + 16)
 		label.size = Vector2(80, 10)
 		tree.add_child(label)
 
@@ -520,7 +520,7 @@ func _build_arsenal_rows(panel: Control) -> void:
 			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
 
 		# System root: branch glyph, then A and B lanes to the right.
-		_tree_icon(tree, "res://assets/sprites/modules/branches/%s_A.png" % system,
+		_tree_icon(tree, "res://assets/sprites/modules/branches/%s_A.png" % system.to_lower(),
 			Vector2(84, y + 4), Vector2(28, 28), sys_color, false, false,
 			system, "Two paths: A and B. Tier 2 needs its own tier 1.")
 		_tree_line(tree, Vector2(84, y + 18), Vector2(116, y + 18),
@@ -566,6 +566,42 @@ func _tree_lane_row(tree: Control, parts: Array, x: float, y: float,
 		tag.position = Vector2(nx - 16.0, y + 34.0)
 		tag.size = Vector2(64.0, 9.0)
 		tree.add_child(tag)
+
+
+func _tree_icon(parent: Control, path: String, pos: Vector2, size: Vector2,
+		border: Color, installed: bool, locked: bool, title: String,
+		body: String) -> void:
+	var card := Panel.new()
+	card.position = pos
+	card.size = size
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bg := UIKit.PAPER if not locked else Color(0.10, 0.11, 0.12, 0.94)
+	var line := UIKit.GREEN if installed else border
+	if locked:
+		line = Color(border.r, border.g, border.b, 0.32)
+	card.add_theme_stylebox_override("panel", UIKit.style_panel(bg, line, 0, 1))
+	parent.add_child(card)
+	if ResourceLoader.exists(path):
+		var icon := TextureRect.new()
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = load(path) as Texture2D
+		icon.position = Vector2(2, 2)
+		icon.size = size - Vector2(4, 4)
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.modulate = Color(1, 1, 1, 0.38 if locked else 1.0)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(icon)
+	UIKit.hover_info(card, title, body, line)
+
+
+func _tree_line(parent: Control, a: Vector2, b: Vector2, color: Color) -> void:
+	var line := Line2D.new()
+	line.points = PackedVector2Array([a, b])
+	line.width = 1.0
+	line.default_color = color
+	line.antialiased = true
+	parent.add_child(line)
 
 
 func _rebuild_arsenal() -> void:
