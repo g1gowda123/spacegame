@@ -318,8 +318,19 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 		(" · " + role) if role != "" else ""
 	], 6, sys_color)
 	branch.position = Vector2(64, 21)
-	branch.size = Vector2(120, 9)
+	branch.size = Vector2(118, 9)
 	card.add_child(branch)
+	var glyph_path := "res://assets/sprites/modules/branches/%s_%s.png" % [sys, path]
+	if ResourceLoader.exists(glyph_path):
+		var glyph := TextureRect.new()
+		glyph.texture = load(glyph_path) as Texture2D
+		glyph.position = Vector2(186, 19)
+		glyph.size = Vector2(16, 16)
+		glyph.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		glyph.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		glyph.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(glyph)
 	var pr := UIKit.label("$%dM" % int(cost), 9, UIKit.ORANGE_DARK if afford else UIKit.SIGNAL, true)
 	pr.position = Vector2(58, 32)
 	pr.size = Vector2(70, 12)
@@ -530,7 +541,7 @@ func _show_event() -> void:
 		desc.size = Vector2(290, 26)
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		rc.add_child(desc)
-		var btn := UIKit.button("CHOOSE", Vector2(86, 24), i == 0)
+		var btn := UIKit.button("CHOOSE", Vector2(86, 24), true)
 		btn.position = Vector2(318, 20)
 		btn.pressed.connect(_on_event_choice.bind(i))
 		rc.add_child(btn)
