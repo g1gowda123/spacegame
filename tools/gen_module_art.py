@@ -101,8 +101,14 @@ def key(img, tol=0):
     bg = np.median(ring, axis=0)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     magenta_sheet = (bg[0] > 90) and (bg[2] > 90) and (bg[1] < 0.74 * min(bg[0], bg[2]))
+    bright_sheet = (bg.mean() > 140) and (bg.max() - bg.min() < 40)
     if magenta_sheet:
         sheetish = (r > 70) & (b > 70) & (g < 0.74 * np.minimum(r, b))
+    elif bright_sheet:
+        # SDXL often paints a white studio card instead of the magenta sheet;
+        # key by whiteness, then by distance, so neither survives as a box.
+        sheetish = (a.min(axis=2) > 140) & ((a.max(axis=2) - a.min(axis=2)) < 30)
+        sheetish |= np.linalg.norm(a - bg, axis=2) < 26
     else:
         sheetish = np.linalg.norm(a - bg, axis=2) < 34
     lab, n = ndimage.label(sheetish)
@@ -171,18 +177,23 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     SHIP.mkdir(parents=True, exist_ok=True)
     BUFF.mkdir(parents=True, exist_ok=True)
-    only = sys.argv[1:] or list(PARTS)
+    args = sys.argv[1:]
+    reprocess = "--reprocess" in args
+    only = [a for a in args if not a.startswith("--")] or list(PARTS)
     done = []
     for i, pid in enumerate(only):
         raw = RAW / f"{pid}.png"
         if not raw.exists():
+            if reprocess:
+                print("skip", pid, "(no raw)")
+                continue
             gen(PARTS[pid], raw, 9400 + i)
         part = finish(key(Image.open(raw)), 128, 128)
         part.save(OUT / f"{pid}.png")
         finish(key(Image.open(raw)), 64, 48, blur=1.4).save(SHIP / f"{pid}.png")
         done.append(pid)
         print("ok", pid, flush=True)
-    if not sys.argv[1:]:
+    if len(sys.argv) == 1:
         for i, (bid, prompt) in enumerate(BUFFS.items()):
             raw = RAW / f"buff_{bid}.png"
             if not raw.exists():

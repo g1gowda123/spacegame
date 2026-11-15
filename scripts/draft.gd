@@ -47,9 +47,11 @@ func _build() -> void:
 	var header := UIKit.head("DESTINATION DRAFT", 12, UIKit.NIGHT_TEXT)
 	header.position = Vector2(10, 6)
 	add_child(header)
-	var step := UIKit.mono("SECTOR %d OF %d   ·   NASA EXOPLANET ARCHIVE   ·   PSCompPars" % [
-		int(GameState.run.get("sector", 1)), GameState.SECTORS_PER_RUN
-	], 7, UIKit.NIGHT_MUTED)
+	var sector_now := int(GameState.run.get("sector", 1))
+	var sector_text := "SECTOR %d OF %d" % [sector_now, GameState.SECTORS_PER_RUN]
+	if bool(GameState.run.get("endless", false)):
+		sector_text = "SECTOR %d  ·  ENDLESS" % sector_now
+	var step := UIKit.mono("%s   ·   NASA EXOPLANET ARCHIVE   ·   PSCompPars" % sector_text, 7, UIKit.NIGHT_MUTED)
 	step.position = Vector2(10, 22)
 	add_child(step)
 

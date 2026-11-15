@@ -14,6 +14,9 @@ func _ready() -> void:
 	share_code = str(score.get("share_code", CrewDirector.code_for_run()))
 	CrewDirector.note_report_score(int(score.get("total", 0)))
 	_build()
+	for arg in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		if str(arg) == "--endless-test":
+			call_deferred("_dev_endless")
 
 
 func _build() -> void:
@@ -261,13 +264,15 @@ func _build_footer() -> void:
 		"THE CAMPAIGN IS OVER  ·  YOUR AGENCY'S RECORD IS FILED",
 		8, UIKit.SIGNAL)
 	l.position = Vector2(12, 8)
-	l.size = Vector2(360, 12)
+	l.size = Vector2(280, 12)
+	l.clip_text = true
 	c.add_child(l)
 	var s := UIKit.mono(
 		"CAMPAIGN CODE  %s  ·  SAME WORLDS + STACK  ·  PRESS C TO COPY" % share_code,
 		7, UIKit.INK_SOFT)
 	s.position = Vector2(12, 23)
-	s.size = Vector2(420, 14)
+	s.size = Vector2(280, 14)
+	s.clip_text = true
 	s.name = "ShareLine"
 	share_line = s
 	c.add_child(s)
@@ -287,6 +292,13 @@ func _build_footer() -> void:
 		get_tree().change_scene_to_file("res://scenes/title.tscn")
 	)
 	c.add_child(again)
+
+
+func _dev_endless() -> void:
+	GameState.start_endless()
+	print("ENDLESS_TEST sector=", int(GameState.run.get("sector", 0)),
+		" draft=", GameState.draft.size(), " endless=", bool(GameState.run.get("endless", false)))
+	get_tree().change_scene_to_file("res://scenes/draft.tscn")
 
 
 func _unhandled_input(event: InputEvent) -> void:
