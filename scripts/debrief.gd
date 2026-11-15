@@ -38,6 +38,16 @@ func _ready() -> void:
 		GameState.run["event_card"] = {}
 		GameState.event_card = {}
 	_build()
+	# The report card's ship arrives instead of being pasted in: a short slide
+	# out of the panel edge while the engine flame (ShipDiagram) is already lit.
+	if ship_diagram != null:
+		var home := ship_diagram.position
+		ship_diagram.position = home + Vector2(-7.0, 0.0)
+		ship_diagram.modulate.a = 0.0
+		var arrive := create_tween().set_parallel(true)
+		arrive.tween_property(ship_diagram, "position", home, 0.36) \
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		arrive.tween_property(ship_diagram, "modulate:a", 1.0, 0.22)
 	if "--next" in cli:
 		call_deferred("_on_next", false)
 	if "--event" in OS.get_cmdline_args() or "--event" in OS.get_cmdline_user_args():

@@ -117,8 +117,8 @@ func _ready() -> void:
 		# The menu is the shop window: a brighter plate than the consoles, with
 		# a visible sky, a lit limb and slow ambient motion.
 		"dim": 0.12,
-		"bright": 1.05,
-		"nebula": 0.030,
+		"bright": 1.0,
+		"nebula": 0.012,
 		"planet_light": 0.52,
 		# The disc edge is nearest-filtered, so a strong rim reads as a dotted
 		# outline. Keep it low and let the halo carry the atmosphere.
