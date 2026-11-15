@@ -10,7 +10,6 @@ var _delay := 1.8
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	var args: Array = OS.get_cmdline_args() + OS.get_cmdline_user_args()
 	for raw in args:
 		var arg := str(raw)

@@ -81,56 +81,86 @@ def gen(prompt, out, seed):
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def key(img, tol=95):
+def key(img, tol=72):
+    """Key the sheet and clean the silhouette.
+
+    Corner median gives the sheet colour, but a plain distance mask eats pale
+    hardware and leaves pinholes where specular highlights match the sheet, so
+    the background is taken as the border-connected region only and any enclosed
+    hole is filled back in. Without the fill, a 128 px part ends up with missing
+    corners and see-through patches.
+    """
     a = np.asarray(img.convert("RGB")).astype(np.float32)
-    c = np.concatenate([a[:8, :8].reshape(-1, 3), a[:8, -8:].reshape(-1, 3),
-                        a[-8:, :8].reshape(-1, 3), a[-8:, -8:].reshape(-1, 3)])
+    pad = 14
+    c = np.concatenate([a[:pad, :pad].reshape(-1, 3), a[:pad, -pad:].reshape(-1, 3),
+                        a[-pad:, :pad].reshape(-1, 3), a[-pad:, -pad:].reshape(-1, 3)])
     bg = np.median(c, axis=0)
     near = np.linalg.norm(a - bg, axis=2) < tol
-    lab, _ = ndimage.label(near)
-    keep = np.zeros_like(near)
-    for i in np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])):
-        if i:
-            keep |= lab == i
-    solid, n = ndimage.label(~keep)
-    if n > 1:
-        sizes = ndimage.sum(~keep, solid, range(1, n + 1))
-        keep = solid != (int(np.argmax(sizes)) + 1)
+    lab, n = ndimage.label(near)
+    if n:
+        border_ids = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+        bgmask = np.isin(lab, border_ids[border_ids > 0])
+    else:
+        bgmask = near
+    fg = ndimage.binary_fill_holes(~bgmask)
+    fg = ndimage.binary_opening(fg, iterations=1)
+    lab2, n2 = ndimage.label(fg)
+    if n2 > 1:
+        sizes = ndimage.sum(fg, lab2, range(1, n2 + 1))
+        biggest = int(np.argmax(sizes)) + 1
+        # keep satellites only if they are real attached detail, not specks
+        keep = np.isin(lab2, [i + 1 for i, s in enumerate(sizes) if s > 0.06 * sizes.max()])
+        if keep.sum() < 0.3 * fg.sum():
+            keep = lab2 == biggest
+        fg = keep
+    al = np.where(fg, 255, 0).astype(np.uint8)
     rgb = a.copy()
-    al = np.where(keep, 0, 255).astype(np.uint8)
+    # despill: magenta bleeds inward from the sheet along every rim
+    edge = fg & ~ndimage.binary_erosion(fg, iterations=4)
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    mag = (al > 0) & (r > b + 18) & (r > g + 28)
-    rgb[mag, 1] = np.minimum(255, rgb[mag, 1] * 1.18 + 14)
-    rgb[mag, 2] = np.minimum(255, rgb[mag, 2] * 1.30 + 22)
-    rgb[mag, 0] = np.clip(rgb[mag, 0] * 0.92, 0, 255)
+    mag = edge & (r > b + 14) & (r > g + 22)
+    rgb[mag, 0] = np.clip(rgb[mag, 0] * 0.86, 0, 255)
+    rgb[mag, 1] = np.minimum(255, rgb[mag, 1] * 1.22 + 16)
+    rgb[mag, 2] = np.minimum(255, rgb[mag, 2] * 1.16 + 12)
     return Image.fromarray(np.dstack([rgb, al]).astype(np.uint8), "RGBA")
 
 
-def lock(img):
-    a = np.asarray(img).astype(np.float32)
-    rgb = a[..., :3]
+def lock_rgb(rgb):
     d = ((rgb[:, :, None, :] - PAL[None, None, :, :]) ** 2).sum(-1)
-    out = PAL[d.argmin(-1)].astype(np.uint8)
-    return Image.fromarray(np.dstack([out, a[..., 3].astype(np.uint8)]), "RGBA")
+    return PAL[d.argmin(-1)].astype(np.uint8)
 
 
 def finish(img, w, h, blur=1.6):
+    """Crop, prefilter, halve, lock to the hardware ramp, ink the outside edge.
+
+    Order matters: blur the *source* while it is still large (the render's fine
+    rivets survive), then downscale, then lock, so the palette is applied to
+    averaged colours instead of single bright pixels. Interior holes are filled
+    after thresholding — the background specks inside a chassis are what made
+    parts look eaten at 128 px.
+    """
     bbox = img.split()[-1].getbbox()
-    if not bbox:
-        return img.resize((w, h), Image.Resampling.NEAREST)
-    img = img.crop(bbox).filter(ImageFilter.GaussianBlur(blur))
-    s = min((w - 8) / img.width, (h - 8) / img.height)
+    if bbox:
+        img = img.crop(bbox)
+    if blur:
+        img = img.filter(ImageFilter.GaussianBlur(blur))
+    m = 2
+    tw, th = w - 2 * m, h - 2 * m
+    s = min(tw / img.width, th / img.height)
     img = img.resize((max(1, int(img.width * s)), max(1, int(img.height * s))), Image.Resampling.LANCZOS)
-    c = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    c.alpha_composite(img, ((w - img.width) // 2, (h - img.height) // 2))
-    c = lock(c)
-    a = np.asarray(c).copy()
-    a[..., 3] = (a[..., 3] > 110) * 255
-    solid = a[..., 3] > 0
-    pad = np.pad(solid, 1)
-    edge = solid & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
-    a[edge, :3] = (22, 24, 30)
-    return Image.fromarray(a, "RGBA")
+    a = np.asarray(img).astype(np.float32)
+    solid = a[..., 3] >= 110
+    solid = ndimage.binary_fill_holes(solid)
+    solid = ndimage.binary_opening(solid, iterations=1)
+    canvas = np.zeros((h, w, 4), np.uint8)
+    rgb = lock_rgb(a[..., :3])
+    ox, oy = (w - img.width) // 2, (h - img.height) // 2
+    canvas[oy:oy + img.height, ox:ox + img.width, :3] = rgb
+    canvas[oy:oy + img.height, ox:ox + img.width, 3] = solid * 255
+    pad = np.pad(canvas[..., 3] > 0, 1)
+    edge = (canvas[..., 3] > 0) & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    canvas[edge, :3] = (22, 24, 30)
+    return Image.fromarray(canvas, "RGBA")
 
 
 def main():
