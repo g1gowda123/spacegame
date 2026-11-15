@@ -110,6 +110,7 @@ def card(img: Image.Image) -> Image.Image:
     left = (w - side) // 2
     top = int(h * 0.015)
     img = img.crop((left, top, left + side, top + int(side * 1.5)))
+    img = img.filter(ImageFilter.GaussianBlur(0.6))
     img = img.resize((160, 240), Image.Resampling.LANCZOS)
     img = img.filter(ImageFilter.UnsharpMask(radius=1.1, percent=70, threshold=4))
     img = ImageEnhance.Contrast(img).enhance(1.03)
@@ -117,7 +118,7 @@ def card(img: Image.Image) -> Image.Image:
     yy, xx = np.mgrid[0:240, 0:160]
     # soft vignette + slightly warmer shadow so it sits on the paper card
     d = np.sqrt(((xx - 80) / 80.0) ** 2 + ((yy - 120) / 120.0) ** 2)
-    v = np.clip(1.06 - 0.30 * np.clip(d - 0.55, 0, 1) ** 1.5, 0, 1.06)
+    v = np.clip(1.04 - 0.16 * np.clip(d - 0.60, 0, 1) ** 1.5, 0, 1.04)
     rgb = np.clip(rgb * v[..., None] + np.array([4, 2, -3]), 0, 255).astype(np.uint8)
     return Image.fromarray(rgb).convert("RGBA")
 

@@ -142,8 +142,13 @@ func _draw() -> void:
 	var ts := _tex.get_size()
 	if ts.x <= 0.0 or ts.y <= 0.0:
 		return
-	var s := Vector2(size.x / ts.x, size.y / ts.y)
-	draw_set_transform(Vector2.ZERO, 0.0, s)
+	# Uniform scale only: the old per-axis fit squashed a 190x70 hull into a
+	# 190x60 control (y = 0.857), so every 1 px horizontal panel line dropped a
+	# row intermittently and read as stray scanlines across the sprite.
+	var sf := minf(size.x / ts.x, size.y / ts.y)
+	var draw_size := ts * sf
+	var origin := (size - draw_size) * 0.5
+	draw_set_transform(origin, 0.0, Vector2(sf, sf))
 	draw_texture(_tex, Vector2.ZERO)
 	_draw_live_lights()
 	for m in _modules:
