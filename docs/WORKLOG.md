@@ -1357,9 +1357,20 @@ than a screen from another build.
     5. Clean separation of over 110 pixels between plaque and spacecraft with zero overlap.
   - Verification: Live native capture `launch_side_left_sub.png` verified, headless smoke exit 0, audit_data 49/49 PASS.
   - Git: Committed locally, not pushed.
-
 ## 15:04 — VFX — star columns fixed (baked into the plate)
 - The vertical dotted columns in the title/launch RHS were **not** the shader or a UI grid: they were in `assets/backgrounds/space.png`. The AI-generated plate had stars clustered on repeated x positions; upscaled 3× they read as vertical lines. Hiding the star rect removed them only because it removed the plate.
 - Rebuilt the plate at the same 640×360 size: median-filtered the baked stars out, kept the nebula/background, then stamped 260 deterministic random stars (plus a few 4-way cross stars) at `params seed 20261115`. Original saved at `/tmp/opencode/vfx/space_orig.png`; the project backup `nasa_copy_20261115` also has it.
 - Also hardened `star_drift.gdshader`: Hoskins 2D hash (the old one repeated every ~50 cells), twinkle is a continuous two-axis sine instead of per-cell hash, the stepped spark gate is gone, and `resolution` is pinned to the source plate size rather than the window size.
 - Verified title/launch/sector at 640 and 1920: pure-sky bright-pixel x histogram is flat, no columns. Launch subsequent-phase RHS and title RHS both clean.
+
+- **14:55 — Title screen: Pathfinder hull body for floating space animation (`scripts/title.gd`).**
+  - User requested: "Deep-Space Research Probe choose from any one of husk body from out of four in the game to just stimulate the home screen animation don't change anything else and do not push until i say".
+  - Selected the iconic flagship hull `Pathfinder` (`res://assets/sprites/ships/pathfinder.png`, 190x70) from the game's four hull classes (`pathfinder`, `relay`, `cryo`, `hopper`).
+  - Implemented in `FloatingCosmos` in `scripts/title.gd`:
+    - Replaced the procedural probe textures with the authentic in-game `Pathfinder` hull sprite loaded at `57x21` pixels (exact 0.3x integer-multiple scaling with nearest-neighbor texture filtering).
+    - Added dual-frequency flickering ion engine exhaust plume (`flick = 0.55 + 0.30 * sin(_t * 7.3) + 0.15 * sin(_t * 23.0)`) with plasma glow core and accent line behind the rear engine bells.
+    - Added navigation strobe blinks (port tail red `#f05a46`, starboard nose green `#6be0ad`) flashing on a 1.6s cycle matching `ship_diagram.gd` conventions.
+    - Added periodic telemetry ping wave radiating upward/forward from the observation cupola / comms dome every 3.8s.
+    - Integer-quantized drift and sway (`536 + sway`, `96 + bob`) keeping pixels aligned to the retro grid.
+  - Verification: Live engine capture `qa_title_husk_pathfinder.png` inspected, headless smoke exit 0, `python tools/audit_data.py` 49/49 PASS.
+  - Git: Committed locally; ready to push per user request.
