@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://6whbljc8pe0"
-path="res://.godot/imported/preview.png-724a47fec140969fbb8bd851b119d66b.ctex"
+uid="uid://unvr05j1mocd"
+path="res://.godot/imported/deepnet.png-f1401a47d998c96cf1e40ed5bb831535.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/modules/preview.png"
-dest_files=["res://.godot/imported/preview.png-724a47fec140969fbb8bd851b119d66b.ctex"]
+source_file="res://assets/sprites/modules/ship/deepnet.png"
+dest_files=["res://.godot/imported/deepnet.png-f1401a47d998c96cf1e40ed5bb831535.ctex"]
 
 [params]
 

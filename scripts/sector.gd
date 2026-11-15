@@ -138,6 +138,8 @@ var extract_cell := Vector2i.ZERO
 var moved := false
 var move_range := 3
 var cursor_cell := Vector2i.ZERO
+var pause_menu: PauseMenu
+var pause_btn: Button
 var path_cells: Array[Vector2i] = []
 var path_valid := false
 var path_cost := 0
@@ -214,7 +216,13 @@ func _ready() -> void:
 	_impact_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fx_root.add_child(_impact_flash)
 	_build_hud()
+	pause_menu = PauseMenu.new()
+	add_child(pause_menu)
+	pause_menu.quit_requested.connect(_quit_to_title)
 	_start_sector()
+	if "--pause" in args:
+		await get_tree().create_timer(1.0).timeout
+		_toggle_pause()
 	GameState.sfx("confirm")
 	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 		var arg := str(raw)
@@ -631,6 +639,13 @@ func _build_hud() -> void:
 		tc.add_child(pip)
 		power_pips.append(pip)
 
+	pause_btn = UIKit.button("II", Vector2(26, 22))
+	pause_btn.position = Vector2(590, 8)
+	pause_btn.add_theme_font_size_override("font_size", 9)
+	pause_btn.pressed.connect(_toggle_pause)
+	tc.add_child(pause_btn)
+	UIKit.hover_info(pause_btn, "PAUSE", "Freeze the mission.\nESC or P also pauses.")
+
 	# Hover dossiers: the HUD keeps numbers only; the rules live behind the
 	# cursor, Balatro-style, when a judge wants the exact mechanic.
 	_hover_cell(tc, Rect2(168, 2, 52, 36), "INTEGRITY",
@@ -648,7 +663,7 @@ func _build_hud() -> void:
 	_hover_cell(tc, Rect2(400, 2, 100, 36), "THERMAL LOAD",
 		"Heat rises every move. At 100: overload, -1 hull.\nHOLD vents 8 + thermal resistance and burns one sol.",
 		UIKit.AMBER, "thermal_res")
-	_hover_cell(tc, Rect2(508, 2, 114, 36), "POWER",
+	_hover_cell(tc, Rect2(508, 2, 74, 36), "POWER",
 		"Shield energy for blockable hazards.\nRecharges at end of turn; HOLD adds reactor vent power.",
 		UIKit.CYAN, "power_regen")
 
@@ -2730,6 +2745,20 @@ func _cell_at_screen(pos: Vector2) -> Vector2i:
 	)
 
 
+func _toggle_pause() -> void:
+	if done or pause_menu == null:
+		return
+	if pause_menu.is_open:
+		pause_menu.close()
+	else:
+		pause_menu.open()
+
+
+func _quit_to_title() -> void:
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/title.tscn")
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
@@ -2755,6 +2784,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key.keycode == KEY_ESCAPE or key.keycode == KEY_TAB or key.keycode == KEY_I:
 			upgrade_strip.toggle_arsenal()
 			get_viewport().set_input_as_handled()
+		return
+	if key.keycode in [KEY_ESCAPE, KEY_P]:
+		_toggle_pause()
+		get_viewport().set_input_as_handled()
 		return
 	match key.keycode:
 		KEY_TAB, KEY_I:
