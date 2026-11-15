@@ -1374,3 +1374,9 @@ than a screen from another build.
     - Integer-quantized drift and sway (`536 + sway`, `96 + bob`) keeping pixels aligned to the retro grid.
   - Verification: Live engine capture `qa_title_husk_pathfinder.png` inspected, headless smoke exit 0, `python tools/audit_data.py` 49/49 PASS.
   - Git: Committed locally; ready to push per user request.
+
+## 15:57 — VFX — launch atmosphere handoff smoothed and sped up
+- Ascent now snapshots the liftoff rocket Y and the live sky colour at the phase boundary, so it no longer jumps 12 px upward or pops from dusk to outer-atmosphere blue in one frame.
+- Clouds use an accumulated downward scroll (no more `TIME * velocity` teleporting), fade in over the first 14 % of ascent and out through the last half.
+- Sky colour is one eased blend from the captured start to void; stars fade in from 18 %, Earth limb waits until 48 %, and the launch uses the static star plate (no full-screen animated star shader) to remove the fade hitch.
+- Initial phases shortened: prep 0.25 s, ignition 0.55 s, stronger liftoff velocity/acceleration, ascent 2.4 s. No push.

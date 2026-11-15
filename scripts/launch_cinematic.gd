@@ -951,7 +951,7 @@ func _process(delta: float) -> void:
 			_rng.randf_range(-_shake_amount, _shake_amount),
 			_rng.randf_range(-_shake_amount, _shake_amount)
 		)
-	else:
+	elif _world.position != Vector2.ZERO:
 		_world.position = Vector2.ZERO
 
 	if not _is_subsequent:
@@ -982,7 +982,9 @@ func _update_preparation_phase() -> void:
 	# 0.0s to 4.5s: Countdown from T-10s down to T-2s
 	var remaining := maxf(1.0, 10.0 - (_time * 6.0))
 	var c_int := int(ceil(remaining))
-	_countdown_label.text = "T-%d.0s" % c_int
+	var c_text := "T-%d.0s" % c_int
+	if _countdown_label.text != c_text:
+		_countdown_label.text = c_text
 
 	# Audio beep on distinct countdown milestones: 10, 5, 3
 	if c_int != _last_beep_val and (c_int in [10, 5, 3]):
