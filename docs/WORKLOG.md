@@ -1186,4 +1186,6 @@ must not sound like an mp3 starting.
   - Added matching hover pop (`card.pivot_offset = Vector2(142, 30)`, `scale 1.025`, `position:y y - 2.0`, `z_index = 2` over `0.14s`) to `_offer_card(...)` for consistent tactile feel across shop refits.
 
 - **Verification:**
+  - `python tools/qa/native_screens.py` -> **10/10 screens pass** (title, crew, design, draft, sector, relay, sector_success, sector_fail, debrief, report) exit 0, zero errors.
   - `python tools/audit_data.py` -> 49 checks, 0 failed.
+
