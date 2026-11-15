@@ -130,50 +130,145 @@ const OBJECTIVES := [
 ]
 
 const UPGRADES := [
-	{"id": "rtg", "name": "RTG AUXILIARY", "cost": 90.0, "kind": "MODULE",
-	 "icon": "reactor", "desc": "+1 power regeneration.",
-	 "plain": "A small nuclear battery: +1 power every turn.",
-	 "power_regen": 1},
-	{"id": "radiator", "name": "DEPLOYABLE RADIATOR", "cost": 85.0, "kind": "MODULE",
-	 "icon": "aerogel", "desc": "Heat gain -3 per move.",
-	 "plain": "Radiator panels: every move adds 3 less heat.",
-	 "thermal_res": 3},
-	{"id": "wheel", "name": "REACTION WHEEL", "cost": 75.0, "kind": "MODULE",
-	 "icon": "sling", "desc": "+4 delta-v in every sector.",
-	 "plain": "Saves fuel: start each sector with 4 extra delta-v.",
+	# Each system has two branches, A and B. Tier 2 unlocks only after the
+	# branch's tier 1 is installed, so the shop becomes a small skill tree.
+	# Names are agency hardware designations, not generic stat labels.
+	{"id": "wheel", "branch": "PROPULSION", "path": "A", "tier": 1,
+	 "name": "RW-4 GYRODYNE", "cost": 75.0, "kind": "MODULE",
+	 "icon": "sling", "desc": "+4 delta-v every sector.",
+	 "plain": "A four-rotor reaction assembly: 4 extra delta-v at sector start.",
 	 "dv": 4},
-	{"id": "armor", "name": "ABLATIVE ARMOR", "cost": 80.0, "kind": "MODULE",
-	 "icon": "harden", "desc": "+2 maximum integrity.",
-	 "plain": "Extra hull plating: survive 2 more hits.",
-	 "integrity": 2},
-	{"id": "buffer", "name": "DEEP DATA BUFFER", "cost": 70.0, "kind": "MODULE",
-	 "icon": "cache", "desc": "+4 data buffer. Comms loss -4%.",
-	 "plain": "A bigger recorder: 4% less data lost on downlink.",
-	 "data_cap": 4, "comms_bonus": 4},
-	{"id": "antenna", "name": "HIGH-GAIN ANTENNA", "cost": 100.0, "kind": "MODULE",
-	 "icon": "deepnet", "desc": "Comms loss -10%.",
-	 "plain": "A larger dish: 10% less data lost on downlink.",
-	 "comms_bonus": 10},
-	{"id": "science_pack", "name": "SCIENCE PACKAGE", "cost": 95.0, "kind": "FIRMWARE",
-	 "icon": "science", "desc": "+15% science value.",
-	 "plain": "Better labs: each data node is worth 15% more science.",
-	 "science": 0.15},
-	{"id": "salvage", "name": "SALVAGE PROTOCOL", "cost": 90.0, "kind": "FIRMWARE",
-	 "icon": "favor", "desc": "+30% grant from every sector.",
-	 "plain": "Better contracts: each sector pays 30% more grant.",
-	 "grant": 0.30},
-	{"id": "repair", "name": "FIELD REPAIR KIT", "cost": 60.0, "kind": "MODULE",
-	 "icon": "repair", "desc": "Restore 2 integrity next sector.",
-	 "plain": "Spare parts: restore 2 hull integrity next sector.",
-	 "repair": 2, "repeatable": true},
-	{"id": "coolant", "name": "CRYO COOLANT LOOP", "cost": 75.0, "kind": "FIRMWARE",
-	 "icon": "shield", "desc": "Venting heat also restores 1 extra power.",
-	 "plain": "Venting heat also recovers 1 extra power.",
-	 "vent_power": 1},
-	{"id": "ion", "name": "ION THRUSTER", "cost": 80.0, "kind": "MODULE",
-	 "icon": "ranger", "desc": "+1 tile movement range each turn.",
-	 "plain": "A steady low-thrust engine: move 1 extra tile each turn.",
+	{"id": "wheel2", "branch": "PROPULSION", "path": "A", "tier": 2,
+	 "requires": "wheel", "name": "RW-8 GYRODYNE", "cost": 120.0,
+	 "kind": "MODULE", "icon": "sling", "desc": "+4 delta-v, +1 range.",
+	 "plain": "Dual four-rotor stack: another 4 delta-v and one extra move range.",
+	 "dv": 4, "move_range": 1},
+	{"id": "ion", "branch": "PROPULSION", "path": "B", "tier": 1,
+	 "name": "HALL H9", "cost": 80.0, "kind": "MODULE",
+	 "icon": "ranger", "desc": "+1 tile movement range.",
+	 "plain": "A nine-channel Hall thruster: one extra tile of range per turn.",
 	 "move_range": 1},
+	{"id": "ion2", "branch": "PROPULSION", "path": "B", "tier": 2,
+	 "requires": "ion", "name": "HALL H12", "cost": 125.0, "kind": "MODULE",
+	 "icon": "ranger", "desc": "+1 range, +2 delta-v.",
+	 "plain": "Twelve-channel Hall thruster: another range step and 2 delta-v.",
+	 "move_range": 1, "dv": 2},
+
+	{"id": "rtg", "branch": "POWER", "path": "A", "tier": 1,
+	 "name": "MMRTG-140", "cost": 90.0, "kind": "MODULE",
+	 "icon": "reactor", "desc": "+1 power regeneration.",
+	 "plain": "A 140 W radioisotope generator: one more power every turn.",
+	 "power_regen": 1},
+	{"id": "rtg2", "branch": "POWER", "path": "A", "tier": 2,
+	 "requires": "rtg", "name": "MMRTG-280", "cost": 130.0, "kind": "MODULE",
+	 "icon": "reactor", "desc": "+1 power, +2 heat resistance.",
+	 "plain": "Stacked 280 W generator: one power and two heat resistance.",
+	 "power_regen": 1, "thermal_res": 2},
+	{"id": "fuel_cell", "branch": "POWER", "path": "B", "tier": 1,
+	 "name": "RFC-2 CELL", "cost": 70.0, "kind": "MODULE",
+	 "icon": "cache", "desc": "+1 power, +2 data buffer.",
+	 "plain": "A regenerative fuel cell: one power and two data slots.",
+	 "power_regen": 1, "data_cap": 2},
+	{"id": "fuel_cell2", "branch": "POWER", "path": "B", "tier": 2,
+	 "requires": "fuel_cell", "name": "RFC-4 CELL", "cost": 110.0, "kind": "MODULE",
+	 "icon": "cache", "desc": "+1 power, +2 data, +2 comms.",
+	 "plain": "A four-cell stack: one power, two data slots and 2% comms.",
+	 "power_regen": 1, "data_cap": 2, "comms_bonus": 2},
+
+	{"id": "radiator", "branch": "THERMAL", "path": "A", "tier": 1,
+	 "name": "LHP-2 LOOP", "cost": 85.0, "kind": "MODULE",
+	 "icon": "aerogel", "desc": "Heat gain -3 per move.",
+	 "plain": "A two-panel loop heat pipe: every move adds 3 less heat.",
+	 "thermal_res": 3},
+	{"id": "radiator2", "branch": "THERMAL", "path": "A", "tier": 2,
+	 "requires": "radiator", "name": "LHP-4 LOOP", "cost": 125.0, "kind": "MODULE",
+	 "icon": "aerogel", "desc": "Heat gain -3, +1 power.",
+	 "plain": "A four-panel loop: another 3 heat resistance and one power.",
+	 "thermal_res": 3, "power_regen": 1},
+	{"id": "coolant", "branch": "THERMAL", "path": "B", "tier": 1,
+	 "name": "CRYO LOOP", "cost": 75.0, "kind": "FIRMWARE",
+	 "icon": "shield", "desc": "Venting also restores 1 power.",
+	 "plain": "Cryogenic coolant routing: venting heat also recovers 1 power.",
+	 "vent_power": 1},
+	{"id": "coolant2", "branch": "THERMAL", "path": "B", "tier": 2,
+	 "requires": "coolant", "name": "CRYO LOOP II", "cost": 115.0,
+	 "kind": "FIRMWARE", "icon": "shield", "desc": "+1 vent power, +2 heat res.",
+	 "plain": "A second coolant stage: venting power and two heat resistance.",
+	 "vent_power": 1, "thermal_res": 2},
+
+	{"id": "armor", "branch": "STRUCTURE", "path": "A", "tier": 1,
+	 "name": "WHIPPLE MK-I", "cost": 80.0, "kind": "MODULE",
+	 "icon": "harden", "desc": "+2 maximum integrity.",
+	 "plain": "A Whipple bumper shell: survive two more hits.",
+	 "integrity": 2},
+	{"id": "armor2", "branch": "STRUCTURE", "path": "A", "tier": 2,
+	 "requires": "armor", "name": "WHIPPLE MK-II", "cost": 120.0, "kind": "MODULE",
+	 "icon": "harden", "desc": "+2 maximum integrity.",
+	 "plain": "A layered Whipple shell: two more hull boxes.",
+	 "integrity": 2},
+	{"id": "whipple", "branch": "STRUCTURE", "path": "B", "tier": 1,
+	 "name": "COMPOSITE SHELL", "cost": 65.0, "kind": "MODULE",
+	 "icon": "harden", "desc": "+1 hull, +1 heat resistance.",
+	 "plain": "A composite pressure shell: one hull and one heat resistance.",
+	 "integrity": 1, "thermal_res": 1},
+	{"id": "whipple2", "branch": "STRUCTURE", "path": "B", "tier": 2,
+	 "requires": "whipple", "name": "COMPOSITE MK-II", "cost": 105.0, "kind": "MODULE",
+	 "icon": "harden", "desc": "+2 maximum integrity.",
+	 "plain": "A cured composite shell: two more hull boxes.",
+	 "integrity": 2},
+
+	{"id": "antenna", "branch": "COMMS", "path": "A", "tier": 1,
+	 "name": "X-BAND HGA", "cost": 100.0, "kind": "MODULE",
+	 "icon": "deepnet", "desc": "Comms loss -10%.",
+	 "plain": "A high-gain X-band dish: 10% less data lost on downlink.",
+	 "comms_bonus": 10},
+	{"id": "antenna2", "branch": "COMMS", "path": "A", "tier": 2,
+	 "requires": "antenna", "name": "KA-BAND DSN", "cost": 130.0, "kind": "MODULE",
+	 "icon": "deepnet", "desc": "Comms loss -8%, +2 data.",
+	 "plain": "A deep-space Ka-band feed: 8% comms and two data slots.",
+	 "comms_bonus": 8, "data_cap": 2},
+	{"id": "buffer", "branch": "COMMS", "path": "B", "tier": 1,
+	 "name": "SSR-4 RECORDER", "cost": 70.0, "kind": "MODULE",
+	 "icon": "cache", "desc": "+4 data buffer, -4% comms loss.",
+	 "plain": "A solid-state recorder: four data slots and 4% comms.",
+	 "data_cap": 4, "comms_bonus": 4},
+	{"id": "buffer2", "branch": "COMMS", "path": "B", "tier": 2,
+	 "requires": "buffer", "name": "SSR-8 RECORDER", "cost": 110.0, "kind": "MODULE",
+	 "icon": "cache", "desc": "+4 data, -4% comms loss.",
+	 "plain": "A second recorder bank: four more data slots and 4% comms.",
+	 "data_cap": 4, "comms_bonus": 4},
+
+	{"id": "science_pack", "branch": "SCIENCE", "path": "A", "tier": 1,
+	 "name": "MASS SPEC LAB", "cost": 95.0, "kind": "FIRMWARE",
+	 "icon": "science", "desc": "+15% science value.",
+	 "plain": "A mass-spectrometry bench: each node is worth 15% more science.",
+	 "science": 0.15},
+	{"id": "science2", "branch": "SCIENCE", "path": "A", "tier": 2,
+	 "requires": "science_pack", "name": "LAB MK-II", "cost": 130.0, "kind": "FIRMWARE",
+	 "icon": "science", "desc": "+15% science, +2 data.",
+	 "plain": "An expanded lab: another 15% science and two data slots.",
+	 "science": 0.15, "data_cap": 2},
+	{"id": "sensor", "branch": "SCIENCE", "path": "B", "tier": 1,
+	 "name": "MULTI-SENSOR BAY", "cost": 70.0, "kind": "FIRMWARE",
+	 "icon": "science", "desc": "+8% science, +2 data.",
+	 "plain": "A cross-calibrated sensor bay: 8% science and two data slots.",
+	 "science": 0.08, "data_cap": 2},
+	{"id": "sensor2", "branch": "SCIENCE", "path": "B", "tier": 2,
+	 "requires": "sensor", "name": "SENSOR BAY II", "cost": 105.0, "kind": "FIRMWARE",
+	 "icon": "science", "desc": "+12% science, +2 data.",
+	 "plain": "A second sensor bank: 12% science and two data slots.",
+	 "science": 0.12, "data_cap": 2},
+
+	{"id": "salvage", "branch": "SUPPORT", "path": "A", "tier": 1,
+	 "name": "CONTRACT RIDER", "cost": 90.0, "kind": "FIRMWARE",
+	 "icon": "favor", "desc": "+30% grant from every sector.",
+	 "plain": "A contract rider: every sector pays 30% more grant.",
+	 "grant": 0.30},
+	{"id": "repair", "branch": "SUPPORT", "path": "B", "tier": 1,
+	 "name": "FIELD KIT", "cost": 60.0, "kind": "MODULE", "repeatable": true,
+	 "icon": "repair", "desc": "Restore 2 integrity next sector.",
+	 "plain": "A spare-parts kit: restore two hull boxes next sector.",
+	 "repair": 2},
 ]
 
 
@@ -821,24 +916,16 @@ func ship() -> Dictionary:
 		var up := _upgrade_by_id(str(uid))
 		if up.is_empty():
 			continue
-		match str(up["id"]):
-			"rtg":
-				power_regen += 1
-			"radiator":
-				thermal_res += int(up.get("thermal_res", 0))
-			"wheel":
-				dv += int(up.get("dv", 0))
-			"armor":
-				integrity += int(up.get("integrity", 0))
-			"buffer":
-				data_cap += int(up.get("data_cap", 0))
-				comms += int(up.get("comms_bonus", 0))
-			"antenna":
-				comms += int(up.get("comms_bonus", 0))
-			"science_pack":
-				science += float(up.get("science", 0.0))
-			"salvage":
-				grant_mult += float(up.get("grant", 0.0))
+		# Refits are data-driven so a skill-tree tier can add any combination
+		# of stats without another match arm.
+		power_regen += int(up.get("power_regen", 0))
+		thermal_res += int(up.get("thermal_res", 0))
+		dv += int(up.get("dv", 0))
+		integrity += int(up.get("integrity", 0))
+		data_cap += int(up.get("data_cap", 0))
+		comms += int(up.get("comms_bonus", 0))
+		science += float(up.get("science", 0.0))
+		grant_mult += float(up.get("grant", 0.0))
 
 	# Free field commissions are applied after paid refits.
 	power_regen += _buff_int("power_regen")
@@ -1343,6 +1430,10 @@ func make_shop() -> void:
 	for up in UPGRADES:
 		if up["id"] in owned and not bool(up.get("repeatable", false)):
 			continue
+		# Skill tree: tier 2 only appears once the branch's tier 1 is owned.
+		var req := str(up.get("requires", ""))
+		if req != "" and not (req in owned):
+			continue
 		pool.append(up)
 	pool.shuffle()
 	if pool.is_empty():
@@ -1392,6 +1483,31 @@ func buy_offer(index: int) -> bool:
 	sfx("confirm")
 	changed.emit()
 	return true
+
+
+func sell_upgrade(id: String) -> Dictionary:
+	## Field resale: installed hardware can be pulled at any refit stop for
+	## half its purchase price. Tier-2 parts lock their prerequisite so the
+	## tree cannot be left with an orphaned branch.
+	var idx := owned.find(id)
+	if idx < 0:
+		return {"ok": false, "reason": "NOT INSTALLED"}
+	for uid in owned:
+		var child := _upgrade_by_id(str(uid))
+		if str(child.get("requires", "")) == id:
+			return {"ok": false, "reason": "SELL TIER 2 FIRST"}
+	var up := _upgrade_by_id(id)
+	if up.is_empty():
+		return {"ok": false, "reason": "UNKNOWN PART"}
+	var refund := int(floor(float(up.get("cost", 0.0)) * 0.5))
+	owned.remove_at(idx)
+	run["budget"] = float(run.get("budget", 0.0)) + float(refund)
+	if up.has("repair"):
+		run["next_integrity"] = maxi(0,
+			int(run.get("next_integrity", 0)) - int(up.get("repair", 0)))
+	changed.emit()
+	return {"ok": true, "id": id, "name": str(up.get("name", id)),
+		"refund": refund}
 
 
 func consume_last_upgrade() -> Dictionary:

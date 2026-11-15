@@ -16,6 +16,7 @@ var build_label: Label
 var build_line: Label
 
 var _toast_tween: Tween
+var sell_layer: Control
 
 
 func _ready() -> void:
@@ -193,7 +194,13 @@ func _build_shop() -> void:
 	c.add_child(shop_root)
 	var hover_hint := UIKit.mono("HOVER A REFIT FOR ITS EFFECT", 7, UIKit.INK_SOFT)
 	hover_hint.position = Vector2(12, 224)
+	hover_hint.size = Vector2(178, 13)
 	c.add_child(hover_hint)
+	var sell_btn := UIKit.button("SELL PARTS", Vector2(82, 18), false)
+	sell_btn.position = Vector2(198, 220)
+	sell_btn.size = Vector2(88, 18)
+	sell_btn.pressed.connect(_open_sell_panel)
+	c.add_child(sell_btn)
 	_refresh_shop()
 
 
@@ -234,7 +241,11 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 		UIKit.NIGHT_2, UIKit.INK, 0
 	))
 	card.add_child(icon_frame)
-	var icon_path := "res://assets/sprites/buffs/%s.png" % str(up.get("icon", "cache"))
+	# Prefer a dedicated 128 px module portrait; buff icons remain the
+	# fallback while VEGA fills the module set.
+	var icon_path := "res://assets/sprites/modules/%s.png" % str(up["id"])
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/sprites/buffs/%s.png" % str(up.get("icon", "cache"))
 	if ResourceLoader.exists(icon_path):
 		var icon := TextureRect.new()
 		icon.texture = load(icon_path) as Texture2D
@@ -255,6 +266,13 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	card.add_child(kind)
 	kind.position = Vector2(186, 8)
 	kind.size = Vector2(74, 11)
+	var branch := UIKit.mono("%s %s%d" % [
+		str(up.get("branch", "SUPPORT")), str(up.get("path", "A")),
+		int(up.get("tier", 1))
+	], 6, UIKit.INK_SOFT)
+	branch.position = Vector2(58, 20)
+	branch.size = Vector2(126, 9)
+	card.add_child(branch)
 	var pr := UIKit.label("$%dM" % int(cost), 9, UIKit.ORANGE_DARK if afford else UIKit.SIGNAL, true)
 	pr.position = Vector2(58, 32)
 	pr.size = Vector2(70, 12)
