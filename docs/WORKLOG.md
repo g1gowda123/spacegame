@@ -1169,3 +1169,21 @@ must not sound like an mp3 starting.
   - Deck updated: slides 1–4 now embed the three films with posters; slot cards still describe the nine recordings.
 
 - **09:00 — Trailer v2.1: real music, tighter cuts.** Boss: epic was the strongest; get music online. Replaced the game-loop beds with three Kevin MacLeod tracks (CC BY 4.0, credited on the end slate): *Easy Lemon* (cozy), *Crusade* (epic), *Sneaky Snitch* (motion). Each was tempo-matched to the films' 84 BPM grid with `atempo` (verified by onset-comb to ±0.02 BPM: 84.00/84.02/84.02), phase-trimmed so the downbeat is at t=0, and loudness-normalised to −16 LUFS. New SoundCraft scores keep only sparse SFX accents on the bar lines. Cozy and MG also got a pass: larger floating cards with softer shadows, a dimmed footage bed under "3 SECTORS", and a persistent feature ticker. Masters re-exported at −14 LUFS; deck embeds refreshed.
+
+## 2026-11-15 03:08 — UI Agent: Responsive Card Hover Pop & Tactile Feedback
+
+- **Tactile Card Hover Pop (`scripts/ui_kit.gd`):**
+  - Updated `row_style(selected, hovered, accent)`: on hover, non-selected option rows gain an interactive highlight wash `Color(0.20, 0.40, 0.46, 0.22)`, a 3px left accent bar, and 1px full border highlight; selected rows gain a lightened background and brightened 4px left accent bar.
+  - Enhanced `option_card(...)`: disabled `clip_contents` (`root.clip_contents = false`), set `p.pivot_offset = Vector2(rect.size.x * 0.5, rect.size.y * 0.5)`, wired enter/exit events to `_hover_option_card(...)`.
+  - Implemented `_hover_option_card(card, on)`: dynamically raises `root.z_index = 3` on hover (`1` if selected, `0` idle) so expanded cards render crisply above adjacent rows, animates `p.scale` to `1.035` (`1.045` if selected), elevates position by `Vector2(1.5, -1.5)`, and brightens title/sub/meta labels over `0.14s` with `Tween.TRANS_CUBIC` and `Tween.EASE_OUT`.
+  - Implemented tactile selection punch in `select_card(card, on)`: springs `scale` to `1.055` and relaxes to `1.015` (`1.045` when hovered) with `Tween.TRANS_BACK` over `0.18s`.
+
+- **Design Screen Polish (`scripts/design.gd`):**
+  - Added responsive hover scaling (`scale 1.06`, `position:y -1.5` over `0.14s`) to Orbit selection buttons (`LOW`, `POLAR`, `HIGH`).
+  - Added responsive hover lift (`scale 1.035`, `position:y base_y - 1.5` over `0.14s`) to footer buttons (`< BACK`, `QUICK LOADOUT`, `CONFIRM DESIGN >`).
+
+- **Debrief Shop Cards (`scripts/debrief.gd`):**
+  - Added matching hover pop (`card.pivot_offset = Vector2(142, 30)`, `scale 1.025`, `position:y y - 2.0`, `z_index = 2` over `0.14s`) to `_offer_card(...)` for consistent tactile feel across shop refits.
+
+- **Verification:**
+  - `python tools/audit_data.py` -> 49 checks, 0 failed.

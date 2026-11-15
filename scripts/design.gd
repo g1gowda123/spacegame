@@ -187,7 +187,18 @@ func _build_center() -> void:
 		var b := UIKit.button(str(o["name"]), Vector2(60, 20))
 		b.toggle_mode = true
 		b.add_theme_font_size_override("font_size", 8)
+		b.pivot_offset = Vector2(30, 10)
 		b.pressed.connect(_pick_orbit.bind(str(o["id"])))
+		b.mouse_entered.connect(func():
+			var tw := b.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(b, "scale", Vector2(1.06, 1.06), 0.14)
+			tw.tween_property(b, "position:y", -1.5, 0.14)
+		)
+		b.mouse_exited.connect(func():
+			var tw := b.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(b, "scale", Vector2.ONE, 0.14)
+			tw.tween_property(b, "position:y", 0.0, 0.14)
+		)
 		UIKit.hover_info(b, str(o["name"]),
 			"%s\nHEAT x%.2f · SCIENCE %+d%%\nALT %dKM · %d%% ECLIPSE · %d PASSES/DAY" % [
 				str(o["desc"]), float(o["heat_mult"]),
@@ -295,6 +306,21 @@ func _build_footer() -> void:
 	confirm_btn.position = Vector2(398, 327)
 	confirm_btn.pressed.connect(_confirm)
 	add_child(confirm_btn)
+
+	for btn_item in [back, quick, confirm_btn]:
+		var base_y: float = btn_item.position.y
+		btn_item.pivot_offset = btn_item.size * 0.5
+		btn_item.mouse_entered.connect(func():
+			if not btn_item.disabled:
+				var tw := btn_item.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+				tw.tween_property(btn_item, "scale", Vector2(1.035, 1.035), 0.14)
+				tw.tween_property(btn_item, "position:y", base_y - 1.5, 0.14)
+		)
+		btn_item.mouse_exited.connect(func():
+			var tw := btn_item.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(btn_item, "scale", Vector2.ONE, 0.14)
+			tw.tween_property(btn_item, "position:y", base_y, 0.14)
+		)
 
 
 func _pick_orbit(id: String) -> void:

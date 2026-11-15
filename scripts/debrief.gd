@@ -274,7 +274,21 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var card := Control.new()
 	card.position = Vector2(0, y)
 	card.size = Vector2(284, 64)
+	card.pivot_offset = Vector2(142, 30)
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	UIKit.sheet(card, 0, 0, 284, 60)
+	card.mouse_entered.connect(func():
+		card.z_index = 2
+		var tw := card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(card, "scale", Vector2(1.025, 1.025), 0.14)
+		tw.tween_property(card, "position:y", y - 2.0, 0.14)
+	)
+	card.mouse_exited.connect(func():
+		card.z_index = 0
+		var tw := card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tw.tween_property(card, "scale", Vector2.ONE, 0.14)
+		tw.tween_property(card, "position:y", y, 0.14)
+	)
 
 	# Every offer gets a physical module portrait, so the shop reads as a
 	# catalogue of hardware rather than three identical text rows.

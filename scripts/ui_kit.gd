@@ -429,18 +429,23 @@ static func stat_color(v: float, good_high: bool = true) -> Color:
 
 static func row_style(selected: bool, hovered: bool = false,
 	accent: Color = CYAN) -> StyleBoxFlat:
-	## Flat list row. Selected rows get a 2 px left marker instead of a full
-	## coloured outline, so a column of options stays quiet.
+	## Flat list row. Selected rows get a 3-4 px left marker.
+	## Hovered rows lift with an accent border and highlight wash.
 	var s := StyleBoxFlat.new()
 	if selected:
-		s.bg_color = ROW_SELECTED
-		s.border_color = accent
-		s.border_width_left = 3
+		s.bg_color = ROW_SELECTED.lightened(0.04) if hovered else ROW_SELECTED
+		s.border_color = accent.lightened(0.2) if hovered else accent
+		s.border_width_left = 4 if hovered else 3
 		s.border_width_bottom = 1
+		s.border_width_top = 1 if hovered else 0
+		s.border_width_right = 1 if hovered else 0
 	else:
-		s.bg_color = ROW_HOVER if hovered else ROW_BG
-		s.border_color = SHEET_LINE
+		s.bg_color = Color(0.20, 0.40, 0.46, 0.22) if hovered else ROW_BG
+		s.border_color = accent.lightened(0.15) if hovered else SHEET_LINE
+		s.border_width_left = 3 if hovered else 0
 		s.border_width_bottom = 1
+		s.border_width_top = 1 if hovered else 0
+		s.border_width_right = 1 if hovered else 0
 	s.set_corner_radius_all(0)
 	s.content_margin_left = 8
 	s.content_margin_right = 6
@@ -458,14 +463,15 @@ static func option_card(
 	root.position = rect.position
 	root.size = rect.size
 	root.custom_minimum_size = rect.size
+	root.clip_contents = false
 	parent.add_child(root)
 
 	var p := Panel.new()
 	p.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.pivot_offset = Vector2(rect.size.x * 0.5, rect.size.y * 0.5)
 	p.add_theme_stylebox_override("panel", row_style(false, false, accent))
 	root.add_child(p)
-	root.clip_contents = true
 
 	# Absolute children, not a VBox: rows must keep the exact height the screen
 	# asked for or a long perk wraps and the column overflows its sheet.
@@ -504,36 +510,101 @@ static func option_card(
 
 	var card := {
 		"root": root, "panel": p, "title": t, "sub": s, "meta": m, "button": btn,
-		"accent": accent, "selected": false, "enabled": true,
-		"base_rect": rect,
+		"accent": accent, "selected": false, "enabled": true, "hovered": false,
+		"base_rect": rect, "tw": null,
 	}
 	btn.mouse_entered.connect(func():
-		if card["enabled"] and not card["selected"]:
-			p.add_theme_stylebox_override("panel", row_style(false, true, accent))
+		if card.get("enabled", true):
+			_hover_option_card(card, true)
 	)
 	btn.mouse_exited.connect(func():
-		if card["enabled"] and not card["selected"]:
-			p.add_theme_stylebox_override("panel", row_style(false, false, accent))
+		_hover_option_card(card, false)
 	)
 	return card
+
+
+static func _hover_option_card(card: Dictionary, on: bool) -> void:
+	if card.is_empty():
+		return
+	card["hovered"] = on
+	var root: Control = card["root"]
+	var p: Panel = card["panel"]
+	var selected: bool = bool(card.get("selected", false))
+	var accent: Color = card.get("accent", CYAN)
+
+	root.z_index = 3 if on else (1 if selected else 0)
+	p.add_theme_stylebox_override("panel", row_style(selected, on, accent))
+
+	var title: Label = card.get("title")
+	if title != null:
+		if selected:
+			title.add_theme_color_override("font_color", ON_LIGHT)
+		else:
+			title.add_theme_color_override("font_color", Color("#ffffff") if on else NAME)
+	var sub: Label = card.get("sub")
+	if sub != null and not selected:
+		sub.add_theme_color_override("font_color", CREAM if on else MUTED)
+	var meta: Label = card.get("meta")
+	if meta != null and not selected:
+		meta.add_theme_color_override("font_color", CREAM if on else DIM)
+
+	var target_scale := 1.045 if on and selected else (1.035 if on else (1.015 if selected else 1.0))
+	var target_pos := Vector2(1.5, -1.5) if on else (Vector2(1.0, 0.0) if selected else Vector2.ZERO)
+
+	var old: Tween = card.get("tw")
+	if old != null and old.is_valid():
+		old.kill()
+
+	var tw := p.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(p, "scale", Vector2(target_scale, target_scale), 0.14)
+	tw.tween_property(p, "position", target_pos, 0.14)
+	card["tw"] = tw
 
 
 static func select_card(card: Dictionary, on: bool) -> void:
 	if card.is_empty():
 		return
+	var was_selected := bool(card.get("selected", false))
 	card["selected"] = on
+	var hovered: bool = bool(card.get("hovered", false))
 	var accent: Color = card["accent"]
+	var root: Control = card["root"]
 	var p: Control = card["panel"]
 	var title: Label = card["title"]
+
+	root.z_index = 3 if hovered else (1 if on else 0)
+	p.add_theme_stylebox_override("panel", row_style(on, hovered, accent))
+
 	if on:
-		p.add_theme_stylebox_override("panel", row_style(true, false, accent))
 		title.add_theme_color_override("font_color", ON_LIGHT)
 	else:
-		p.add_theme_stylebox_override("panel", row_style(false, false, accent))
-		title.add_theme_color_override("font_color", NAME)
+		title.add_theme_color_override("font_color", Color("#ffffff") if hovered else NAME)
 	var sub: Label = card.get("sub")
 	if sub != null:
-		sub.add_theme_color_override("font_color", ON_LIGHT_SOFT if on else MUTED)
+		sub.add_theme_color_override("font_color", ON_LIGHT_SOFT if on else (CREAM if hovered else MUTED))
 	var meta: Label = card.get("meta")
 	if meta != null:
-		meta.add_theme_color_override("font_color", ON_LIGHT_SOFT if on else DIM)
+		meta.add_theme_color_override("font_color", ON_LIGHT_SOFT if on else (CREAM if hovered else DIM))
+
+	if on != was_selected:
+		var old: Tween = card.get("tw")
+		if old != null and old.is_valid():
+			old.kill()
+
+		if on:
+			p.scale = Vector2(1.055, 1.055)
+			p.position = Vector2(2.0, -2.0)
+			var target_scale := 1.045 if hovered else 1.015
+			var target_pos := Vector2(1.5, -1.5) if hovered else Vector2(1.0, 0.0)
+			var tw := p.create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(p, "scale", Vector2(target_scale, target_scale), 0.18)
+			tw.tween_property(p, "position", target_pos, 0.18)
+			card["tw"] = tw
+		else:
+			var target_scale := 1.035 if hovered else 1.0
+			var target_pos := Vector2(1.5, -1.5) if hovered else Vector2.ZERO
+			var tw := p.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			tw.tween_property(p, "scale", Vector2(target_scale, target_scale), 0.14)
+			tw.tween_property(p, "position", target_pos, 0.14)
+			card["tw"] = tw
+
