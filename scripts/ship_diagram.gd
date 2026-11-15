@@ -8,6 +8,7 @@ const SHIP_BUILD := preload("res://scripts/ship_build.gd")
 ## so the ship visibly grows as the player installs refits between planets.
 
 const SHIP_DIR := "res://assets/sprites/ships/"
+const MODULE_TEX_DIR := "res://assets/sprites/modules/ship/"
 
 var hull_id := "pathfinder"
 var accent := Color("#54e6d1")
@@ -27,6 +28,7 @@ var _install_slots: Array[Rect2] = []
 var _install_left := 0.0
 var _install_name := ""
 var _font: Font = null
+var _module_tex: Dictionary = {}
 const INSTALL_PULSE := 3.0
 
 
@@ -205,6 +207,17 @@ func _draw_live_lights() -> void:
 			Color(0.42, 1.0, 0.68, 0.90))
 
 
+func _module_texture(id: String) -> Texture2D:
+	if _module_tex.has(id):
+		return _module_tex[id]
+	var path := MODULE_TEX_DIR + id + ".png"
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_module_tex[id] = tex
+	return tex
+
+
 func _slot_rect(slot: String, ts: Vector2) -> Rect2:
 	var bx := _bbox.position.x
 	var by := _bbox.position.y
@@ -257,6 +270,15 @@ func bbox_end_y() -> float:
 
 func _draw_module(m: Dictionary, r: Rect2) -> void:
 	var id := str(m["id"])
+	var tex := _module_texture(id)
+	if tex != null:
+		# High-resolution module portraits replace the old 10×8 vector blocks;
+		# the source art is authored at 64×48 and downsampled with nearest.
+		draw_texture_rect(tex, Rect2(r.position - Vector2(2, 2),
+			r.size + Vector2(4, 4)), false)
+		if _flash > 0.0:
+			draw_rect(r.grow(3.0), Color(1, 1, 1, 0.35 * _flash), false, 1.0)
+		return
 	var c: Color = m["color"]
 	var dark := c.darkened(0.55)
 	var light := c.lightened(0.28)

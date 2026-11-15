@@ -49,7 +49,22 @@ func _ready() -> void:
 			call_deferred("_dev_buy", int(str(raw).substr(6)))
 	if "--sell" in cli:
 		call_deferred("_open_sell_panel")
+	if "--sell-first" in cli:
+		call_deferred("_dev_sell_first")
 
+
+
+func _dev_sell_first() -> void:
+	if GameState.owned.is_empty():
+		print("DEVSELL none")
+		return
+	var id := str(GameState.owned[0])
+	var res := GameState.sell_upgrade(id)
+	print("DEVSELL ", id, " ok=", res.get("ok", false),
+		" refund=", int(res.get("refund", 0)), " funds=", int(GameState.run.get("budget", 0)))
+	GameState.make_shop()
+	_refresh_shop()
+	_refresh_ship()
 
 
 func _dev_buy(idx: int) -> void:
@@ -315,6 +330,7 @@ func _on_buy(idx: int) -> void:
 		if not delta.is_empty():
 			line += "  ·  " + delta
 		_show_toast(line, UIKit.GREEN)
+		GameState.make_shop()
 		_refresh_shop()
 		_refresh_ship()
 		if ship_diagram != null:
@@ -631,6 +647,7 @@ func _sell_part(id: String) -> void:
 		_show_toast("PULLED %s  ·  +$%dM" % [
 			str(res.get("name", id)), int(res.get("refund", 0))
 		], UIKit.GREEN)
+		GameState.make_shop()
 		_refresh_ship()
 		_refresh_shop()
 		_open_sell_panel()
