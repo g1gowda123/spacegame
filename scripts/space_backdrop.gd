@@ -15,10 +15,6 @@ var _planet_center := Vector2(0.82, 0.34)
 var _planet_size := 0.62
 var _planet_on := true
 var _planet_asset := ""
-var _planet_clouds := 0.0
-var _planet_turn := 0.0
-var _planet_sway := 0.0
-var _anim_t := 0.0
 var _stars_on := true
 var _bg_on := true
 var _dim := 0.35
@@ -61,7 +57,6 @@ func _build() -> void:
 	planet_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	planet_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	planet_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	planet_rect.pivot_offset = planet_rect.size * 0.5
 	planet_rect.visible = _planet_on
 	var pshader := load("res://shaders/planet_view.gdshader") as Shader
 	if pshader != null:
@@ -98,22 +93,11 @@ func configure(opts: Dictionary) -> void:
 	if opts.has("planet_asset"):
 		_planet_asset = str(opts["planet_asset"])
 		_load_planet(_planet_asset)
-	if opts.has("planet_clouds"):
-		_planet_clouds = float(opts["planet_clouds"])
-		if _planet_mat != null:
-			_planet_mat.set_shader_parameter("cloud_amount", _planet_clouds)
-	if opts.has("planet_turn"):
-		_planet_turn = float(opts["planet_turn"])
-		if _planet_mat != null:
-			_planet_mat.set_shader_parameter("turn_amount", _planet_turn)
-	if opts.has("planet_sway"):
-		_planet_sway = float(opts["planet_sway"])
 	if opts.has("dim"):
 		_dim = clampf(float(opts["dim"]), 0.0, 1.0)
 		if _shade != null:
 			_shade.color = Color(0.03, 0.05, 0.08, _dim)
 	if planet_rect != null:
-		planet_rect.pivot_offset = planet_rect.size * 0.5
 		planet_rect.visible = _planet_on
 	_layout()
 
@@ -171,7 +155,6 @@ func _layout() -> void:
 		vp.x * _planet_center.x - rect_d * 0.5,
 		vp.y * _planet_center.y - rect_d * 0.5
 	)
-	planet_rect.pivot_offset = planet_rect.size * 0.5
 	planet_rect.visible = _planet_on
 
 

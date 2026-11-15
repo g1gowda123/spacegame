@@ -38,8 +38,7 @@ def polish(raw: Path, w: int, h: int, margin: int = 6, blur: float = 1.4) -> Ima
     lab, n = ndimage.label(solid)
     if n > 1:
         sizes = ndimage.sum(solid, lab, range(1, n + 1))
-        keep = [i + 1 for i, sz in enumerate(sizes) if sz >= 0.14 * sizes.max()]
-        solid = np.isin(lab, keep)
+        solid = lab == (int(np.argmax(sizes)) + 1)
         solid = ndimage.binary_fill_holes(solid)
 
     canvas = np.zeros((h, w, 4), np.uint8)
