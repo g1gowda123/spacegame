@@ -1440,15 +1440,25 @@ func make_shop() -> void:
 		shop_offers = []
 		changed.emit()
 		return
-	# Keep one affordable option in every shop. Without this, a bad roll can
-	# show three cards the player cannot buy after a low-payout sector, which
-	# reads as a broken store rather than a hard choice.
+	# A newly unlocked tier-2 part is the point of the tree: guarantee that
+	# the next shop shows at least one branch continuation, then fill around
+	# it with an affordable anchor.
+	var focus: Array = []
+	for up in pool:
+		if str(up.get("requires", "")) != "":
+			focus.append(up)
 	var budget := float(run.get("budget", 0))
 	var affordable: Array = []
 	for up in pool:
 		if float(up["cost"]) <= budget:
 			affordable.append(up)
-	var anchor: Dictionary = affordable[0] if not affordable.is_empty() else pool[0]
+	var anchor: Dictionary
+	if not focus.is_empty():
+		anchor = focus[0]
+	elif not affordable.is_empty():
+		anchor = affordable[0]
+	else:
+		anchor = pool[0]
 	shop_offers = [anchor]
 	for up in pool:
 		if shop_offers.size() >= 3:
