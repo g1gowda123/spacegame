@@ -28,14 +28,16 @@ func _ready() -> void:
 
 
 func _build_ui() -> void:
-	# A manila program poster taped over the star chart. The planet stays the
-	# hero on the right; the left is the agency's filed mission cover.
-	UIKit.sheet(self, 18, 10, 456, 338, true)
-	var margin_rule := ColorRect.new()
-	margin_rule.color = Color(0.62, 0.82, 0.64, 0.45)
-	margin_rule.position = Vector2(34, 18)
-	margin_rule.size = Vector2(1, 322)
-	add_child(margin_rule)
+	# Full-bleed title: the starfield stays open and a soft scrim carries the
+	# type. No poster edge, so the screen reads as one continuous view.
+	var scrim := TextureRect.new()
+	scrim.texture = _left_scrim()
+	scrim.position = Vector2.ZERO
+	scrim.size = Vector2(472, 360)
+	scrim.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	scrim.stretch_mode = TextureRect.STRETCH_SCALE
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(scrim)
 	var plot := ORBIT_PLOT.new()
 	plot.position = Vector2(300, 68)
 	plot.size = Vector2(150, 78)
@@ -84,39 +86,27 @@ func _build_ui() -> void:
 	blurb.position = Vector2(44, 178)
 	add_child(blurb)
 
-	var begin := UIKit.button("BEGIN MISSION", Vector2(156, 30), true)
+	var begin := UIKit.button("BEGIN MISSION", Vector2(208, 34), true)
 	begin.position = Vector2(44, 208)
+	begin.add_theme_font_size_override("font_size", 11)
 	begin.pressed.connect(_start)
 	add_child(begin)
 
-	var crew := UIKit.button("MISSION CONTROL", Vector2(140, 30))
-	crew.position = Vector2(208, 208)
+	var crew := UIKit.button("MISSION CONTROL", Vector2(156, 32))
+	crew.position = Vector2(264, 208)
+	crew.add_theme_font_size_override("font_size", 9)
 	crew.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew.tscn"))
 	add_child(crew)
 
-	var daily := UIKit.button("DAILY RUN", Vector2(92, 24))
-	daily.position = Vector2(44, 248)
-	daily.add_theme_font_size_override("font_size", 9)
-	daily.pressed.connect(_start_daily)
-	add_child(daily)
-
-	var how := UIKit.button("HOW TO PLAY", Vector2(112, 24))
-	how.position = Vector2(144, 248)
-	how.add_theme_font_size_override("font_size", 9)
-	how.pressed.connect(func(): howto_layer.visible = true)
-	add_child(how)
-
-	var story := UIKit.button("STORY", Vector2(80, 24))
-	story.position = Vector2(264, 248)
-	story.add_theme_font_size_override("font_size", 9)
-	story.pressed.connect(_open_briefing)
-	add_child(story)
-
-	var ranks := UIKit.button("RANKS", Vector2(80, 24))
-	ranks.position = Vector2(352, 248)
-	ranks.add_theme_font_size_override("font_size", 9)
-	ranks.pressed.connect(func(): ranks_layer.visible = true)
-	add_child(ranks)
+	# Secondary commands are a loose strip, not a second row of boxes.
+	_link("DAILY RUN", Vector2(44, 252), 82, _start_daily)
+	_link("HOW TO PLAY", Vector2(138, 252), 104, func(): howto_layer.visible = true)
+	_link("STORY", Vector2(254, 252), 54, _open_briefing)
+	_link("RANKS", Vector2(320, 252), 54, func(): ranks_layer.visible = true)
+	for x in [130, 244, 310]:
+		var dot := UIKit.mono("·", 8, UIKit.DIM)
+		dot.position = Vector2(x, 255)
+		add_child(dot)
 
 	var daily_note := "BEST RUN  %s   ·   CMD %s" % [_fmt(GameState.best_score), GameState.player_name]
 	var today := CrewDirector.today_key()
@@ -125,10 +115,9 @@ func _build_ui() -> void:
 	else:
 		daily_note += "   ·   DAILY %s  %s" % [today, _fmt(0)]
 	var best := UIKit.mono(daily_note, 7, UIKit.INK_SOFT)
-	best.position = Vector2(44, 290)
+	best.position = Vector2(44, 292)
 	add_child(best)
 
-	UIKit.hairline(self, 44, 306, 380)
 	# Body face here: the pixel font is uppercase-only, so it would render the
 	# archive table name as PSCOMPPARS. The source name is PSCompPars.
 	var credit := UIKit.mono(
@@ -150,6 +139,40 @@ func _build_ui() -> void:
 	var tw := create_tween().set_loops()
 	tw.tween_property(sig, "modulate:a", 0.35, 1.6)
 	tw.tween_property(sig, "modulate:a", 1.0, 1.6)
+
+
+func _left_scrim() -> Texture2D:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.55, 0.82, 1.0])
+	g.colors = PackedColorArray([
+		Color(0.039, 0.067, 0.082, 0.94),
+		Color(0.039, 0.067, 0.082, 0.88),
+		Color(0.039, 0.067, 0.082, 0.48),
+		Color(0.039, 0.067, 0.082, 0.0),
+	])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.width = 256
+	t.height = 2
+	t.fill_from = Vector2(0, 0)
+	t.fill_to = Vector2(1, 0)
+	return t
+
+
+func _link(text: String, pos: Vector2, width: float, cb: Callable) -> void:
+	var b := UIKit.button(text, Vector2(width, 22))
+	b.flat = true
+	for state in ["normal", "hover", "pressed", "focus"]:
+		b.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+	b.add_theme_color_override("font_color", UIKit.MUTED)
+	b.add_theme_color_override("font_hover_color", UIKit.CREAM)
+	b.add_theme_color_override("font_pressed_color", UIKit.SAGE_HI)
+	b.add_theme_font_size_override("font_size", 9)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.position = pos
+	b.size = Vector2(width, 22)
+	b.pressed.connect(cb)
+	add_child(b)
 
 
 func _build_howto() -> void:

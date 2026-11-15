@@ -42,14 +42,15 @@ var _space_backdrop: SpaceBackdrop
 var _earth_disc: Control
 var _rocket_root: Node2D
 var _rocket_body: Node2D
-var _fairing_left: Polygon2D
-var _fairing_right: Polygon2D
+var _fairing_left: Node2D
+var _fairing_right: Node2D
 var _ship_sprite: Sprite2D
 var _booster_sprite: Sprite2D
 var _exhaust_plume: Node2D
 var _plume_smoke: Node2D
 var _plume_frames: Array[Texture2D] = []
 var _plume_billows: Array[Sprite2D] = []
+var _cloud_textures: Array[Texture2D] = []
 var _shock_cone: Polygon2D
 var _smoke_particles: CPUParticles2D
 var _pad_smoke_left: CPUParticles2D
@@ -218,6 +219,11 @@ func _build_scene_layers() -> void:
 	_clouds_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_clouds_root.draw.connect(_draw_atmospheric_layers)
 	_world.add_child(_clouds_root)
+	# Native cloud strips replace the flat grey rectangles when VEGA lands them.
+	for i in range(3):
+		var cloud_path := "res://assets/sprites/vehicles/cloud_band_%d.png" % i
+		if ResourceLoader.exists(cloud_path):
+			_cloud_textures.append(load(cloud_path) as Texture2D)
 
 	# 4. Ground & Launch Pad
 	_ground_root = Control.new()
@@ -390,9 +396,14 @@ func _build_rocket_assembly() -> void:
 	_smoke_particles.gravity = Vector2(0, 40)
 	_smoke_particles.initial_velocity_min = 80.0
 	_smoke_particles.initial_velocity_max = 140.0
-	_smoke_particles.scale_amount_min = 4.0
-	_smoke_particles.scale_amount_max = 0.55
-	_smoke_particles.scale_amount_min = 0.20
+	var trail_tex := _soft_smoke_texture()
+	if trail_tex != null:
+		_smoke_particles.texture = trail_tex
+		_smoke_particles.scale_amount_min = 0.20
+		_smoke_particles.scale_amount_max = 0.55
+	else:
+		_smoke_particles.scale_amount_min = 4.0
+		_smoke_particles.scale_amount_max = 14.0
 	var grad := Gradient.new()
 	grad.colors = PackedColorArray([
 		Color(1.0, 0.85, 0.40, 0.90),
@@ -418,25 +429,40 @@ func _build_rocket_assembly() -> void:
 	_rocket_body.add_child(_ship_sprite)
 
 	# Aerodynamic Fairing Halves (Shroud payload during atmospheric ascent)
-	_fairing_left = Polygon2D.new()
-	_fairing_left.color = Color(0.90, 0.92, 0.96)
-	_fairing_left.polygon = PackedVector2Array([
-		Vector2(0, -98),
-		Vector2(-14, -72),
-		Vector2(-14, -30),
-		Vector2(0, -30)
-	])
+	# Fairing halves are containers so a native pixel-art pair can replace the
+	# flat polygons without changing the jettison tween (rotation stays around
+	# the stack axis, position slides out, modulate fades).
+	_fairing_left = Node2D.new()
 	_rocket_body.add_child(_fairing_left)
-
-	_fairing_right = Polygon2D.new()
-	_fairing_right.color = Color(0.82, 0.84, 0.88)
-	_fairing_right.polygon = PackedVector2Array([
-		Vector2(0, -98),
-		Vector2(14, -72),
-		Vector2(14, -30),
-		Vector2(0, -30)
-	])
+	_fairing_right = Node2D.new()
 	_rocket_body.add_child(_fairing_right)
+	var fairing_left_art := "res://assets/sprites/vehicles/fairing_left.png"
+	var fairing_right_art := "res://assets/sprites/vehicles/fairing_right.png"
+	if ResourceLoader.exists(fairing_left_art) and ResourceLoader.exists(fairing_right_art):
+		for pair in [[_fairing_left, fairing_left_art, -14.0], [_fairing_right, fairing_right_art, 0.0]]:
+			var host: Node2D = pair[0]
+			var tex := load(str(pair[1])) as Texture2D
+			var spr := Sprite2D.new()
+			spr.texture = tex
+			spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			spr.centered = false
+			var sc := 0.5 if tex.get_width() > 20 else 1.0
+			spr.scale = Vector2(sc, sc)
+			spr.position = Vector2(float(pair[2]), -98.0)
+			host.add_child(spr)
+	else:
+		var pl := Polygon2D.new()
+		pl.color = Color(0.90, 0.92, 0.96)
+		pl.polygon = PackedVector2Array([
+			Vector2(0, -98), Vector2(-14, -72), Vector2(-14, -30), Vector2(0, -30)
+		])
+		_fairing_left.add_child(pl)
+		var pr := Polygon2D.new()
+		pr.color = Color(0.82, 0.84, 0.88)
+		pr.polygon = PackedVector2Array([
+			Vector2(0, -98), Vector2(14, -72), Vector2(14, -30), Vector2(0, -30)
+		])
+		_fairing_right.add_child(pr)
 
 	# Transonic Condensation Shock Collar (Max-Q cone)
 	_shock_cone = Polygon2D.new()
@@ -705,8 +731,14 @@ func _draw_atmospheric_layers() -> void:
 		var cw := 140.0 + sin(float(i) * 3.4) * 60.0
 		var cx := 80.0 + float(i % 3) * 190.0
 		var a := 0.18 + 0.12 * sin(float(i) + _time)
-		_clouds_root.draw_rect(Rect2(cx, cy, cw, 14), Color(0.85, 0.92, 1.0, a))
-		_clouds_root.draw_rect(Rect2(cx + 12, cy - 4, cw * 0.7, 8), Color(0.90, 0.95, 1.0, a * 0.8))
+		if not _cloud_textures.is_empty():
+			var tex: Texture2D = _cloud_textures[i % _cloud_textures.size()]
+			var ch := tex.get_height() * (cw / maxf(1.0, tex.get_width()))
+			_clouds_root.draw_texture_rect(tex, Rect2(cx, cy, cw, ch), false,
+				Color(1, 1, 1, minf(1.0, a * 2.2)))
+		else:
+			_clouds_root.draw_rect(Rect2(cx, cy, cw, 14), Color(0.85, 0.92, 1.0, a))
+			_clouds_root.draw_rect(Rect2(cx + 12, cy - 4, cw * 0.7, 8), Color(0.90, 0.95, 1.0, a * 0.8))
 
 
 func _draw_earth_limb() -> void:
