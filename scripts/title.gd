@@ -156,13 +156,17 @@ func _build_ui() -> void:
 	_menu_column()
 	_title_mark()
 	_cells()
-	_footer()
 
 
 func _header() -> void:
 	var head := UIKit.label("MISSION TERMINAL", 22, UIKit.NAME, true)
 	head.position = Vector2(10, 2)
 	add_child(head)
+	var sub := UIKit.mono(
+		"EXOPLANET SURVEY AGENCY  ·  MISSION ARCHITECTURE DIVISION", 8, UIKit.DIM)
+	sub.position = Vector2(10, 28)
+	add_child(sub)
+
 	var stamp := TextureRect.new()
 	stamp.texture = load("res://assets/ui/skin_ops/stamp_approved.png")
 	stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -261,6 +265,8 @@ func _title_mark() -> void:
 	# font metrics, and this strip has to clear the readout sections below it.
 	_centred(UIKit.mono("Design a spacecraft. Draft a real exoplanet.", 6, UIKit.MUTED),
 		"Design a spacecraft. Draft a real exoplanet.", 6, 421, 200, false)
+	_centred(UIKit.mono("Survive its surface. Save the agency.", 6, UIKit.MUTED),
+		"Survive its surface. Save the agency.", 6, 421, 209, false)
 
 
 func _tw(text: String, font_size: int, pixel: bool = false) -> float:
@@ -381,6 +387,10 @@ func _footer() -> void:
 		6, UIKit.INK_FAINT),
 		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars", 6, 320, 331, false)
 
+	var proto_text := "PROTOTYPE 1.0  ·  WEB BUILD"
+	var proto := UIKit.mono(proto_text, 6, UIKit.INK_FAINT)
+	proto.position = Vector2(630.0 - _tw(proto_text, 6), 331)
+	add_child(proto)
 
 
 func _scrim() -> void:
