@@ -46,7 +46,9 @@ func _build() -> void:
 		"planet_asset": "ringed",
 		"dim": 0.62,
 	})
-	bg.modulate.a = 0.46
+	# Keep the planet as atmosphere, not a second subject competing with the
+	# cards. The cream icon tiles and card edges now carry the hierarchy.
+	bg.modulate.a = 0.30
 
 	var kicker := UIKit.mono("AGENCY REVIEW  //  FIELD COMMISSION", 7, UIKit.ORANGE,
 		HORIZONTAL_ALIGNMENT_CENTER)
@@ -127,15 +129,27 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	tag.size = Vector2(CARD_W - 8, 11)
 	card.add_child(tag)
 
+	# The commission art is monochrome technical line work. A cream
+	# technical-drawing tile gives it a light ground; directly on the dark
+	# card the internal grey-on-grey detail collapsed at 640×360.
+	var icon_tile := Panel.new()
+	icon_tile.position = Vector2(15, 36)
+	icon_tile.size = Vector2(124, 104)
+	icon_tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_tile.add_theme_stylebox_override("panel", UIKit.style_panel(
+		UIKit.CREAM, color, 0, 1
+	))
+	card.add_child(icon_tile)
+
 	var icon_panel := Control.new()
-	icon_panel.position = Vector2(17, 38)
-	icon_panel.size = Vector2(120, 100)
+	icon_panel.position = Vector2(19, 40)
+	icon_panel.size = Vector2(116, 96)
 	icon_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(icon_panel)
 
 	var icon := TextureRect.new()
 	icon.position = Vector2(0, 0)
-	icon.size = Vector2(120, 100)
+	icon.size = Vector2(116, 96)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
