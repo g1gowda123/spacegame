@@ -20,8 +20,6 @@ func _ready() -> void:
 	_build()
 	_select_first()
 	_refresh()
-	if "--hover-card" in OS.get_cmdline_args() or "--hover-card" in OS.get_cmdline_user_args():
-		call_deferred("_dev_hover")
 	if "--capture" in OS.get_cmdline_args() or "--capture" in OS.get_cmdline_user_args():
 		# Capture starts with the pointer at screen centre, which can sit on a
 		# planet card. Dismiss the dossier so the evidence frame shows the board.
@@ -33,12 +31,6 @@ func _ready() -> void:
 		_commit_route()
 	if "--commit" in OS.get_cmdline_args() or "--commit" in OS.get_cmdline_user_args():
 		_commit_route.call_deferred()
-
-
-func _dev_hover() -> void:
-	if cards.size() > 0:
-		var c: Dictionary = cards[0]
-		_hover(c["root"], c["panel"], true)
 
 
 func _hide_tips_for_capture() -> void:

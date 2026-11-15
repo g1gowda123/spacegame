@@ -528,6 +528,18 @@ func _show_event() -> void:
 		var opt: Dictionary = opts[i]
 		var y := 80.0 + i * 78.0
 		var row := UIKit.sheet(c, 14, y, 420, 66)
+		row.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		row.mouse_entered.connect(func():
+			row.add_theme_stylebox_override("panel", UIKit.style_panel(
+				Color(0, 0, 0, 0), UIKit.SAGE, 0, 1
+			))
+		)
+		row.mouse_exited.connect(func():
+			row.add_theme_stylebox_override("panel", UIKit.style_panel(
+				Color(0, 0, 0, 0), UIKit.SHEET_LINE, 0, 1
+			))
+		)
 		var rc := Control.new()
 		rc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		rc.mouse_filter = Control.MOUSE_FILTER_IGNORE
