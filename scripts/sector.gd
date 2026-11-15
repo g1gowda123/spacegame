@@ -700,8 +700,8 @@ func _build_hud() -> void:
 	bc.add_child(route_label)
 
 	onboard_label = UIKit.mono("", 7, UIKit.CYAN)
-	onboard_label.position = Vector2(8, 21)
-	onboard_label.size = Vector2(398, 11)
+	onboard_label.position = Vector2(8, 20)
+	onboard_label.size = Vector2(398, 25)
 	onboard_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	onboard_label.add_theme_constant_override("outline_size", 1)
 	onboard_label.visible = false
@@ -957,9 +957,17 @@ func _refresh_status() -> void:
 	var onboard := _sector_hint != "" and turn == 1 and not moved and not done 		and cursor_cell == player_cell
 	if onboard_label != null:
 		onboard_label.visible = onboard
-		onboard_label.text = "TURN %d · RANGE %d · %s · CLICK A TILE" % [
-			turn, _current_range(), _sector_hint
-		] if onboard else ""
+		if onboard:
+			var line1 := "TURN %d · RANGE %d · %s" % [turn, _current_range(), _sector_hint]
+			var line2 := "CLICK A TILE TO MOVE"
+			if bool(sec.get("shakedown", false)):
+				line1 = "TURN %d · RANGE %d · SHAKEDOWN" % [turn, _current_range()]
+				line2 = "+2 HULL · CYAN PAD = EXTRACTION · CLICK A TILE"
+			elif extract_cell != start_cell:
+				line2 = "CYAN PAD = EXIT · CLICK A TILE"
+			onboard_label.text = line1 + "\n" + line2
+		else:
+			onboard_label.text = ""
 	# Do not stack the onboarding hint on top of the live route line; the
 	# hint owns the bottom HUD while it is visible, then the route returns.
 	if route_label != null:
