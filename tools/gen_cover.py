@@ -34,6 +34,25 @@ BASE_W, BASE_H = 1280, 1024
 HIRES_W, HIRES_H = 1920, 1536
 
 PROMPTS = {
+    "f": (
+        "store cover illustration for a turn-based exoplanet survey game, "
+        "isometric diorama of stepped alien plateaus: warm terracotta and rust stone slabs with dark "
+        "near-black vertical cliff walls, deep teal water channels winding between the shelves, "
+        "one small glowing cyan survey orb resting in the water, a compact four-legged survey lander "
+        "with a high-gain dish parked on the highest shelf, a few tiny data nodes strung along a path, "
+        "a huge pale ringed planet low in the dark sky, "
+        "limited palette of terracotta orange, teal, charcoal and cream, chunky 16-bit pixel art with "
+        "crisp tile edges and two-tone top surfaces, calm dark sky across the top third, "
+        "no text, no letters, no UI, no frame"
+    ),
+    "g": (
+        "top-down isometric map view of a terraced alien plateau archipelago, "
+        "orange stone shelves stepping down into deep teal ocean, dark cliff faces between levels, "
+        "thin foam lines where rock meets water, a single glowing cyan anomaly on one shelf, "
+        "a tiny survey lander with a dish, sparse dark rock spires, "
+        "limited palette of terracotta, teal, charcoal and cream, chunky 16-bit pixel art, "
+        "even lighting, no text, no UI, no frame"
+    ),
     "e": (
         "store cover art for a turn-based exoplanet survey game, "
         "isometric tactical map diorama floating in a dark sky, alien tidal marsh: "
