@@ -158,23 +158,23 @@ func _shot_title() -> void:
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 	await _scene_ready()
 	_mark("title.settled")
-	await _wait(8.0)
+	await _wait(12.80)
 
 
 func _shot_crew() -> void:
 	GameState.new_run()
 	get_tree().change_scene_to_file("res://scenes/crew.tscn")
 	await _scene_ready()
-	await _wait(1.2)
+	await _wait(1.92)
 	_mark("crew.settled")
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_set_players"):
 		scene.call("_set_players", 4)
-		await _wait(1.8)
+		await _wait(2.88)
 		_mark("crew.players4")
 		if scene.has_method("_set_difficulty"):
 			scene.call("_set_difficulty", "director")
-		await _wait(2.4)
+		await _wait(3.84)
 
 
 func _shot_design() -> void:
@@ -320,19 +320,19 @@ func _shot_event() -> void:
 	GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	await _scene_ready()
-	await _wait(1.2)
+	await _wait(1.92)
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_show_event"):
 		scene.call("_show_event")
-		await _wait(1.4)
+		await _wait(2.24)
 		_mark("event.shown")
 		if scene.has_method("_on_event_choice") and GameState.run.get("event", {}).size() > 0:
 			scene.call("_on_event_choice", 0)
 		elif scene.has_method("_pick_event_choice"):
 			scene.call("_pick_event_choice", 0)
-		await _wait(3.0)
+		await _wait(4.80)
 		_mark("event.chose")
-	await _wait(3.4)
+	await _wait(5.44)
 
 
 func _shot_hover() -> void:
@@ -394,9 +394,9 @@ func _shot_report() -> void:
 		GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/report.tscn")
 	await _scene_ready()
-	await _wait(1.0)
+	await _wait(1.60)
 	_mark("report.settled")
-	await _wait(11.0)
+	await _wait(17.60)
 
 
 # ---------------------------------------------------------------------------
