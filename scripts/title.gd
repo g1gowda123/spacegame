@@ -221,13 +221,6 @@ func _menu_column() -> void:
 	ranks.pressed.connect(func(): ranks_layer.visible = true)
 	v.add_child(ranks)
 
-	# Small, unaccented and last: the terminal's own power switch, not a
-	# mission action. Q is the shortcut.
-	var quit := UIKit.button("QUIT", Vector2(176, 20))
-	quit.add_theme_font_size_override("font_size", 8)
-	quit.pressed.connect(_quit_game)
-	v.add_child(quit)
-
 	v.add_child(UIKit.vspace(2))
 	UIKit.hairline(v, 0, 0, 176, Color(UIKit.STEEL, 0.55))
 	v.add_child(UIKit.vspace(2))
@@ -266,8 +259,6 @@ func _title_mark() -> void:
 	# font metrics, and this strip has to clear the readout sections below it.
 	_centred(UIKit.mono("Design a spacecraft. Draft a real exoplanet.", 6, UIKit.MUTED),
 		"Design a spacecraft. Draft a real exoplanet.", 6, 421, 200, false)
-	_centred(UIKit.mono("Survive its surface. Save the agency.", 6, UIKit.MUTED),
-		"Survive its surface. Save the agency.", 6, 421, 209, false)
 
 
 func _tw(text: String, font_size: int, pixel: bool = false) -> float:
@@ -320,35 +311,6 @@ func _cells() -> void:
 	sectors.position = Vector2(106, 20)
 	plot_cell.add_child(sectors)
 
-	var archive := _cell(300, 274, 158, 46, "ARCHIVE")
-	var rows := [
-		["WORLDS", str(GameState.planets.size())],
-		["HULLS", str(GameState.HULLS.size())],
-		["SECTORS", str(GameState.SECTORS_PER_RUN)],
-	]
-	for i in range(rows.size()):
-		var y := 10.0 + float(i) * 8.0
-		var key := UIKit.mono(str(rows[i][0]), 6, UIKit.INK_FAINT)
-		key.position = Vector2(0, y)
-		archive.add_child(key)
-		# Right-aligned by measurement: a Label's `size` is clamped to its
-		# minimum before it enters the tree, so a fixed box does not hold.
-		var vtxt := str(rows[i][1])
-		var val := UIKit.mono(vtxt, 6, UIKit.CREAM)
-		val.position = Vector2(140.0 - _tw(vtxt, 6), y)
-		archive.add_child(val)
-
-	var comms := _cell(468, 274, 162, 46, "COMMS")
-	var ticker := Ticker.new()
-	ticker.position = Vector2(0, 11)
-	ticker.size = Vector2(148, 10)
-	comms.add_child(ticker)
-	ticker.set_text(
-		"TELEMETRY  ·  SOL 001  ·  ORBITAL INSERTION NOMINAL  ·  "
-		+ "ARCHIVE SYNC %d WORLDS  ·  GRANTS CLEARED  ·  " % GameState.planets.size())
-	var relay := UIKit.mono("UPLINK 98%  ·  RELAY 3/3", 6, UIKit.INK_FAINT)
-	relay.position = Vector2(0, 27)
-	comms.add_child(relay)
 
 
 func _cell(x: float, y: float, w: float, h: float, title: String) -> Control:
@@ -388,10 +350,6 @@ func _footer() -> void:
 		6, UIKit.INK_FAINT),
 		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars", 6, 320, 331, false)
 
-	var proto_text := "PROTOTYPE 1.0  ·  WEB BUILD"
-	var proto := UIKit.mono(proto_text, 6, UIKit.INK_FAINT)
-	proto.position = Vector2(630.0 - _tw(proto_text, 6), 331)
-	add_child(proto)
 
 
 func _scrim() -> void:
