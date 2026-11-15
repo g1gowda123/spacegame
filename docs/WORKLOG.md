@@ -1257,3 +1257,16 @@ Continuation of the 05:22 card-pop pass (base commit `1e011a5`). The ask was "ca
   for `repair`, a multi-object cluster. `tools/tidy_item_icons.py` locks all buff icons to the 11-colour
   ramp, makes alpha binary, keeps the largest component and inks a 2 px contour (12 buffs_hd + 12 buffs).
   `repair` rebuilt as a composed sealant canister in `tools/make_module_hw.py`.
+## 2026-11-15 11:48 — ATLAS/UI: Fog Now Veils Structures Too
+
+The sector fog dimmed the ground but left every prop at full brightness — cream rock spires, amber beacons, cyan data nodes and the ambient dust all read as lit objects standing in the dark.
+
+- **Cause:** the veil (`fog_layer`) sat at `z_index = 23`, but structure sprites y-sort *inside* their layer and carry their own `z_index` up to 940. `z_as_relative` is on by default, so a sprite's effective z was `20 + 940 = 960` — far above the veil. The comment in `_structure_visibility` already said "fog is a screen-space veil above the structure layer"; the z simply never matched it.
+- **Fix (`scripts/map_generator.gd`):** draw order is now named instead of magic numbers. `STRUCTURE_Z = 20`, `STRUCTURE_Z_CAP = 940`, `FOG_Z = 20 + 940 + 1 = 961` (above every structure sprite, below the actor at 975 so the lander is never dimmed by a neighbouring cell's band), `OVERLAY_Z = FOG_Z + 1`. The three `min(..., 940)` structure caps now use `STRUCTURE_Z_CAP`.
+- **Fix (`scripts/sector.gd`):** `move_layer` moved from 24 to `OVERLAY_Z`. The veil hides terrain, not legality — reachable cells, danger outlines and the Δv cost numbers have to stay readable where the move ring extends past the 2-cell survey radius. `vfx_layer` (27) deliberately stays under the veil: the pad, flag, beam and pickup effects all live at the lander, which is always revealed.
+- **Verification (native, Godot 4.7.2, GL Compatibility):**
+  - A/B on the same biome (`--screen=sector --fog --biome=arid`): `fog_arid_before.png` / `fog_arid_after.png`. Spires in fog go from bright cream to dark silhouettes at the same value as the ground; the lit diamond is unchanged.
+  - Also checked `--biome=volcanic` (relay) and `--biome=methane` (crystal field): props dim, ground and lit centre unchanged.
+  - `python tools/qa/native_screens.py` -> **10/10 pass**, no leak warnings.
+  - `--screen=flowtest` -> `total=5464 grade=S successes=3`.
+- **Pushed to `main`** in the same commit as the fix.

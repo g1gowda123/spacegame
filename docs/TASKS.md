@@ -566,3 +566,11 @@ Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; upda
 | U5 | QA hooks for hover states | **done** (this pass) | `--hover-seg=N` / `--hover-arc` force hover + `UITip.preview` so one capture proves it |
 | U6 | Dossier placement when a review row is hovered (opens left, covers the arc) | **open - not a bug** | Shared `UITip` placement; changing it is a `ui_tip.gd` decision, not per-screen |
 | U7 | Re-run the browser loop on the next Web export | waiting on ATLAS/ORION | this pass is source only; `build/web` is stale |
+
+## Render lane - fog veil (UI agent, 11:48)
+
+| # | Task | Status | Evidence / note |
+|---|---|---|---|
+| R1 | Structures/props inside fog render at full brightness | **done (unpushed)** | og_layer z 23 -> FOG_Z (961): above every structure sprite (cap 940 + layer 20), below the actor (975). A/B og_arid_before.png / og_arid_after.png |
+| R2 | Keep the legal-move overlay readable through fog | **done (unpushed)** | move_layer 24 -> OVERLAY_Z (962); the veil hides terrain, not reachable cells or their dv cost |
+| R3 | Re-run browser loop after the next Web export | waiting on ATLAS/ORION | source-only change; uild/web still predates it |

@@ -184,7 +184,10 @@ func _ready() -> void:
 	_build_tileset()
 	_build_view()
 	move_layer = Node2D.new()
-	move_layer.z_index = 24
+	# Legal-move overlay: stays above the fog veil on purpose. The veil hides
+	# terrain, not where you may step — reachable cells and their Δv cost must
+	# stay readable when the ring extends past the survey radius.
+	move_layer.z_index = OVERLAY_Z
 	add_child(move_layer)
 	fx_layer = Node2D.new()
 	fx_layer.z_index = 21

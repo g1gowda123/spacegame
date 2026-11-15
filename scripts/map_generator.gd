@@ -11,6 +11,15 @@ const TILE := 64
 const CHUNK := 16
 const VIEW_TILES := 10.0
 
+# World draw order. Structure sprites y-sort inside their own layer and cap at
+# STRUCTURE_Z_CAP, so the fog veil has to sit above that cap or props stand in
+# the dark at full brightness. The actor (z 975) stays above the veil so the
+# player is never dimmed by a neighbouring cell.
+const STRUCTURE_Z := 20
+const STRUCTURE_Z_CAP := 940
+const FOG_Z := STRUCTURE_Z + STRUCTURE_Z_CAP + 1  # 961
+const OVERLAY_Z := FOG_Z + 1  # move preview: readable through fog by design
+
 @export_group("Render Window")
 ## Tiles rendered around the player. Larger = more survey visible, more
 ## SubViewport work; defaults are tuned for mobile/WebGL.
@@ -1001,7 +1010,10 @@ func _build_view() -> void:
 	add_child(overlay_layer)
 
 	fog_layer = Node2D.new()
-	fog_layer.z_index = 23
+	# Above every structure sprite, below the actor: props in an unrevealed cell
+	# must dim with the ground under them, or they read as lit objects standing
+	# in the dark. At z 23 they pierced the veil.
+	fog_layer.z_index = FOG_Z
 	add_child(fog_layer)
 	fog_mat = ShaderMaterial.new()
 	fog_mat.shader = load("res://shaders/fog_veil.gdshader") as Shader
@@ -1011,7 +1023,7 @@ func _build_view() -> void:
 	add_child(debug_layer)
 
 	structure_layer = Node2D.new()
-	structure_layer.z_index = 20
+	structure_layer.z_index = STRUCTURE_Z
 	add_child(structure_layer)
 
 	actor_layer = Node2D.new()
@@ -3388,7 +3400,7 @@ func _add_piece_sprites(
 		sprite.position = top_left + Vector2(col, row) * unit * map_scale
 		sprite.scale = Vector2(map_scale, map_scale)
 		sprite.modulate = Color(1.0, 1.0, 1.0, dim)
-		sprite.z_index = min(int(anchor_screen.y - float(h - 1 - row) * unit * map_scale), 940)
+		sprite.z_index = min(int(anchor_screen.y - float(h - 1 - row) * unit * map_scale), STRUCTURE_Z_CAP)
 		structure_layer.add_child(sprite)
 	return true
 
@@ -3487,7 +3499,7 @@ func _add_structure_sprite(s: Dictionary) -> void:
 	)
 	sprite.position = anchor_screen - bbox_center * sprite.scale
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.z_index = min(int(anchor_screen.y), 940)
+	sprite.z_index = min(int(anchor_screen.y), STRUCTURE_Z_CAP)
 	structure_layer.add_child(sprite)
 
 
@@ -3624,7 +3636,7 @@ func _add_prop_sprite(p: Dictionary) -> void:
 	)
 	sprite.modulate = Color(1.0, 1.0, 1.0, dim)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.z_index = min(int(base_screen.y), 940)
+	sprite.z_index = min(int(base_screen.y), STRUCTURE_Z_CAP)
 	structure_layer.add_child(sprite)
 
 
