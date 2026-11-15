@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gen_asset import generate, post_json  # noqa: E402
@@ -91,7 +91,12 @@ def finish(img: Image.Image, ship: Image.Image) -> Image.Image:
     hero_mean = a[m][:, :3].mean(axis=0) if m.any() else base_mean
     shift = base_mean - hero_mean
     a[m, :3] = np.clip(a[m, :3] + shift * 0.55, 0, 255)
-    return Image.fromarray(a.astype(np.uint8), "RGBA")
+    out = Image.fromarray(a.astype(np.uint8), "RGBA")
+    q = out.convert("RGB").quantize(colors=14, method=Image.MEDIANCUT).convert("RGB")
+    q = ImageEnhance.Sharpness(q).enhance(1.6)
+    out = q.convert("RGBA")
+    out.putalpha(Image.fromarray(a[..., 3].astype(np.uint8)))
+    return out
 
 
 def main() -> None:

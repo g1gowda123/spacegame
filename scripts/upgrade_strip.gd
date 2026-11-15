@@ -504,13 +504,18 @@ func _build_arsenal_rows(panel: Control) -> void:
 
 func _tree_block(tree: Control, system: String, bx: float, by: float) -> void:
 	var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
-	var title := UIKit.mono(system, 6, sys_color)
+	var system_owned := false
+	for uid in GameState.owned:
+		var u := _upgrade(str(uid))
+		if str(u.get("branch", "")) == system:
+			system_owned = true
+	var title := UIKit.mono(system, 6, sys_color if system_owned else UIKit.MUTED_C)
 	title.position = Vector2(bx, by)
 	title.size = Vector2(110.0, 10.0)
 	tree.add_child(title)
 	_tree_icon(tree, "res://assets/sprites/modules/branches/%s_A.png" % system.to_lower(),
-		Vector2(bx, by + 18.0), Vector2(22.0, 22.0), sys_color, false, false,
-		system, "Two paths: A and B. Tier 2 needs its own tier 1.")
+		Vector2(bx, by + 18.0), Vector2(22.0, 22.0), UIKit.STEEL, false, false,
+		false, system, "Two paths: A and B. Tier 2 needs its own tier 1.")
 	var a: Array = []
 	var b: Array = []
 	for up in GameState.UPGRADES:
@@ -526,10 +531,18 @@ func _tree_block(tree: Control, system: String, bx: float, by: float) -> void:
 		return int(x.get("tier", 1)) < int(z.get("tier", 1)))
 	# Shared system bus splits into a left (A) and right (B) lane.
 	var bus_y := by + 29.0
+	var a_owned := false
+	for up in a:
+		if str(up.get("id", "")) in GameState.owned:
+			a_owned = true
+	var b_owned := false
+	for up in b:
+		if str(up.get("id", "")) in GameState.owned:
+			b_owned = true
 	_tree_line(tree, Vector2(bx + 22.0, bus_y), Vector2(bx + 50.0, bus_y),
-		Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
+		UIKit.GREEN if a_owned else Color(0.33, 0.39, 0.46, 0.30))
 	_tree_line(tree, Vector2(bx + 22.0, bus_y), Vector2(bx + 140.0, bus_y),
-		Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
+		UIKit.GREEN if b_owned else Color(0.33, 0.39, 0.46, 0.30))
 	_tree_block_lane(tree, a, bx + 50.0, by + 20.0, sys_color, "A")
 	_tree_block_lane(tree, b, bx + 140.0, by + 20.0, sys_color, "B")
 
@@ -543,39 +556,50 @@ func _tree_block_lane(tree: Control, parts: Array, x: float, y: float,
 		var installed := id in GameState.owned
 		var req := str(up.get("requires", ""))
 		var locked := req != "" and not (req in GameState.owned)
+		var next_up := req != "" and (req in GameState.owned) and not installed
 		var ny := y + float(i) * 34.0
+		var prev_owned := i > 0 and str(parts[i - 1].get("id", "")) in GameState.owned
+		var link := Color(0.33, 0.39, 0.46, 0.30)
+		if prev_owned and installed:
+			link = UIKit.GREEN
+		elif prev_owned and next_up:
+			link = UIKit.AMBER
 		if i > 0:
-			_tree_line(tree, Vector2(x + 11.0, ny - 12.0), Vector2(x + 11.0, ny),
-				Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
+			_tree_line(tree, Vector2(x + 11.0, ny - 12.0), Vector2(x + 11.0, ny), link)
 		_tree_icon(tree, "res://assets/sprites/modules/%s.png" % id,
 			Vector2(x, ny), Vector2(22.0, 22.0), sys_color, installed, locked,
-			str(up.get("name", id)),
+			next_up, str(up.get("name", id)),
 			"%s\n\n%s\nCOST $%dM%s" % [
 				str(up.get("plain", up.get("desc", ""))),
 				"TIER 2 LOCKED · BUY TIER 1 FIRST" if locked else
-					("INSTALLED" if installed else "AVAILABLE IN REFIT"),
+					("INSTALLED" if installed else
+						("NEXT UPGRADE" if next_up else "AVAILABLE IN REFIT")),
 				int(up.get("cost", 0.0)),
 				("\nREQUIRES " + req) if req != "" else "",
 			])
 		var short := str(up.get("name", id)).split(" ")[0]
-		var tag := UIKit.mono("%s%d %s" % [path, tier, short], 6,
-			UIKit.CREAM if installed else UIKit.MUTED_C)
+		var role := str(GameState.BRANCH_ROLE.get(str(up.get("branch", "")), {}).get(path, ""))
+		var tag_text := "%s%d %s" % [path, tier, role if role != "" else short]
+		var tag_color := UIKit.CREAM if installed else (UIKit.AMBER if next_up else UIKit.MUTED_C)
+		var tag := UIKit.mono(tag_text, 6, tag_color)
 		tag.position = Vector2(x - 6.0, ny + 24.0)
 		tag.size = Vector2(56.0, 9.0)
 		tree.add_child(tag)
 
 
 func _tree_icon(parent: Control, path: String, pos: Vector2, size: Vector2,
-		border: Color, installed: bool, locked: bool, title: String,
+		border: Color, installed: bool, locked: bool, next_up: bool, title: String,
 		body: String) -> void:
 	var card := Panel.new()
 	card.position = pos
 	card.size = size
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	var bg := UIKit.PAPER if not locked else Color(0.10, 0.11, 0.12, 0.94)
-	var line := UIKit.GREEN if installed else border
-	if locked:
-		line = Color(border.r, border.g, border.b, 0.32)
+	var bg := UIKit.PAPER if installed else Color(0.09, 0.10, 0.11, 0.96)
+	var line := UIKit.GREEN if installed else Color(0.33, 0.39, 0.46, 0.60)
+	if next_up:
+		line = UIKit.AMBER
+	elif locked:
+		line = Color(border.r, border.g, border.b, 0.22)
 	card.add_theme_stylebox_override("panel", UIKit.style_panel(bg, line, 0, 1))
 	parent.add_child(card)
 	if ResourceLoader.exists(path):
@@ -586,7 +610,8 @@ func _tree_icon(parent: Control, path: String, pos: Vector2, size: Vector2,
 		icon.position = Vector2(2, 2)
 		icon.size = size - Vector2(4, 4)
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		icon.modulate = Color(1, 1, 1, 0.38 if locked else 1.0)
+		icon.modulate = Color(1, 1, 1,
+			1.0 if installed else (0.72 if next_up else (0.34 if locked else 0.45)))
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(icon)
 	UIKit.hover_info(card, title, body, line)

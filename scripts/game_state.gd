@@ -354,6 +354,23 @@ const SYSTEM_COLOR := {
 	"SUPPORT": "#e8dfc8",
 }
 
+const SYNERGIES := [
+	{"id": "torch", "name": "TORCHBEARER", "parts": ["wheel", "rtg"],
+	 "desc": "RW gyrodyne + MMRTG: +1 ΔV, +1 power.", "dv": 1, "power_regen": 1},
+	{"id": "longburn", "name": "LONG BURN", "parts": ["ion", "coolant"],
+	 "desc": "Hall thruster + cryo loop: +1 move range.", "move_range": 1},
+	{"id": "coldstart", "name": "COLD START", "parts": ["radiator", "fuel_cell"],
+	 "desc": "LHP loop + RFC cell: +2 heat resistance.", "thermal_res": 2},
+	{"id": "deepstack", "name": "DEEP STACK", "parts": ["buffer", "science_pack"],
+	 "desc": "SSR recorder + mass spec lab: +2 data, +5% science.", "data_cap": 2, "science": 0.05},
+	{"id": "cleanlink", "name": "CLEAN LINK", "parts": ["antenna", "sensor"],
+	 "desc": "X-band HGA + sensor bay: +4 comms.", "comms_bonus": 4},
+	{"id": "fieldfix", "name": "FIELD FIX", "parts": ["armor", "repair"],
+	 "desc": "Whipple shell + field kit: +1 hull.", "integrity": 1},
+	{"id": "contractlab", "name": "CONTRACT LAB", "parts": ["salvage", "science_pack"],
+	 "desc": "Contract rider + lab: +10% grant.", "grant": 0.10},
+]
+
 const BUFF_MILESTONES := [1, 2]
 
 const BIOME_INFO := {
@@ -943,6 +960,18 @@ func ship() -> Dictionary:
 		science += float(up.get("science", 0.0))
 		grant_mult += float(up.get("grant", 0.0))
 
+	# Cross-system synergies: a small roguelike reward for specific pairings.
+	for syn in active_synergies():
+		power_regen += int(syn.get("power_regen", 0))
+		thermal_res += int(syn.get("thermal_res", 0))
+		dv += int(syn.get("dv", 0))
+		integrity += int(syn.get("integrity", 0))
+		data_cap += int(syn.get("data_cap", 0))
+		comms += int(syn.get("comms_bonus", 0))
+		science += float(syn.get("science", 0.0))
+		grant_mult += float(syn.get("grant", 0.0))
+		pass
+
 	# Free field commissions are applied after paid refits.
 	power_regen += _buff_int("power_regen")
 	dv += _buff_int("dv")
@@ -982,7 +1011,7 @@ func ship() -> Dictionary:
 		"science_mult": science, "grant_mult": grant_mult,
 		"comms_bonus": comms, "heat_mult": heat_mult,
 		"power_regen_bonus": power_regen_bonus, "shield_cost": shield_cost,
-		"move_range": int(h["move_range"]) + _upgrade_int("move_range") + _buff_int("move_range"),
+		"move_range": int(h["move_range"]) + _upgrade_int("move_range") + _buff_int("move_range") + _synergy_int("move_range"),
 		"bonus_data": bonus_data, "power_regen": power_regen,
 		"orbit": str(orb.get("id", "low")),
 		"science_fit": science_fit(),
@@ -1238,6 +1267,26 @@ func begin_sector(planet: Dictionary) -> void:
 		run[key] = 0
 	sfx("confirm")
 	changed.emit()
+
+
+func active_synergies() -> Array:
+	var out: Array = []
+	for syn in SYNERGIES:
+		var ok := true
+		for part in syn.get("parts", []):
+			if not (str(part) in owned):
+				ok = false
+				break
+		if ok:
+			out.append(syn)
+	return out
+
+
+func _synergy_int(field: String) -> int:
+	var total := 0
+	for syn in active_synergies():
+		total += int(syn.get(field, 0))
+	return total
 
 
 func _upgrade_int(field: String) -> int:
