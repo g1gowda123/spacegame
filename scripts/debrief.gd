@@ -279,13 +279,13 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	UIKit.sheet(card, 0, 0, 284, 60)
 	card.mouse_entered.connect(func():
 		card.z_index = 2
-		var tw := card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		var tw: Tween = card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(card, "scale", Vector2(1.025, 1.025), 0.14)
 		tw.tween_property(card, "position:y", y - 2.0, 0.14)
 	)
 	card.mouse_exited.connect(func():
 		card.z_index = 0
-		var tw := card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		var tw: Tween = card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(card, "scale", Vector2.ONE, 0.14)
 		tw.tween_property(card, "position:y", y, 0.14)
 	)
@@ -342,7 +342,7 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	branch.position = Vector2(64, 21)
 	branch.size = Vector2(118, 9)
 	card.add_child(branch)
-	var glyph_path := "res://assets/sprites/modules/branches/%s_%s.png" % [sys, path]
+	var glyph_path := "res://assets/sprites/modules/branches/%s_%s.png" % [sys.to_lower(), path]
 	if ResourceLoader.exists(glyph_path):
 		var glyph := TextureRect.new()
 		glyph.texture = load(glyph_path) as Texture2D

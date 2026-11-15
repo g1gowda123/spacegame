@@ -190,12 +190,12 @@ func _build_center() -> void:
 		b.pivot_offset = Vector2(30, 10)
 		b.pressed.connect(_pick_orbit.bind(str(o["id"])))
 		b.mouse_entered.connect(func():
-			var tw := b.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			var tw: Tween = b.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			tw.tween_property(b, "scale", Vector2(1.06, 1.06), 0.14)
 			tw.tween_property(b, "position:y", -1.5, 0.14)
 		)
 		b.mouse_exited.connect(func():
-			var tw := b.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			var tw: Tween = b.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			tw.tween_property(b, "scale", Vector2.ONE, 0.14)
 			tw.tween_property(b, "position:y", 0.0, 0.14)
 		)
@@ -307,17 +307,17 @@ func _build_footer() -> void:
 	confirm_btn.pressed.connect(_confirm)
 	add_child(confirm_btn)
 
-	for btn_item in [back, quick, confirm_btn]:
+	for btn_item: Button in [back, quick, confirm_btn]:
 		var base_y: float = btn_item.position.y
 		btn_item.pivot_offset = btn_item.size * 0.5
 		btn_item.mouse_entered.connect(func():
 			if not btn_item.disabled:
-				var tw := btn_item.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+				var tw: Tween = btn_item.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 				tw.tween_property(btn_item, "scale", Vector2(1.035, 1.035), 0.14)
 				tw.tween_property(btn_item, "position:y", base_y - 1.5, 0.14)
 		)
 		btn_item.mouse_exited.connect(func():
-			var tw := btn_item.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			var tw: Tween = btn_item.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			tw.tween_property(btn_item, "scale", Vector2.ONE, 0.14)
 			tw.tween_property(btn_item, "position:y", base_y, 0.14)
 		)

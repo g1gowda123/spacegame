@@ -555,7 +555,7 @@ static func _hover_option_card(card: Dictionary, on: bool) -> void:
 	if old != null and old.is_valid():
 		old.kill()
 
-	var tw := p.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var tw: Tween = p.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(p, "scale", Vector2(target_scale, target_scale), 0.14)
 	tw.tween_property(p, "position", target_pos, 0.14)
 	card["tw"] = tw
@@ -596,14 +596,14 @@ static func select_card(card: Dictionary, on: bool) -> void:
 			p.position = Vector2(2.0, -2.0)
 			var target_scale := 1.045 if hovered else 1.015
 			var target_pos := Vector2(1.5, -1.5) if hovered else Vector2(1.0, 0.0)
-			var tw := p.create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			var tw: Tween = p.create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 			tw.tween_property(p, "scale", Vector2(target_scale, target_scale), 0.18)
 			tw.tween_property(p, "position", target_pos, 0.18)
 			card["tw"] = tw
 		else:
 			var target_scale := 1.035 if hovered else 1.0
 			var target_pos := Vector2(1.5, -1.5) if hovered else Vector2.ZERO
-			var tw := p.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			var tw: Tween = p.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			tw.tween_property(p, "scale", Vector2(target_scale, target_scale), 0.14)
 			tw.tween_property(p, "position", target_pos, 0.14)
 			card["tw"] = tw
