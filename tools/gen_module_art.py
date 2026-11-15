@@ -79,7 +79,7 @@ def gen(prompt, out, seed):
              "teal and orange accents, retro science fiction game icon")
     cmd = [PY, str(GEN), prompt + ", single piece of spacecraft hardware, engineering part, " + style,
            "--out", str(out), "--size", "1024", "--gen-size", "1024",
-           "--seed", str(seed), "--lora", "1.0", "--no-pixelize", "--bg", "magenta",
+           "--seed", str(seed), "--lora", "1.0", "--no-pixelize", "--bg", __import__("os").environ.get("MODULE_BG", "magenta"),
            "--view", "product shot, three-quarter view, centred, one isolated object on a flat magenta background that fills the frame, nothing behind it, no backing shape, flat even lighting",
            "--negative-extra", "text, watermark, logo, frame, border, hands, person, multiple objects, blurry, photo, landscape, terrain, background shape, circle behind, ring, halo, badge, emblem behind, glow, gradient background, vignette, orange background, coloured backdrop"]
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -95,6 +95,7 @@ def key(img, tol=0):
     specular pinholes are not punched through the part.
     """
     a = np.asarray(img.convert("RGB")).astype(np.float32)
+    h, w = a.shape[:2]
     pad = 12
     ring = np.concatenate([a[:pad, :pad].reshape(-1, 3), a[:pad, -pad:].reshape(-1, 3),
                            a[-pad:, :pad].reshape(-1, 3), a[-pad:, -pad:].reshape(-1, 3)])
@@ -118,6 +119,19 @@ def key(img, tol=0):
     else:
         bgmask = sheetish
     fg = ndimage.binary_fill_holes(~bgmask)
+    # a studio card painted inside the frame survives the border key; drop any
+    # large near-white/grey plate that still touches the frame edge
+    pale = (a.min(axis=2) > 145) & ((a.max(axis=2) - a.min(axis=2)) < 34)
+    lp, np_ = ndimage.label(pale)
+    if np_:
+        for lid in range(1, np_ + 1):
+            comp = lp == lid
+            if comp.sum() < 0.012 * comp.size:
+                continue
+            ys, xs = np.nonzero(comp)
+            # a studio card spans a wide rectangle; object panels are small and inset
+            if (ys.min() < 8 or xs.min() < 8 or ys.max() > h - 9 or xs.max() > w - 9):
+                fg &= ~comp
     fg = ndimage.binary_opening(fg, iterations=1)
     lab2, n2 = ndimage.label(fg)
     if n2 > 1:
