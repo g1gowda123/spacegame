@@ -47,6 +47,9 @@ var _fairing_right: Polygon2D
 var _ship_sprite: Sprite2D
 var _booster_sprite: Sprite2D
 var _exhaust_plume: Node2D
+var _plume_smoke: Node2D
+var _plume_frames: Array[Texture2D] = []
+var _plume_billows: Array[Sprite2D] = []
 var _shock_cone: Polygon2D
 var _smoke_particles: CPUParticles2D
 var _pad_smoke_left: CPUParticles2D
@@ -334,29 +337,43 @@ func _build_rocket_assembly() -> void:
 			_booster_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			_booster_sprite.centered = false
 			var art_size := art.get_size()
-			var base := 0.5
-			var sx := base
-			var cx := art_size.x * 0.5
-			# VEGA ships the sheets at 2x with generous side margin. Measure the
-			# opaque core so the booster matches the width of the vector class it
-			# replaces instead of reading as a thin stick under a wide fairing.
-			var img := art.get_image()
-			if img != null:
-				var used := img.get_used_rect()
-				if used.size.x > 0:
-					var target_w := 20.0
-					match _veh_id:
-						"vector_l": target_w = 20.0
-						"vector_h": target_w = 62.0
-						_: target_w = 28.0
-					sx = target_w / float(used.size.x)
-					cx = float(used.position.x) + float(used.size.x) * 0.5
-			_booster_sprite.scale = Vector2(sx, base)
-			_booster_sprite.position = Vector2(-cx * sx, -30.0)
+			# Native 1x sheets win the artstyle pass; the 2x sheets still work
+			# at an exact 0.5 so the pixel grid never lands on half-pixels.
+			var native_w := 28.0
+			match _veh_id:
+				"vector_l": native_w = 20.0
+				"vector_h": native_w = 62.0
+			var art_scale := 1.0
+			if art_size.x > native_w * 1.6:
+				art_scale = 0.5
+			_booster_sprite.scale = Vector2(art_scale, art_scale)
+			_booster_sprite.position = Vector2(-art_size.x * art_scale * 0.5, -30.0)
 			booster_node.add_child(_booster_sprite)
 			if "--debug-launch" in OS.get_cmdline_args() + OS.get_cmdline_user_args():
 				print("LAUNCH booster art ", booster_art, " ", art_size,
-					" sx=", sx, " cx=", cx)
+					" scale=", art_scale)
+
+	# Exhaust billows from VEGA's three frames. Added before the plume so the
+	# flame core draws on top; the textures replace the hard polygon wedges.
+	_plume_smoke = Node2D.new()
+	_rocket_body.add_child(_plume_smoke)
+	for i in range(3):
+		var frame_path := "res://assets/sprites/vehicles/exhaust_plume_%d.png" % i
+		if ResourceLoader.exists(frame_path):
+			_plume_frames.append(load(frame_path) as Texture2D)
+	if not _plume_frames.is_empty():
+		for side in [-1.0, 1.0]:
+			var b := Sprite2D.new()
+			b.texture = _plume_frames[0]
+			b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			b.centered = true
+			b.flip_h = side > 0.0
+			b.scale = Vector2(0.42, 0.42)
+			b.modulate = Color(1, 1, 1, 0.0)
+			b.set_meta("side", side)
+			_plume_smoke.add_child(b)
+			_plume_billows.append(b)
+	_plume_smoke.visible = false
 
 	# Exhaust plume node (under rocket)
 	_exhaust_plume = Node2D.new()
@@ -606,6 +623,8 @@ func _draw_vector_h_booster(node: Node2D) -> void:
 
 func _draw_exhaust_plume() -> void:
 	if _phase < Phase.IGNITION or _booster_dropped:
+		if _plume_smoke != null:
+			_plume_smoke.visible = false
 		return
 	
 	var base_y := 60.0
@@ -619,6 +638,25 @@ func _draw_exhaust_plume() -> void:
 	var flame_w := 12.0 * flick
 	if _veh_id == "vector_h":
 		flame_w = 26.0 * flick
+
+	# Soft billows behind the tail. VEGA's frames are 160x96; keep them broad
+	# and low-contrast so the white flame core stays the only bright element.
+	if _plume_smoke != null:
+		_plume_smoke.visible = true
+	if not _plume_frames.is_empty():
+		var fi := int(_time * 14.0) % _plume_frames.size()
+		for k in range(_plume_billows.size()):
+			var b: Sprite2D = _plume_billows[k]
+			var side := float(b.get_meta("side", 1.0))
+			b.texture = _plume_frames[(fi + k) % _plume_frames.size()]
+			b.position = Vector2(
+				side * (flame_w * 1.55 + 4.0),
+				base_y + 26.0 + sin(_time * 9.0 + k * 2.1) * 3.0
+			)
+			var bs := (0.40 + 0.035 * sin(_time * 11.0 + k)) * clampf(1.0 + _altitude * 0.0008, 1.0, 1.35)
+			b.scale = Vector2(bs, bs)
+			b.rotation = side * (0.10 + 0.025 * sin(_time * 6.0 + k))
+			b.modulate = Color(1.0, 0.97, 0.93, 0.58 + 0.16 * flick)
 
 	# Outer Orange Fire Plume
 	var outer_flame := PackedVector2Array([
