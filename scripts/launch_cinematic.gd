@@ -98,6 +98,8 @@ var _current_sector_no: int = 1
 # --- Motion Parameters ---
 var _altitude: float = 0.0
 var _cloud_scroll: float = 0.0
+var _ascent_start_y: float = 160.0
+var _ascent_sky_start := Color(0.04, 0.07, 0.12)
 var _rng := RandomNumberGenerator.new()
 var _velocity: float = 0.0
 var _acceleration: float = 0.0
@@ -220,6 +222,11 @@ func _build_scene_layers() -> void:
 
 	_space_backdrop = SpaceBackdrop.create({"planet_on": false, "stars_on": true, "dim": 0.20})
 	_space_root.add_child(_space_backdrop)
+	# The launch only needs the plate for ~2 s; the animated star shader is the
+	# one full-screen cost that shows up as a hitch exactly at the fade. Use the
+	# static raster here; the animated version stays on menus/sector.
+	if _space_backdrop.star_rect != null:
+		_space_backdrop.star_rect.material = null
 
 	# Luminous Earth / Departure Planet Limb
 	_earth_disc = Control.new()
@@ -1078,6 +1085,13 @@ func _enter_ascent_phase() -> void:
 		_status_vbox.visible = false
 	if _ground_root != null:
 		_ground_root.visible = false
+	# Snapshot the live state at the phase boundary instead of resetting to a
+	# different pose/palette. The old ascent opened 12 px above the liftoff
+	# rocket and jumped the sky from dusk to outer-atmosphere blue in one frame.
+	if _rocket_root != null:
+		_ascent_start_y = _rocket_root.position.y
+	if _sky_rect != null:
+		_ascent_sky_start = _sky_rect.color
 	# Clouds are a continuous curtain for this phase: start them above the
 	# frame, scroll them down by accumulated velocity, and fade the whole layer
 	# in/out. Using TIME * velocity made their position jump every frame the
@@ -1101,12 +1115,10 @@ func _update_ascent_phase(delta: float) -> void:
 	# Start in the thin outer atmosphere, not a dusk-lit inner sky. The rocket
 	# is already well above the weather by the time this phase opens, so the
 	# palette begins close to the void and only the airglow changes.
-	var col_outer := Color(0.018, 0.042, 0.085)
 	var col_space := Color(0.008, 0.012, 0.024)
 	if _sky_rect != null:
-		# One eased blend for the whole handoff. Two back-to-back smoothsteps
-		# read as a visible colour step around the middle of the ascent.
-		_sky_rect.color = col_outer.lerp(col_space, e)
+		# Blend from whatever colour the sky actually had when ascent began.
+		_sky_rect.color = _ascent_sky_start.lerp(col_space, e)
 	# Stars come up first and early; the Earth limb waits until the airglow
 	# has thinned, so the horizon does not pop on at the phase change.
 	if _space_root != null:
@@ -1131,7 +1143,7 @@ func _update_ascent_phase(delta: float) -> void:
 	if _rocket_body != null:
 		_rocket_body.scale = Vector2(sc, sc)
 	if _rocket_root != null:
-		_rocket_root.position = Vector2(320, lerpf(160, 120, t))
+		_rocket_root.position = Vector2(320, lerpf(_ascent_start_y, 120.0, t))
 
 	if _exhaust_plume != null:
 		_exhaust_plume.queue_redraw()
