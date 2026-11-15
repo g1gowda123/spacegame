@@ -293,7 +293,7 @@ func _build_name_prompt() -> void:
 	name_edit.max_length = 12
 	name_edit.placeholder_text = "CHIEF"
 	name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_edit.add_theme_font_override("font", UIKit.pixel_font)
+	name_edit.add_theme_font_override("font", UIKit._font(true))
 	name_edit.add_theme_font_size_override("font_size", 9)
 	name_edit.add_theme_color_override("font_color", INK)
 	name_edit.add_theme_color_override("font_placeholder_color", Color(0.45, 0.54, 0.53, 0.8))
@@ -355,7 +355,7 @@ func _paper_button(text: String, size: Vector2, primary: bool) -> Button:
 	b.text = text
 	b.custom_minimum_size = size
 	b.size = size
-	b.add_theme_font_override("font", UIKit.pixel_font)
+	b.add_theme_font_override("font", UIKit._font(true))
 	b.add_theme_font_size_override("font_size", 6)
 	b.add_theme_color_override("font_color", NIGHT if primary else INK)
 	b.add_theme_color_override("font_hover_color", NIGHT if primary else INK)

@@ -255,10 +255,13 @@ func _dev_screen() -> bool:
 
 
 func _open_briefing() -> void:
-	get_tree().change_scene_to_file("res://scenes/briefing.tscn")
+	if is_inside_tree() and get_tree() != null:
+		get_tree().change_scene_to_file("res://scenes/briefing.tscn")
 
 
 func _start() -> void:
+	if not is_inside_tree() or get_tree() == null:
+		return
 	CrewDirector.begin_run("campaign", 1, "standard")
 	get_tree().change_scene_to_file("res://scenes/design.tscn")
 

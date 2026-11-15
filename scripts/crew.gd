@@ -131,7 +131,7 @@ func _build_right() -> void:
 	code_edit.size = Vector2(286, 20)
 	code_edit.placeholder_text = "NASA-2026  ·  12345  ·  OO-0F7A5-S1"
 	code_edit.max_length = 64
-	code_edit.add_theme_font_override("font", UIKit.body_font)
+	code_edit.add_theme_font_override("font", UIKit._font(false))
 	code_edit.add_theme_font_size_override("font_size", 8)
 	code_edit.add_theme_color_override("font_color", UIKit.INK)
 	code_edit.add_theme_color_override("font_placeholder_color", UIKit.INK_FAINT)

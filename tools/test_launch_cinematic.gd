@@ -64,6 +64,14 @@ func _initialize() -> void:
 	else:
 		print("[+] PASS: Reduced-effects mode")
 
+	# Test 7: Target Exoplanet & Departure Planet Linkage
+	var link_ok := _test_planet_linkage()
+	if not link_ok:
+		failures += 1
+		print("[-] FAIL: Target planet & departure world linkage")
+	else:
+		print("[+] PASS: Target planet linkage & departure world visual continuity")
+
 	# Test 6: Verify GameState preservation
 	var state_ok := _test_gamestate_preservation()
 	if not state_ok:
@@ -215,6 +223,49 @@ func _test_reduced_effects() -> bool:
 	_clean_up(instance)
 	return true
 
+
+
+func _test_planet_linkage() -> bool:
+	_reset_state()
+	_game_state.run["sector"] = 1
+	var planet: Dictionary = _game_state.draft[0] if not _game_state.draft.is_empty() else {}
+	var expected_biome: String = str(planet.get("biome", "temperate"))
+
+	var launch_scene = load("res://scenes/launch.tscn")
+	var instance = launch_scene.instantiate()
+	root.add_child(instance)
+	instance._ready()
+
+	# Verify target planet info and texture
+	if instance._planet_biome != expected_biome:
+		_clean_up(instance)
+		return false
+	if instance._target_planet_rect == null or instance._target_planet_rect.texture == null:
+		_clean_up(instance)
+		return false
+	if instance._departure_biome != "earth":
+		_clean_up(instance)
+		return false
+	if instance._planet_info.is_empty() or not instance._planet_info.has("terrain"):
+		_clean_up(instance)
+		return false
+
+	_clean_up(instance)
+
+	# Verify sector > 1 departure planet linkage
+	_reset_state()
+	_game_state.history.append({"planet": {"name": "Testworld", "biome": "volcanic"}})
+	_game_state.run["sector"] = 2
+	var instance2 = launch_scene.instantiate()
+	root.add_child(instance2)
+	instance2._ready()
+
+	if instance2._departure_biome != "volcanic":
+		_clean_up(instance2)
+		return false
+
+	_clean_up(instance2)
+	return true
 
 func _test_gamestate_preservation() -> bool:
 	_reset_state()

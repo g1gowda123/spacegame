@@ -158,7 +158,7 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	desc.custom_minimum_size = Vector2(CARD_W - 16, 48)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	desc.add_theme_font_override("normal_font", UIKit.body_font)
+	desc.add_theme_font_override("normal_font", UIKit._font(false))
 	desc.add_theme_font_size_override("normal_font_size", 7)
 	desc.add_theme_color_override("default_color", UIKit.INK_SOFT)
 	desc.add_theme_constant_override("line_separation", 0)
