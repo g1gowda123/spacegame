@@ -77,6 +77,7 @@ var _phase_time: float = 0.0
 var _shake_amount: float = 0.0
 var _is_subsequent: bool = false
 var _reduced_fx: bool = false
+var _no_fairing: bool = false
 var _skipping: bool = false
 var _transitioned: bool = false
 
@@ -131,6 +132,8 @@ func _parse_arguments() -> void:
 			_is_subsequent = false
 		elif arg == "--skip-launch":
 			call_deferred("_skip_launch")
+		elif arg == "--no-fairing":
+			_no_fairing = true
 
 
 func _load_mission_data() -> void:
@@ -450,6 +453,9 @@ func _build_rocket_assembly() -> void:
 			spr.scale = Vector2(sc, sc)
 			spr.position = Vector2(float(pair[2]), -98.0)
 			host.add_child(spr)
+	elif _no_fairing:
+		_fairing_left.visible = false
+		_fairing_right.visible = false
 	else:
 		var pl := Polygon2D.new()
 		pl.color = Color(0.90, 0.92, 0.96)
