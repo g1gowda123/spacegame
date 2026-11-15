@@ -1,0 +1,94 @@
+{
+  "portraits": {
+    "dir": "res://assets/sprites/modules",
+    "size": [
+      128,
+      128
+    ],
+    "ids": [
+      "wheel",
+      "wheel2",
+      "ion",
+      "ion2",
+      "rtg",
+      "rtg2",
+      "fuel_cell",
+      "fuel_cell2",
+      "radiator",
+      "radiator2",
+      "coolant",
+      "coolant2",
+      "armor",
+      "armor2",
+      "whipple",
+      "whipple2",
+      "antenna",
+      "antenna2",
+      "buffer",
+      "buffer2",
+      "science_pack",
+      "science2",
+      "sensor",
+      "sensor2",
+      "salvage",
+      "repair"
+    ]
+  },
+  "ship": {
+    "dir": "res://assets/sprites/modules/ship",
+    "size": [
+      64,
+      48
+    ],
+    "ids": [
+      "wheel",
+      "wheel2",
+      "ion",
+      "ion2",
+      "rtg",
+      "rtg2",
+      "fuel_cell",
+      "fuel_cell2",
+      "radiator",
+      "radiator2",
+      "coolant",
+      "coolant2",
+      "armor",
+      "armor2",
+      "whipple",
+      "whipple2",
+      "antenna",
+      "antenna2",
+      "buffer",
+      "buffer2",
+      "science_pack",
+      "science2",
+      "sensor",
+      "sensor2",
+      "salvage",
+      "repair"
+    ]
+  },
+  "buffs": {
+    "dir": "res://assets/sprites/buffs_hd",
+    "size": [
+      128,
+      128
+    ],
+    "ids": [
+      "reactor",
+      "harden",
+      "aerogel",
+      "sling",
+      "deepnet",
+      "science",
+      "favor",
+      "ranger",
+      "shield",
+      "cache",
+      "legacy",
+      "repair"
+    ]
+  },
+  "method": "drawn on a 64 px grid, scaled NEAREST; tier 2 adds a stage + warm accent"
+}
