@@ -594,6 +594,12 @@ func _open_sell_panel() -> void:
 	sell_layer.mouse_filter = Control.MOUSE_FILTER_STOP
 	sell_layer.z_index = 60
 	add_child(sell_layer)
+	var backing := ColorRect.new()
+	backing.color = UIKit.HULL
+	backing.position = Vector2.ZERO
+	backing.size = Vector2(304, 256)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sell_layer.add_child(backing)
 	var p := UIKit.sheet(sell_layer, 0, 0, 304, 256)
 	var c := UIKit.fill(p)
 	var head := UIKit.head("RESALE BAY", 9, UIKit.NAME)
