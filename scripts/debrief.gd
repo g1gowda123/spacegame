@@ -265,19 +265,21 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var afford := float(GameState.run.get("budget", 0)) >= cost
 	var card := Control.new()
 	card.position = Vector2(0, y)
-	card.size = Vector2(284, 60)
+	card.size = Vector2(284, 64)
 	UIKit.sheet(card, 0, 0, 284, 60)
 
 	# Every offer gets a physical module portrait, so the shop reads as a
 	# catalogue of hardware rather than three identical text rows.
 	var icon_frame := Panel.new()
-	icon_frame.position = Vector2(6, 7)
-	icon_frame.size = Vector2(46, 46)
+	icon_frame.position = Vector2(6, 6)
+	icon_frame.size = Vector2(52, 52)
 	icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sys_id := str(up.get("branch", "SUPPORT"))
 	var sys_color := Color(str(GameState.SYSTEM_COLOR.get(sys_id, "#e8dfc8")))
+	# Cream technical-drawing tile: the mono module line art needs contrast,
+	# and a paper inset makes the shop feel like a parts catalogue.
 	icon_frame.add_theme_stylebox_override("panel", UIKit.style_panel(
-		UIKit.NIGHT_2, sys_color, 0
+		UIKit.PAPER, sys_color, 0
 	))
 	card.add_child(icon_frame)
 	# Prefer a dedicated 128 px module portrait; buff icons remain the
@@ -300,8 +302,8 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 		icon_frame.add_child(icon)
 
 	var nm := UIKit.label(str(up["name"]), 9, UIKit.NAME, true)
-	nm.position = Vector2(58, 7)
-	nm.size = Vector2(136, 13)
+	nm.position = Vector2(64, 7)
+	nm.size = Vector2(128, 13)
 	card.add_child(nm)
 	var kind_text := "HARDWARE" if str(up["kind"]) == "MODULE" else "SOFTWARE"
 	var kind := UIKit.mono(kind_text, 6, UIKit.ORANGE_DARK, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -315,8 +317,8 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 		sys, path, int(up.get("tier", 1)),
 		(" · " + role) if role != "" else ""
 	], 6, sys_color)
-	branch.position = Vector2(58, 20)
-	branch.size = Vector2(126, 9)
+	branch.position = Vector2(64, 21)
+	branch.size = Vector2(120, 9)
 	card.add_child(branch)
 	var pr := UIKit.label("$%dM" % int(cost), 9, UIKit.ORANGE_DARK if afford else UIKit.SIGNAL, true)
 	pr.position = Vector2(58, 32)
@@ -326,8 +328,8 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	# A one-line effect readout so the card explains itself before hover. The
 	# full plain-language copy still lives in the dossier.
 	var effect := UIKit.mono(str(up.get("desc", "")), 6, UIKit.MUTED)
-	effect.position = Vector2(58, 46)
-	effect.size = Vector2(150, 9)
+	effect.position = Vector2(64, 47)
+	effect.size = Vector2(144, 10)
 	effect.clip_text = true
 	card.add_child(effect)
 
