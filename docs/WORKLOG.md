@@ -1348,3 +1348,12 @@ than a screen from another build.
 - Fairing halves were 14×68 at y=-98, so their foot sat at y=-30 while the booster body starts at y=0 — the 30 px hole ORION saw.
 - `tools/make_launch_extras.py: fairing()` now builds 14×98 halves (cone 56 px + 42 px adapter, stripe at 0.74 h). Regenerated `fairing_left/right.png`; placement in `scripts/launch_cinematic.gd` is unchanged.
 - Payload: `_ship_sprite` is only revealed in the no-fairing fallback, so the shroud hides it; if it still pokes, the hull scale (0.48 → 95 px wide) is wider than the 28 px shroud and must drop to ≤0.13 while shrouded.
+
+## 14:02 — VFX — finishing-touch pass: living portraits, ship exhaust, report beat
+- `SpaceBackdrop.configure()` now actually applies the title/portrait finish keys it was already being handed: `bright`, `nebula`, `planet_light`, `atmosphere`, `planet_clouds`, `planet_turn`, `planet_sway`. The 13:05 revert left these dead, so the title's cloud/turn/sway request and its planet light were silently ignored. Defaults stay flat for consoles that do not opt in.
+- Title: clouds/turn/sway enabled again (planet keeps its lit limb); star brightness/nebula left at the shipped defaults so the field is not re-densified.
+- Draft destination cards, briefing, debrief and report background planets now carry a slow weather band + small axial turn + 0.5 rad sway. Three cards animate independently but stay calm enough to read as portraits.
+- `ShipDiagram`: added a tapered pixel exhaust cone and two edge lines behind the engine bell, so the portrait reads as powered rather than a lamp. Engine flicker/nav strobe unchanged.
+- `debrief.gd`: the sector report's ship slides in 7 px from the panel edge over 0.36 s while fading up; the flame is already running when it lands.
+- `report.gd`: grade lands with a 1.42→1.0 back-ease stamp and the total counts 0→score over 0.72 s. Captures at 1.6 s settle on the final value.
+- Verified: title at 2 s and 12 s (planet weather/turn differs, no backface holes), draft/debrief/design/report captures at 640 and 1920, flowtest 5369/S. No push.
