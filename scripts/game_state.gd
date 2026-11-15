@@ -1427,8 +1427,20 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 
 func make_shop() -> void:
 	var pool: Array = []
+	# Bloons-style commitment: the first part bought in a system picks its
+	# path. The other path stays locked until the installed path is sold back.
+	var committed: Dictionary = {}
+	for uid in owned:
+		var picked := _upgrade_by_id(str(uid))
+		if not picked.is_empty():
+			var sys := str(picked.get("branch", ""))
+			if sys != "" and not committed.has(sys):
+				committed[sys] = str(picked.get("path", "A"))
 	for up in UPGRADES:
 		if up["id"] in owned and not bool(up.get("repeatable", false)):
+			continue
+		var sys := str(up.get("branch", ""))
+		if committed.has(sys) and str(up.get("path", "A")) != str(committed[sys]):
 			continue
 		# Skill tree: tier 2 only appears once the branch's tier 1 is owned.
 		var req := str(up.get("requires", ""))
