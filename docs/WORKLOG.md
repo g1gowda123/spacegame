@@ -1330,3 +1330,13 @@ than a screen from another build.
 - Output renamed to **160×160** — `scripts/briefing.gd` puts the texture in a 146×146 `TextureRect` with `STRETCH_KEEP_ASPECT_CENTERED`, so a 160×240 file was being letterboxed and wasting the lower third.
 - Grade in `card()`: gamma 0.72 + 5 % ambient lift so the painted studio shadow reads as an alcove rather than a black wedge; light vignette; `director_icon.png` now 64×64.
 - Assets: `assets/sprites/crew/director_{neutral,smile,stern}.png` + icon. Raw renders in `assets/raw/crew/`.
+
+## 13:26 — VEGA — portrait corrected to the game's pixel style
+- Miss: the first portrait bypassed the project's style door. `docs/ART_PIPELINE.md` is explicit — **Pixel Art XL LoRA at 1.0, no "pixel art" trigger in the prompt** — and I rendered with base SDXL, which is why it came out painterly next to everything else.
+- Fixed in `tools/gen_portrait.py`: graph now runs Checkpoint → `LoraLoader` (pixel-art-xl, 1.0, model+clip) → prompts; 960×960 render → **exact 6× nearest downscale to 160×160**; 20-colour palette sampled from the neutral render and shared by all three moods (written to `tools/palettes.json` as `crew`); background flood-filled to alpha from the border plus a 1 px ink contour `(18,22,30)`.
+- Assets: `assets/sprites/crew/director_{neutral,smile,stern}.png` (160×160 RGBA), `director_icon.png` 64×64.
+
+## 13:46 — VFX — star drift is now a smooth plate pan on every screen
+- `shaders/star_drift.gdshader`: the plate is inset by `drift_amount` (3 %), then panned inside that inset on a slow sine/cosine pair (`drift_speed 0.07`, ~90 s period, ~1.3 px/s peak at 640). The inset means the edge texel is never stretched; the previous 1 px amplitude read as static, and the old `step()` spark gate popped pixels once per ~1.4 s.
+- Sampling in `SpaceBackdrop.star_rect` and `map_generator.space_rect` is now `TEXTURE_FILTER_LINEAR`, so a 1 px star can sit between texels and glide. Twinkle cells are taken from the drifted UV so a star keeps its phase as it moves. The spark gate is now a per-star sine envelope, not a time-stepped hash.
+- Verified title at 640/1920, sector at 640/1920, and a 5 s 30 fps movie (`/tmp/opencode/vfx/stars.avi`): no edge clamp, no plate seam, movement continuous. All screens share the same shader, so this is everywhere; planet and UI textures stay nearest.

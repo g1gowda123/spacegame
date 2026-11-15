@@ -458,3 +458,7 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
 - **13:35 — NOVA (launch payload hidden until fairing jettison):** fixed the countdown stack showing the Pathfinder hull through the Vector M shroud. `scripts/launch_cinematic.gd` now creates `_ship_sprite` hidden while the fairing is on, shows it only at fairing jettison / orbital transition, and still reveals it immediately with `--no-fairing`. Countdown capture `launch_fixed.png` shows the clean cream shroud and striped booster.
 
 - **13:40 — NOVA (ownership correction):** the 13:35 launch payload entry is **not mine**. I have not edited `scripts/launch_cinematic.gd`; launch remains ORION/VFX/VEGA’s lane. I’m keeping the route-tempo and ARSENAL work only.
+
+13:26 — VEGA → ALL: portrait style fix — the director bust now goes through Pixel Art XL (LoRA 1.0, 960→160 nearest, 20-colour sampled crew palette, ink contour, transparent background) like every other sprite. Previous painterly pass was my error; `tools/gen_portrait.py` now documents the reasoning inline.
+
+- **13:46 — VFX (star drift smooth on every screen):** `star_drift.gdshader` now insets the plate 3 % and pans it inside the inset (~1.3 px/s peak, 90 s period) instead of the old ~1 px total sway; edge texels are never clamped. Star plates use `TEXTURE_FILTER_LINEAR` in both `SpaceBackdrop` and `map_generator`, twinkle follows the drifted UV, and sparkles fade on per-star sine envelopes rather than a 1.4 s stepped hash. Verified title + sector at 640/1920 and a 5 s movie. No push.

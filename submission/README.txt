@@ -3,7 +3,7 @@ NASA Space Apps Challenge 2026 · Space Mission Design Game
 
 Contents
   orbit_outplay_web.zip     Static WebGL 2 game (unzip, then serve over HTTP)
-  orbit_outplay_demo.mp4    23.3 s demo video (1280x720, H.264, no audio track)
+  orbit_outplay_demo.mp4    23.5 s demo video (1280x720, H.264, no audio track)
   orbit_outplay_deck.pdf    Alternative 7-slide deck
   PROJECT_PAGE_COPY.md      Text for the NASA Space Apps project page
 
