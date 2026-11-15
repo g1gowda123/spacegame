@@ -190,11 +190,48 @@ FAMILIES = {
 }
 
 
+SYSTEM_ACCENT = {
+    "wheel": (255, 170, 60), "ion": (255, 170, 60),
+    "rtg": (84, 230, 209), "fuel_cell": (84, 230, 209),
+    "radiator": (228, 120, 46), "coolant": (228, 120, 46),
+    "armor": (150, 162, 176), "whipple": (150, 162, 176),
+    "antenna": (108, 214, 132), "buffer": (108, 214, 132),
+    "science_pack": (176, 132, 236), "sensor": (176, 132, 236),
+    "salvage": (232, 223, 200), "repair": (232, 223, 200),
+}
+
+
+def base_id(part_id):
+    return part_id[:-1] if part_id.endswith("2") and part_id not in ("wheel2",) else part_id
+
+
+def detail(d, part_id, t):
+    """Shared per-system material pass: rivets, seams, and a segmented housing
+    on tier 2 so A and B differ in silhouette, not just in colour."""
+    sys_id = part_id.rstrip("2") if part_id not in ("salvage", "repair") else part_id
+    accent = SYSTEM_ACCENT.get(sys_id, SYSTEM_ACCENT.get(part_id, CYAN))
+    for p in ((8, 8), (55, 8), (8, 55), (55, 55)):
+        d.point(p, fill=STEEL_HI)
+    d.line([(10, 46), (54, 46)], fill=(30, 34, 42))
+    if t:
+        # segmented housing: ribs on both flanks + a hatch, so the B build reads
+        # as a different casing at 40 px
+        for y in range(16, 52, 6):
+            d.line([(6, y), (6, y + 3)], fill=accent)
+            d.line([(57, y), (57, y + 3)], fill=accent)
+        d.rectangle([40, 50, 52, 56], fill=(40, 46, 56))
+        d.line([(40, 50), (52, 50)], fill=accent)
+    else:
+        d.rectangle([8, 50, 20, 56], fill=(40, 46, 56))
+
+
 def portrait(part_id):
     fn, _ = FAMILIES[part_id]
     img = base(64)
     d = ImageDraw.Draw(img)
-    fn(d, part_id.endswith("2"))
+    t = part_id.endswith("2")
+    fn(d, t)
+    detail(d, part_id, t)
     img = outline(img)
     return img.resize((128, 128), Image.Resampling.NEAREST)
 
@@ -203,7 +240,9 @@ def ship_module(part_id):
     fn, _ = FAMILIES[part_id]
     img = base(64)
     d = ImageDraw.Draw(img)
-    fn(d, part_id.endswith("2"))
+    t = part_id.endswith("2")
+    fn(d, t)
+    detail(d, part_id, t)
     img = outline(img)
     return img.resize((64, 48), Image.Resampling.NEAREST)
 
