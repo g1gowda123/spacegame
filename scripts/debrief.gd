@@ -89,6 +89,10 @@ func _dev_buy(idx: int) -> void:
 	var name := str(GameState.shop_offers[idx].get("name", "?"))
 	_on_buy(idx)
 	print("DEVBUY ", name, " owned=", GameState.owned.size())
+	var ids: Array[String] = []
+	for o in GameState.shop_offers:
+		ids.append(str(o.get("id", "")))
+	print("SHOPOFFERS ", ids)
 
 
 func _capture_event() -> void:
