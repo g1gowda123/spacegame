@@ -26,27 +26,41 @@ RIVET = (150, 146, 134)
 
 
 def fairing(side: str):
+    """One half of a nose cone, cut down the centre line.
+
+    The silhouette is the deliverable: a straight taper from a near-point tip at
+    y=0 to the full 14 px shoulder at the bottom, with the mating edge exactly on
+    the inner column and NO dark line there, so the pair closes without a slot.
+    """
     w, h = 14, 68
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    # shell: curved outer edge, straight mating edge
+    cone_h = 38                      # cone above, cylindrical adapter below
+    for y in range(h):
+        t = min(1.0, y / (cone_h - 1))
+        half = max(1.5, w * t)
+        if side == "left":
+            x0, x1 = int(round(w - half)), w - 1
+        else:
+            x0, x1 = 0, int(round(half)) - 1
+        d.rectangle([x0, y, x1, y], fill=CREAM)
     outer = 0 if side == "left" else w - 1
     inner = w - 1 if side == "left" else 0
-    d.rectangle([0, 0, w - 1, h - 1], fill=CREAM)
-    # taper the nose
-    for y in range(0, 10):
-        inset = 9 - y
-        if side == "left":
-            d.rectangle([min(w - 1, inset), y, w - 1, y], fill=(0, 0, 0, 0))
-        else:
-            d.rectangle([0, y, max(0, w - 1 - inset), y], fill=(0, 0, 0, 0))
-    d.line([outer, 8, outer, h - 1], fill=SHADE)
-    d.line([inner, 10, inner, h - 1], fill=DARK)        # mating edge
-    d.rectangle([3 if side == "left" else 6, 26, 10 if side == "left" else 12, 30], fill=ORANGE)
-    for y in range(16, h - 6, 9):
-        d.point((6, y), fill=RIVET)
-        d.point((7, y), fill=RIVET)
-    d.line([2, 44, w - 3, 44], fill=SHADE)               # panel line
+    # shading: shadow on the outer flank only, never on the mating edge
+    for y in range(h):
+        if img.getpixel((outer, y))[3]:
+            d.point((outer, y), fill=SHADE)
+    # agency stripe low on the shoulder, rivets along the body
+    sy = int(h * 0.62)
+    for y in range(sy, min(h, sy + 4)):
+        for x in range(w):
+            if img.getpixel((x, y))[3]:
+                d.point((x, y), fill=ORANGE)
+    for y in range(int(h * 0.30), h - 4, 8):
+        for x in range(w):
+            if img.getpixel((x, y))[3]:
+                d.point((x, y), fill=RIVET)
+                break
     return img
 
 
