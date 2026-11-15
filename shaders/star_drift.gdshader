@@ -32,19 +32,15 @@ void fragment() {
 	vec4 src = texture(TEXTURE, clamp(uv, vec2(0.0), vec2(1.0)));
 	vec3 col = src.rgb * bright;
 
-	// Bright pixels are stars: give each a stable phase and a slow breath.
-	vec2 cell = floor(UV * resolution);
+	// Bright pixels are stars: a smooth two-axis shimmer, not a per-cell hash.
+	// A per-cell hash at screen resolution exposed a 20 px periodic artifact
+	// that read as vertical columns of stars; a continuous sine field cannot
+	// alias into columns at any window size.
 	float luma = dot(col, vec3(0.299, 0.587, 0.114));
 	float is_star = smoothstep(0.22, 0.70, luma);
-	float phase = hash21(cell) * 6.28318;
-	float breath = 0.72 + 0.28 * sin(TIME * (0.9 + hash21(cell + 3.7) * 1.6) + phase);
-	col += src.rgb * is_star * breath * 0.55 * twinkle * bright;
-
-	// A few 1px sparkles that only appear for a moment, so the field is never
-	// perfectly static even on a sparse plate.
-	float spark = step(0.9985, hash21(cell + floor(TIME * 0.7) * 17.0));
-	vec3 spark_col = mix(tint_a.rgb, tint_b.rgb, hash21(cell + 9.1));
-	col += spark_col * spark * 0.75 * twinkle;
+	float breath = 0.78 + 0.22 * sin(TIME * 0.80 + UV.x * 9.0 + UV.y * 13.0);
+	breath *= 0.90 + 0.10 * sin(TIME * 0.37 - UV.x * 5.0 + UV.y * 3.0);
+	col += src.rgb * is_star * breath * 0.46 * twinkle * bright;
 
 	// Horizontal nebula wash that shifts hue over a minute. `nebula` is the
 	// per-screen strength: near-invisible on the consoles, a soft coloured
