@@ -12,6 +12,30 @@ uniform float base_light = 0.38;
 uniform float specular = 0.12;
 uniform float disc_radius = 0.90; // disc size inside the padded texture box
 uniform vec2 planet_res = vec2(256.0, 256.0);
+// Title-screen life: slow drifting cloud bands over the baked surface. Zero on
+// every other screen so the design/draft portraits stay still.
+uniform float cloud_amount = 0.0;
+uniform float cloud_speed = 0.06;
+
+float pv_hash(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float pv_noise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	return mix(mix(pv_hash(i), pv_hash(i + vec2(1.0, 0.0)), u.x),
+		mix(pv_hash(i + vec2(0.0, 1.0)), pv_hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+float pv_fbm(vec2 p) {
+	float v = 0.0;
+	v += pv_noise(p) * 0.55;
+	v += pv_noise(p * 2.03 + vec2(11.0, 3.0)) * 0.30;
+	v += pv_noise(p * 4.01 + vec2(2.0, 17.0)) * 0.15;
+	return v;
+}
 
 void fragment() {
 	vec4 src = texture(TEXTURE, UV);
@@ -38,6 +62,20 @@ void fragment() {
 		// Wrap the terminator so unlit terrain keeps a readable cool value.
 		float lit = base_light + (1.0 - base_light) * pow(ndl, 0.85);
 		col = src.rgb * mix(vec3(0.80, 0.86, 1.0), vec3(1.06, 1.02, 0.97), lit);
+
+		// Cloud bands: a slow horizontal weather layer, compressed toward the
+		// limb by the same sphere normal. Kept very low contrast so the baked
+		// craters and the terminator still lead.
+		if (cloud_amount > 0.001) {
+			vec2 cp = p * vec2(2.1, 2.7);
+			cp.x += TIME * cloud_speed;
+			float n = pv_fbm(vec2(cp.x, cp.y + sin(cp.x * 0.45) * 0.35));
+			n = smoothstep(0.48, 0.80, n);
+			float band = 0.55 + 0.45 * sin(p.y * 8.0 + TIME * 0.025);
+			float inside = smoothstep(1.0, 0.80, length(p));
+			float cl = n * band * inside;
+			col = mix(col, vec3(0.84, 0.89, 0.96), cl * 0.17 * cloud_amount);
+		}
 
 		// Specular sheen on the lit shoulder.
 		vec3 h = normalize(ld + vec3(0.0, 0.0, 1.0));

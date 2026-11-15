@@ -14,6 +14,9 @@ func _ready() -> void:
 		"planet_size": 0.92,
 		"planet_asset": "rocky",
 		"dim": 0.58,
+		# Home-screen life: drifting cloud bands + a barely-there sway.
+		"planet_clouds": 1.0,
+		"planet_sway": 1.0,
 	})
 	_build_ui()
 	_build_howto()
