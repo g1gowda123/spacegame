@@ -109,8 +109,8 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	})
 
 	var plate := Panel.new()
-	plate.position = Vector2(8, 69)
-	plate.size = Vector2(180, 18)
+	plate.position = Vector2(8, 68)
+	plate.size = Vector2(180, 20)
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plate.add_theme_stylebox_override("panel", UIKit.style_panel(
 		UIKit.NAME, Color(0, 0, 0, 0), 0, 0
@@ -119,8 +119,8 @@ func _make_card(p: Dictionary, idx: int) -> void:
 	c.add_child(plate)
 
 	var name := UIKit.label(str(p["name"]), 9, UIKit.NAME, true, HORIZONTAL_ALIGNMENT_CENTER)
-	name.position = Vector2(4, 72)
-	name.size = Vector2(180, 13)
+	name.position = Vector2(4, 70)
+	name.size = Vector2(180, 17)
 	c.add_child(name)
 
 	var star_type := str(p.get("star_type", "")).strip_edges()
