@@ -1335,3 +1335,14 @@ than a screen from another build.
   - Zero interference: `mouse_filter = Control.MOUSE_FILTER_IGNORE` on all ambient nodes; rendered behind UI sheets and menus.
   - Verification: Headless smoke exit 0, native frame capture `qa_title_new2.png` verified, data audit 49/49 PASS.
   - Git: Committed locally per directive, not pushed.
+- **13:55 — Retro video-game pixel art remake of Deep-Space Research Probe.**
+  - User requested the Deep-Space Research Probe look "more retro style game like".
+  - Replaced the thin vector line-art drawing with a 4-frame animated chunky pixel-art sprite (generated dynamically into `ImageTexture`s at runtime using exact retro palette):
+    - Bold dark contour outline (`#0e181c`) with off-white armor plating and gold thermal foil core.
+    - Symmetrical solar array wings with deep navy cells and cyan frames.
+    - Stepped parabolic dish on top with an active red transmitter beacon (`#f05a46`/`#ffa490`) that pulses.
+    - Flickering cyan ion-drive plume (`#4ae3c0`/`#92f6de`) cycling through 4 animated flame states at 6 FPS.
+    - 2x integer scaling (66x40 screen pixels) with nearest-neighbor texture filtering, perfectly matching the fat-pixel font size of `ORBIT & OUTPLAY`.
+    - Quantized integer-pixel floating bob (`sway` and `bob`), keeping all sprite pixels aligned to the game's retro grid.
+  - Verification: Clean native frame capture `qa_retro_final.png`, headless smoke exit 0, data audit 49/49 PASS.
+  - Git: Committed locally, not pushed.

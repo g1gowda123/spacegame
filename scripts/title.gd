@@ -56,6 +56,7 @@ class FloatingCosmos:
 	## 4. Occasional micrometeoroid streak dashing across the upper starfield.
 
 	var _t: float = 0.0
+	var _probe_textures: Array[ImageTexture] = []
 
 	var _asteroids: Array[Dictionary] = [
 		{"pos": Vector2(495.0, 68.0), "vel": Vector2(-2.2, 0.7), "rot": 0.4, "vrot": 0.18, "r": 2.2, "alpha": 0.60},
@@ -65,6 +66,130 @@ class FloatingCosmos:
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_init_probe_textures()
+
+	func _init_probe_textures() -> void:
+		var palette := {
+			".": Color(0, 0, 0, 0),
+			"K": Color("#0e181c"),
+			"W": Color("#f2eee1"),
+			"G": Color("#5e6e69"),
+			"Y": Color("#d9ad52"),
+			"B": Color("#163b52"),
+			"C": Color("#48a6bf"),
+			"R": Color("#f05a46"),
+			"r": Color("#ffa490"),
+			"L": Color("#62e8cc"),
+			"F": Color("#4ae3c0"),
+			"f": Color("#92f6de"),
+		}
+
+		var frames_data: Array[Array] = [
+			# Frame 0: Beacon bright ping, small ion flame
+			[
+				"................r",
+				"...............RR",
+				"..............KKK",
+				".............KWWW",
+				"............KWWWW",
+				".............KKKG",
+				"..............KKG",
+				"...KKKKKKKKK...KK",
+				"..KCCCCCCCCCK.KWW",
+				"..KCBBKCBBKCKKWWL",
+				".KKCBBKCBBKCKKWYY",
+				".KKCBBKCBBKCKKWYY",
+				"..KCBBKCBBKCKKWWY",
+				"..KCCCCCCCCCK.KGG",
+				"...KKKKKKKKK...KK",
+				"...............KK",
+				"..............KFF",
+				"...............FF",
+				"................F",
+				".................",
+			],
+			# Frame 1: Beacon standard, medium ion flame
+			[
+				"................R",
+				"...............RR",
+				"..............KKK",
+				".............KWWW",
+				"............KWWWW",
+				".............KKKG",
+				"..............KKG",
+				"...KKKKKKKKK...KK",
+				"..KCCCCCCCCCK.KWW",
+				"..KCBBKCBBKCKKWWL",
+				".KKCBBKCBBKCKKWYY",
+				".KKCBBKCBBKCKKWYY",
+				"..KCBBKCBBKCKKWWY",
+				"..KCCCCCCCCCK.KGG",
+				"...KKKKKKKKK...KK",
+				"...............KK",
+				"..............KFf",
+				"..............Kff",
+				"...............FF",
+				".................",
+			],
+			# Frame 2: Beacon dim, long ion flame
+			[
+				"................R",
+				"................R",
+				"..............KKK",
+				".............KWWW",
+				"............KWWWW",
+				".............KKKG",
+				"..............KKG",
+				"...KKKKKKKKK...KK",
+				"..KCCCCCCCCCK.KWW",
+				"..KCBBKCBBKCKKWWL",
+				".KKCBBKCBBKCKKWYY",
+				".KKCBBKCBBKCKKWYY",
+				"..KCBBKCBBKCKKWWY",
+				"..KCCCCCCCCCK.KGG",
+				"...KKKKKKKKK...KK",
+				"...............KK",
+				"..............Kff",
+				"..............Kff",
+				"...............FF",
+				"................F",
+			],
+			# Frame 3: Beacon standard, medium ion flame
+			[
+				"................R",
+				"...............RR",
+				"..............KKK",
+				".............KWWW",
+				"............KWWWW",
+				".............KKKG",
+				"..............KKG",
+				"...KKKKKKKKK...KK",
+				"..KCCCCCCCCCK.KWW",
+				"..KCBBKCBBKCKKWWL",
+				".KKCBBKCBBKCKKWYY",
+				".KKCBBKCBBKCKKWYY",
+				"..KCBBKCBBKCKKWWY",
+				"..KCCCCCCCCCK.KGG",
+				"...KKKKKKKKK...KK",
+				"...............KK",
+				"..............KFf",
+				"...............Ff",
+				"...............FF",
+				".................",
+			],
+		]
+
+		for f in frames_data:
+			var img := Image.create(33, 20, false, Image.FORMAT_RGBA8)
+			for y in range(f.size()):
+				var row_half: String = str(f[y])
+				var full_row: String = row_half
+				for x in range(15, -1, -1):
+					full_row += row_half[x]
+				for x in range(33):
+					var ch := full_row[x]
+					img.set_pixel(x, y, palette.get(ch, Color(0, 0, 0, 0)))
+			_probe_textures.append(ImageTexture.create_from_image(img))
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -120,89 +245,30 @@ class FloatingCosmos:
 		draw_line(b_pos - Vector2(0, 3), b_pos + Vector2(0, 3), Color(0.32, 0.88, 0.77, 0.45), 1.0)
 		draw_circle(b_pos, 1.2, Color(0.85, 0.94, 0.90, 0.85))
 
-	func _pt(origin: Vector2, ux: Vector2, uy: Vector2, lx: float, ly: float) -> Vector2:
-		return origin + ux * lx + uy * ly
-
 	func _draw_probe() -> void:
-		var p_pos := Vector2(540.0 + sin(_t * 0.20) * 16.0, 102.0 + cos(_t * 0.32) * 8.0)
-		var p_rot := sin(_t * 0.16) * 0.07
-		var ux := Vector2(cos(p_rot), sin(p_rot))
-		var uy := Vector2(-sin(p_rot), cos(p_rot))
+		if _probe_textures.is_empty():
+			return
+		var frame_idx := int(fmod(_t * 6.0, float(_probe_textures.size())))
+		var tex: ImageTexture = _probe_textures[frame_idx]
 
-		# Solar wing mounts & panels
-		draw_line(_pt(p_pos, ux, uy, -5.0, 0.0), _pt(p_pos, ux, uy, -8.0, 0.0), Color("#5a6b68"), 1.0)
-		draw_line(_pt(p_pos, ux, uy, 5.0, 0.0), _pt(p_pos, ux, uy, 8.0, 0.0), Color("#5a6b68"), 1.0)
+		# Discrete integer pixel bobbing & sway for classic retro feel
+		var sway := int(round(sin(_t * 0.40) * 12.0))
+		var bob := int(round(cos(_t * 0.70) * 5.0))
+		var p_pos := Vector2(540 + sway, 96 + bob)
 
-		# Left solar panel (deep blue cells + cyan border + 2x2 grid)
-		var lp := PackedVector2Array([
-			_pt(p_pos, ux, uy, -21.0, -3.5),
-			_pt(p_pos, ux, uy, -8.0, -3.5),
-			_pt(p_pos, ux, uy, -8.0, 3.5),
-			_pt(p_pos, ux, uy, -21.0, 3.5),
-		])
-		draw_colored_polygon(lp, Color(0.08, 0.16, 0.24, 0.95))
-		draw_polyline(lp, Color(0.24, 0.48, 0.62, 0.90), 1.0)
-		draw_line(_pt(p_pos, ux, uy, -14.5, -3.5), _pt(p_pos, ux, uy, -14.5, 3.5), Color(0.24, 0.48, 0.62, 0.65), 1.0)
-		draw_line(_pt(p_pos, ux, uy, -21.0, 0.0), _pt(p_pos, ux, uy, -8.0, 0.0), Color(0.24, 0.48, 0.62, 0.50), 1.0)
+		# Draw the retro pixel-art probe sprite centered (2x integer scaling: 66x40 for perfect 2x2 fat pixels)
+		var spr_w := 66.0
+		var spr_h := 40.0
+		draw_texture_rect(tex, Rect2(p_pos - Vector2(spr_w * 0.5, spr_h * 0.5), Vector2(spr_w, spr_h)), false)
 
-		# Right solar panel
-		var rp := PackedVector2Array([
-			_pt(p_pos, ux, uy, 8.0, -3.5),
-			_pt(p_pos, ux, uy, 21.0, -3.5),
-			_pt(p_pos, ux, uy, 21.0, 3.5),
-			_pt(p_pos, ux, uy, 8.0, 3.5),
-		])
-		draw_colored_polygon(rp, Color(0.08, 0.16, 0.24, 0.95))
-		draw_polyline(rp, Color(0.24, 0.48, 0.62, 0.90), 1.0)
-		draw_line(_pt(p_pos, ux, uy, 14.5, -3.5), _pt(p_pos, ux, uy, 14.5, 3.5), Color(0.24, 0.48, 0.62, 0.65), 1.0)
-		draw_line(_pt(p_pos, ux, uy, 8.0, 0.0), _pt(p_pos, ux, uy, 21.0, 0.0), Color(0.24, 0.48, 0.62, 0.50), 1.0)
-
-		# Antenna mast and parabolic dish
-		draw_line(_pt(p_pos, ux, uy, 0.0, -4.0), _pt(p_pos, ux, uy, 0.0, -9.0), Color(0.55, 0.65, 0.62), 1.0)
-		var dish_pts := PackedVector2Array([
-			_pt(p_pos, ux, uy, -4.0, -11.0),
-			_pt(p_pos, ux, uy, 0.0, -9.0),
-			_pt(p_pos, ux, uy, 4.0, -11.0),
-		])
-		draw_polyline(dish_pts, Color(0.86, 0.90, 0.88), 1.0)
-		draw_line(_pt(p_pos, ux, uy, 0.0, -9.0), _pt(p_pos, ux, uy, 0.0, -12.0), Color(0.81, 0.48, 0.45), 1.0)
-
-		# Central chassis bus
-		var bus := PackedVector2Array([
-			_pt(p_pos, ux, uy, -5.0, -4.0),
-			_pt(p_pos, ux, uy, 5.0, -4.0),
-			_pt(p_pos, ux, uy, 5.0, 4.0),
-			_pt(p_pos, ux, uy, -5.0, 4.0),
-		])
-		draw_colored_polygon(bus, Color(0.56, 0.62, 0.58, 0.98))
-		draw_polyline(bus, Color(0.78, 0.86, 0.82, 0.95), 1.0)
-
-		# Gold foil core panel
-		var foil := PackedVector2Array([
-			_pt(p_pos, ux, uy, -2.5, -2.0),
-			_pt(p_pos, ux, uy, 2.5, -2.0),
-			_pt(p_pos, ux, uy, 2.5, 2.0),
-			_pt(p_pos, ux, uy, -2.5, 2.0),
-		])
-		draw_colored_polygon(foil, Color(0.78, 0.62, 0.31, 0.95))
-
-		# Telemetry beacon (blinks every 1.8s)
-		var b_cycle := fmod(_t, 1.8)
-		var beacon_pt := _pt(p_pos, ux, uy, 0.0, 4.5)
-		if b_cycle < 0.16:
-			draw_circle(beacon_pt, 1.5, Color(0.35, 0.95, 0.84))
-			draw_circle(beacon_pt, 3.5, Color(0.35, 0.95, 0.84, 0.35))
-		else:
-			draw_circle(beacon_pt, 1.0, Color(0.30, 0.60, 0.55, 0.45))
-
-		# Subtle attitude RCS micro-puff every 8 seconds
-		var rcs_t := fmod(_t, 8.0)
-		if rcs_t < 0.42:
-			var rcs_prog := rcs_t / 0.42
-			var rcs_pos: Vector2 = _pt(p_pos, ux, uy, -5.0 - rcs_prog * 5.0, -2.0 - rcs_prog * 1.5)
-			var rcs_alpha := (1.0 - rcs_prog) * 0.70
-			draw_circle(rcs_pos, 0.9, Color(0.85, 0.95, 0.95, rcs_alpha))
-			draw_circle(rcs_pos + ux * 1.5, 0.6, Color(0.70, 0.85, 0.90, rcs_alpha * 0.6))
+		# Retro radio wave ping radiating from the antenna dish tip every 3.8s
+		var ping_cycle := fmod(_t, 3.8)
+		if ping_cycle < 1.2:
+			var prog := ping_cycle / 1.2
+			var wave_r := 6.0 + prog * 20.0
+			var wave_a := (1.0 - prog) * 0.55
+			var dish_tip := p_pos + Vector2(0, -18)
+			draw_arc(dish_tip, wave_r, -PI * 0.85, -PI * 0.15, 14, Color(0.94, 0.35, 0.27, wave_a), 2.0, true)
 
 	func _draw_meteoroid() -> void:
 		var m_t := fmod(_t, 11.0)
