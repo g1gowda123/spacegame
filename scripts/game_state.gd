@@ -778,6 +778,54 @@ const EVENTS := [
 			{"label": "LOG AND MOVE", "desc": "+1 power next sector.", "effect": {"next_power": 1}},
 		],
 	},
+	{
+		"id": "pulsar_fix", "title": "PULSAR FIX",
+		"body": "A millisecond pulsar gives the nav team a free timing fix, if the receiver can spare the cycles.",
+		"options": [
+			{"label": "LOCK THE PULSAR", "desc": "+2 data buffer, -2 sols next sector.", "effect": {"next_data": 2, "next_sol": -2}},
+			{"label": "STAY OPTICAL", "desc": "+1 power, +3 heat next sector.", "effect": {"next_power": 1, "next_heat": 3}},
+		],
+	},
+	{
+		"id": "sail_trial", "title": "SOLAR SAIL TRIAL",
+		"body": "A piggyback solar sail can be deployed on the cruise. It is either a science headline or a thermal problem.",
+		"options": [
+			{"label": "DEPLOY SAIL", "desc": "+220 science, +6 heat next sector.", "effect": {"bonus_science": 220, "next_heat": 6}},
+			{"label": "KEEP IT STOWED", "desc": "+2 delta-v next sector.", "effect": {"next_dv": 2}},
+		],
+	},
+	{
+		"id": "debris_sweep", "title": "DEBRIS SWEEP",
+		"body": "A tracked debris cloud crosses the approach corridor. The shield can take the hits, or the pilot can thread it.",
+		"options": [
+			{"label": "RUN THE SHIELD", "desc": "+1 integrity, -2 sols next sector.", "effect": {"next_integrity": 1, "next_sol": -2}},
+			{"label": "THREAD IT", "desc": "+2 delta-v, -1 integrity next sector.", "effect": {"next_dv": 2, "next_integrity": -1}},
+		],
+	},
+	{
+		"id": "host_city", "title": "HOST CITY",
+		"body": "The launch range offers a public outreach day. The agency can open the pad or keep the schedule quiet.",
+		"options": [
+			{"label": "OPEN THE PAD", "desc": "+3 approval, -$20M.", "effect": {"approval": 3, "budget": -20}},
+			{"label": "KEEP IT QUIET", "desc": "+$30M, -1 approval.", "effect": {"budget": 30, "approval": -1}},
+		],
+	},
+	{
+		"id": "radiator_swap", "title": "RADIATOR SWAP",
+		"body": "A ground-test radiator is available before the next departure. It is better hardware, or a quick sale.",
+		"options": [
+			{"label": "SWAP IT IN", "desc": "-$35M, -6 heat next sector.", "effect": {"budget": -35, "next_heat": -6}},
+			{"label": "SELL THE CORE", "desc": "+$25M, +5 heat next sector.", "effect": {"budget": 25, "next_heat": 5}},
+		],
+	},
+	{
+		"id": "open_source", "title": "OPEN-SOURCE FLIGHT SOFTWARE",
+		"body": "The team can publish its scheduler as a public good, or license it to a partner agency.",
+		"options": [
+			{"label": "PUBLISH IT", "desc": "+2 approval, -$10M.", "effect": {"approval": 2, "budget": -10}},
+			{"label": "LICENSE IT", "desc": "+$35M, -1 approval.", "effect": {"budget": 35, "approval": -1}},
+		],
+	},
 ]
 
 

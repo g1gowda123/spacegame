@@ -1077,18 +1077,26 @@ func _update_ascent_phase(delta: float) -> void:
 	_velocity += (_acceleration + 18.0) * delta
 	_altitude += _velocity * delta
 
-	# Sky transition: Dusk teal -> Royal Indigo -> Cosmic Violet -> Void Black
-	var t := clampf(_phase_time / 2.6, 0.0, 1.0)
+	# One long, eased atmosphere -> space handoff. The old version switched
+	# colour halves in a straight line and only began the space fade at 50 %,
+	# so the star plate arrived as a block while the sky was already dark.
+	var t := clampf(_phase_time / 3.4, 0.0, 1.0)
+	var e := smoothstep(0.0, 1.0, t)
 	var col_dusk := Color(0.04, 0.07, 0.12)
-	var col_mid := Color(0.03, 0.04, 0.18)
+	var col_mid := Color(0.025, 0.035, 0.16)
 	var col_space := Color(0.008, 0.012, 0.024)
 	if _sky_rect != null:
-		if t < 0.5:
-			_sky_rect.color = col_dusk.lerp(col_mid, t * 2.0)
-		else:
-			_sky_rect.color = col_mid.lerp(col_space, (t - 0.5) * 2.0)
-	if _space_root != null and t >= 0.5:
-		_space_root.modulate.a = (t - 0.5) * 2.0
+		var sky := col_dusk.lerp(col_mid, smoothstep(0.0, 0.55, e))
+		sky = sky.lerp(col_space, smoothstep(0.45, 1.0, e))
+		_sky_rect.color = sky
+	# Stars come up first and early; the Earth limb waits until the airglow
+	# has thinned, so the horizon does not pop on at the phase change.
+	if _space_root != null:
+		_space_root.modulate.a = smoothstep(0.18, 1.0, t)
+	if _earth_disc != null:
+		_earth_disc.modulate.a = smoothstep(0.48, 0.98, t)
+	if _clouds_root != null:
+		_clouds_root.modulate.a = 1.0 - smoothstep(0.30, 0.86, t)
 
 	# Max-Q Condensation Cone (flares at t between 0.35 and 0.65)
 	if _shock_cone != null:
@@ -1110,7 +1118,7 @@ func _update_ascent_phase(delta: float) -> void:
 	if _clouds_root != null:
 		_clouds_root.queue_redraw()
 
-	if _phase_time >= 2.6:
+	if _phase_time >= 3.4:
 		_enter_space_phase()
 
 
@@ -1125,6 +1133,10 @@ func _enter_space_phase() -> void:
 		_shock_cone.visible = false
 	if _space_root != null:
 		_space_root.modulate.a = 1.0
+	if _earth_disc != null:
+		_earth_disc.modulate.a = 1.0
+	if _clouds_root != null:
+		_clouds_root.visible = false
 
 	# Stage Separation: Booster drops away, fairings split, payload is revealed.
 	if _ship_sprite != null:
