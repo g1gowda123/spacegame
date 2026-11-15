@@ -209,3 +209,21 @@ debrief once the next sector starts.
   matching chips), `--arsenal` (open the sheet), `--rack-dump` (print entries).
   Capture evidence `/tmp/opencode/vfx/rack_tip.png`, `arsenal_final.png`,
   `rack_many.png`, `rack_hl.png`.
+
+## Living title planet (`shaders/planet_view.gdshader` + `SpaceBackdrop`)
+
+The home-screen disc is the only planet with motion; all other portraits stay
+still so the UI reads as a document.
+
+- `cloud_amount` / `cloud_speed`: a low-contrast fbm cloud layer with latitude
+  banding, drifting horizontally; compressed at the limb by the disc mask.
+- `turn_amount`: rotates the surface **sampling** around Y and reprojects
+  (`n2 = rotateY(n)`), so baked markings slide across the disc while the
+  terminator and sphere normal stay fixed. Oscillates ±0.18 rad instead of
+  wrapping, because the source PNG only has the near hemisphere.
+- `SpaceBackdrop` sway: ±0.02 rad over a 74 s period, pivot at the disc centre.
+- Enable only from `title.gd`:
+  `configure({"planet_clouds": 1.0, "planet_turn": 1.0, "planet_sway": 1.0})`.
+  Defaults are 0, so split-screen/draft/debrief portraits are unaffected.
+- QA: `--screen=title` and capture at 1 s / 8 s / 15 s; the crater pattern and
+  cloud bands must differ between frames with no transparent holes.

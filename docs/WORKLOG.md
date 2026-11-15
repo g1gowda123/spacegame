@@ -1210,3 +1210,4 @@ must not sound like an mp3 starting.
   - `python tools/audit_data.py` -> 49 checks, 0 failed.
 
 
+- **07:36 — VFX / living title planet:** `planet_view.gdshader` gained opt-in drifting cloud bands and a small axial turn (surface sampling rotated around Y; fixed normal/terminator), and `SpaceBackdrop` gained a 74 s ±0.02 rad sway. `title.gd` enables all three via `configure`; other screens default off. Verified t=1/8/15 s (`title_turn*.png`), draft planet still static, no backface holes; headless clean.

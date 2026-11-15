@@ -83,7 +83,7 @@ def finish(img: Image.Image, ship: Image.Image) -> Image.Image:
     pad.paste(img, (4, 4), img)
     img = pad.resize((380, 140), Image.Resampling.LANCZOS)
     a = np.asarray(img).astype(np.float32)
-    a[..., 3] = np.where(a[..., 3] > 110, 255, 0)
+    a[..., 3] = np.where(a[..., 3] > 150, 255, 0)
     # palette: reuse the sheet's own hue family by pulling the hero toward it
     base = np.asarray(ship.convert("RGB")).astype(np.float32)
     base_mean = base.reshape(-1, 3).mean(axis=0)
@@ -93,7 +93,8 @@ def finish(img: Image.Image, ship: Image.Image) -> Image.Image:
     a[m, :3] = np.clip(a[m, :3] + shift * 0.55, 0, 255)
     out = Image.fromarray(a.astype(np.uint8), "RGBA")
     q = out.convert("RGB").quantize(colors=14, method=Image.MEDIANCUT).convert("RGB")
-    q = ImageEnhance.Sharpness(q).enhance(1.6)
+    q = q.filter(ImageFilter.UnsharpMask(radius=1, percent=130, threshold=2))
+    q = ImageEnhance.Sharpness(q).enhance(1.5)
     out = q.convert("RGBA")
     out.putalpha(Image.fromarray(a[..., 3].astype(np.uint8)))
     return out
@@ -102,7 +103,7 @@ def finish(img: Image.Image, ship: Image.Image) -> Image.Image:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="")
-    ap.add_argument("--denoise", type=float, default=0.42)
+    ap.add_argument("--denoise", type=float, default=0.40)
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     ids = [i for i in IDS if not args.only or i in args.only.split(",")]
