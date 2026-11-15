@@ -105,15 +105,9 @@ func _build_ui() -> void:
 
 	var daily_note := "BEST RUN  %s   ·   CMD %s" % [_fmt(GameState.best_score), GameState.player_name]
 	var best := UIKit.mono(daily_note, 7, UIKit.INK_SOFT)
-	best.position = Vector2(44, 278)
+	best.position = Vector2(44, 318)
 	add_child(best)
 
-	var sig := UIKit.mono("●  SIGNAL LOCKED", 6, UIKit.SIGNAL)
-	sig.position = Vector2(44, 308)
-	add_child(sig)
-	var tw := create_tween().set_loops()
-	tw.tween_property(sig, "modulate:a", 0.35, 1.6)
-	tw.tween_property(sig, "modulate:a", 1.0, 1.6)
 
 
 func _left_scrim() -> Texture2D:
