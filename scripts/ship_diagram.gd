@@ -155,7 +155,13 @@ func _draw() -> void:
 	# uniformly. The old fit used size/ts per axis, which squashed a 190x70 hull
 	# into a 190x60 control and made 1 px panel lines drop rows as scanlines.
 	var base := Vector2(190.0, 70.0)
-	var sf := minf(size.x / base.x, size.y / base.y)
+	var raw := minf(size.x / base.x, size.y / base.y)
+	# Snap to whole multiples of the native sheet whenever the control has room.
+	# A fractional nearest-neighbour scale drops source rows in a regular beat,
+	# which reads as stray scanlines across the hull (the design-screen bug).
+	var sf := raw
+	if raw >= 1.0:
+		sf = floorf(raw)
 	var draw_size := base * sf
 	var origin := (size - draw_size) * 0.5
 	draw_set_transform(origin, 0.0, Vector2(sf, sf))

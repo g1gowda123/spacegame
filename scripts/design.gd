@@ -146,7 +146,6 @@ func _build_center() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 2)
 	p.add_child(v)
-	v.add_child(UIKit.vspace(4))
 	v.add_child(UIKit.head("SPACECRAFT", 10, UIKit.INK))
 	UIKit.hairline(v, 0, 0, 188, UIKit.LINE)
 
@@ -174,7 +173,7 @@ func _build_center() -> void:
 
 	warning_label = UIKit.mono("Select hull, vehicle, objective and two instruments.", 7, UIKit.SIGNAL)
 	warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	warning_label.custom_minimum_size = Vector2(188, 24)
+	warning_label.custom_minimum_size = Vector2(188, 18)
 	warning_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	v.add_child(warning_label)
 

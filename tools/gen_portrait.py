@@ -116,8 +116,15 @@ def card(img: Image.Image) -> Image.Image:
     rgb = np.asarray(img.convert("RGB")).astype(np.float32)
     yy, xx = np.mgrid[0:160, 0:160]
     d = np.sqrt(((xx - 80) / 80.0) ** 2 + ((yy - 78) / 80.0) ** 2)
-    v = np.clip(1.03 - 0.22 * np.clip(d - 0.62, 0, 1) ** 1.4, 0, 1.03)
-    rgb = np.clip(rgb * v[..., None], 0, 255).astype(np.uint8)
+    v = np.clip(1.03 - 0.18 * np.clip(d - 0.70, 0, 1) ** 1.4, 0, 1.03)
+    rgb = rgb * v[..., None]
+    # the studio backdrop collapses to near-black at this crop size; pull it into
+    # the card's navy so the frame reads as a lit alcove, not a hole
+    lum = rgb.mean(axis=2)
+    blend = np.clip((52.0 - lum) / 30.0, 0, 1)[..., None] * 0.85
+    navy = np.array([19, 26, 38], dtype=np.float32)
+    rgb = rgb * (1 - blend) + navy * blend
+    rgb = np.clip(rgb, 0, 255).astype(np.uint8)
     return Image.fromarray(rgb).convert("RGBA")
 
 
