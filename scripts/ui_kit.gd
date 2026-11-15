@@ -336,57 +336,97 @@ static func button(
 		b.add_theme_color_override("font_pressed_color", Color("#0b160f"))
 		b.add_theme_color_override("font_disabled_color", DIM)
 
+	# WeakRef, not the button: a control holding a lambda that captures the
+	# control is a reference cycle, and Godot reports it as an ObjectDB leak when
+	# the screen exits (that failed `native_screens.py` on DESTINATION DRAFT).
+	var press_ref: WeakRef = weakref(b)
 	b.pressed.connect(func():
 		if GameState:
 			GameState.sfx("click")
-		if not b.disabled:
-			var ptw: Tween = b.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			ptw.tween_property(b, "scale", Vector2(1.055 if accent else 1.045, 1.055 if accent else 1.045), 0.08)
-			ptw.tween_property(b, "scale", Vector2(1.045 if accent else 1.035, 1.045 if accent else 1.035), 0.10)
+		var pressed_btn: Control = press_ref.get_ref() as Control
+		if pressed_btn == null:
+			return
+		var is_disabled := pressed_btn is Button and (pressed_btn as Button).disabled
+		if is_disabled:
+			return
+		press_punch(pressed_btn, 1.045 if accent else 1.035)
 	)
 	attach_hover_pop(b, 1.045 if accent else 1.035, 2.0)
 	return b
 
 
+static func press_punch(ctrl: Control, rest_scale: float = 1.035) -> void:
+	## Click acknowledgement: a short Back-out punch that settles at the resting
+	## scale. Informational cards use it too, so a click that commits nothing still
+	## feels wired to the pointer.
+	if ctrl == null:
+		return
+	_kill_pop_tweens(ctrl)
+	var tw := ctrl.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ctrl, "scale", Vector2(rest_scale + 0.02, rest_scale + 0.02), 0.08)
+	tw.tween_property(ctrl, "scale", Vector2(rest_scale, rest_scale), 0.12)
+	ctrl.set_meta("hover_tw", tw)
+
+
+static func _kill_pop_tweens(ctrl: Control) -> void:
+	## One owner for scale: hover, exit and press all reuse these two meta slots, so
+	## a click during a lift cannot leave two tweens fighting over the same value.
+	for key in ["hover_tw", "pop_tw"]:
+		if ctrl.has_meta(key):
+			var old: Tween = ctrl.get_meta(key)
+			if old != null and old.is_valid():
+				old.kill()
+
+
 static func attach_hover_pop(
 	ctrl: Control, scale_mult: float = 1.035, lift_y: float = 2.0
 ) -> void:
+	## Shared control feel: the thing answers the pointer by lifting a couple of
+	## pixels and rising above its neighbours. Base position is captured once, on
+	## the first hover, so a mid-animation re-entry cannot bake a wrong origin.
+	## The closure holds a WeakRef so it cannot keep the control alive.
+	var ref: WeakRef = weakref(ctrl)
 	ctrl.mouse_entered.connect(func():
-		if ctrl is Button and ctrl.disabled:
+		var c: Control = ref.get_ref() as Control
+		if c == null:
 			return
-		ctrl.z_index = 2
-		if ctrl.size.x > 0 and ctrl.size.y > 0:
-			ctrl.pivot_offset = ctrl.size * 0.5
-		# get_meta(name, null) errors on a missing key in Godot 4 (the default is
-		# treated as "no default"), so every read is guarded — this used to spam
-		# "does not have any 'meta' values" on the first hover of every control.
-		var old: Tween = ctrl.get_meta("pop_tw") if ctrl.has_meta("pop_tw") else null
-		if old != null and old.is_valid():
-			old.kill()
-		if not ctrl.has_meta("base_y") or ctrl.scale == Vector2.ONE:
-			ctrl.set_meta("base_y", ctrl.position.y)
-		var base_y: float = float(ctrl.get_meta("base_y")) if ctrl.has_meta("base_y") else ctrl.position.y
-		var tw: Tween = ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_property(ctrl, "scale", Vector2(scale_mult, scale_mult), 0.14)
-		if ctrl.get_parent() != null and ctrl.get_parent() is not Container:
-			tw.tween_property(ctrl, "position:y", base_y - lift_y, 0.14)
-		ctrl.set_meta("pop_tw", tw)
+		var is_disabled := c is Button and (c as Button).disabled
+		if is_disabled:
+			return
+		_hover_pop_enter(c, scale_mult, lift_y)
 	)
 	ctrl.mouse_exited.connect(func():
-		ctrl.z_index = 0
-		# get_meta(name, null) errors on a missing key in Godot 4 (the default is
-		# treated as "no default"), so every read is guarded — this used to spam
-		# "does not have any 'meta' values" on the first hover of every control.
-		var old: Tween = ctrl.get_meta("pop_tw") if ctrl.has_meta("pop_tw") else null
-		if old != null and old.is_valid():
-			old.kill()
-		var base_y: float = float(ctrl.get_meta("base_y")) if ctrl.has_meta("base_y") else ctrl.position.y
-		var tw: Tween = ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-		tw.tween_property(ctrl, "scale", Vector2.ONE, 0.14)
-		if ctrl.get_parent() != null and ctrl.get_parent() is not Container:
-			tw.tween_property(ctrl, "position:y", base_y, 0.14)
-		ctrl.set_meta("pop_tw", tw)
+		var c: Control = ref.get_ref() as Control
+		if c == null:
+			return
+		_hover_pop_exit(c)
 	)
+
+
+static func _hover_pop_enter(c: Control, scale_mult: float, lift_y: float) -> void:
+	c.z_index = 2
+	if c.size.x > 0 and c.size.y > 0:
+		c.pivot_offset = c.size * 0.5
+	_kill_pop_tweens(c)
+	if not c.has_meta("base_y"):
+		c.set_meta("base_y", c.position.y)
+	var base_y: float = float(c.get_meta("base_y"))
+	var tw: Tween = c.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "scale", Vector2(scale_mult, scale_mult), 0.14)
+	if c.get_parent() != null and c.get_parent() is not Container:
+		tw.tween_property(c, "position:y", base_y - lift_y, 0.14)
+	c.set_meta("pop_tw", tw)
+
+
+static func _hover_pop_exit(c: Control) -> void:
+	c.z_index = 0
+	_kill_pop_tweens(c)
+	var base_y: float = float(c.get_meta("base_y")) if c.has_meta("base_y") else c.position.y
+	var tw: Tween = c.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(c, "scale", Vector2.ONE, 0.14)
+	if c.get_parent() != null and c.get_parent() is not Container:
+		tw.tween_property(c, "position:y", base_y, 0.14)
+	c.set_meta("pop_tw", tw)
 
 
 static func bar(width: float, height: float, color: Color) -> UIGauge:

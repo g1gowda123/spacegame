@@ -8,6 +8,11 @@ var objective_label: Label
 var selected_planet: Dictionary = {}
 var review_layer: CanvasLayer
 var _committing := false
+var _review_segs: Array = []
+var _arc_card: Control
+var _arc_frame: PanelContainer
+var _arc_hit: Control
+var _arc_tip := ""
 
 
 func _ready() -> void:
@@ -369,6 +374,7 @@ func _show_mission_review() -> void:
 	var orbit := GameState.orbit_stats(p)
 	var cm := GameState.cml()
 	var relay := GameState.sector_mode() == "relay"
+	_review_segs.clear()
 	review_layer = CanvasLayer.new()
 	review_layer.layer = 35
 	add_child(review_layer)
@@ -401,11 +407,18 @@ func _show_mission_review() -> void:
 	c.add_child(title)
 
 	# ---- transfer arc (Mission Viz / VR resource: trajectory + timeline)
+	# The arc is a card too: hovering it lifts the plate and opens a dossier on
+	# the transfer itself, so the left half of the review answers the pointer.
+	var arc_card := Control.new()
+	arc_card.position = Vector2(12, 44)
+	arc_card.size = Vector2(270, 112)
+	arc_card.pivot_offset = arc_card.size * 0.5
+	c.add_child(arc_card)
 	var traj := Control.new()
-	traj.position = Vector2(12, 44)
-	traj.size = Vector2(270, 112)
+	traj.position = Vector2.ZERO
+	traj.size = arc_card.size
 	traj.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.add_child(traj)
+	arc_card.add_child(traj)
 	var frame := UIKit.panel(Color("#060b13"), Color("#1d344a"))
 	frame.position = Vector2.ZERO
 	frame.size = traj.size
@@ -490,13 +503,39 @@ func _show_mission_review() -> void:
 	timeline.add_theme_constant_override("line_spacing", 1)
 	c.add_child(timeline)
 
+	# The plate answers the pointer: border warms, card lifts, dossier reads the
+	# transfer back to the player. Nothing here is clickable state, so the punch
+	# on press is acknowledgement only.
+	var arc_hit := Button.new()
+	arc_hit.flat = true
+	arc_hit.focus_mode = Control.FOCUS_NONE
+	arc_hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	arc_hit.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var arc_empty := StyleBoxEmpty.new()
+	for st in ["normal", "hover", "pressed", "focus"]:
+		arc_hit.add_theme_stylebox_override(st, arc_empty)
+	arc_card.add_child(arc_hit)
+	var arc_tip := "ORIGIN  EARTH\nTARGET  %s · %s\nDISTANCE  %.1f LY\nCRUISE  0.85c · %.1f YR\nORBIT  %s · %d KM\n\nCRUISE TIME IS THE PRICE OF DISTANCE: THE LONGER THE ARC, THE MORE OF THE MISSION IS SPENT BEFORE THE FIRST SOL." % [
+		str(p["name"]).to_upper(), GameState.biome_name(str(p["biome"])).to_upper(),
+		float(p["distance_ly"]), maxf(0.4, float(p["distance_ly"]) / 0.85),
+		str(GameState.orbit().get("name", "LOW")).to_upper(), int(orbit["alt_km"])
+	]
+	UIKit.hover_info(arc_hit, "TRANSFER ARC", arc_tip, UIKit.CYAN)
+	arc_hit.mouse_entered.connect(func(): _review_arc_hover(true))
+	arc_hit.mouse_exited.connect(func(): _review_arc_hover(false))
+	arc_hit.pressed.connect(func(): UIKit.press_punch(arc_card, 1.02))
+	_arc_card = arc_card
+	_arc_frame = frame
+	_arc_hit = arc_hit
+	_arc_tip = arc_tip
+
 	# ---- four mission segments (Design and Develop Science Missions)
 	var seg_x := 298.0
 	var segs := [
-		["LAUNCH", "%s · %dKG CAP" % [str(veh.get("name", "—")).to_upper(), int(veh.get("capacity", 0))], UIKit.TEXT],
-		["SPACE", "%s · %d INSTR · %dW" % [str(GameState.hull().get("name", "—")).to_upper(), GameState.run.get("instruments", []).size(), int(ship.get("power_gen", 0))], UIKit.TEXT],
-		["GROUND", "-%d%% DOWNLINK · %d PASSES/DAY" % [int(g["comms_loss"]), int(orbit["passes"])], UIKit.TEXT],
-		["USER", "%s%s" % [str(obj.get("name", "—")).to_upper(), " · FIT +10%" if bool(ship.get("science_fit", false)) else ""], UIKit.TEXT],
+		["LAUNCH", "%s · %dKG CAP" % [str(veh.get("name", "—")).to_upper(), int(veh.get("capacity", 0))]],
+		["SPACE", "%s · %d INSTR · %dW" % [str(GameState.hull().get("name", "—")).to_upper(), GameState.run.get("instruments", []).size(), int(ship.get("power_gen", 0))]],
+		["GROUND", "-%d%% DOWNLINK · %d PASSES/DAY" % [int(g["comms_loss"]), int(orbit["passes"])]],
+		["USER", "%s%s" % [str(obj.get("name", "—")).to_upper(), " · FIT +10%" if bool(ship.get("science_fit", false)) else ""]],
 	]
 	var seg_tooltips := [
 		"LAUNCH VEHICLE  %s\nPAYLOAD CAPACITY  %d KG\nCOST  $%dM\n\n%s" % [
@@ -521,60 +560,19 @@ func _show_mission_review() -> void:
 		],
 	]
 	for i in range(segs.size()):
-		var y := 42.0 + i * 27.0
-		var card_w := 288.0
-		var card_h := 23.0
-		var card := Control.new()
-		card.position = Vector2(seg_x, y)
-		card.size = Vector2(card_w, card_h)
-		card.pivot_offset = Vector2(card_w * 0.5, card_h * 0.5)
-		c.add_child(card)
+		_make_segment_card(c, 298.0, 42.0 + i * 27.0, 288.0, 23.0,
+			str(segs[i][0]), str(segs[i][1]), str(seg_tooltips[i]))
 
-		var bg := Panel.new()
-		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bg.add_theme_stylebox_override("panel", UIKit.row_style(false, false, UIKit.CYAN))
-		card.add_child(bg)
+	# QA hook: `--hover-seg=N` / `--hover-arc` boot the review with a card already
+	# hovered, so one capture proves the pop, the wash and the dossier (same idea
+	# as the sector's `--rack-highlight=`). Never fires in a normal run.
+	for raw in OS.get_cmdline_args() + OS.get_cmdline_user_args():
+		var arg := str(raw)
+		if arg == "--hover-arc":
+			call_deferred("_qa_hover_arc")
+		elif arg.begins_with("--hover-seg="):
+			call_deferred("_qa_hover_segment", int(arg.substr(12)))
 
-		var lab := UIKit.label(str(segs[i][0]), 6, UIKit.SAGE, true)
-		lab.position = Vector2(8, 4)
-		lab.size = Vector2(46, 14)
-		card.add_child(lab)
-
-		var val := UIKit.label(str(segs[i][1]), 7, UIKit.CREAM, true)
-		val.position = Vector2(56, 3)
-		val.size = Vector2(card_w - 62, 14)
-		card.add_child(val)
-
-		var btn := Button.new()
-		btn.flat = true
-		btn.focus_mode = Control.FOCUS_NONE
-		btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var empty := StyleBoxEmpty.new()
-		for st in ["normal", "hover", "pressed", "focus"]:
-			btn.add_theme_stylebox_override(st, empty)
-		card.add_child(btn)
-
-		UIKit.hover_info(btn, str(segs[i][0]) + " SEGMENT", seg_tooltips[i], UIKit.CYAN)
-
-		var base_y := y
-		btn.mouse_entered.connect(func():
-			card.z_index = 2
-			bg.add_theme_stylebox_override("panel", UIKit.row_style(false, true, UIKit.CYAN))
-			val.add_theme_color_override("font_color", Color.WHITE)
-			var tw: Tween = card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			tw.tween_property(card, "scale", Vector2(1.03, 1.03), 0.14)
-			tw.tween_property(card, "position:y", base_y - 1.5, 0.14)
-		)
-		btn.mouse_exited.connect(func():
-			card.z_index = 0
-			bg.add_theme_stylebox_override("panel", UIKit.row_style(false, false, UIKit.CYAN))
-			val.add_theme_color_override("font_color", UIKit.CREAM)
-			var tw: Tween = card.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-			tw.tween_property(card, "scale", Vector2.ONE, 0.14)
-			tw.tween_property(card, "position:y", base_y, 0.14)
-		)
 
 	var cml := UIKit.label("CML %d %s  ·  %s" % [
 		int(cm["level"]), str(cm["label"]),
@@ -596,6 +594,112 @@ func _show_mission_review() -> void:
 	commit.position = Vector2(426, 260)
 	commit.pressed.connect(_commit_route)
 	c.add_child(commit)
+
+
+## One mission segment as a hoverable card. The row keeps the printed look when
+## idle (bottom hairline, label + value on one line) and behaves like a draft
+## planet card when the pointer is on it: it lifts, gains an accent edge and a
+## wash, brightens its value, and opens a dossier with the full spec.
+func _make_segment_card(parent: Control, x: float, y: float, w: float, h: float,
+	key: String, value: String, tip: String) -> void:
+	var root := Control.new()
+	root.position = Vector2(x, y)
+	root.size = Vector2(w, h)
+	root.pivot_offset = Vector2(w * 0.5, h * 0.5)
+	parent.add_child(root)
+
+	var bg := Panel.new()
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_theme_stylebox_override("panel", UIKit.row_style(false, false, UIKit.CYAN))
+	root.add_child(bg)
+
+	var lab := UIKit.label(key, 6, UIKit.SAGE, true)
+	lab.position = Vector2(8, 4)
+	lab.size = Vector2(46, 14)
+	root.add_child(lab)
+
+	var val := UIKit.label(value, 7, UIKit.CREAM, true)
+	val.position = Vector2(56, 3)
+	val.size = Vector2(w - 64, 14)
+	root.add_child(val)
+
+	# Full-row hit target: the labels are input-transparent, so the card needs one
+	# control that owns the mouse for hover and the dossier anchor.
+	var btn := Button.new()
+	btn.flat = true
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var empty := StyleBoxEmpty.new()
+	for st in ["normal", "hover", "pressed", "focus"]:
+		btn.add_theme_stylebox_override(st, empty)
+	root.add_child(btn)
+	UIKit.hover_info(btn, "%s SEGMENT" % key, tip, UIKit.CYAN)
+
+	var seg := {
+		"root": root, "bg": bg, "val": val, "btn": btn, "base_y": y,
+		"key": key, "tip": tip, "hovered": false,
+	}
+	btn.mouse_entered.connect(func(): _seg_hover(seg, true))
+	btn.mouse_exited.connect(func(): _seg_hover(seg, false))
+	btn.pressed.connect(func(): UIKit.press_punch(root, 1.035))
+	_review_segs.append(seg)
+
+
+func _seg_hover(seg: Dictionary, on: bool) -> void:
+	if seg.is_empty():
+		return
+	seg["hovered"] = on
+	var root: Control = seg["root"]
+	var bg: Panel = seg["bg"]
+	var val: Label = seg["val"]
+	root.z_index = 2 if on else 0
+	bg.add_theme_stylebox_override("panel", UIKit.row_style(false, on, UIKit.CYAN))
+	val.add_theme_color_override("font_color", UIKit.NAME if on else UIKit.CREAM)
+	_tween_lift(root, float(seg["base_y"]), on, 1.035, 2.0)
+
+
+func _review_arc_hover(on: bool) -> void:
+	if _arc_card == null or _arc_frame == null:
+		return
+	_arc_card.z_index = 2 if on else 0
+	_arc_frame.add_theme_stylebox_override("panel", UIKit.style_panel(
+		Color("#060b13"), Color("#2f5a7a") if on else Color("#1d344a")
+	))
+	_tween_lift(_arc_card, 44.0, on, 1.02, 2.0)
+
+
+func _tween_lift(ctrl: Control, base_y: float, on: bool, scale_to: float, lift: float) -> void:
+	## Shared hover motion: cubic-out lift so the card leaves the sheet and lands,
+	## with any in-flight tween killed first so a fast in/out cannot stack.
+	var old: Tween = ctrl.get_meta("hover_tw") if ctrl.has_meta("hover_tw") else null
+	if old != null and old.is_valid():
+		old.kill()
+	if ctrl.size.x > 0.0 and ctrl.size.y > 0.0:
+		ctrl.pivot_offset = ctrl.size * 0.5
+	var tw := ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(ctrl, "scale", Vector2(scale_to, scale_to) if on else Vector2.ONE, 0.14)
+	tw.tween_property(ctrl, "position:y", base_y - lift if on else base_y, 0.14)
+	ctrl.set_meta("hover_tw", tw)
+
+
+func _qa_hover_segment(index: int) -> void:
+	## QA hook for `--hover-seg=N`: force the hover state and dossier without a
+	## real pointer, so one capture shows the pop.
+	if index < 0 or index >= _review_segs.size():
+		return
+	var seg: Dictionary = _review_segs[index]
+	_seg_hover(seg, true)
+	UITip.preview(seg["btn"], "%s SEGMENT" % str(seg["key"]), str(seg["tip"]), UIKit.CYAN)
+
+
+func _qa_hover_arc() -> void:
+	## QA hook for `--hover-arc`.
+	if _arc_card == null or _arc_hit == null:
+		return
+	_review_arc_hover(true)
+	UITip.preview(_arc_hit, "TRANSFER ARC", _arc_tip, UIKit.CYAN)
 
 
 func _commit_route() -> void:

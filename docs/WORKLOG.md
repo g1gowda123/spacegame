@@ -1209,5 +1209,31 @@ must not sound like an mp3 starting.
   - `python tools/qa/native_screens.py` -> **10/10 screens pass**, exit 0, zero errors.
   - `python tools/audit_data.py` -> 49 checks, 0 failed.
 
+## 2026-11-15 11:10 — UI Agent: Dossier Cards, Arc Plate, and an ObjectDB Leak Fix
+
+Continuation of the 05:22 card-pop pass (base commit `1e011a5`). The ask was "cards must pop on hover like the planet switcher, and the screen must feel alive", so this pass hardens the hover feel, gives the left half of the review the same treatment, and clears the leak the first pass introduced.
+
+- **`scripts/ui_kit.gd` — hover feel shared, cycle removed.**
+  - `attach_hover_pop` is now built on `_hover_pop_enter` / `_hover_pop_exit` and captures the control through a **`WeakRef`**, not directly. A control that owns a lambda which captures the control is a reference cycle; Godot counted it at shutdown and `native_screens.py` failed DESTINATION DRAFT with `4 ObjectDB instances were leaked` / `2 resources still in use`. With the WeakRef the same screen exits clean. (Verified by stubbing `attach_hover_pop` to `pass` and watching the leak disappear, then by re-running the sweep.)
+  - `base_y` is captured once on the first hover and never re-captured, so re-entering a control mid-animation cannot bake a lifted origin.
+  - New `UIKit.press_punch(ctrl, rest_scale)`: one shared Back-out click punch that kills any in-flight `hover_tw` / `pop_tw` first, so a click during a lift cannot leave two tweens fighting over `scale`. Buttons use it; informational cards reuse it.
+  - `button()` keeps its pointer cursor and now returns to the accent/standard resting scale (`1.045` / `1.035`) instead of overshooting the hover scale.
+
+- **`scripts/draft.gd` — review screen responds everywhere.**
+  - The four architecture segments are built by one `_make_segment_card(...)` helper (row of title + value, `row_style` wash, accent edge) and moved by a shared `_tween_lift(...)` (cubic-out, `1.035` scale, `2px` lift, `z_index 2`), matching the draft planet cards. Idle state is byte-for-byte the printed row: same hairline, same typography.
+  - `TRANSFER ARC` plate is now a card as well: hovering warms the frame border (`#1d344a` -> `#2f5a7a`), lifts the plate `2px` at `1.02`, and opens a dossier with target, distance, cruise time and orbit. The live `TransferShip` keeps flying inside it.
+  - Segment dossiers read the real run state (vehicle capacity/cost, bus mass/draw/integrity/range, orbit altitude/eclipse/passes/comms penalty, objective quota/ΔV/integrity/science fit) instead of repeating the visible line.
+  - Clicks on either card type give a short `UIKit.press_punch` acknowledgement — no sound and no state change, because nothing there is a decision.
+  - QA hooks `--hover-seg=N` and `--hover-arc` boot the review with a card already hovered **and** force the dossier through `UITip.preview`, so a single capture proves pop + wash + tip without a synthetic mouse (`--capture --capture-name=... --capture-delay=2.2`). Same spirit as the sector's `--rack-highlight=`; inert in a normal run.
+
+- **Verification (native, Godot 4.7.2, GL Compatibility).**
+  - `godot --headless --quit-after 10` -> clean, no parse errors (the project treats GDScript warnings as errors, so the `weakref()` typing is explicit: `var ref: WeakRef = weakref(ctrl)`).
+  - `python tools/qa/native_screens.py` -> **10/10 screens pass**, and DESTINATION DRAFT now exits with **no leak warning**.
+  - `--screen=flowtest` -> `total=5340 grade=S successes=3`.
+  - Hover evidence: `r_seg2.png` (GROUND row popped + dossier), `r_arc2.png` (arc plate border warmed + dossier), `t_title.png` (QUIT on the secondary strip, no collision with RANKS).
+
+- **Still open / handoff:** the segment dossier opens to the left of the row (shared `UITip` placement) and covers the arc plate while it is open. That matches how every other dossier in the game behaves, so it was left alone; if a "prefer below" placement is wanted it belongs in `scripts/ui_tip.gd`, not per-screen. The dossier text is copy, not data — VEGA/e owns the wording.
+
+
 
 - **07:36 — VFX / living title planet:** `planet_view.gdshader` gained opt-in drifting cloud bands and a small axial turn (surface sampling rotated around Y; fixed normal/terminator), and `SpaceBackdrop` gained a 74 s ±0.02 rad sway. `title.gd` enables all three via `configure`; other screens default off. Verified t=1/8/15 s (`title_turn*.png`), draft planet still static, no backface holes; headless clean.

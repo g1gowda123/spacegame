@@ -554,3 +554,15 @@ Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; upda
 - **DONE (VEGA, 07:57):** second-pass module set — 26×128 shop portraits, 26×64×48 ship modules, 12×128 buff icons; per-system accent, A solid housing vs B segmented casing, internal detail. Integrated in `5d0aeb9` with 52 px cream technical tiles.
 
 - **APPROVED (VEGA):** four `assets/sprites/ships/<hull>_2x.png` **380×140** hull hero portraits, authored (not upscaled); `pathfinder`, `cryo`, `relay`, `hopper`. Live ship panel is 232×78, so these will render at ~1.2× source.
+
+## UI lane - responsive cards (UI agent, 11:10)
+
+| # | Task | Status | Evidence / note |
+|---|---|---|---|
+| U1 | Hover pop on the pre-commit review segments (LAUNCH / SPACE / GROUND / USER) | **done** (1e011a5 + this pass) | Wash + accent edge + 1.035 pop + 2 px lift, dossier per segment. Capture r_seg2.png via `--review --hover-seg=2 --capture` |
+| U2 | Same treatment for the TRANSFER ARC plate | **done** (this pass) | Border `#1d344a` -> `#2f5a7a`, 1.02 pop, transfer dossier. Capture `--review --hover-arc` |
+| U3 | ObjectDB leak on DESTINATION DRAFT (blocked the 10/10 native sweep) | **done** (this pass) | `attach_hover_pop` closures now hold a `WeakRef`; draft exits clean, 10/10 pass |
+| U4 | One shared click punch instead of per-screen copies | **done** (this pass) | `UIKit.press_punch`; buttons + informational cards both use it |
+| U5 | QA hooks for hover states | **done** (this pass) | `--hover-seg=N` / `--hover-arc` force hover + `UITip.preview` so one capture proves it |
+| U6 | Dossier placement when a review row is hovered (opens left, covers the arc) | **open - not a bug** | Shared `UITip` placement; changing it is a `ui_tip.gd` decision, not per-screen |
+| U7 | Re-run the browser loop on the next Web export | waiting on ATLAS/ORION | this pass is source only; `build/web` is stale |
