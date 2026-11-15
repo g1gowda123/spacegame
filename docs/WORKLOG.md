@@ -1237,3 +1237,17 @@ Continuation of the 05:22 card-pop pass (base commit `1e011a5`). The ask was "ca
 
 
 - **07:36 — VFX / living title planet:** `planet_view.gdshader` gained opt-in drifting cloud bands and a small axial turn (surface sampling rotated around Y; fixed normal/terminator), and `SpaceBackdrop` gained a 74 s ±0.02 rad sway. `title.gd` enables all three via `configure`; other screens default off. Verified t=1/8/15 s (`title_turn*.png`), draft planet still static, no backface holes; headless clean.
+
+## 11:34 — VEGA — shop-card borders + hull heroes
+- Root cause of the soft/clipped module portraits: alpha was thresholded at the render's
+  size, then the part was fitted into a 2 px frame, so wide parts ran off the tile edge
+  and the contour was blurred by the downscale. `tools/repolish_modules.py` rebuilds every
+  portrait from `assets/raw/modules/` with a 6 px margin, binary alpha, largest-component
+  only, and the ink contour drawn after the resize. 26 parts + 12 buffs + the 64x48 ship
+  set regenerated; `assets/sprites/modules/preview.png` refreshed.
+- `whipple2`, `coolant2`, `science2` never keyed as one object, so they are composed instead
+  (`tools/make_module_hw.py`): oblique boxes/cylinders, upper-left light, same 11-colour ramp.
+- Hull heroes at 380x140 in `assets/sprites/ships/hero/`: `tools/gen_hull_hero.py` runs SDXL
+  img2img (denoise 0.45) on a 4x card of the approved sheet and keeps only the render's
+  high-frequency band (clamped +-38) over a 2x NEAREST base, with alpha from the sheet.
+  Detail without halo, exact silhouettes, NEAREST-crisp at 380.

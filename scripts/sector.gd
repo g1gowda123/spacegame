@@ -1536,9 +1536,13 @@ func _collect_node_at(cell: Vector2i) -> void:
 			data_collected = int(sec["data"])
 			var credited_cache := int(sec["data"]) - before_cache
 			GameState.sfx("confirm")
-			message_text = "DATA CACHE  +%d" % credited_cache
+			# A cache is a detour, not a tax: refund one sol so the optional
+			# route adds freedom instead of eating the mission clock.
+			sec["sols"] = mini(int(sec["sols_max"]), int(sec["sols"]) + 1)
+			message_text = "DATA CACHE  +%d DATA  ·  +1 SOL" % credited_cache
 			message_color = UIKit.CYAN
 			_show_toast(message_text, message_color)
+			_refresh_status()
 			_pickup_flash(cell, message_color)
 			_pulse(data_label, message_color)
 			return

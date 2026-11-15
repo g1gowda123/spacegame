@@ -1208,7 +1208,7 @@ func begin_sector(planet: Dictionary) -> void:
 	if shakedown:
 		dv += 6
 	dv = maxi(dv, 26 if shakedown else 22)
-	sols = maxi(sols, 26 if shakedown else 20)
+	sols = maxi(sols, 30 if shakedown else 24)
 
 	var heat_mult := float(s["heat_mult"])
 	if str(hull().get("id", "")) == "cryo":
