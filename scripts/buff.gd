@@ -141,7 +141,9 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var icon_name := str(buff.get("icon", "legacy"))
-	var icon_path := "res://assets/sprites/buffs/%s.png" % icon_name
+	var icon_path := "res://assets/sprites/buffs_hd/%s.png" % icon_name
+	if not ResourceLoader.exists(icon_path):
+		icon_path = "res://assets/sprites/buffs/%s.png" % icon_name
 	if ResourceLoader.exists(icon_path):
 		icon.texture = load(icon_path) as Texture2D
 	icon_panel.add_child(icon)
