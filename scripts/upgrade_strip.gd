@@ -447,13 +447,11 @@ func _open_arsenal() -> void:
 	panel.add_theme_stylebox_override("panel", sb)
 	_arsenal.add_child(panel)
 
-	var title := UIKit.head("ARSENAL // INSTALLED SYSTEMS", 10, UIKit.CREAM)
+	var title := UIKit.head("ARSENAL // UPGRADE TREE", 10, UIKit.CREAM)
 	title.position = Vector2(14, 10)
 	title.size = Vector2(400, 16)
 	panel.add_child(title)
-	var sub := UIKit.mono("%d MODULES · %d FIELD COMMISSIONS · TAB / ESC TO CLOSE" % [
-		GameState.owned.size(), GameState.run.get("buffs", []).size()
-	], 7, UIKit.MUTED_C)
+	var sub := UIKit.mono("7 SYSTEMS · 2 PATHS EACH · TIER 2 NEEDS TIER 1 · %d INSTALLED · TAB / ESC CLOSE" % GameState.owned.size(), 7, UIKit.MUTED_C)
 	sub.position = Vector2(14, 26)
 	sub.size = Vector2(520, 12)
 	panel.add_child(sub)
@@ -482,67 +480,99 @@ func _build_arsenal_rows(panel: Control) -> void:
 		old.queue_free()
 	var rows := Control.new()
 	rows.name = "Rows"
-	rows.position = Vector2(12, 50)
-	rows.size = Vector2(564, 160)
+	rows.position = Vector2(12, 48)
+	rows.size = Vector2(564, 166)
 	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(rows)
 
-	if _entries.is_empty():
-		var empty := UIKit.mono("No refits or commissions installed yet. Buy hardware in debrief, or pick a field commission between planets.", 8, UIKit.MUTED_C)
-		empty.position = Vector2(2, 6)
-		empty.size = Vector2(540, 40)
-		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		rows.add_child(empty)
-		return
+	var systems := [
+		"PROPULSION", "POWER", "THERMAL", "STRUCTURE",
+		"COMMS", "SCIENCE", "SUPPORT",
+	]
+	var row_h := 23.0
+	for si in range(systems.size()):
+		var system := str(systems[si])
+		var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
+		var y := float(si) * row_h
+		var row := Control.new()
+		row.position = Vector2(0, y)
+		row.size = Vector2(564, row_h - 1.0)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rows.add_child(row)
+		var label := UIKit.mono(system, 6, sys_color)
+		label.position = Vector2(0, 6)
+		label.size = Vector2(88, 10)
+		row.add_child(label)
 
-	var per_col := 5
-	var col_w := 188.0
-	for i in range(_entries.size()):
-		var e: Dictionary = _entries[i]
-		var col := i / per_col
-		var row := i % per_col
-		var accent: Color = e["accent"]
-		var card := Control.new()
-		card.position = Vector2(col * col_w, row * 30.0)
-		card.size = Vector2(col_w - 8.0, 28)
+		var a: Array = []
+		var b: Array = []
+		for up in GameState.UPGRADES:
+			if str(up.get("branch", "")) != system:
+				continue
+			if str(up.get("path", "A")) == "B":
+				b.append(up)
+			else:
+				a.append(up)
+		a.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
+			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
+		b.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
+			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
+		_tree_node(row, a, 92.0, sys_color)
+		_tree_node(row, b, 308.0, sys_color)
+		var line_a := ColorRect.new()
+		line_a.color = Color(sys_color.r, sys_color.g, sys_color.b, 0.55)
+		line_a.position = Vector2(196, 11)
+		line_a.size = Vector2(8, 1)
+		row.add_child(line_a)
+		var line_b := ColorRect.new()
+		line_b.color = Color(sys_color.r, sys_color.g, sys_color.b, 0.55)
+		line_b.position = Vector2(412, 11)
+		line_b.size = Vector2(8, 1)
+		row.add_child(line_b)
+		var gap := ColorRect.new()
+		gap.color = Color(0.33, 0.39, 0.46, 0.18)
+		gap.position = Vector2(0, row_h - 1.0)
+		gap.size = Vector2(564, 1)
+		row.add_child(gap)
+
+
+func _tree_node(row: Control, parts: Array, x: float, sys_color: Color) -> void:
+	for i in range(parts.size()):
+		var up: Dictionary = parts[i]
+		var id := str(up.get("id", ""))
+		var installed := id in GameState.owned
+		var req := str(up.get("requires", ""))
+		var locked := req != "" and not (req in GameState.owned)
+		var path := str(up.get("path", "A"))
+		var tier := int(up.get("tier", 1))
+		var card := Panel.new()
+		card.position = Vector2(x + float(i) * 108.0, 2)
+		card.size = Vector2(104, 18)
 		card.mouse_filter = Control.MOUSE_FILTER_STOP
-		rows.add_child(card)
-
-		var icon_frame := Panel.new()
-		icon_frame.position = Vector2(0, 3)
-		icon_frame.size = Vector2(22, 22)
-		icon_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon_frame.add_theme_stylebox_override("panel", _chip_style(accent, false))
-		card.add_child(icon_frame)
-		var icon_path := "res://assets/sprites/buffs/%s.png" % str(e["icon"])
-		if ResourceLoader.exists(icon_path):
-			var icon := TextureRect.new()
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.texture = load(icon_path) as Texture2D
-			icon.position = Vector2(3, 3)
-			icon.size = Vector2(16, 16)
-			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			icon_frame.add_child(icon)
-
-		var nm := UIKit.head(str(e["name"]), 8, UIKit.CREAM)
-		nm.position = Vector2(28, 1)
-		nm.size = Vector2(col_w - 62.0, 12)
-		card.add_child(nm)
-		var count_tag := "x%d" % int(e["count"]) if int(e["count"]) > 1 else ""
-		var kind := UIKit.mono(count_tag, 6, accent, HORIZONTAL_ALIGNMENT_RIGHT)
-		kind.position = Vector2(col_w - 40.0, 1)
-		kind.size = Vector2(32, 12)
-		card.add_child(kind)
-		var desc := UIKit.mono(str(e["desc"]), 7, UIKit.MUTED_C)
-		desc.position = Vector2(28, 13)
-		desc.size = Vector2(col_w - 36.0, 14)
-		desc.clip_text = true
-		card.add_child(desc)
-		UIKit.hover_info(card, str(e["name"]),
-			str(e["desc"]) + ("\n" + str(e["plain"]) if str(e["plain"]) != "" else ""),
-			accent)
+		var fill := UIKit.NIGHT_2
+		var border := sys_color
+		if installed:
+			fill = Color(0.04, 0.14, 0.11, 0.98)
+			border = UIKit.GREEN
+		elif locked:
+			fill = Color(0.03, 0.04, 0.05, 0.88)
+			border = Color(sys_color.r, sys_color.g, sys_color.b, 0.28)
+		card.add_theme_stylebox_override("panel", UIKit.style_panel(fill, border, 0, 1))
+		row.add_child(card)
+		var name := str(up.get("name", id))
+		var text := "%s%d  %s" % [path, tier, name]
+		var label := UIKit.mono(text, 6, UIKit.CREAM if installed else UIKit.MUTED_C)
+		label.position = Vector2(4, 4)
+		label.size = Vector2(96, 11)
+		label.clip_text = true
+		card.add_child(label)
+		UIKit.hover_info(card, name, "%s\n\n%s\nCOST $%dM%s" % [
+			str(up.get("plain", up.get("desc", ""))),
+			"TIER 2 LOCKED · BUY TIER 1 FIRST" if locked else
+				("INSTALLED" if installed else "AVAILABLE IN REFIT"),
+			int(up.get("cost", 0.0)),
+			("\nREQUIRES " + str(up.get("requires", ""))) if req != "" else "",
+		], border)
 
 
 func _rebuild_arsenal() -> void:

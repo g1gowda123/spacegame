@@ -229,7 +229,7 @@ func _build_shop() -> void:
 	shop_root.size = Vector2(284, 216)
 	shop_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.add_child(shop_root)
-	var hover_hint := UIKit.mono("PATHS LOCK ON FIRST BUY · SELL TO SWITCH", 6, UIKit.INK_SOFT)
+	var hover_hint := UIKit.mono("TWO PATHS · TIER 2 NEEDS TIER 1", 6, UIKit.INK_SOFT)
 	hover_hint.position = Vector2(12, 224)
 	hover_hint.size = Vector2(178, 13)
 	c.add_child(hover_hint)
