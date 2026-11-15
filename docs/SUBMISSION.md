@@ -121,7 +121,7 @@ Recorded at 1280×720 as one continuous, deterministic run — not stitched stil
 | 29.4–33.6 → cut to 4.0 s | Debrief: MISSION SUCCESS, grant, approval, shop offers | "Earn grants. Refit. Stack synergies." |
 | → 4.2 s | Final Report: grade A, 4953, three-sector ledger | "Three sectors. One agency. Can you keep the lights on?" |
 
-The shipped cut is **23.5 s** (706 frames at 30 fps, H.264, 2.30 MB). It was re-recorded against the `40a6d72` gate and cut to the live Web flow; the deck is exactly 7 slides. If the platform rejects the length, submit the 7-slide deck instead.
+The shipped cut is **23.5 s** (706 frames at 30 fps, H.264, 2.30 MB). It was re-recorded against the current gate build (see `docs/AUDIT.md`) and cut to the live Web flow; the deck is exactly 7 slides. If the platform rejects the length, submit the 7-slide deck instead.
 
 How the cut was made (reproducible):
 ```
