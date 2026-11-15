@@ -158,63 +158,63 @@ func _shot_title() -> void:
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 	await _scene_ready()
 	_mark("title.settled")
-	await _wait(12.80)
+	await _wait(17.28)
 
 
 func _shot_crew() -> void:
 	GameState.new_run()
 	get_tree().change_scene_to_file("res://scenes/crew.tscn")
 	await _scene_ready()
-	await _wait(1.92)
+	await _wait(2.59)
 	_mark("crew.settled")
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_set_players"):
 		scene.call("_set_players", 4)
-		await _wait(2.88)
+		await _wait(3.89)
 		_mark("crew.players4")
 		if scene.has_method("_set_difficulty"):
 			scene.call("_set_difficulty", "director")
-		await _wait(3.84)
+		await _wait(5.18)
 
 
 func _shot_design() -> void:
 	GameState.new_run()
 	get_tree().change_scene_to_file("res://scenes/design.tscn")
 	await _scene_ready()
-	await _wait(1.2)
+	await _wait(1.62)
 	_mark("design.settled")
 	GameState.select_hull("cryo")
-	await _wait(1.6)
+	await _wait(2.16)
 	_mark("design.hull_cryo")
 	GameState.select_hull("relay")
-	await _wait(1.5)
+	await _wait(2.03)
 	_mark("design.hull_relay")
 	GameState.select_hull("pathfinder")
 	GameState.select_orbit("polar")
-	await _wait(1.7)
+	await _wait(2.29)
 	_mark("design.orbit_polar")
 	GameState.select_orbit("low")
-	await _wait(1.4)
+	await _wait(1.89)
 	_mark("design.orbit_low")
 	GameState.toggle_instrument("spectrometer")
-	await _wait(1.2)
+	await _wait(1.62)
 	_mark("design.instrument")
-	await _wait(1.0)
+	await _wait(1.35)
 
 
 func _shot_draft() -> void:
 	GameState.new_run()
 	get_tree().change_scene_to_file("res://scenes/draft.tscn")
 	await _scene_ready()
-	await _wait(1.4)
+	await _wait(1.89)
 	_mark("draft.settled")
 	for i in range(mini(3, GameState.draft.size())):
 		var scene := get_tree().current_scene
 		if scene != null and scene.has_method("_select"):
 			scene.call("_select", str(GameState.draft[i]["id"]))
 		_mark("draft.card_%d" % i)
-		await _wait(2.6)
-	await _wait(0.8)
+		await _wait(3.51)
+	await _wait(1.08)
 
 
 func _shot_launch() -> void:
@@ -264,14 +264,14 @@ func _shot_debrief() -> void:
 	GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	await _scene_ready()
-	await _wait(1.6)
+	await _wait(2.16)
 	_mark("debrief.settled")
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_dev_buy"):
 		scene.call("_dev_buy", 0)
-	await _wait(3.0)
+	await _wait(4.05)
 	_mark("debrief.bought")
-	await _wait(2.0)
+	await _wait(2.70)
 
 
 func _shot_tech() -> void:
@@ -280,18 +280,18 @@ func _shot_tech() -> void:
 	GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	await _scene_ready()
-	await _wait(1.4)
+	await _wait(1.89)
 	_mark("tech.settled")
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_open_tree_panel"):
 		scene.call("_open_tree_panel")
-		await _wait(2.4)
+		await _wait(3.24)
 		_mark("tech.tree")
 		if scene.has_method("_dev_buy_id"):
 			scene.call("_dev_buy_id", "rw8")
-		await _wait(2.2)
+		await _wait(2.97)
 		_mark("tech.bought")
-	await _wait(4.0)
+	await _wait(5.40)
 
 
 func _shot_resale() -> void:
@@ -300,18 +300,18 @@ func _shot_resale() -> void:
 	GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	await _scene_ready()
-	await _wait(1.4)
+	await _wait(1.89)
 	_mark("resale.settled")
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_open_sell_panel"):
 		scene.call("_open_sell_panel")
-		await _wait(2.2)
+		await _wait(2.97)
 		_mark("resale.panel")
 		if scene.has_method("_dev_sell_first"):
 			scene.call("_dev_sell_first")
-		await _wait(2.0)
+		await _wait(2.70)
 		_mark("resale.sold")
-	await _wait(4.0)
+	await _wait(5.40)
 
 
 func _shot_event() -> void:
@@ -320,19 +320,19 @@ func _shot_event() -> void:
 	GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	await _scene_ready()
-	await _wait(1.92)
+	await _wait(2.59)
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_method("_show_event"):
 		scene.call("_show_event")
-		await _wait(2.24)
+		await _wait(3.02)
 		_mark("event.shown")
 		if scene.has_method("_on_event_choice") and GameState.run.get("event", {}).size() > 0:
 			scene.call("_on_event_choice", 0)
 		elif scene.has_method("_pick_event_choice"):
 			scene.call("_pick_event_choice", 0)
-		await _wait(4.80)
+		await _wait(6.48)
 		_mark("event.chose")
-	await _wait(5.44)
+	await _wait(7.34)
 
 
 func _shot_hover() -> void:
@@ -341,7 +341,7 @@ func _shot_hover() -> void:
 	GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
 	await _scene_ready()
-	await _wait(1.3)
+	await _wait(1.76)
 	_mark("hover.settled")
 	var pts := [Vector2(456, 200), Vector2(456, 392), Vector2(456, 584), Vector2(456, 392)]
 	for i in range(pts.size()):
@@ -350,9 +350,9 @@ func _shot_hover() -> void:
 		mv.position = pts[i]
 		mv.global_position = pts[i]
 		Input.parse_input_event(mv)
-		await _wait(1.5)
+		await _wait(2.03)
 		_mark("hover.card%d" % i)
-	await _wait(2.0)
+	await _wait(2.70)
 
 
 func _shot_briefing() -> void:
@@ -394,9 +394,9 @@ func _shot_report() -> void:
 		GameState.make_shop()
 	get_tree().change_scene_to_file("res://scenes/report.tscn")
 	await _scene_ready()
-	await _wait(1.60)
+	await _wait(2.16)
 	_mark("report.settled")
-	await _wait(17.60)
+	await _wait(23.76)
 
 
 # ---------------------------------------------------------------------------
