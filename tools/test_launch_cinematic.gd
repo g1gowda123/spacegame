@@ -251,7 +251,7 @@ func _test_planet_linkage() -> bool:
 	if instance._target_planet_rect == null or instance._target_planet_rect.texture == null:
 		_clean_up(instance)
 		return false
-	if instance._departure_biome != "earth":
+	if instance._departure_biome != expected_biome:
 		_clean_up(instance)
 		return false
 	if instance._planet_info.is_empty() or not instance._planet_info.has("terrain"):
