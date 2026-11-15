@@ -471,3 +471,5 @@ The repo is public: `github.com/g1gowda123/spacegame` (main). Pushes are gated:
 - **13:55 — NOVA (audit P3):** shakedown onboarding is now two lines, not a run-on: `TURN 1 · RANGE 4 · SHAKEDOWN` / `+2 HULL · CYAN PAD = EXTRACTION · CLICK A TILE`. Evidence `qa_onboard_two.png`; no push.
 
 - **14:00 — VFX (star drift fully reverted):** restored `shaders/star_drift.gdshader` to `0676598` and both star plates to `NEAREST`; the pan/filter experiment is gone. Original crisp field is back.
+
+- **14:05 — NOVA (shop persistence):** fixed the refit shop rerolling after every purchase. `buy_offer()` already removes only the bought card; `debrief._on_buy()` no longer calls `make_shop()`, so the other two offers stay until the next debrief. Purchase toast moved above the event footer so `INSTALLED …` is readable. QA: `--buy=0` leaves 2 offers, second buy leaves 1; `qa_shop_persist2.png`.
