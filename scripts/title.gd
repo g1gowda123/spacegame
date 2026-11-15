@@ -42,10 +42,6 @@ func _build_ui() -> void:
 	plot.position = Vector2(300, 68)
 	plot.size = Vector2(150, 78)
 	add_child(plot)
-	var plot_label := UIKit.mono("TRANSFER PLOT  //  18.6 LY", 6, UIKit.INK_SOFT)
-	plot_label.position = Vector2(300, 150)
-	add_child(plot_label)
-
 	var stamp := TextureRect.new()
 	stamp.texture = load("res://assets/ui/skin_ops/stamp_approved.png")
 	stamp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -56,81 +52,64 @@ func _build_ui() -> void:
 	stamp.modulate = Color(1, 1, 1, 0.92)
 	add_child(stamp)
 
-	var kicker := UIKit.mono("NASA SPACE APPS CHALLENGE 2026", 8, UIKit.ORANGE)
-	kicker.position = Vector2(42, 24)
-	add_child(kicker)
-	var sub := UIKit.mono("OFFICIAL CHALLENGE  //  SPACE MISSION DESIGN GAME", 7, UIKit.INK_SOFT)
-	sub.position = Vector2(42, 37)
-	add_child(sub)
-
 	var logo := UIKit.label("ORBIT", 46, UIKit.TEXT, true)
-	logo.position = Vector2(38, 66)
+	logo.position = Vector2(38, 44)
 	add_child(logo)
 	var amp := UIKit.label("&", 34, UIKit.ORANGE, false)
-	amp.position = Vector2(40, 110)
+	amp.position = Vector2(40, 88)
 	amp.size = Vector2(22, 34)
 	add_child(amp)
 	var outplay := UIKit.label("OUTPLAY", 30, UIKit.TEXT, true)
-	outplay.position = Vector2(64, 112)
+	outplay.position = Vector2(64, 90)
 	add_child(outplay)
 
-	var tag := UIKit.mono("MISSION ARCHITECTURE ROGUELITE", 8, UIKit.SIGNAL)
-	tag.position = Vector2(44, 160)
-	add_child(tag)
-
-	var blurb := UIKit.mono(
-		"Design a spacecraft. Draft a real exoplanet.\n"
-		+ "Survive its surface. Save the agency in three missions.",
-		8, UIKit.MUTED
-	)
-	blurb.position = Vector2(44, 178)
-	add_child(blurb)
+	var tagline := UIKit.mono("DESIGN A SHIP.  DRAFT A WORLD.  SURVIVE IT.", 8, UIKit.MUTED)
+	tagline.position = Vector2(44, 138)
+	add_child(tagline)
 
 	var begin := UIKit.button("BEGIN MISSION", Vector2(208, 34), true)
-	begin.position = Vector2(44, 208)
+	begin.position = Vector2(44, 170)
 	begin.add_theme_font_size_override("font_size", 11)
 	begin.pressed.connect(_start)
 	add_child(begin)
 
 	var crew := UIKit.button("MISSION CONTROL", Vector2(156, 34))
-	crew.position = Vector2(264, 208)
+	crew.position = Vector2(264, 170)
 	crew.add_theme_font_size_override("font_size", 10)
 	crew.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew.tscn"))
 	add_child(crew)
 
-	# Secondary commands are a loose strip, not a second row of boxes.
-	_link("DAILY RUN  ›", Vector2(44, 252), 96, _start_daily)
-	_link("HOW TO PLAY  ›", Vector2(148, 252), 118, func(): howto_layer.visible = true)
-	_link("STORY  ›", Vector2(278, 252), 68, _open_briefing)
-	_link("RANKS  ›", Vector2(356, 252), 68, func(): ranks_layer.visible = true)
+	var daily := UIKit.button("DAILY RUN", Vector2(96, 26))
+	daily.position = Vector2(44, 222)
+	daily.add_theme_font_size_override("font_size", 9)
+	daily.pressed.connect(_start_daily)
+	add_child(daily)
+
+	var how := UIKit.button("HOW TO PLAY", Vector2(112, 26))
+	how.position = Vector2(148, 222)
+	how.add_theme_font_size_override("font_size", 9)
+	how.pressed.connect(func(): howto_layer.visible = true)
+	add_child(how)
+
+	var story := UIKit.button("STORY", Vector2(72, 26))
+	story.position = Vector2(268, 222)
+	story.add_theme_font_size_override("font_size", 9)
+	story.pressed.connect(_open_briefing)
+	add_child(story)
+
+	var ranks := UIKit.button("RANKS", Vector2(72, 26))
+	ranks.position = Vector2(348, 222)
+	ranks.add_theme_font_size_override("font_size", 9)
+	ranks.pressed.connect(func(): ranks_layer.visible = true)
+	add_child(ranks)
 
 	var daily_note := "BEST RUN  %s   ·   CMD %s" % [_fmt(GameState.best_score), GameState.player_name]
-	var today := CrewDirector.today_key()
-	if CrewDirector.daily_key == today and CrewDirector.daily_best > 0:
-		daily_note += "   ·   DAILY %s  %d" % [today, CrewDirector.daily_best]
-	else:
-		daily_note += "   ·   DAILY %s  %s" % [today, _fmt(0)]
 	var best := UIKit.mono(daily_note, 7, UIKit.INK_SOFT)
-	best.position = Vector2(44, 292)
+	best.position = Vector2(44, 278)
 	add_child(best)
 
-	# Body face here: the pixel font is uppercase-only, so it would render the
-	# archive table name as PSCOMPPARS. The source name is PSCompPars.
-	var credit := UIKit.mono(
-		"PLANETARY DATA  //  NASA EXOPLANET ARCHIVE  ·  PSCompPars",
-		6, UIKit.INK_FAINT
-	)
-	credit.position = Vector2(44, 314)
-	add_child(credit)
-
-	var proto := UIKit.mono("PROTOTYPE 1.0  ·  WEB BUILD", 6, UIKit.INK_FAINT,
-		HORIZONTAL_ALIGNMENT_RIGHT)
-	add_child(proto)
-	proto.position = Vector2(352, 332)
-	proto.size = Vector2(112, 12)
-
 	var sig := UIKit.mono("●  SIGNAL LOCKED", 6, UIKit.SIGNAL)
-	sig.position = Vector2(44, 332)
+	sig.position = Vector2(44, 308)
 	add_child(sig)
 	var tw := create_tween().set_loops()
 	tw.tween_property(sig, "modulate:a", 0.35, 1.6)
@@ -153,22 +132,6 @@ func _left_scrim() -> Texture2D:
 	t.fill_from = Vector2(0, 0)
 	t.fill_to = Vector2(1, 0)
 	return t
-
-
-func _link(text: String, pos: Vector2, width: float, cb: Callable) -> void:
-	var b := UIKit.button(text, Vector2(width, 22))
-	b.flat = true
-	for state in ["normal", "hover", "pressed", "focus"]:
-		b.add_theme_stylebox_override(state, StyleBoxEmpty.new())
-	b.add_theme_color_override("font_color", UIKit.MUTED)
-	b.add_theme_color_override("font_hover_color", UIKit.CREAM)
-	b.add_theme_color_override("font_pressed_color", UIKit.SAGE_HI)
-	b.add_theme_font_size_override("font_size", 9)
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.position = pos
-	b.size = Vector2(width, 22)
-	b.pressed.connect(cb)
-	add_child(b)
 
 
 func _build_howto() -> void:
