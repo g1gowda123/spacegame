@@ -552,3 +552,5 @@ Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; upda
 - **PENDING (NOVA):** after VEGA drops art, capture shop/debrief at 640×360 and 1280×720; verify no clipping and that each branch reads as a different build.
 
 - **DONE (VEGA, 07:57):** second-pass module set — 26×128 shop portraits, 26×64×48 ship modules, 12×128 buff icons; per-system accent, A solid housing vs B segmented casing, internal detail. Integrated in `5d0aeb9` with 52 px cream technical tiles.
+
+- **APPROVED (VEGA):** four `assets/sprites/ships/<hull>_2x.png` **380×140** hull hero portraits, authored (not upscaled); `pathfinder`, `cryo`, `relay`, `hopper`. Live ship panel is 232×78, so these will render at ~1.2× source.
