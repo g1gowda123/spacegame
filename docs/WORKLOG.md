@@ -1322,48 +1322,16 @@ than a screen from another build.
   ~4.3 but their own self-diff is 4.7/4.3 (random draft pool + run summary), so
   that is RNG, not a regression.
 - Not pushed — ORION owns `git push`.
-- **13:24 — VFX / design spacecraft sprite: grid/scanline fix:** the SPACECRAFT card was loading `assets/sprites/ships/<hull>_2x.png`, whose 380×140 sheets carry a baked 1 px blueprint grid, and then drawing it through a fractional nearest-neighbour fit (140 source rows into a 60 px control) that dropped rows in a regular beat. `ShipDiagram._load_texture()` now prefers the clean authored `assets/sprites/ships/hero/<hull>.png`, normalises its bbox to the 190×70 logical space, and `_draw()` snaps scale to whole multiples (1× at the 190×70 design slot, 3× at 1920) so no source row is dropped. The design diagram is 190×70; removed one 4 px spacer and trimmed the warning row to 18 px so the CONOPS footer still fits. Verified all four hulls at 640 and 1920, plus debrief at 232×78: no grid, no scanlines. Evidence `design_final.png`, `design_hulls.png`, `debrief_ship.png`.
-
-## 13:20 — VEGA — Dr. Imani Vale portrait replaced (generated, not drawn)
-- User: "make a bit more realistic its 'too' simplified and cartoonish" — the flat pixel bust in the briefing card read as a cartoon next to the painted plates.
-- New workflow `tools/workflows/portrait_bust.json` (SDXL 832×1216, dpmpp_2m/karras, 30 steps cfg 6.5, optional 1.35× nearest-exact hires pass). `tools/gen_portrait.py` renders the neutral bust, then smile/stern from the same seed (img2img pass available via `--denoise`, `--fresh` renders independently, `--no-hires` for the single pass).
-- Output renamed to **160×160** — `scripts/briefing.gd` puts the texture in a 146×146 `TextureRect` with `STRETCH_KEEP_ASPECT_CENTERED`, so a 160×240 file was being letterboxed and wasting the lower third.
-- Grade in `card()`: gamma 0.72 + 5 % ambient lift so the painted studio shadow reads as an alcove rather than a black wedge; light vignette; `director_icon.png` now 64×64.
-- Assets: `assets/sprites/crew/director_{neutral,smile,stern}.png` + icon. Raw renders in `assets/raw/crew/`.
-
-## 13:26 — VEGA — portrait corrected to the game's pixel style
-- Miss: the first portrait bypassed the project's style door. `docs/ART_PIPELINE.md` is explicit — **Pixel Art XL LoRA at 1.0, no "pixel art" trigger in the prompt** — and I rendered with base SDXL, which is why it came out painterly next to everything else.
-- Fixed in `tools/gen_portrait.py`: graph now runs Checkpoint → `LoraLoader` (pixel-art-xl, 1.0, model+clip) → prompts; 960×960 render → **exact 6× nearest downscale to 160×160**; 20-colour palette sampled from the neutral render and shared by all three moods (written to `tools/palettes.json` as `crew`); background flood-filled to alpha from the border plus a 1 px ink contour `(18,22,30)`.
-- Assets: `assets/sprites/crew/director_{neutral,smile,stern}.png` (160×160 RGBA), `director_icon.png` 64×64.
-
-## 13:46 — VFX — star drift is now a smooth plate pan on every screen
-- `shaders/star_drift.gdshader`: the plate is inset by `drift_amount` (3 %), then panned inside that inset on a slow sine/cosine pair (`drift_speed 0.07`, ~90 s period, ~1.3 px/s peak at 640). The inset means the edge texel is never stretched; the previous 1 px amplitude read as static, and the old `step()` spark gate popped pixels once per ~1.4 s.
-- Sampling in `SpaceBackdrop.star_rect` and `map_generator.space_rect` is now `TEXTURE_FILTER_LINEAR`, so a 1 px star can sit between texels and glide. Twinkle cells are taken from the drifted UV so a star keeps its phase as it moves. The spark gate is now a per-star sine envelope, not a time-stepped hash.
-- Verified title at 640/1920, sector at 640/1920, and a 5 s 30 fps movie (`/tmp/opencode/vfx/stars.avi`): no edge clamp, no plate seam, movement continuous. All screens share the same shader, so this is everywhere; planet and UI textures stay nearest.
-
-## 14:00 — VFX — star drift fully reverted to the shipped version
-- User: "just undo .the original version was better". Restored `shaders/star_drift.gdshader` to the pre-change version (`git checkout 0676598`) and both star plates to `TEXTURE_FILTER_NEAREST`. No star-drift changes remain in the working tree.
-
-## 14:15 — VEGA — launch shroud re-cut (ORION audit P1)
-- Fairing halves were 14×68 at y=-98, so their foot sat at y=-30 while the booster body starts at y=0 — the 30 px hole ORION saw.
-- `tools/make_launch_extras.py: fairing()` now builds 14×98 halves (cone 56 px + 42 px adapter, stripe at 0.74 h). Regenerated `fairing_left/right.png`; placement in `scripts/launch_cinematic.gd` is unchanged.
-- Payload: `_ship_sprite` is only revealed in the no-fairing fallback, so the shroud hides it; if it still pokes, the hull scale (0.48 → 95 px wide) is wider than the 28 px shroud and must drop to ≤0.13 while shrouded.
-
-## 14:02 — VFX — finishing-touch pass: living portraits, ship exhaust, report beat
-- `SpaceBackdrop.configure()` now actually applies the title/portrait finish keys it was already being handed: `bright`, `nebula`, `planet_light`, `atmosphere`, `planet_clouds`, `planet_turn`, `planet_sway`. The 13:05 revert left these dead, so the title's cloud/turn/sway request and its planet light were silently ignored. Defaults stay flat for consoles that do not opt in.
-- Title: clouds/turn/sway enabled again (planet keeps its lit limb); star brightness/nebula left at the shipped defaults so the field is not re-densified.
-- Draft destination cards, briefing, debrief and report background planets now carry a slow weather band + small axial turn + 0.5 rad sway. Three cards animate independently but stay calm enough to read as portraits.
-- `ShipDiagram`: added a tapered pixel exhaust cone and two edge lines behind the engine bell, so the portrait reads as powered rather than a lamp. Engine flicker/nav strobe unchanged.
-- `debrief.gd`: the sector report's ship slides in 7 px from the panel edge over 0.36 s while fading up; the flame is already running when it lands.
-- `report.gd`: grade lands with a 1.42→1.0 back-ease stamp and the total counts 0→score over 0.72 s. Captures at 1.6 s settle on the final value.
-- Verified: title at 2 s and 12 s (planet weather/turn differs, no backface holes), draft/debrief/design/report captures at 640 and 1920, flowtest 5369/S. No push.
-
-## 14:40 — VEGA — upgrade sprites regenerated through Pixel Art XL (styles + subjects)
-- Problem reported twice: shop portraits "out of place compared to other art ingame", then "search what the component is before creating it". Both were true — the set used LoRA 0.55 and generic prompts, so a loop heat pipe looked like a shuttle.
-- `tools/gen_module_art.py` now: LoRA **1.0**, style suffix "chunky flat shading, thick dark outline, limited desaturated palette, teal and orange accents … simple bold silhouette, two or three large shapes, readable at small size", background `flat magenta … no backdrop`, negatives for backing shapes/haloes.
-- Every prompt rewritten from the component the shop name actually names (`scripts/game_state.gd` ids): RW gyrodyne → reaction wheel disc in a square housing; HALL → ceramic cylinder with a glowing discharge ring; MMRTG → finned canister; RFC → spherical tanks around a cell stack; LHP → pipe loop with evaporator + condenser; CRYO → cryocooler coil; Whipple → bumper plate on standoffs; COMPOSITE SHELL → hull cross-section slab; X-BAND/KA-BAND → dish on a gimbal; SSR → recorder rack with slots; MASS SPEC → vacuum chamber with magnet ring + inlet; MULTI-SENSOR → three-aperture turret; CONTRACT RIDER → data chit in a reader; FIELD KIT → tool case.
-- Pixel grid: after the fit, the icon is halved and nearest-upscaled 2× so its pixels match tile density instead of being smooth at 128 px.
-- Keying hardened: bright studio cards (keyed by whiteness), magenta sheets (hue), and any large pale plate that reaches the frame edge is dropped.
-- Regenerated all 26 `assets/sprites/modules/<id>.png` + 26 `ship/<id>.png` (64×48) + 12 `buffs_hd/` icons (four buff prompts rewritten: senate token, gravity-assist arc, traverse pack, flight recorder). Contact sheet `assets/sprites/modules/preview.png`.
-- Still weak and worth a second pass: `whipple2` (reads as debris), `armor2` (busy), `wheel2`/`coolant2`/`radiator2` (pale backing plate survives), `ranger` (pale backdrop).
 - `tools/ensure_comfy.sh` added: ComfyUI gets OOM-killed while `effectcraft-cli` holds 3.7 GB; the script restarts it with `--lowvram` before a batch.
+
+## 2026-11-15
+
+- **13:45 — Ambient floating space elements on title screen (`FloatingCosmos`).**
+  - Added `FloatingCosmos` to `scripts/title.gd` to bring subtle, lively space motion to the starting interface without cluttering or interfering with the UI:
+    1. **Deep-space research probe:** floating with attitude sway (`sin/cos` drift), 2x2 grid solar array wings, high-gain antenna mast + dish, blinking cyan telemetry beacon (every 1.8 s), and periodic RCS gas puffs (every 8 s) for attitude stabilization. Positioned in the upper-right quadrant open starfield (`x: ~540, y: ~102`).
+    2. **Distant navigation beacon buoy:** sitting above the planet limb (`x: 245, y: 108`), emitting faint expanding circular radio ping arcs every 3.6 s.
+    3. **Tumbling micro-asteroids:** 3 small faceted pixel-art asteroids tumbling in slow orbital drift with smooth alpha fade near boundary edges.
+    4. **Micrometeoroid streak:** occasional shooting star dashing across the upper starfield every 11 s.
+  - Zero interference: `mouse_filter = Control.MOUSE_FILTER_IGNORE` on all ambient nodes; rendered behind UI sheets and menus.
+  - Verification: Headless smoke exit 0, native frame capture `qa_title_new2.png` verified, data audit 49/49 PASS.
+  - Git: Committed locally per directive, not pushed.

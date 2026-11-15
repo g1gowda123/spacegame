@@ -46,6 +46,177 @@ class RingMark:
 		draw_arc(m, 4.0, 0.0, TAU, 20, Color(0.52, 0.68, 0.60, 0.32), 1.0, true)
 
 
+class FloatingCosmos:
+	extends Control
+	## Ambient floating space elements for the title screen:
+	## 1. Deep-space research probe drifting with attitude sway, solar wings,
+	##    blinking telemetry beacon, and periodic RCS stabilization puffs.
+	## 2. Distant navigation buoy pulsing faint radio ping arcs.
+	## 3. Micro-asteroids tumbling in slow orbital drift across open space.
+	## 4. Occasional micrometeoroid streak dashing across the upper starfield.
+
+	var _t: float = 0.0
+
+	var _asteroids: Array[Dictionary] = [
+		{"pos": Vector2(495.0, 68.0), "vel": Vector2(-2.2, 0.7), "rot": 0.4, "vrot": 0.18, "r": 2.2, "alpha": 0.60},
+		{"pos": Vector2(310.0, 78.0), "vel": Vector2(-1.4, 0.4), "rot": 1.2, "vrot": -0.12, "r": 1.6, "alpha": 0.40},
+		{"pos": Vector2(585.0, 155.0), "vel": Vector2(-2.6, -0.5), "rot": 2.1, "vrot": 0.22, "r": 2.0, "alpha": 0.48},
+	]
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _process(delta: float) -> void:
+		_t += delta
+		for a in _asteroids:
+			a["pos"] += a["vel"] * delta
+			a["rot"] += a["vrot"] * delta
+			if a["pos"].x < 190.0:
+				a["pos"].x = 642.0
+			elif a["pos"].x > 645.0:
+				a["pos"].x = 192.0
+			if a["pos"].y < 42.0:
+				a["pos"].y = 224.0
+			elif a["pos"].y > 225.0:
+				a["pos"].y = 44.0
+		queue_redraw()
+
+	func _draw() -> void:
+		_draw_asteroids()
+		_draw_nav_beacon()
+		_draw_probe()
+		_draw_meteoroid()
+
+	func _draw_asteroids() -> void:
+		for a in _asteroids:
+			var p: Vector2 = a["pos"]
+			var rot: float = a["rot"]
+			var r: float = a["r"]
+			# Subtle fade at the edges of the open space area
+			var edge_fade := clampf((p.x - 190.0) / 25.0, 0.0, 1.0) * clampf((645.0 - p.x) / 25.0, 0.0, 1.0)
+			var alpha: float = a["alpha"] * edge_fade
+			if alpha <= 0.02:
+				continue
+			var pts := PackedVector2Array([
+				p + Vector2(cos(rot), sin(rot)) * r,
+				p + Vector2(cos(rot + 1.2), sin(rot + 1.2)) * (r * 0.85),
+				p + Vector2(cos(rot + 2.5), sin(rot + 2.5)) * (r * 1.15),
+				p + Vector2(cos(rot + 4.1), sin(rot + 4.1)) * (r * 0.90),
+				p + Vector2(cos(rot + 5.3), sin(rot + 5.3)) * (r * 1.05),
+			])
+			draw_colored_polygon(pts, Color(0.35, 0.44, 0.46, alpha))
+			draw_polyline(pts, Color(0.55, 0.68, 0.70, alpha * 0.8), 1.0)
+
+	func _draw_nav_beacon() -> void:
+		var b_pos := Vector2(245.0, 108.0) + Vector2(sin(_t * 0.35) * 4.0, cos(_t * 0.28) * 3.0)
+		var cycle := fmod(_t, 3.6)
+		if cycle < 1.8:
+			var prog := cycle / 1.8
+			var pr := 2.0 + prog * 18.0
+			var palpha := (1.0 - prog) * 0.32
+			draw_arc(b_pos, pr, 0.0, TAU, 28, Color(0.32, 0.88, 0.77, palpha), 1.0, true)
+
+		draw_line(b_pos - Vector2(3, 0), b_pos + Vector2(3, 0), Color(0.32, 0.88, 0.77, 0.45), 1.0)
+		draw_line(b_pos - Vector2(0, 3), b_pos + Vector2(0, 3), Color(0.32, 0.88, 0.77, 0.45), 1.0)
+		draw_circle(b_pos, 1.2, Color(0.85, 0.94, 0.90, 0.85))
+
+	func _pt(origin: Vector2, ux: Vector2, uy: Vector2, lx: float, ly: float) -> Vector2:
+		return origin + ux * lx + uy * ly
+
+	func _draw_probe() -> void:
+		var p_pos := Vector2(540.0 + sin(_t * 0.20) * 16.0, 102.0 + cos(_t * 0.32) * 8.0)
+		var p_rot := sin(_t * 0.16) * 0.07
+		var ux := Vector2(cos(p_rot), sin(p_rot))
+		var uy := Vector2(-sin(p_rot), cos(p_rot))
+
+		# Solar wing mounts & panels
+		draw_line(_pt(p_pos, ux, uy, -5.0, 0.0), _pt(p_pos, ux, uy, -8.0, 0.0), Color("#5a6b68"), 1.0)
+		draw_line(_pt(p_pos, ux, uy, 5.0, 0.0), _pt(p_pos, ux, uy, 8.0, 0.0), Color("#5a6b68"), 1.0)
+
+		# Left solar panel (deep blue cells + cyan border + 2x2 grid)
+		var lp := PackedVector2Array([
+			_pt(p_pos, ux, uy, -21.0, -3.5),
+			_pt(p_pos, ux, uy, -8.0, -3.5),
+			_pt(p_pos, ux, uy, -8.0, 3.5),
+			_pt(p_pos, ux, uy, -21.0, 3.5),
+		])
+		draw_colored_polygon(lp, Color(0.08, 0.16, 0.24, 0.95))
+		draw_polyline(lp, Color(0.24, 0.48, 0.62, 0.90), 1.0)
+		draw_line(_pt(p_pos, ux, uy, -14.5, -3.5), _pt(p_pos, ux, uy, -14.5, 3.5), Color(0.24, 0.48, 0.62, 0.65), 1.0)
+		draw_line(_pt(p_pos, ux, uy, -21.0, 0.0), _pt(p_pos, ux, uy, -8.0, 0.0), Color(0.24, 0.48, 0.62, 0.50), 1.0)
+
+		# Right solar panel
+		var rp := PackedVector2Array([
+			_pt(p_pos, ux, uy, 8.0, -3.5),
+			_pt(p_pos, ux, uy, 21.0, -3.5),
+			_pt(p_pos, ux, uy, 21.0, 3.5),
+			_pt(p_pos, ux, uy, 8.0, 3.5),
+		])
+		draw_colored_polygon(rp, Color(0.08, 0.16, 0.24, 0.95))
+		draw_polyline(rp, Color(0.24, 0.48, 0.62, 0.90), 1.0)
+		draw_line(_pt(p_pos, ux, uy, 14.5, -3.5), _pt(p_pos, ux, uy, 14.5, 3.5), Color(0.24, 0.48, 0.62, 0.65), 1.0)
+		draw_line(_pt(p_pos, ux, uy, 8.0, 0.0), _pt(p_pos, ux, uy, 21.0, 0.0), Color(0.24, 0.48, 0.62, 0.50), 1.0)
+
+		# Antenna mast and parabolic dish
+		draw_line(_pt(p_pos, ux, uy, 0.0, -4.0), _pt(p_pos, ux, uy, 0.0, -9.0), Color(0.55, 0.65, 0.62), 1.0)
+		var dish_pts := PackedVector2Array([
+			_pt(p_pos, ux, uy, -4.0, -11.0),
+			_pt(p_pos, ux, uy, 0.0, -9.0),
+			_pt(p_pos, ux, uy, 4.0, -11.0),
+		])
+		draw_polyline(dish_pts, Color(0.86, 0.90, 0.88), 1.0)
+		draw_line(_pt(p_pos, ux, uy, 0.0, -9.0), _pt(p_pos, ux, uy, 0.0, -12.0), Color(0.81, 0.48, 0.45), 1.0)
+
+		# Central chassis bus
+		var bus := PackedVector2Array([
+			_pt(p_pos, ux, uy, -5.0, -4.0),
+			_pt(p_pos, ux, uy, 5.0, -4.0),
+			_pt(p_pos, ux, uy, 5.0, 4.0),
+			_pt(p_pos, ux, uy, -5.0, 4.0),
+		])
+		draw_colored_polygon(bus, Color(0.56, 0.62, 0.58, 0.98))
+		draw_polyline(bus, Color(0.78, 0.86, 0.82, 0.95), 1.0)
+
+		# Gold foil core panel
+		var foil := PackedVector2Array([
+			_pt(p_pos, ux, uy, -2.5, -2.0),
+			_pt(p_pos, ux, uy, 2.5, -2.0),
+			_pt(p_pos, ux, uy, 2.5, 2.0),
+			_pt(p_pos, ux, uy, -2.5, 2.0),
+		])
+		draw_colored_polygon(foil, Color(0.78, 0.62, 0.31, 0.95))
+
+		# Telemetry beacon (blinks every 1.8s)
+		var b_cycle := fmod(_t, 1.8)
+		var beacon_pt := _pt(p_pos, ux, uy, 0.0, 4.5)
+		if b_cycle < 0.16:
+			draw_circle(beacon_pt, 1.5, Color(0.35, 0.95, 0.84))
+			draw_circle(beacon_pt, 3.5, Color(0.35, 0.95, 0.84, 0.35))
+		else:
+			draw_circle(beacon_pt, 1.0, Color(0.30, 0.60, 0.55, 0.45))
+
+		# Subtle attitude RCS micro-puff every 8 seconds
+		var rcs_t := fmod(_t, 8.0)
+		if rcs_t < 0.42:
+			var rcs_prog := rcs_t / 0.42
+			var rcs_pos: Vector2 = _pt(p_pos, ux, uy, -5.0 - rcs_prog * 5.0, -2.0 - rcs_prog * 1.5)
+			var rcs_alpha := (1.0 - rcs_prog) * 0.70
+			draw_circle(rcs_pos, 0.9, Color(0.85, 0.95, 0.95, rcs_alpha))
+			draw_circle(rcs_pos + ux * 1.5, 0.6, Color(0.70, 0.85, 0.90, rcs_alpha * 0.6))
+
+	func _draw_meteoroid() -> void:
+		var m_t := fmod(_t, 11.0)
+		if m_t < 0.45:
+			var prog := m_t / 0.45
+			var m_start := Vector2(625.0, 46.0)
+			var m_end := Vector2(420.0, 115.0)
+			var head := m_start.lerp(m_end, prog)
+			var tail := m_start.lerp(m_end, maxf(0.0, prog - 0.20))
+			var alpha := sin(prog * PI) * 0.75
+			draw_line(tail, head, Color(0.85, 0.95, 0.92, alpha), 1.0)
+			draw_circle(head, 1.2, Color(1.0, 1.0, 1.0, alpha))
+
+
 class SignalBars:
 	extends Control
 	## A live uplink readout: five bars breathing out of phase.
@@ -153,6 +324,12 @@ func _build_ui() -> void:
 	arc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	arc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(arc)
+
+	var cosmos := FloatingCosmos.new()
+	cosmos.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cosmos.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(cosmos)
+
 	_scrim()
 
 	_header()
