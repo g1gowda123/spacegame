@@ -92,21 +92,17 @@ func _build_ui() -> void:
 	begin.pressed.connect(_start)
 	add_child(begin)
 
-	var crew := UIKit.button("MISSION CONTROL", Vector2(156, 32))
+	var crew := UIKit.button("MISSION CONTROL", Vector2(156, 34))
 	crew.position = Vector2(264, 208)
-	crew.add_theme_font_size_override("font_size", 9)
+	crew.add_theme_font_size_override("font_size", 10)
 	crew.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/crew.tscn"))
 	add_child(crew)
 
 	# Secondary commands are a loose strip, not a second row of boxes.
-	_link("DAILY RUN", Vector2(44, 252), 82, _start_daily)
-	_link("HOW TO PLAY", Vector2(138, 252), 104, func(): howto_layer.visible = true)
-	_link("STORY", Vector2(254, 252), 54, _open_briefing)
-	_link("RANKS", Vector2(320, 252), 54, func(): ranks_layer.visible = true)
-	for x in [130, 244, 310]:
-		var dot := UIKit.mono("·", 8, UIKit.DIM)
-		dot.position = Vector2(x, 255)
-		add_child(dot)
+	_link("DAILY RUN  ›", Vector2(44, 252), 96, _start_daily)
+	_link("HOW TO PLAY  ›", Vector2(148, 252), 118, func(): howto_layer.visible = true)
+	_link("STORY  ›", Vector2(278, 252), 68, _open_briefing)
+	_link("RANKS  ›", Vector2(356, 252), 68, func(): ranks_layer.visible = true)
 
 	var daily_note := "BEST RUN  %s   ·   CMD %s" % [_fmt(GameState.best_score), GameState.player_name]
 	var today := CrewDirector.today_key()
