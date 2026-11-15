@@ -99,22 +99,27 @@ def key(img: Image.Image) -> Image.Image:
 
 
 def card(img: Image.Image) -> Image.Image:
-    """Crop to the 160x240 card: head and shoulders, eyes on the upper third."""
-    bb = img.split()[-1].getbbox()
-    if bb:
-        img = img.crop(bb)
+    """Crop to the 160x240 dossier frame and keep the studio backdrop.
+
+    Keying a painted gradient leaves holes, so the portrait stays rectangular and
+    is vignetted into the card instead of being cut out of it.
+    """
     w, h = img.size
+    # 2:3 window around the face, eyes on the upper third
     side = int(min(w, h * 0.667))
     left = (w - side) // 2
-    top = max(0, int(h * 0.02))
+    top = int(h * 0.015)
     img = img.crop((left, top, left + side, top + int(side * 1.5)))
     img = img.resize((160, 240), Image.Resampling.LANCZOS)
-    img = img.filter(ImageFilter.UnsharpMask(radius=1.2, percent=80, threshold=3))
-    img = ImageEnhance.Contrast(img).enhance(1.04)
-    rgb = img.convert("RGB").quantize(56, method=Image.MEDIANCUT).convert("RGB")
-    out = rgb.convert("RGBA")
-    out.putalpha(img.getchannel("A"))
-    return out
+    img = img.filter(ImageFilter.UnsharpMask(radius=1.1, percent=70, threshold=4))
+    img = ImageEnhance.Contrast(img).enhance(1.03)
+    rgb = np.asarray(img.convert("RGB")).astype(np.float32)
+    yy, xx = np.mgrid[0:240, 0:160]
+    # soft vignette + slightly warmer shadow so it sits on the paper card
+    d = np.sqrt(((xx - 80) / 80.0) ** 2 + ((yy - 120) / 120.0) ** 2)
+    v = np.clip(1.06 - 0.30 * np.clip(d - 0.55, 0, 1) ** 1.5, 0, 1.06)
+    rgb = np.clip(rgb * v[..., None] + np.array([4, 2, -3]), 0, 255).astype(np.uint8)
+    return Image.fromarray(rgb).convert("RGBA")
 
 
 def main() -> None:
