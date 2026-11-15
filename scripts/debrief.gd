@@ -360,9 +360,13 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 
 	# A one-line effect readout so the card explains itself before hover. The
 	# full plain-language copy still lives in the dossier.
-	var effect := UIKit.mono(str(up.get("desc", "")), 6, UIKit.MUTED)
-	effect.position = Vector2(64, 47)
-	effect.size = Vector2(144, 10)
+	# Read-less buying: the effect is the boldest thing on the card. Cost stays
+	# orange/red, the stat line is live green, and the branch role carries the
+	# system colour, so the player can scan rather than parse.
+	var effect := UIKit.label(str(up.get("desc", "")), 8,
+		UIKit.LIVE if afford else UIKit.INK_SOFT, true)
+	effect.position = Vector2(64, 46)
+	effect.size = Vector2(144, 13)
 	effect.clip_text = true
 	card.add_child(effect)
 

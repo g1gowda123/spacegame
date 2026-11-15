@@ -79,7 +79,7 @@ def gen(prompt, out, seed):
            "--out", str(out), "--size", "1024", "--gen-size", "1024",
            "--seed", str(seed), "--lora", "1.0", "--no-pixelize", "--bg", "magenta",
            "--view", "product shot, three-quarter view, centred, one isolated object on a flat magenta background that fills the frame, nothing behind it, no backing shape, flat even lighting",
-           "--negative-extra", "text, watermark, logo, frame, border, hands, person, multiple objects, blurry, photo, landscape, terrain, background shape, circle behind, ring, halo, badge, emblem behind, glow, gradient background, vignette"]
+           "--negative-extra", "text, watermark, logo, frame, border, hands, person, multiple objects, blurry, photo, landscape, terrain, background shape, circle behind, ring, halo, badge, emblem behind, glow, gradient background, vignette, orange background, coloured backdrop"]
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
@@ -147,6 +147,8 @@ def finish(img, w, h, blur=1.6):
     tw, th = w - 2 * m, h - 2 * m
     s = min(tw / img.width, th / img.height)
     img = img.resize((max(1, int(img.width * s)), max(1, int(img.height * s))), Image.Resampling.LANCZOS)
+    img = img.resize((max(1, img.width // 2), max(1, img.height // 2)), Image.Resampling.LANCZOS)
+    img = img.resize((img.width * 2, img.height * 2), Image.Resampling.NEAREST)
     a = np.asarray(img).astype(np.float32)
     solid = a[..., 3] >= 110
     solid = ndimage.binary_fill_holes(solid)
