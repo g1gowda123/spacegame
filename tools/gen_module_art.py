@@ -73,10 +73,12 @@ BUFFS = {
 
 
 def gen(prompt, out, seed):
-    cmd = [PY, str(GEN), prompt + ", single piece of spacecraft hardware, engineering part,",
+    style = ("chunky flat shading, thick dark outline, limited desaturated palette, "
+             "teal and orange accents, retro science fiction game icon")
+    cmd = [PY, str(GEN), prompt + ", single piece of spacecraft hardware, engineering part, " + style,
            "--out", str(out), "--size", "1024", "--gen-size", "1024",
-           "--seed", str(seed), "--lora", "0.55", "--no-pixelize", "--bg", "magenta",
-           "--view", "product shot, three-quarter view, centred, isolated on flat magenta",
+           "--seed", str(seed), "--lora", "1.0", "--no-pixelize", "--bg", "magenta",
+           "--view", "product shot, three-quarter view, centred, isolated on flat magenta, flat even lighting",
            "--negative-extra", "text, watermark, logo, frame, border, hands, person, multiple objects, blurry, photo, landscape, terrain"]
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
