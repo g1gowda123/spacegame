@@ -128,6 +128,7 @@ def main() -> None:
     ap.add_argument("--only", default="")
     ap.add_argument("--denoise", type=float, default=0.30)
     ap.add_argument("--no-hires", action="store_true", help="single pass, no 1.35x detail pass")
+    ap.add_argument("--fresh", action="store_true", help="render each mood from the same seed instead of img2img")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     RAW.mkdir(parents=True, exist_ok=True)
@@ -137,9 +138,10 @@ def main() -> None:
         globals()["NO_HIRES"] = True
     for mood in ids:
         prompt = f"{BUST}, {MOODS[mood]}"
-        if mood == "neutral":
+        if mood == "neutral" or args.fresh:
             raw = generate(text2img(prompt, 4821), timeout_s=1200)
-            shutil.copy(raw, anchor)
+            if mood == "neutral":
+                shutil.copy(raw, anchor)
         else:
             if not anchor.exists():
                 raise SystemExit("generate neutral first (identity anchor)")
