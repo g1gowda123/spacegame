@@ -140,6 +140,11 @@ func _run() -> void:
 		"sector_cryo": await _shot_sector("cryo")
 		"debrief": await _shot_debrief()
 		"report": await _shot_report()
+		"tech": await _shot_tech()
+		"resale": await _shot_resale()
+		"event": await _shot_event()
+		"briefing": await _shot_briefing()
+		"story": await _shot_story()
 		_:
 			push_error("trailer: unknown shot " + _shot)
 	_write_marks()
@@ -266,6 +271,96 @@ func _shot_debrief() -> void:
 	await _wait(3.0)
 	_mark("debrief.bought")
 	await _wait(2.0)
+
+
+func _shot_tech() -> void:
+	var planet := _prepared_run("temperate")
+	GameState.finish_sector(true, 4, GameState.current_sector)
+	GameState.make_shop()
+	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
+	await _scene_ready()
+	await _wait(1.4)
+	_mark("tech.settled")
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("_open_tree_panel"):
+		scene.call("_open_tree_panel")
+		await _wait(2.4)
+		_mark("tech.tree")
+		if scene.has_method("_dev_buy_id"):
+			scene.call("_dev_buy_id", "rw8")
+		await _wait(2.2)
+		_mark("tech.bought")
+	await _wait(4.0)
+
+
+func _shot_resale() -> void:
+	var planet := _prepared_run("temperate")
+	GameState.finish_sector(true, 4, GameState.current_sector)
+	GameState.make_shop()
+	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
+	await _scene_ready()
+	await _wait(1.4)
+	_mark("resale.settled")
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("_open_sell_panel"):
+		scene.call("_open_sell_panel")
+		await _wait(2.2)
+		_mark("resale.panel")
+		if scene.has_method("_dev_sell_first"):
+			scene.call("_dev_sell_first")
+		await _wait(2.0)
+		_mark("resale.sold")
+	await _wait(4.0)
+
+
+func _shot_event() -> void:
+	var planet := _prepared_run("temperate")
+	GameState.finish_sector(true, 4, GameState.current_sector)
+	GameState.make_shop()
+	get_tree().change_scene_to_file("res://scenes/debrief.tscn")
+	await _scene_ready()
+	await _wait(1.2)
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("_show_event"):
+		scene.call("_show_event")
+		await _wait(1.4)
+		_mark("event.shown")
+		if scene.has_method("_on_event_choice") and GameState.run.get("event", {}).size() > 0:
+			scene.call("_on_event_choice", 0)
+		elif scene.has_method("_pick_event_choice"):
+			scene.call("_pick_event_choice", 0)
+		await _wait(3.0)
+		_mark("event.chose")
+	await _wait(3.4)
+
+
+func _shot_briefing() -> void:
+	GameState.new_run()
+	get_tree().change_scene_to_file("res://scenes/briefing.tscn")
+	await _scene_ready()
+	await _wait(2.0)
+	_mark("briefing.settled")
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("_advance"):
+		for i in range(3):
+			scene.call("_advance")
+			await _wait(2.4)
+		_mark("briefing.beats")
+	await _wait(2.6)
+
+
+func _shot_story() -> void:
+	GameState.new_run()
+	get_tree().change_scene_to_file("res://scenes/briefing.tscn")
+	await _scene_ready()
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("_advance"):
+		for i in range(4):
+			scene.call("_advance")
+			await _wait(0.4)
+	await _wait(1.2)
+	_mark("story.beat")
+	await _wait(8.0)
 
 
 func _shot_report() -> void:

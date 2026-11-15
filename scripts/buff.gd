@@ -186,7 +186,7 @@ func _make_card(index: int, buff: Dictionary, x: float, y: float) -> void:
 	num.position = Vector2(10, 192)
 	num.size = Vector2(20, 12)
 	card.add_child(num)
-	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.INK_FAINT, HORIZONTAL_ALIGNMENT_RIGHT)
+	var pick_hint := UIKit.mono("CHOOSE", 6, UIKit.MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
 	pick_hint.position = Vector2(CARD_W - 68, 192)
 	pick_hint.size = Vector2(54, 12)
 	card.add_child(pick_hint)

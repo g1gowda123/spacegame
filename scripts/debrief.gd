@@ -215,11 +215,11 @@ func _build_summary() -> void:
 	c.add_child(build_label)
 	ship_diagram = ShipDiagram.new()
 	ship_diagram.position = Vector2(38, 166)
-	ship_diagram.size = Vector2(232, 78)
+	ship_diagram.size = Vector2(232, 64)
 	c.add_child(ship_diagram)
 	build_line = UIKit.mono("", 7, UIKit.INK_SOFT, HORIZONTAL_ALIGNMENT_CENTER)
 	build_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	build_line.position = Vector2(12, 248)
+	build_line.position = Vector2(12, 232)
 	build_line.size = Vector2(282, 18)
 	c.add_child(build_line)
 	_refresh_ship()

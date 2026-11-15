@@ -61,10 +61,12 @@ func _build_grade() -> void:
 	var c := UIKit.fill(p)
 
 	var g := str(score.get("grade", "C"))
-	var gc := UIKit.ORANGE_DARK
-	if g == "B":
+	var gc := UIKit.SAGE_HI
+	if g == "S":
+		gc = UIKit.AMBER
+	elif g == "B":
 		gc = UIKit.TEAL
-	elif g != "S" and g != "A":
+	elif g != "A":
 		gc = UIKit.SIGNAL
 	var grade := UIKit.label(g, 58, gc, true, HORIZONTAL_ALIGNMENT_CENTER)
 	grade.position = Vector2(0, 0)
