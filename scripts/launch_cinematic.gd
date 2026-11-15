@@ -62,6 +62,7 @@ var _phase_label: Label
 var _status_vbox: VBoxContainer
 var _status_items: Array[Dictionary] = []
 var _mission_plaque: PanelContainer
+var _head_panel: PanelContainer
 var _skip_button: Button
 
 # --- Audio Players ---
@@ -780,14 +781,14 @@ func _build_hud() -> void:
 	_hud_layer.add_child(root)
 
 	# Agency Mission Header (Top Left)
-	var head_panel := PanelContainer.new()
-	head_panel.position = Vector2(16, 14)
-	head_panel.add_theme_stylebox_override("panel", UIKit._ops_skin("panel", 6))
-	root.add_child(head_panel)
+	_head_panel = PanelContainer.new()
+	_head_panel.position = Vector2(16, 14)
+	_head_panel.add_theme_stylebox_override("panel", UIKit._ops_skin("panel", 6))
+	root.add_child(_head_panel)
 
 	var hb := VBoxContainer.new()
 	hb.add_theme_constant_override("separation", 2)
-	head_panel.add_child(hb)
+	_head_panel.add_child(hb)
 
 	var title_lbl := UIKit.label("ORBIT & OUTPLAY  //  EXOPLANET INITIATIVE", 8, UIKit.CYAN, true)
 	hb.add_child(title_lbl)
@@ -850,17 +851,17 @@ func _build_hud() -> void:
 
 func _build_mission_plaque(parent: Control) -> void:
 	_mission_plaque = PanelContainer.new()
-	_mission_plaque.position = Vector2(140, 70)
-	_mission_plaque.size = Vector2(360, 180)
+	_mission_plaque.position = Vector2(24, 56)
+	_mission_plaque.size = Vector2(330, 192)
 	_mission_plaque.add_theme_stylebox_override("panel", UIKit._ops_skin("panel", 6))
 	_mission_plaque.modulate.a = 0.0
 	parent.add_child(_mission_plaque)
 
 	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 8)
+	vb.add_theme_constant_override("separation", 7)
 	_mission_plaque.add_child(vb)
 
-	var badge := UIKit.label("★  LAUNCH SUCCESSFUL  ·  TRAJECTORY NOMINAL  ★", 9, UIKit.LIVE, true, HORIZONTAL_ALIGNMENT_CENTER)
+	var badge := UIKit.label("★  LAUNCH SUCCESSFUL  ·  TRAJECTORY NOMINAL  ★", 8, UIKit.LIVE, true, HORIZONTAL_ALIGNMENT_CENTER)
 	vb.add_child(badge)
 
 	var sep := HSeparator.new()
@@ -869,7 +870,7 @@ func _build_mission_plaque(parent: Control) -> void:
 
 	var grid := GridContainer.new()
 	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 4)
 	vb.add_child(grid)
 
@@ -911,7 +912,7 @@ func _start_subsequent_sequence() -> void:
 	_ship_sprite.visible = true
 	_ship_sprite.position = Vector2(0, 0)
 	_ship_sprite.scale = Vector2(0.55, 0.55)
-	_rocket_root.position = Vector2(320, 180)
+	_rocket_root.position = Vector2(480, 170)
 	print("LAUNCH SUBSEQUENT ORBITAL DEPARTURE | Spacecraft: %s | Target: %s" % [_hull_name, _planet_name])
 	
 	_play_sfx(_audio_staging)
@@ -1152,6 +1153,10 @@ func _show_space_plaque() -> void:
 		_complete_and_transition()
 		return
 	var tw := create_tween()
+	if _head_panel != null:
+		tw.parallel().tween_property(_head_panel, "modulate:a", 0.0, 0.30)
+	if _rocket_root != null:
+		tw.parallel().tween_property(_rocket_root, "position:x", 480.0, 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_mission_plaque, "modulate:a", 1.0, 0.45)
 	tw.tween_interval(3.2 if not _is_subsequent else 2.4)
 	tw.tween_callback(_complete_and_transition)

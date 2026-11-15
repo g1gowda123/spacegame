@@ -1346,3 +1346,14 @@ than a screen from another build.
     - Quantized integer-pixel floating bob (`sway` and `bob`), keeping all sprite pixels aligned to the game's retro grid.
   - Verification: Clean native frame capture `qa_retro_final.png`, headless smoke exit 0, data audit 49/49 PASS.
   - Git: Committed locally, not pushed.
+- **14:05 — Launch cinematic: fix mission plaque & rocket overlap (`scripts/launch_cinematic.gd`).**
+  - User reported that the mission plaque information was overlapping directly on top of the ascending rocket in Phase 5 (Space Transition / Orbital Insertion).
+  - Root cause: `_mission_plaque` was centered at `(140, 70)` with width 360, while `_rocket_root` was at `x = 320`, causing the rocket and its exhaust plume to slice right through the center of the telemetry text.
+  - Fix:
+    1. Re-anchored `_mission_plaque` to the left side (`position = Vector2(24, 56)`, `size = Vector2(330, 192)`), giving full width for unclipped 2-column text and badge.
+    2. In Phase 5 (`_show_space_plaque`), tween `_rocket_root.position.x` smoothly from 320 to 480 into the right half of the screen as it achieves orbital insertion.
+    3. In subsequent orbital departures (`_start_subsequent_sequence`), set `_rocket_root.position = Vector2(480, 170)`.
+    4. Fade out the redundant top-left `_head_panel` when `_mission_plaque` enters.
+    5. Clean separation of over 110 pixels between plaque and spacecraft with zero overlap.
+  - Verification: Live native capture `launch_side_left_sub.png` verified, headless smoke exit 0, audit_data 49/49 PASS.
+  - Git: Committed locally, not pushed.
