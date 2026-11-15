@@ -190,7 +190,13 @@ func _layout() -> void:
 	star_rect.size = vp
 	star_rect.visible = _stars_on
 	if _star_mat != null:
-		_star_mat.set_shader_parameter("resolution", vp)
+		# Keep twinkle cells on the 640x360 source grid. Feeding the viewport
+		# size here made every star sample hash at a different cell per screen
+		# pixel and exposed the hash's 50-cell period as vertical columns.
+		var plate := Vector2(640.0, 360.0)
+		if star_rect.texture != null:
+			plate = Vector2(star_rect.texture.get_width(), star_rect.texture.get_height())
+		_star_mat.set_shader_parameter("resolution", plate)
 	if _shade != null:
 		_shade.position = Vector2.ZERO
 		_shade.size = vp

@@ -8,7 +8,7 @@ render_mode unshaded;
 
 uniform float drift = 1.0;
 uniform float twinkle = 1.0;
-uniform vec2 resolution = vec2(640.0, 360.0);
+uniform vec2 resolution = vec2(640.0, 360.0); // source plate size, not screen size
 uniform vec4 tint_a : source_color = vec4(0.62, 0.86, 1.0, 1.0);
 uniform vec4 tint_b : source_color = vec4(1.0, 0.84, 0.66, 1.0);
 // The title menu asks for a brighter, warmer plate than the working consoles,
@@ -18,9 +18,12 @@ uniform float bright = 1.0;
 uniform float nebula = 0.012;
 
 float hash21(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
+	// The old sin/fract pair repeated visibly every ~50 cells at screen
+	// resolution, which turned twinkle/spark cells into vertical star columns.
+	// This is the Dave Hoskins 2D hash: weak correlation, no short period.
+	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+	p3 += dot(p3, p3.yzx + 33.33);
+	return fract((p3.x + p3.y) * p3.z);
 }
 
 void fragment() {

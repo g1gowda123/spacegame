@@ -4022,7 +4022,10 @@ func _update_view() -> void:
 		space_rect.size = vp
 		space_rect.position = Vector2.ZERO
 	if space_mat != null:
-		space_mat.set_shader_parameter("resolution", vp)
+		var plate := Vector2(640.0, 360.0)
+		if space_rect != null and space_rect.texture != null:
+			plate = Vector2(space_rect.texture.get_width(), space_rect.texture.get_height())
+		space_mat.set_shader_parameter("resolution", plate)
 	shader_mat.set_shader_parameter("view_mode", view_mode)
 	shader_mat.set_shader_parameter("map_scale", map_scale)
 	shader_mat.set_shader_parameter("tilt", tilt)
