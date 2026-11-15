@@ -23,7 +23,7 @@ d owns QA per `docs/BOARD.md` (browser loops, claim-vs-evidence checks, bug list
 
 | Area | State | Notes |
 |---|---|---|
-| Title screen | done | Starfield, ringed planet, best score, How to Play overlay |
+| Title screen | done | Same terminal grid as design/draft: MISSION SELECT column + 2x2 readout cells, cropped `rocky` planet, opt-in motion (craft, meteor, 90 s spin, ticker); best score, How to Play + Ranks overlays. 2026-11-15 |
 | Mission design | done | 4 hulls, 3 launch vehicles, 4 objectives, 6 instruments, live 6-bar telemetry, budget + fairing validation |
 | Real-exoplanet data | done | 72 curated `pscomppars` planets, derived hazards, biome classification, `mass_est` flag |
 | 3-planet draft | done | Biome-first planet colors, Teq/gravity/distance detail line, target selection |

@@ -1270,3 +1270,55 @@ The sector fog dimmed the ground but left every prop at full brightness — crea
   - `python tools/qa/native_screens.py` -> **10/10 pass**, no leak warnings.
   - `--screen=flowtest` -> `total=5464 grade=S successes=3`.
 - **Pushed to `main`** in the same commit as the fix.
+
+## 2026-11-15 03:10 — Title screen rebuilt as the same terminal as the game (ECHO)
+
+Brief: the title read as a separate poster — one big green box, a static planet,
+a single column of buttons. It had to be brighter, denser, livelier, retro in the
+*Into the Breach* sense, and above all **continuous with `design`/`draft`** rather
+than a screen from another build.
+
+- **The box is gone; the page grid is shared.** `title.gd` now uses the same
+  header (8..38) / content (50..322) / footer (326..346) bands as `design.gd`.
+  The left column is one `UIKit.sheet(self, 10, 50, 190, 272)` titled
+  `MISSION SELECT` — the same bay the design screen puts its hull list in, not a
+  full-screen panel. The title mark floats in open sky between the columns.
+- **Density without clutter:** a 2x2 readout grid on the right — `SECTOR QUEUE`
+  (three archive thumbnails + biome bars), `TRANSFER PLOT` (live
+  `ui_orbit_plot.gd` + `18.6 LY` / `3 SECTORS`), `ARCHIVE` (worlds/hulls/sectors)
+  and `COMMS` (scrolling ticker + `UPLINK 98% · RELAY 3/3`). Each is the same
+  `_cell()` treatment as a design section: header, hairline, content.
+- **Planet is the frame, not a prop:** cropped by the left edge at
+  `planet_center 0.235/0.66`, `planet_size 1.00`, asset `rocky` (muted, moon-like
+  maria; `temperate` read as a second green surface next to the sage UI and `cryo`
+  as a second accent colour). `planet_light 0.52` so the lit limb carries the
+  screen; `atmosphere 0.05` because the nearest-filtered disc edge turns a strong
+  rim into a dotted outline.
+- **Motion is opt-in.** `SpaceBackdrop.configure({"motion": true, ...})` gates all
+  of it, so design/draft/crew/debrief/report/buff stay still. On the title:
+  `pathfinder.png` drifting on a 30 s diagonal pass with a 0.08 fade at each edge,
+  a drawn tapered `Streak` meteor (first at 1.4 s, then every 7–12 s), planet spin
+  at `TAU / 90` (**one turn per 90 s**), `RingMark` turning once per 300 s, live
+  `SignalBars` in the footer and the `Ticker` line.
+- **Spin verified observable, not guessed:** captured at 3 s and 9 s and compared
+  the crescent crop — mean diff 40.7/255 over the lit limb. A 90 s turn is 4°/s,
+  which is slow enough to read as rotation and not as a flicker.
+- **New backdrop knobs, defaults unchanged:** `sky_top`/`sky_bottom` (additive
+  gradient over the plate, so stars survive), `halo` (radial bloom at 1.62x the
+  disc radius), `light_angle`, `atmosphere`; `star_drift.gdshader` gained `bright`
+  and `nebula`; `planet_view.gdshader` gained `spin` (counter-rotates the key
+  light so the terminator does not sweep with the surface) and `light_angle`.
+  `UIKit.sheet()` gained `fill_color`, `grid_tint`, `fill_alpha` (default 0.96).
+- **Bug worth remembering:** `Control.size` is clamped to
+  `get_combined_minimum_size()`, which is stale before the node enters the tree.
+  Centring a label by giving it a fixed box silently shifted and clipped
+  `ORBIT`/`OUTPLAY`, the footer credit and the archive values. Fixed by measuring
+  with `Font.get_string_size` (`_tw()`) and positioning by that; the ARCHIVE
+  values are right-aligned the same way. Do not re-introduce box-based alignment
+  at 6–8 px.
+- **Verification:** headless smoke clean; captures `title_v5`…`title_v10`,
+  `spin_compare.png`, `howto_v2`, `ranks_v2`. `design` and `crew` diff against the
+  pre-change reference at mean 3e-5 (star twinkle only); `draft`/`debrief` diff at
+  ~4.3 but their own self-diff is 4.7/4.3 (random draft pool + run summary), so
+  that is RNG, not a regression.
+- Not pushed — ORION owns `git push`.

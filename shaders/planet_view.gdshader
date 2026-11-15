@@ -12,6 +12,14 @@ uniform float base_light = 0.38;
 uniform float specular = 0.12;
 uniform float disc_radius = 0.90; // disc size inside the padded texture box
 uniform vec2 planet_res = vec2(256.0, 256.0);
+// The node rotates the disc to spin the planet; this carries that same angle
+// so the key light can be counter-rotated. Without it the terminator would
+// sweep around with the surface, which reads as a turning lamp, not a planet.
+uniform float spin = 0.0;
+// Resting angle of the key light. -0.75 lights the disc from the right, which
+// is what every console wants; the title menu turns it round so its planet is
+// lit from off-frame left.
+uniform float light_angle = -0.75;
 // Title-screen life: slow drifting cloud bands over the baked surface. Zero on
 // every other screen so the design/draft portraits stay still.
 uniform float cloud_amount = 0.0;
@@ -57,7 +65,7 @@ void fragment() {
 		vec3 n = vec3(p, sqrt(max(1.0 - dot(p, p), 0.0)));
 
 		// Slow-moving key light, upper-left, drifting through the mission.
-		float ang = TIME * light_speed - 0.75;
+		float ang = TIME * light_speed + light_angle - spin;
 		vec3 ld = normalize(vec3(cos(ang) * 0.75, -0.62, 0.55));
 		float ndl = clamp(dot(n, ld), 0.0, 1.0);
 		// Wrap the terminator so unlit terrain keeps a readable cool value.

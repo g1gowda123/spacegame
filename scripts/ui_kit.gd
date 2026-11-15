@@ -129,9 +129,17 @@ static func _ops_skin(name: String, margin: int = 4) -> StyleBoxTexture:
 	return sb
 
 
-static func sheet(parent: Control, x: float, y: float, w: float, h: float, with_grid: bool = false) -> PanelContainer:
+static func sheet(
+	parent: Control, x: float, y: float, w: float, h: float,
+	with_grid: bool = false, fill_color: Color = HULL,
+	grid_tint: Color = Color(1, 1, 1, 1), fill_alpha: float = 0.96
+) -> PanelContainer:
 	## A major decision surface: a machined console bay with a 1 px bevel,
 	## a faint blueprint grid and a hard drop shadow. No paper, no glow.
+	##
+	## `fill_color`, `grid_tint` and `fill_alpha` let one screen lift or thin
+	## the surface (the title menu is a shade lighter and lets the planet read
+	## through it) without changing the shared look for everyone else.
 	var shadow := ColorRect.new()
 	shadow.color = Color(0.0, 0.0, 0.0, 0.55)
 	shadow.position = Vector2(x + 3, y + 3)
@@ -140,7 +148,7 @@ static func sheet(parent: Control, x: float, y: float, w: float, h: float, with_
 	parent.add_child(shadow)
 
 	var fill := ColorRect.new()
-	fill.color = Color(HULL.r, HULL.g, HULL.b, 0.96)
+	fill.color = Color(fill_color.r, fill_color.g, fill_color.b, fill_alpha)
 	fill.position = Vector2(x, y)
 	fill.size = Vector2(w, h)
 	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -155,6 +163,7 @@ static func sheet(parent: Control, x: float, y: float, w: float, h: float, with_
 		grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		grid.position = Vector2(x, y)
 		grid.size = Vector2(w, h)
+		grid.modulate = grid_tint
 		parent.add_child(grid)
 
 	var p := PanelContainer.new()
