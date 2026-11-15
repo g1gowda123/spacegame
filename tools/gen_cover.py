@@ -73,6 +73,28 @@ PROMPTS = {
         "wide cinematic view, subject in lower third, dark sky at top, "
         "16-bit pixel-art illustration, crisp readable shapes, no text, no letters, no UI, no HUD, no frame"
     ),
+    "e": (
+        "hero cover illustration for a space survey game, "
+        "lone astronaut in a bone-white suit kneeling on a black basalt ridge, "
+        "holding a glowing cyan data core in both hands, "
+        "a compact four-legged lunar lander with a gold-foil body and tall dish behind them, "
+        "enormous banded exoplanet rising in the deep teal sky, "
+        "orange solar storm ribbons on the right, dust blowing off the ridge, "
+        "large clean dark negative space across the top third, "
+        "cinematic low-angle composition, 16-bit pixel-art illustration, "
+        "high contrast, warm bone and amber accents, no text, no letters, no UI, no HUD, no frame"
+    ),
+    "f": (
+        "isometric key art for a turn-based exoplanet mission game, "
+        "a prominent four-legged lunar lander with gold foil, a tall high-gain dish and cyan beacon lights, "
+        "standing on a raised cliff in the center of the frame, "
+        "a winding cyan path of illuminated tiles leads to a glowing science node, "
+        "orange hazard front creeping along the lower right, dark teal water and crystal spires, "
+        "a huge ringed planet fills the upper right sky, "
+        "deep navy and teal with bone-white and agency-orange accents, "
+        "clean poster composition, dark negative space top left, "
+        "16-bit pixel-art illustration, strong readable silhouette, no text, no letters, no UI, no HUD, no frame"
+    ),
 }
 
 NEGATIVE = (
