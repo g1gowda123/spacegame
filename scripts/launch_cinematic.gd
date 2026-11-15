@@ -30,7 +30,12 @@ enum Phase {
 # --- Nodes & Layers ---
 var _world: Control
 var _sky_rect: ColorRect
+var _sky_canvas: Control
+var _distant_mountains_root: Control
+var _midground_terrain_root: Control
 var _ground_root: Control
+var _foreground_surface: Control
+var _ground_illumination: Control
 var _pad_mount: Control
 var _gantry_tower: Control
 var _gantry_sprite: Sprite2D
@@ -70,6 +75,26 @@ var _status_vbox: VBoxContainer
 var _status_items: Array[Dictionary] = []
 var _mission_plaque: PanelContainer
 var _skip_button: Button
+
+# --- Planetary Launch Environment ---
+var _env: Dictionary = {}
+var _env_sky_zenith: Color = Color("#183860")
+var _env_sky_horizon: Color = Color("#5c9cd8")
+var _current_sky_zenith: Color = Color("#183860")
+var _current_sky_horizon: Color = Color("#5c9cd8")
+var _env_sun_color: Color = Color(1.0, 0.95, 0.8, 0.9)
+var _env_mountain_color: Color = Color("#1e3344")
+var _env_mountain_highlight: Color = Color("#4a7090")
+var _env_mountain_style: String = "peaks"
+var _env_mid_terrain_color: Color = Color("#1a4030")
+var _env_ground_base_color: Color = Color("#1c3d28")
+var _env_ground_detail_color: Color = Color("#2e5938")
+var _env_ground_accent_color: Color = Color("#4e8055")
+var _env_atmosphere_haze: Color = Color(0.65, 0.82, 1.0, 0.22)
+var _sun_offset_y: float = 0.0
+var _engine_light_glow: float = 0.0
+var _mountain_polygon: PackedVector2Array = PackedVector2Array()
+var _midground_polygon: PackedVector2Array = PackedVector2Array()
 
 # --- Audio Players ---
 var _audio_beep: AudioStreamPlayer
@@ -217,6 +242,25 @@ func _load_mission_data() -> void:
 			_departure_biome = "barren"
 			_departure_info = get_biome_info("barren")
 
+	# Initialize planetary launch environment based on target exoplanet
+	_env = get_launch_environment(_planet_biome)
+	_env_sky_zenith = _env.get("sky_zenith", Color("#163558"))
+	_env_sky_horizon = _env.get("sky_horizon", Color("#5896d0"))
+	_current_sky_zenith = _env_sky_zenith
+	_current_sky_horizon = _env_sky_horizon
+	_env_sun_color = _env.get("sun_color", Color(1.0, 0.94, 0.82, 0.95))
+	_env_mountain_color = _env.get("mountain_color", Color("#182e40"))
+	_env_mountain_highlight = _env.get("mountain_highlight", Color("#3e6888"))
+	_env_mountain_style = str(_env.get("mountain_style", "peaks"))
+	_env_mid_terrain_color = _env.get("mid_terrain_color", Color("#163d2c"))
+	_env_ground_base_color = _env.get("ground_base_color", Color("#183824"))
+	_env_ground_detail_color = _env.get("ground_detail_color", Color("#2b5435"))
+	_env_ground_accent_color = _env.get("ground_accent_color", Color("#4d8256"))
+	_env_atmosphere_haze = _env.get("atmosphere_haze", Color(0.65, 0.82, 1.0, 0.22))
+
+	_mountain_polygon = _build_ridge_polygon(_env_mountain_style, 235.0, 70.0, 33, 640.0)
+	_midground_polygon = _build_ridge_polygon("peaks", 262.0, 32.0, 25, 640.0)
+
 
 static func get_biome_info(b_id: String) -> Dictionary:
 	match b_id:
@@ -334,6 +378,248 @@ static func get_biome_info(b_id: String) -> Dictionary:
 			}
 
 
+static func get_launch_environment(b_id: String) -> Dictionary:
+	match b_id:
+		"temperate":
+			return {
+				"sky_zenith": Color("#163558"),
+				"sky_horizon": Color("#5896d0"),
+				"sun_color": Color(1.0, 0.94, 0.82, 0.95),
+				"mountain_color": Color("#182e40"),
+				"mountain_highlight": Color("#3e6888"),
+				"mountain_style": "peaks",
+				"mid_terrain_color": Color("#163d2c"),
+				"ground_base_color": Color("#183824"),
+				"ground_detail_color": Color("#2b5435"),
+				"ground_accent_color": Color("#4d8256"),
+				"atmosphere_haze": Color(0.65, 0.82, 1.0, 0.22),
+				"terrain_label": "CONTINENTAL HIGHLANDS",
+			}
+		"arid":
+			return {
+				"sky_zenith": Color("#582c16"),
+				"sky_horizon": Color("#d98842"),
+				"sun_color": Color(1.0, 0.90, 0.65, 0.95),
+				"mountain_color": Color("#4a2012"),
+				"mountain_highlight": Color("#884224"),
+				"mountain_style": "mesas",
+				"mid_terrain_color": Color("#783a1a"),
+				"ground_base_color": Color("#a65822"),
+				"ground_detail_color": Color("#c47632"),
+				"ground_accent_color": Color("#df9e50"),
+				"atmosphere_haze": Color(0.95, 0.70, 0.40, 0.28),
+				"terrain_label": "DUNE SEA & SANDSTONE MESAS",
+			}
+		"cryo":
+			return {
+				"sky_zenith": Color("#0c1c34"),
+				"sky_horizon": Color("#3a749c"),
+				"sun_color": Color(0.85, 0.95, 1.0, 0.85),
+				"mountain_color": Color("#142a40"),
+				"mountain_highlight": Color("#5088b0"),
+				"mountain_style": "jagged",
+				"mid_terrain_color": Color("#224460"),
+				"ground_base_color": Color("#36607c"),
+				"ground_detail_color": Color("#5a8ca8"),
+				"ground_accent_color": Color("#96cee6"),
+				"atmosphere_haze": Color(0.55, 0.85, 1.0, 0.24),
+				"terrain_label": "FRACTURED CRYOGLACIERS",
+			}
+		"volcanic":
+			return {
+				"sky_zenith": Color("#220806"),
+				"sky_horizon": Color("#8a260e"),
+				"sun_color": Color(1.0, 0.45, 0.15, 0.95),
+				"mountain_color": Color("#180606"),
+				"mountain_highlight": Color("#ff4818"),
+				"mountain_style": "caldera",
+				"mid_terrain_color": Color("#2c0e0c"),
+				"ground_base_color": Color("#1e1212"),
+				"ground_detail_color": Color("#3a1e1c"),
+				"ground_accent_color": Color("#ff4514"),
+				"atmosphere_haze": Color(0.95, 0.35, 0.15, 0.25),
+				"terrain_label": "BASALT CALDERAS & MAGMA FISSURES",
+			}
+		"barren":
+			return {
+				"sky_zenith": Color("#060a10"),
+				"sky_horizon": Color("#1a2230"),
+				"sun_color": Color(1.0, 1.0, 1.0, 0.95),
+				"mountain_color": Color("#161e28"),
+				"mountain_highlight": Color("#3a485a"),
+				"mountain_style": "peaks",
+				"mid_terrain_color": Color("#263040"),
+				"ground_base_color": Color("#343e4e"),
+				"ground_detail_color": Color("#465264"),
+				"ground_accent_color": Color("#66768c"),
+				"atmosphere_haze": Color(0.50, 0.60, 0.75, 0.08),
+				"terrain_label": "CRATERED REGOLITH HIGHLANDS",
+			}
+		"ocean":
+			return {
+				"sky_zenith": Color("#0c2844"),
+				"sky_horizon": Color("#3676a2"),
+				"sun_color": Color(1.0, 0.95, 0.85, 0.92),
+				"mountain_color": Color("#102c44"),
+				"mountain_highlight": Color("#2e688e"),
+				"mountain_style": "peaks",
+				"mid_terrain_color": Color("#184460"),
+				"ground_base_color": Color("#143c56"),
+				"ground_detail_color": Color("#245c7a"),
+				"ground_accent_color": Color("#4c9ec2"),
+				"atmosphere_haze": Color(0.40, 0.75, 1.0, 0.25),
+				"terrain_label": "SEAMOUNT LAUNCH ATOLL",
+			}
+		"methane":
+			return {
+				"sky_zenith": Color("#0a2420"),
+				"sky_horizon": Color("#246e5e"),
+				"sun_color": Color(0.80, 1.0, 0.85, 0.85),
+				"mountain_color": Color("#0c2c28"),
+				"mountain_highlight": Color("#2e8070"),
+				"mountain_style": "jagged",
+				"mid_terrain_color": Color("#14443c"),
+				"ground_base_color": Color("#184840"),
+				"ground_detail_color": Color("#266c5e"),
+				"ground_accent_color": Color("#44b29c"),
+				"atmosphere_haze": Color(0.35, 0.88, 0.70, 0.28),
+				"terrain_label": "HYDROCARBON DELTA SHORES",
+			}
+		"crystal":
+			return {
+				"sky_zenith": Color("#220e34"),
+				"sky_horizon": Color("#6c328c"),
+				"sun_color": Color(0.95, 0.80, 1.0, 0.95),
+				"mountain_color": Color("#26103c"),
+				"mountain_highlight": Color("#a244ce"),
+				"mountain_style": "spires",
+				"mid_terrain_color": Color("#421a64"),
+				"ground_base_color": Color("#4e2274"),
+				"ground_detail_color": Color("#7236a6"),
+				"ground_accent_color": Color("#be6cf0"),
+				"atmosphere_haze": Color(0.80, 0.45, 0.95, 0.25),
+				"terrain_label": "PRISMATIC QUARTZ SPIRE FIELD",
+			}
+		"sulfur":
+			return {
+				"sky_zenith": Color("#24280c"),
+				"sky_horizon": Color("#747e1e"),
+				"sun_color": Color(1.0, 0.95, 0.4, 0.90),
+				"mountain_color": Color("#2a2e0e"),
+				"mountain_highlight": Color("#889426"),
+				"mountain_style": "peaks",
+				"mid_terrain_color": Color("#464e16"),
+				"ground_base_color": Color("#5a601a"),
+				"ground_detail_color": Color("#7e8626"),
+				"ground_accent_color": Color("#d0dc38"),
+				"atmosphere_haze": Color(0.85, 0.90, 0.30, 0.28),
+				"terrain_label": "SULFURIC BRIMSTONE CRAGS",
+			}
+		"obsidian":
+			return {
+				"sky_zenith": Color("#160e22"),
+				"sky_horizon": Color("#442c5c"),
+				"sun_color": Color(0.9, 0.75, 1.0, 0.90),
+				"mountain_color": Color("#1a1024"),
+				"mountain_highlight": Color("#66428a"),
+				"mountain_style": "spires",
+				"mid_terrain_color": Color("#2a1a3c"),
+				"ground_base_color": Color("#20162c"),
+				"ground_detail_color": Color("#38264e"),
+				"ground_accent_color": Color("#784e9c"),
+				"atmosphere_haze": Color(0.55, 0.35, 0.75, 0.20),
+				"terrain_label": "VITREOUS BASALT GLASS SHEETS",
+			}
+		"iron":
+			return {
+				"sky_zenith": Color("#34160e"),
+				"sky_horizon": Color("#8e3c22"),
+				"sun_color": Color(1.0, 0.7, 0.4, 0.90),
+				"mountain_color": Color("#2c100a"),
+				"mountain_highlight": Color("#7e321a"),
+				"mountain_style": "mesas",
+				"mid_terrain_color": Color("#522014"),
+				"ground_base_color": Color("#662a1a"),
+				"ground_detail_color": Color("#863824"),
+				"ground_accent_color": Color("#c05432"),
+				"atmosphere_haze": Color(0.85, 0.45, 0.25, 0.25),
+				"terrain_label": "FERROUS OXIDE DUNES",
+			}
+		"ammonia":
+			return {
+				"sky_zenith": Color("#0c202c"),
+				"sky_horizon": Color("#2e627a"),
+				"sun_color": Color(0.85, 0.95, 1.0, 0.85),
+				"mountain_color": Color("#122834"),
+				"mountain_highlight": Color("#447c94"),
+				"mountain_style": "jagged",
+				"mid_terrain_color": Color("#1c3e4e"),
+				"ground_base_color": Color("#2a5264"),
+				"ground_detail_color": Color("#44748a"),
+				"ground_accent_color": Color("#70acc4"),
+				"atmosphere_haze": Color(0.45, 0.80, 0.95, 0.25),
+				"terrain_label": "AMMONIA HYDRATE ICE BASIN",
+			}
+		"carbon":
+			return {
+				"sky_zenith": Color("#0e1218"),
+				"sky_horizon": Color("#283242"),
+				"sun_color": Color(0.95, 0.95, 1.0, 0.95),
+				"mountain_color": Color("#141a24"),
+				"mountain_highlight": Color("#3e4c62"),
+				"mountain_style": "spires",
+				"mid_terrain_color": Color("#242e3c"),
+				"ground_base_color": Color("#303c4c"),
+				"ground_detail_color": Color("#46566a"),
+				"ground_accent_color": Color("#7c92b0"),
+				"atmosphere_haze": Color(0.60, 0.70, 0.85, 0.18),
+				"terrain_label": "CARBONACEOUS GRAPHITE TERRACES",
+			}
+		_:
+			return {
+				"sky_zenith": Color("#163558"),
+				"sky_horizon": Color("#5896d0"),
+				"sun_color": Color(1.0, 0.94, 0.82, 0.95),
+				"mountain_color": Color("#182e40"),
+				"mountain_highlight": Color("#3e6888"),
+				"mountain_style": "peaks",
+				"mid_terrain_color": Color("#163d2c"),
+				"ground_base_color": Color("#183824"),
+				"ground_detail_color": Color("#2b5435"),
+				"ground_accent_color": Color("#4d8256"),
+				"atmosphere_haze": Color(0.65, 0.82, 1.0, 0.22),
+				"terrain_label": "EXOPLANETARY SURFACE",
+			}
+
+
+static func _build_ridge_polygon(style: String, base_y: float, max_h: float, num_pts: int = 33, width: float = 640.0) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var dx := width / float(num_pts - 1)
+	for i in range(num_pts):
+		var x := float(i) * dx
+		var nx := x / width
+		var h := 0.0
+		match style:
+			"caldera":
+				var cone := exp(-pow((nx - 0.48) * 4.2, 2.0)) * max_h
+				var caldera_dip := exp(-pow((nx - 0.48) * 15.0, 2.0)) * (max_h * 0.38)
+				h = cone - caldera_dip + sin(nx * 19.0) * 7.0
+			"jagged":
+				h = abs(sin(nx * 8.5) * cos(nx * 16.0)) * max_h + sin(nx * 28.0) * 8.0
+			"mesas":
+				var m := sin(nx * 6.8)
+				h = maxf(0.0, tanh(m * 2.8)) * max_h + sin(nx * 14.0) * 6.0
+			"spires":
+				var sp := pow(maxf(0.0, cos(nx * 12.0)), 4.0) * max_h * 1.25
+				h = sp + sin(nx * 5.2) * (max_h * 0.35)
+			_: # peaks
+				h = abs(sin(nx * 3.8) * 0.5 + sin(nx * 10.5) * 0.3 + sin(nx * 21.0) * 0.2) * max_h
+		pts.append(Vector2(x, base_y - maxf(4.0, h)))
+	pts.append(Vector2(width, 360.0))
+	pts.append(Vector2(0.0, 360.0))
+	return pts
+
+
 func _setup_audio() -> void:
 	_audio_beep = _create_player("res://assets/audio/launch_beep.wav", -2.0)
 	_audio_ignition = _create_player("res://assets/audio/launch_ignition.wav", 0.0)
@@ -364,13 +650,46 @@ func _build_scene_layers() -> void:
 	_world.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_world)
 
-	# 1. Sky & Atmosphere Background (Day/Twilight on ground -> Dark vacuum in space)
+	# 1. Base Sky Background & Planetary Atmosphere
 	_sky_rect = ColorRect.new()
 	_sky_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_sky_rect.color = Color(0.04, 0.07, 0.12)
+	_sky_rect.color = _env_sky_zenith
 	_world.add_child(_sky_rect)
 
-	# 2. Deep Space Layer (Stars, Destination Planet, Departure Limb, Transfer Arc)
+	_sky_canvas = Control.new()
+	_sky_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sky_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sky_canvas.draw.connect(_draw_planetary_sky)
+	_world.add_child(_sky_canvas)
+
+	# 2. Distant Mountains & Formations (Slowest parallax)
+	_distant_mountains_root = Control.new()
+	_distant_mountains_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_distant_mountains_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_distant_mountains_root.draw.connect(_draw_distant_mountains)
+	_world.add_child(_distant_mountains_root)
+
+	# 3. Midground Planetary Hills (Medium parallax)
+	_midground_terrain_root = Control.new()
+	_midground_terrain_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_midground_terrain_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_midground_terrain_root.draw.connect(_draw_midground_terrain)
+	_world.add_child(_midground_terrain_root)
+
+	# 4. Low Atmosphere & Passing Clouds
+	_clouds_root = Control.new()
+	_clouds_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_clouds_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_clouds_root.draw.connect(_draw_atmospheric_layers)
+	_world.add_child(_clouds_root)
+	for i in range(3):
+		var cloud_path := "res://assets/sprites/vehicles/cloud_band_%d.png" % i
+		if ResourceLoader.exists(cloud_path):
+			var ct := load(cloud_path) as Texture2D
+			if ct != null:
+				_cloud_textures.append(ct)
+
+	# 5. Deep Space Layer (Stars, Destination Planet, Departure Limb, Transfer Arc)
 	_space_root = Control.new()
 	_space_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_space_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -441,22 +760,17 @@ func _build_scene_layers() -> void:
 	_target_planet_label.size = Vector2(200, 14)
 	_target_planet_root.add_child(_target_planet_label)
 
-	# 3. Clouds & Atmospheric Wisps (Lower atmosphere during ascent)
-	_clouds_root = Control.new()
-	_clouds_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_clouds_root.draw.connect(_draw_atmospheric_layers)
-	_world.add_child(_clouds_root)
-	for i in range(3):
-		var cloud_path := "res://assets/sprites/vehicles/cloud_band_%d.png" % i
-		if ResourceLoader.exists(cloud_path):
-			var ct := load(cloud_path) as Texture2D
-			if ct != null:
-				_cloud_textures.append(ct)
-
-	# 4. Ground & Launch Pad
+	# 6. Foreground Planetary Surface & Launch Area
 	_ground_root = Control.new()
 	_ground_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_ground_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_world.add_child(_ground_root)
+
+	_foreground_surface = Control.new()
+	_foreground_surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_foreground_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_foreground_surface.draw.connect(_draw_foreground_surface)
+	_ground_root.add_child(_foreground_surface)
 
 	_pad_mount = Control.new()
 	_pad_mount.position = Vector2(320, 275)
@@ -496,6 +810,12 @@ func _build_scene_layers() -> void:
 	_gantry_arm_node.name = "GantryArms"
 	_gantry_arm_node.draw.connect(_draw_gantry_arms)
 	_gantry_tower.add_child(_gantry_arm_node)
+
+	_ground_illumination = Control.new()
+	_ground_illumination.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_ground_illumination.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ground_illumination.draw.connect(_draw_ground_illumination)
+	_ground_root.add_child(_ground_illumination)
 
 	_spotlights = Node2D.new()
 	_spotlights.draw.connect(_draw_spotlights)
@@ -723,6 +1043,171 @@ func _build_rocket_assembly() -> void:
 
 
 # --- Custom Drawing Callbacks ----------------------------------------------
+
+func _draw_planetary_sky() -> void:
+	if _sky_canvas == null:
+		return
+	var verts := PackedVector2Array([
+		Vector2(0, 0),
+		Vector2(640, 0),
+		Vector2(640, 360),
+		Vector2(0, 360)
+	])
+	var colors := PackedColorArray([
+		_current_sky_zenith,
+		_current_sky_zenith,
+		_current_sky_horizon,
+		_current_sky_horizon
+	])
+	_sky_canvas.draw_polygon(verts, colors)
+
+	# Primary Luminary (Sun / Host Star) in atmospheric sky
+	if _space_root != null and _space_root.modulate.a < 0.95:
+		var sun_pos := Vector2(170, 92 + _sun_offset_y)
+		if sun_pos.y < 350.0:
+			var s_a := clampf(1.0 - _space_root.modulate.a, 0.0, 1.0)
+			var col := _env_sun_color * Color(1, 1, 1, s_a)
+			_sky_canvas.draw_circle(sun_pos, 44.0, col * Color(1, 1, 1, 0.08))
+			_sky_canvas.draw_circle(sun_pos, 22.0, col * Color(1, 1, 1, 0.22))
+			_sky_canvas.draw_circle(sun_pos, 11.0, col * Color(1, 1, 1, 0.92))
+			_sky_canvas.draw_line(sun_pos + Vector2(-40, 30), sun_pos + Vector2(220, 210), col * Color(1, 1, 1, 0.05), 32.0)
+
+
+func _draw_distant_mountains() -> void:
+	if _distant_mountains_root == null or _mountain_polygon.is_empty():
+		return
+	_distant_mountains_root.draw_polygon(_mountain_polygon, [_env_mountain_color])
+	
+	# Draw crest ridge highlight
+	var ridge_count := _mountain_polygon.size() - 2
+	if ridge_count > 1:
+		for i in range(ridge_count - 1):
+			var p1 := _mountain_polygon[i]
+			var p2 := _mountain_polygon[i + 1]
+			_distant_mountains_root.draw_line(p1, p2, _env_mountain_highlight, 1.5)
+	
+	# Atmospheric distance haze across base
+	_distant_mountains_root.draw_rect(Rect2(0, 225, 640, 55), _env_atmosphere_haze)
+
+
+func _draw_midground_terrain() -> void:
+	if _midground_terrain_root == null or _midground_polygon.is_empty():
+		return
+	_midground_terrain_root.draw_polygon(_midground_polygon, [_env_mid_terrain_color])
+	
+	# Strata lines and rock bands across midground hills
+	var ridge_count := _midground_polygon.size() - 2
+	if ridge_count > 1:
+		for i in range(ridge_count - 1):
+			var p1 := _midground_polygon[i]
+			var p2 := _midground_polygon[i + 1]
+			_midground_terrain_root.draw_line(p1, p2, _env_mid_terrain_color.lightened(0.18), 1.0)
+			if i % 3 == 0:
+				_midground_terrain_root.draw_line(p1 + Vector2(0, 10), p2 + Vector2(0, 10), _env_ground_detail_color * Color(1, 1, 1, 0.4), 1.0)
+
+
+func _draw_foreground_surface() -> void:
+	if _foreground_surface == null:
+		return
+	# 1. Base planetary bedrock polygon spanning full width 0..640
+	var ground_pts := PackedVector2Array([
+		Vector2(0, 268),
+		Vector2(70, 266),
+		Vector2(140, 270),
+		Vector2(210, 267),
+		Vector2(248, 275), # Meets launch pad foundation
+		Vector2(392, 275),
+		Vector2(430, 267),
+		Vector2(500, 271),
+		Vector2(570, 265),
+		Vector2(640, 269),
+		Vector2(640, 360),
+		Vector2(0, 360)
+	])
+	_foreground_surface.draw_polygon(ground_pts, [_env_ground_base_color])
+
+	# 2. Geological strata layers across bedrock
+	_foreground_surface.draw_line(Vector2(0, 288), Vector2(245, 290), _env_ground_detail_color, 2.0)
+	_foreground_surface.draw_line(Vector2(395, 290), Vector2(640, 287), _env_ground_detail_color, 2.0)
+	_foreground_surface.draw_line(Vector2(0, 314), Vector2(240, 316), _env_ground_detail_color * Color(1, 1, 1, 0.8), 2.0)
+	_foreground_surface.draw_line(Vector2(400, 316), Vector2(640, 313), _env_ground_detail_color * Color(1, 1, 1, 0.8), 2.0)
+	_foreground_surface.draw_line(Vector2(0, 342), Vector2(640, 344), _env_ground_detail_color * Color(1, 1, 1, 0.6), 1.5)
+
+	# 3. Boulders, Crags, and Environmental Outcrops
+	var rocks := [
+		[Vector2(45, 280), Vector2(20, 12)],
+		[Vector2(105, 294), Vector2(26, 16)],
+		[Vector2(165, 278), Vector2(16, 10)],
+		[Vector2(215, 285), Vector2(22, 14)],
+		[Vector2(435, 282), Vector2(18, 11)],
+		[Vector2(485, 294), Vector2(24, 15)],
+		[Vector2(545, 279), Vector2(20, 13)],
+		[Vector2(605, 292), Vector2(22, 14)],
+	]
+	for r in rocks:
+		var r_pos: Vector2 = r[0]
+		var r_sz: Vector2 = r[1]
+		var r_poly := PackedVector2Array([
+			r_pos + Vector2(-r_sz.x * 0.5, 0),
+			r_pos + Vector2(-r_sz.x * 0.25, -r_sz.y),
+			r_pos + Vector2(r_sz.x * 0.35, -r_sz.y * 0.9),
+			r_pos + Vector2(r_sz.x * 0.5, 0)
+		])
+		_foreground_surface.draw_polygon(r_poly, [_env_ground_base_color.darkened(0.25)])
+		_foreground_surface.draw_line(r_pos + Vector2(-r_sz.x * 0.25, -r_sz.y), r_pos + Vector2(r_sz.x * 0.35, -r_sz.y * 0.9), _env_ground_accent_color, 1.5)
+
+	# 4. Biome-specific accent details
+	match _env_mountain_style:
+		"caldera":
+			_foreground_surface.draw_polyline(PackedVector2Array([
+				Vector2(60, 330), Vector2(95, 335), Vector2(140, 332), Vector2(180, 338)
+			]), Color(1.0, 0.42, 0.12, 0.85), 2.0)
+			_foreground_surface.draw_polyline(PackedVector2Array([
+				Vector2(460, 335), Vector2(510, 331), Vector2(565, 336), Vector2(610, 332)
+			]), Color(1.0, 0.42, 0.12, 0.85), 2.0)
+		"jagged":
+			for ix in [75, 145, 455, 525, 590]:
+				var sp := PackedVector2Array([
+					Vector2(ix - 5, 275), Vector2(ix, 262), Vector2(ix + 5, 275)
+				])
+				_foreground_surface.draw_polygon(sp, [_env_ground_accent_color * Color(1, 1, 1, 0.9)])
+		"spires":
+			for cx in [85, 175, 465, 565]:
+				var cp := PackedVector2Array([
+					Vector2(cx - 6, 280), Vector2(cx, 258), Vector2(cx + 6, 280)
+				])
+				_foreground_surface.draw_polygon(cp, [_env_ground_accent_color])
+				_foreground_surface.draw_line(Vector2(cx - 6, 280), Vector2(cx, 258), Color(1, 1, 1, 0.8), 1.5)
+		"mesas":
+			for rx in [30, 90, 150, 440, 500, 560]:
+				_foreground_surface.draw_arc(Vector2(rx, 305), 18.0, -PI * 0.7, -PI * 0.3, 8, _env_ground_accent_color, 1.5)
+
+	# 5. Reinforced Launch Platform Bedrock Footing & Flame Trench
+	_foreground_surface.draw_rect(Rect2(240, 275, 160, 75), Color("#0e151c"))
+	_foreground_surface.draw_rect(Rect2(240, 275, 160, 75), Color("#1e2b36"), false, 2.0)
+	_foreground_surface.draw_rect(Rect2(252, 290, 16, 60), Color("#080c10"))
+	_foreground_surface.draw_rect(Rect2(372, 290, 16, 60), Color("#080c10"))
+	_foreground_surface.draw_rect(Rect2(282, 276, 76, 44), Color("#04070a"))
+	_foreground_surface.draw_line(Vector2(282, 276), Vector2(266, 312), Color("#2a3e4c"), 2.0)
+	_foreground_surface.draw_line(Vector2(358, 276), Vector2(374, 312), Color("#2a3e4c"), 2.0)
+	for hx in range(244, 396, 14):
+		_foreground_surface.draw_line(Vector2(hx, 276), Vector2(hx + 6, 282), Color(0.95, 0.75, 0.20, 0.85), 1.5)
+
+
+func _draw_ground_illumination() -> void:
+	if _ground_illumination == null:
+		return
+	if _phase == Phase.PREPARATION:
+		_ground_illumination.draw_circle(Vector2(260, 290), 45.0, Color(0.85, 0.95, 1.0, 0.08))
+		_ground_illumination.draw_circle(Vector2(380, 290), 45.0, Color(0.85, 0.95, 1.0, 0.08))
+	elif _phase in [Phase.IGNITION, Phase.LIFTOFF]:
+		if _engine_light_glow > 0.01:
+			var pad_c := Vector2(320, 288)
+			var a := _engine_light_glow * 0.65
+			_ground_illumination.draw_circle(pad_c, 210.0, Color(1.0, 0.52, 0.12, a * 0.14))
+			_ground_illumination.draw_circle(pad_c, 120.0, Color(1.0, 0.68, 0.22, a * 0.32))
+			_ground_illumination.draw_circle(pad_c, 52.0, Color(1.0, 0.92, 0.60, a * 0.70))
+
 
 func _draw_launch_pad() -> void:
 	if _pad_sprite != null and is_instance_valid(_pad_sprite):
@@ -1096,6 +1581,28 @@ func _start_launch_sequence() -> void:
 	_time = 0.0
 	_phase_time = 0.0
 	_countdown_val = 10
+	if _ground_root != null:
+		_ground_root.visible = true
+		_ground_root.modulate.a = 1.0
+		_ground_root.position.y = 0.0
+	if _midground_terrain_root != null:
+		_midground_terrain_root.visible = true
+		_midground_terrain_root.modulate.a = 1.0
+		_midground_terrain_root.position.y = 0.0
+	if _distant_mountains_root != null:
+		_distant_mountains_root.visible = true
+		_distant_mountains_root.modulate.a = 1.0
+		_distant_mountains_root.position.y = 0.0
+	if _sky_canvas != null:
+		_sky_canvas.visible = true
+	if _space_root != null:
+		_space_root.modulate.a = 0.0
+	_current_sky_zenith = _env_sky_zenith
+	_current_sky_horizon = _env_sky_horizon
+	if _sky_rect != null:
+		_sky_rect.color = _env_sky_zenith
+	_sun_offset_y = 0.0
+	_engine_light_glow = 0.0
 	print("LAUNCH PHASE 1: PREPARATION | Spacecraft: %s | Vehicle: %s | Target: %s" % [_hull_name, _veh_name, _planet_name])
 
 
@@ -1103,7 +1610,14 @@ func _start_subsequent_sequence() -> void:
 	_phase = Phase.SPACE
 	_sky_rect.color = Color(0.003, 0.005, 0.010)
 	_space_root.modulate.a = 1.0
-	_ground_root.visible = false
+	if _ground_root != null:
+		_ground_root.visible = false
+	if _midground_terrain_root != null:
+		_midground_terrain_root.visible = false
+	if _distant_mountains_root != null:
+		_distant_mountains_root.visible = false
+	if _sky_canvas != null:
+		_sky_canvas.visible = false
 	_countdown_label.visible = false
 	if _phase_label != null:
 		_phase_label.visible = false
@@ -1207,14 +1721,17 @@ func _enter_ignition_phase() -> void:
 func _update_ignition_phase() -> void:
 	var t := clampf(_phase_time / 2.0, 0.0, 1.0)
 	_shake_amount = lerpf(0.5, 3.2, t) if not _reduced_fx else 0.4
-	
+	_engine_light_glow = lerpf(0.25, 1.0, t)
+
 	if _exhaust_plume != null:
 		_exhaust_plume.queue_redraw()
+	if _ground_illumination != null:
+		_ground_illumination.queue_redraw()
 
-	if _sky_rect != null:
-		var col_dusk := Color(0.04, 0.07, 0.12)
-		var col_flash := Color(0.14, 0.09, 0.08)
-		_sky_rect.color = col_dusk.lerp(col_flash, sin(t * PI) * 0.45)
+	if _sky_canvas != null:
+		_current_sky_zenith = _env_sky_zenith.lerp(_env_sky_zenith.lightened(0.12), sin(t * PI) * 0.45)
+		_current_sky_horizon = _env_sky_horizon.lerp(_env_sun_color.lightened(0.2), sin(t * PI) * 0.35)
+		_sky_canvas.queue_redraw()
 
 	if _phase_time >= 2.2:
 		_enter_liftoff_phase()
@@ -1239,13 +1756,24 @@ func _update_liftoff_phase(delta: float) -> void:
 	_velocity += _acceleration * delta
 	_altitude += _velocity * delta
 
+	# Parallax layer movements
 	if _rocket_root != null:
 		_rocket_root.position.y -= _velocity * delta * 0.65
 	if _ground_root != null:
-		_ground_root.position.y += _velocity * delta * 0.45
+		_ground_root.position.y += _velocity * delta * 0.55
+	if _midground_terrain_root != null:
+		_midground_terrain_root.position.y += _velocity * delta * 0.35
+	if _distant_mountains_root != null:
+		_distant_mountains_root.position.y += _velocity * delta * 0.16
+	_sun_offset_y += _velocity * delta * 0.06
 
+	_engine_light_glow = clampf(1.0 - (_altitude / 70.0), 0.0, 1.0)
 	_shake_amount = (3.5 + sin(_time * 30.0) * 0.8) if not _reduced_fx else 0.5
 
+	if _sky_canvas != null:
+		_sky_canvas.queue_redraw()
+	if _ground_illumination != null:
+		_ground_illumination.queue_redraw()
 	if _exhaust_plume != null:
 		_exhaust_plume.queue_redraw()
 	if _gantry_arm_node != null:
@@ -1271,18 +1799,36 @@ func _update_ascent_phase(delta: float) -> void:
 	_altitude += _velocity * delta
 
 	var t := clampf(_phase_time / 3.4, 0.0, 1.0)
-	var col_dusk := Color(0.04, 0.07, 0.12)
-	var col_stratosphere := Color(0.02, 0.03, 0.07)
+
+	# Parallax continuation and altitude haze fade
+	if _ground_root != null:
+		_ground_root.position.y += _velocity * delta * 0.55
+		_ground_root.modulate.a = clampf(1.0 - t * 1.5, 0.0, 1.0)
+	if _midground_terrain_root != null:
+		_midground_terrain_root.position.y += _velocity * delta * 0.35
+		_midground_terrain_root.modulate.a = clampf(1.0 - t * 1.3, 0.0, 1.0)
+	if _distant_mountains_root != null:
+		_distant_mountains_root.position.y += _velocity * delta * 0.16
+		_distant_mountains_root.modulate.a = clampf(1.0 - t * 1.1, 0.0, 1.0)
+	_sun_offset_y += _velocity * delta * 0.06
+
+	# Smooth atmospheric sky darkening into cosmic void
+	var col_stratosphere := Color(0.015, 0.025, 0.055)
 	var col_vacuum := Color(0.003, 0.005, 0.010)
-	
+	if t < 0.5:
+		_current_sky_zenith = _env_sky_zenith.lerp(col_stratosphere, t * 2.0)
+		_current_sky_horizon = _env_sky_horizon.lerp(col_stratosphere.lightened(0.12), t * 2.0)
+	else:
+		_current_sky_zenith = col_stratosphere.lerp(col_vacuum, (t - 0.5) * 2.0)
+		_current_sky_horizon = col_stratosphere.lightened(0.12).lerp(col_vacuum, (t - 0.5) * 2.0)
+
 	if _sky_rect != null:
-		if t < 0.5:
-			_sky_rect.color = col_dusk.lerp(col_stratosphere, t * 2.0)
-		else:
-			_sky_rect.color = col_stratosphere.lerp(col_vacuum, (t - 0.5) * 2.0)
-	
+		_sky_rect.color = _current_sky_zenith
+	if _sky_canvas != null:
+		_sky_canvas.queue_redraw()
+
 	if _space_root != null:
-		_space_root.modulate.a = clampf((t - 0.25) / 0.70, 0.0, 1.0)
+		_space_root.modulate.a = clampf((t - 0.20) / 0.80, 0.0, 1.0)
 
 	if _shock_cone != null:
 		if t >= 0.35 and t <= 0.65:
@@ -1317,10 +1863,22 @@ func _enter_space_phase() -> void:
 		_smoke_particles.emitting = false
 	if _shock_cone != null:
 		_shock_cone.visible = false
+	if _ground_root != null:
+		_ground_root.visible = false
+	if _midground_terrain_root != null:
+		_midground_terrain_root.visible = false
+	if _distant_mountains_root != null:
+		_distant_mountains_root.visible = false
+	if _sky_canvas != null:
+		_sky_canvas.visible = false
 	if _space_root != null:
 		_space_root.modulate.a = 1.0
 	if _sky_rect != null:
 		_sky_rect.color = Color(0.003, 0.005, 0.010)
+
+	_play_sfx(_audio_staging)
+	_separate_stages()
+	_show_space_plaque()
 
 	_play_sfx(_audio_staging)
 	_separate_stages()

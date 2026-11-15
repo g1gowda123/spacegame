@@ -72,6 +72,14 @@ func _initialize() -> void:
 	else:
 		print("[+] PASS: Target planet linkage & departure world visual continuity")
 
+	# Test 8: Planetary Launch Background & Biome Environments
+	var env_ok := _test_planetary_background_environments()
+	if not env_ok:
+		failures += 1
+		print("[-] FAIL: Planetary launch background & biome environments")
+	else:
+		print("[+] PASS: Planetary launch background & 13 biome environments")
+
 	# Test 6: Verify GameState preservation
 	var state_ok := _test_gamestate_preservation()
 	if not state_ok:
@@ -300,4 +308,84 @@ func _test_gamestate_preservation() -> bool:
 		return false
 
 	_clean_up(instance)
+	return true
+
+
+func _test_planetary_background_environments() -> bool:
+	var biomes := [
+		"volcanic", "cryo", "arid", "temperate", "barren", "ocean",
+		"methane", "crystal", "obsidian", "iron", "sulfur", "ammonia", "carbon"
+	]
+	var launch_scene = load("res://scenes/launch.tscn")
+	if launch_scene == null:
+		return false
+
+	for b_id in biomes:
+		_reset_state()
+		_game_state.run["sector"] = 1
+		_game_state.current_sector = {
+			"planet": {
+				"name": b_id.to_upper() + "-MAJOR",
+				"biome": b_id,
+				"distance_ly": 18.5,
+				"gravity_g": 1.05,
+				"eq_temp_k": 295.0,
+				"star": "SOL",
+				"star_type": "G2V",
+				"escape_kms": 11.2
+			}
+		}
+
+		var instance = launch_scene.instantiate()
+		root.add_child(instance)
+		instance._ready()
+
+		# Verify environment setup
+		if instance._env.is_empty():
+			_clean_up(instance)
+			return false
+		
+		# Verify sky and terrain are not pitch black
+		if instance._env_sky_zenith.v < 0.04 or instance._env_sky_horizon.v < 0.08:
+			_clean_up(instance)
+			return false
+		if instance._env_ground_base_color.v < 0.05:
+			_clean_up(instance)
+			return false
+		if instance._mountain_polygon.size() < 30:
+			_clean_up(instance)
+			return false
+		if instance._midground_polygon.size() < 20:
+			_clean_up(instance)
+			return false
+
+		# Verify layer components exist and are visible on pad
+		if instance._sky_canvas == null or instance._ground_root == null:
+			_clean_up(instance)
+			return false
+		if not instance._ground_root.visible or not instance._distant_mountains_root.visible:
+			_clean_up(instance)
+			return false
+		if instance._foreground_surface == null or instance._ground_illumination == null:
+			_clean_up(instance)
+			return false
+
+		# Advance into ignition and liftoff to test illumination and parallax
+		instance._enter_ignition_phase()
+		instance._update_ignition_phase()
+		if instance._engine_light_glow < 0.1:
+			_clean_up(instance)
+			return false
+
+		instance._enter_liftoff_phase()
+		instance._update_liftoff_phase(0.1)
+		if instance._ground_root.position.y <= 0.0:
+			_clean_up(instance)
+			return false
+		if instance._distant_mountains_root.position.y <= 0.0:
+			_clean_up(instance)
+			return false
+
+		_clean_up(instance)
+
 	return true
