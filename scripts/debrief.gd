@@ -467,7 +467,7 @@ func _build_footer() -> void:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(c)
 
-	var final := int(r.get("sector", 1)) >= GameState.SECTORS_PER_RUN or bool(r.get("run_over", false))
+	var final := (int(r.get("sector", 1)) >= GameState.SECTORS_PER_RUN 			and not bool(GameState.run.get("endless", false))) 			or bool(r.get("run_over", false))
 	var event_pending := not bool(GameState.run.get("event_resolved", true)) \
 			and not ((GameState.run.get("event_card", {}) as Dictionary).is_empty())
 	var buff_pending := GameState.has_pending_buff()

@@ -664,6 +664,7 @@ func new_run() -> void:
 		"daily": false,
 		"daily_key": "",
 		"share_code": "",
+		"endless": false,
 	}
 	draft = []
 	current_sector = {}
@@ -1125,7 +1126,7 @@ func roll_event() -> void:
 	event_card = {}
 	run["event_resolved"] = false
 	var sector_no := int(run.get("sector", 1))
-	if sector_no > SECTORS_PER_RUN:
+	if sector_no > SECTORS_PER_RUN and not bool(run.get("endless", false)):
 		run["event_resolved"] = true
 		return
 	var seen: Array = run.get("events_seen", [])
@@ -1406,6 +1407,20 @@ func owned_modules() -> Array:
 	return out
 
 
+func start_endless() -> void:
+	## Continue the same ship, crew and agency past the three-sector campaign.
+	## The report remains the scored run; endless is the victory lap.
+	run["endless"] = true
+	run["sector"] = SECTORS_PER_RUN + 1
+	run["event_resolved"] = true
+	run["pending_buff"] = false
+	run["buff_choices"] = []
+	shop_offers.clear()
+	last_result["run_over"] = false
+	roll_draft()
+	changed.emit()
+
+
 func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	var planet: Dictionary = sec["planet"]
 	var quota := int(sec["quota"])
@@ -1474,7 +1489,7 @@ func finish_sector(extracted: bool, data: int, sec: Dictionary) -> void:
 	# one debrief, but must not leak into the next sector in a shorter form.
 	shop_offers.clear()
 	last_result["run_over"] = int(run["approval"]) <= 0
-	if int(run["sector"]) <= SECTORS_PER_RUN and int(run["approval"]) > 0:
+	if (int(run["sector"]) <= SECTORS_PER_RUN or bool(run.get("endless", false))) and int(run["approval"]) > 0:
 		roll_event()
 		if finished_sector in BUFF_MILESTONES:
 			roll_buff_choices()

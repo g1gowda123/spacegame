@@ -272,6 +272,14 @@ func _build_footer() -> void:
 	share_line = s
 	c.add_child(s)
 
+	var endless := UIKit.button("ENDLESS >", Vector2(146, 28), true)
+	endless.position = Vector2(300, 11)
+	endless.disabled = int(GameState.run.get("approval", 0)) <= 0
+	endless.pressed.connect(func():
+		GameState.start_endless()
+		get_tree().change_scene_to_file("res://scenes/draft.tscn")
+	)
+	c.add_child(endless)
 	var again := UIKit.button("NEW CAMPAIGN >", Vector2(150, 28), true)
 	again.position = Vector2(456, 11)
 	again.pressed.connect(func():
