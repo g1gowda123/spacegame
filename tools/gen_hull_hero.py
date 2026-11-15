@@ -23,6 +23,7 @@ OUT = SRC / "hero"
 COMFY_IN = Path("/home/g1/ComfyUI/input")
 
 IDS = ["pathfinder", "cryo", "relay", "hopper"]
+INK = (20, 24, 30)
 LOOK = {
     "pathfinder": "pale turquoise survey vessel, teal and cyan hull",
     "cryo": "ice-white insulated hauler, pale blue and steel hull",
@@ -76,36 +77,28 @@ def key(img: Image.Image) -> Image.Image:
 
 
 def finish(img: Image.Image, ship: Image.Image) -> Image.Image:
-    bb = img.getbbox()
-    if bb:
-        img = img.crop(bb)
-    pad = Image.new("RGBA", (img.width + 8, img.height + 8), (0, 0, 0, 0))
-    pad.paste(img, (4, 4), img)
-    img = pad.resize((380, 140), Image.Resampling.LANCZOS)
-    a = np.asarray(img).astype(np.float32)
-    a[..., 3] = np.where(a[..., 3] > 150, 255, 0)
-    # palette: reuse the sheet's own hue family by pulling the hero toward it
-    base = np.asarray(ship.convert("RGB")).astype(np.float32)
-    base_mean = base.reshape(-1, 3).mean(axis=0)
+    """Crisp 2x original + high-frequency detail from the img2img pass.
+
+    The render's silhouette drifts from the approved sheet, so alpha always comes
+    from the sheet; only the mid/high band of the render is added, clamped, which
+    keeps flat hulls flat and avoids the halo a straight composite produced.
+    """
+    base = ship.convert("RGBA").resize((380, 140), Image.Resampling.NEAREST)
+    b = np.asarray(base).astype(np.float32)
+    hero = img.convert("RGB").resize((380, 140), Image.Resampling.LANCZOS)
+    ha = np.asarray(hero).astype(np.float32)
+    smooth = np.asarray(hero.filter(ImageFilter.GaussianBlur(2.2))).astype(np.float32)
+    high = np.clip(ha - smooth, -38, 38)
+    out = b.copy()
+    out[..., :3] = np.clip(b[..., :3] + high * 0.9, 0, 255)
+    rgb = Image.fromarray(out[..., :3].astype(np.uint8)).quantize(16, method=Image.MEDIANCUT).convert("RGB")
+    a = np.asarray(rgb).astype(np.float32)
+    a = np.dstack([a, b[..., 3]])
     m = a[..., 3] > 0
-    hero_mean = a[m][:, :3].mean(axis=0) if m.any() else base_mean
-    # detail transfer: keep the crisp 2x original as the colour base and add
-    # only the high-frequency band from the img2img pass, so flat hulls do not
-    # pick up the render's mottling.
-    small = ship.resize((380, 140), Image.Resampling.NEAREST)
-    base = np.asarray(small).astype(np.float32)
-    smooth = np.asarray(Image.fromarray(a[..., :3].astype(np.uint8)).filter(
-        ImageFilter.GaussianBlur(2.2))).astype(np.float32)
-    high = a[..., :3] - smooth
-    base[..., :3] = np.clip(base[..., :3] + high * 0.85, 0, 255)
-    base[..., 3] = a[..., 3]
-    out = Image.fromarray(base.astype(np.uint8), "RGBA")
-    q = out.convert("RGB").quantize(colors=14, method=Image.MEDIANCUT).convert("RGB")
-    q = q.filter(ImageFilter.UnsharpMask(radius=1, percent=130, threshold=2))
-    q = ImageEnhance.Sharpness(q).enhance(1.5)
-    out = q.convert("RGBA")
-    out.putalpha(Image.fromarray(a[..., 3].astype(np.uint8)))
-    return out
+    pad = np.pad(m, 1)
+    edge = m & ~(pad[:-2, 1:-1] & pad[2:, 1:-1] & pad[1:-1, :-2] & pad[1:-1, 2:])
+    a[edge, :3] = INK
+    return Image.fromarray(a.astype(np.uint8), "RGBA")
 
 
 def main() -> None:

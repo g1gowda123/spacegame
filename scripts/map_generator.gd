@@ -3817,10 +3817,21 @@ func _rebuild_actors() -> void:
 		cglow.polygon = _diamond_points(19.0)
 		cglow.color = Color(0.20, 1.0, 0.90, 0.22)
 		cm.add_child(cglow)
-		var ccore := Polygon2D.new()
-		ccore.polygon = _diamond_points(8.0)
-		ccore.color = Color(0.30, 1.0, 0.92, 0.95)
-		cm.add_child(ccore)
+		# Same visual family as a quota data node, one size down and without the
+		# tall beam: an optional cache should read as data, not as a different
+		# kind of pickup.
+		if node_tex != null:
+			var cicon := Sprite2D.new()
+			cicon.texture = node_tex
+			cicon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			cicon.scale = Vector2(0.27, 0.27)
+			cicon.modulate = Color(0.72, 1.0, 1.0)
+			cm.add_child(cicon)
+		else:
+			var ccore := Polygon2D.new()
+			ccore.polygon = _diamond_points(8.0)
+			ccore.color = Color(0.30, 1.0, 0.92, 0.95)
+			cm.add_child(ccore)
 		var cout := Line2D.new()
 		cout.points = _diamond_points(9.0)
 		cout.closed = true

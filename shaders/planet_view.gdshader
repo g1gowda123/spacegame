@@ -75,7 +75,7 @@ void fragment() {
 			float band = 0.55 + 0.45 * sin(p.y * 8.0 + TIME * 0.025);
 			float inside = smoothstep(1.0, 0.80, length(p));
 			float cl = n * band * inside;
-			col = mix(col, vec3(0.84, 0.89, 0.96), cl * 0.26 * cloud_amount);
+			col = mix(col, vec3(0.84, 0.89, 0.96), cl * 0.30 * cloud_amount);
 		}
 
 		// Axial turn: rotate the planet normal around Y and reproject, so the
@@ -83,7 +83,7 @@ void fragment() {
 		// stays put. Oscillates instead of wrapping, because the source PNG
 		// only has the near hemisphere.
 		if (turn_amount > 0.001) {
-			float turn = sin(TIME * 0.11) * 0.18 * turn_amount;
+			float turn = sin(TIME * 0.11) * 0.24 * turn_amount;
 			vec3 n2 = vec3(
 				n.x * cos(turn) + n.z * sin(turn),
 				n.y,
