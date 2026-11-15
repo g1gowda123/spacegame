@@ -540,7 +540,6 @@ func _tree_block(tree: Control, system: String, bx: float, by: float) -> void:
 	b.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
 		return int(x.get("tier", 1)) < int(z.get("tier", 1)))
 	# Shared system bus splits into a left (A) and right (B) lane.
-	var bus_y := by + 29.0
 	var a_owned := false
 	for up in a:
 		if str(up.get("id", "")) in GameState.owned:
@@ -549,12 +548,15 @@ func _tree_block(tree: Control, system: String, bx: float, by: float) -> void:
 	for up in b:
 		if str(up.get("id", "")) in GameState.owned:
 			b_owned = true
-	_tree_line(tree, Vector2(bx + 22.0, bus_y), Vector2(bx + 50.0, bus_y),
-		UIKit.GREEN if a_owned else Color(0.33, 0.39, 0.46, 0.30))
-	_tree_line(tree, Vector2(bx + 22.0, bus_y), Vector2(bx + 140.0, bus_y),
-		UIKit.GREEN if b_owned else Color(0.33, 0.39, 0.46, 0.30))
-	_tree_block_lane(tree, a, bx + 50.0, by + 20.0, sys_color, "A")
-	_tree_block_lane(tree, b, bx + 140.0, by + 20.0, sys_color, "B")
+	var a_line := UIKit.GREEN if a_owned else Color(0.33, 0.39, 0.46, 0.30)
+	var b_line := UIKit.GREEN if b_owned else Color(0.33, 0.39, 0.46, 0.30)
+	# Fork from the system root, not a bus through A1. The B lane sits one
+	# text-row lower so the two paths visibly split instead of sharing a line.
+	var root_c := Vector2(bx + 11.0, by + 29.0)
+	_tree_line(tree, root_c, Vector2(bx + 61.0, by + 27.0), a_line)
+	_tree_line(tree, root_c, Vector2(bx + 151.0, by + 45.0), b_line)
+	_tree_block_lane(tree, a, bx + 50.0, by + 16.0, sys_color, "A")
+	_tree_block_lane(tree, b, bx + 140.0, by + 34.0, sys_color, "B")
 
 
 func _tree_block_lane(tree: Control, parts: Array, x: float, y: float,

@@ -17,6 +17,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "assets" / "sprites" / "modules"
+ICONS = ROOT / "assets" / "sprites" / "buffs_hd"
 SHIP = OUT / "ship"
 
 INK = (22, 24, 30)
@@ -111,6 +112,26 @@ def science2():
     return img
 
 
+def repair():
+    """Sealant dispenser for the SELF-HEALING SEALANT card: one readable object."""
+    img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    box(d, 38, 46, 44, 66, 14, STEEL)          # canister body
+    box(d, 46, 58, 28, 34, 8, LIGHT, ink=False)  # label plate
+    d.rectangle([52, 66, 74, 70], fill=ORANGE)   # hazard band
+    d.rectangle([52, 74, 74, 78], fill=ORANGE)
+    box(d, 44, 36, 32, 12, 10, DARK)            # collar
+    cyl(d, 60, 24, 9, 4, 14, MID)               # nozzle
+    d.rectangle([54, 14, 66, 20], fill=CYAN)
+    d.polygon([(56, 14), (52, 8), (60, 11)], fill=CYAN)
+    box(d, 34, 104, 52, 12, 10, DARK)           # base
+    bolts(d, 38, 46, 44, 66, 24)
+    # plus mark on the label
+    d.rectangle([58, 60, 62, 72], fill=ORANGE)
+    d.rectangle([54, 64, 66, 68], fill=ORANGE)
+    return img
+
+
 def main() -> None:
     SHIP.mkdir(parents=True, exist_ok=True)
     for pid, fn in (("whipple2", whipple2), ("coolant2", coolant2), ("science2", science2)):
@@ -118,6 +139,9 @@ def main() -> None:
         img.save(OUT / f"{pid}.png")
         img.resize((64, 48), Image.Resampling.LANCZOS).save(SHIP / f"{pid}.png")
         print("ok", pid)
+    ICONS.mkdir(parents=True, exist_ok=True)
+    repair().save(ICONS / "repair.png")
+    print("ok repair icon")
 
 
 if __name__ == "__main__":
