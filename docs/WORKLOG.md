@@ -1323,3 +1323,10 @@ than a screen from another build.
   that is RNG, not a regression.
 - Not pushed — ORION owns `git push`.
 - **13:24 — VFX / design spacecraft sprite: grid/scanline fix:** the SPACECRAFT card was loading `assets/sprites/ships/<hull>_2x.png`, whose 380×140 sheets carry a baked 1 px blueprint grid, and then drawing it through a fractional nearest-neighbour fit (140 source rows into a 60 px control) that dropped rows in a regular beat. `ShipDiagram._load_texture()` now prefers the clean authored `assets/sprites/ships/hero/<hull>.png`, normalises its bbox to the 190×70 logical space, and `_draw()` snaps scale to whole multiples (1× at the 190×70 design slot, 3× at 1920) so no source row is dropped. The design diagram is 190×70; removed one 4 px spacer and trimmed the warning row to 18 px so the CONOPS footer still fits. Verified all four hulls at 640 and 1920, plus debrief at 232×78: no grid, no scanlines. Evidence `design_final.png`, `design_hulls.png`, `debrief_ship.png`.
+
+## 13:20 — VEGA — Dr. Imani Vale portrait replaced (generated, not drawn)
+- User: "make a bit more realistic its 'too' simplified and cartoonish" — the flat pixel bust in the briefing card read as a cartoon next to the painted plates.
+- New workflow `tools/workflows/portrait_bust.json` (SDXL 832×1216, dpmpp_2m/karras, 30 steps cfg 6.5, optional 1.35× nearest-exact hires pass). `tools/gen_portrait.py` renders the neutral bust, then smile/stern from the same seed (img2img pass available via `--denoise`, `--fresh` renders independently, `--no-hires` for the single pass).
+- Output renamed to **160×160** — `scripts/briefing.gd` puts the texture in a 146×146 `TextureRect` with `STRETCH_KEEP_ASPECT_CENTERED`, so a 160×240 file was being letterboxed and wasting the lower third.
+- Grade in `card()`: gamma 0.72 + 5 % ambient lift so the painted studio shadow reads as an alcove rather than a black wedge; light vignette; `director_icon.png` now 64×64.
+- Assets: `assets/sprites/crew/director_{neutral,smile,stern}.png` + icon. Raw renders in `assets/raw/crew/`.

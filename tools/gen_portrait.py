@@ -101,8 +101,9 @@ def key(img: Image.Image) -> Image.Image:
 def card(img: Image.Image) -> Image.Image:
     """Square dossier frame for the 146x146 portrait slot in `scripts/briefing.gd`.
 
-    The slot uses STRETCH_KEEP_ASPECT_CENTERED, so the art is authored square:
-    head and shoulders with the studio backdrop kept, lightly vignetted.
+    Authored square (the slot is STRETCH_KEEP_ASPECT_CENTERED). The studio backdrop
+    is lifted with a gamma curve so its shadow side reads as an alcove instead of a
+    black wedge, then a light vignette seats it in the paper card.
     """
     w, h = img.size
     side = int(h * 0.60)
@@ -111,21 +112,14 @@ def card(img: Image.Image) -> Image.Image:
     img = img.crop((left, top, left + side, top + side))
     img = img.filter(ImageFilter.GaussianBlur(0.5))
     img = img.resize((160, 160), Image.Resampling.LANCZOS)
-    img = img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=70, threshold=4))
-    img = ImageEnhance.Contrast(img).enhance(1.03)
-    rgb = np.asarray(img.convert("RGB")).astype(np.float32)
+    img = img.filter(ImageFilter.UnsharpMask(radius=1.0, percent=65, threshold=4))
+    a = np.asarray(img.convert("RGB")).astype(np.float32) / 255.0
+    a = np.clip(a, 0, 1) ** 0.72 * 0.94 + 0.05
     yy, xx = np.mgrid[0:160, 0:160]
     d = np.sqrt(((xx - 80) / 80.0) ** 2 + ((yy - 78) / 80.0) ** 2)
-    v = np.clip(1.03 - 0.18 * np.clip(d - 0.70, 0, 1) ** 1.4, 0, 1.03)
-    rgb = rgb * v[..., None]
-    # the studio backdrop collapses to near-black at this crop size; pull it into
-    # the card's navy so the frame reads as a lit alcove, not a hole
-    lum = rgb.mean(axis=2)
-    blend = np.clip((52.0 - lum) / 30.0, 0, 1)[..., None] * 0.85
-    navy = np.array([19, 26, 38], dtype=np.float32)
-    rgb = rgb * (1 - blend) + navy * blend
-    rgb = np.clip(rgb, 0, 255).astype(np.uint8)
-    return Image.fromarray(rgb).convert("RGBA")
+    v = np.clip(1.0 - 0.14 * np.clip(d - 0.70, 0, 1) ** 1.4, 0, 1.0)
+    a = np.clip(a * v[..., None], 0, 1)
+    return Image.fromarray((a * 255).astype(np.uint8)).convert("RGBA")
 
 
 def main() -> None:
