@@ -62,14 +62,14 @@ BUFFS = {
     "reactor": "compact fission reactor core, hexagonal housing with control rods and a radiant core",
     "harden": "reinforced hull brace, armoured bracket with bolts and a diagonal strut",
     "aerogel": "aerogel insulation tile, translucent porous block in a metal frame",
-    "sling": "gravity sling trajectory hardware, orbital arc ring with a tethered probe",
+    "sling": "gravity assist diagram: a planet disc with a curved trajectory arc sweeping past it and a tiny probe at the end",
     "deepnet": "deep space network transceiver, phased array panel with glowing elements",
     "science": "science boost module, spectrometer with sample chamber and glowing readout",
-    "favor": "agency favour token, brass medallion with a stamped rocket emblem",
-    "ranger": "long range ranger module, folded antenna mast with a pennant and beacon",
+    "favor": "brass senate token medallion, stamped rocket emblem in the middle, ribbon tab at the top",
+    "ranger": "traverse pack: a rugged backpack with two side canisters and a folded antenna on top",
     "shield": "magnetic deflector shield emitter, ring coil with a glowing field aperture",
     "cache": "supply cache crate, strapped container with a latch and stencil marks",
-    "legacy": "legacy flight recorder, steel casing with a starburst emblem and rivets",
+    "legacy": "flight recorder: a rugged steel casing with a starburst emblem, rivets and a carry handle",
     "repair": "repair kit, tool roll with wrench, patch plates and a welding torch",
 }
 
