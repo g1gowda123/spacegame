@@ -105,20 +105,17 @@ func _make_card(p: Dictionary, idx: int) -> void:
 		"planet_asset": SpaceBackdrop.asset_for_planet(p),
 	})
 
-	var plate := Panel.new()
-	plate.position = Vector2(8, 68)
-	plate.size = Vector2(180, 20)
-	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	plate.add_theme_stylebox_override("panel", UIKit.style_panel(
-		UIKit.NAME, Color(0, 0, 0, 0), 0, 0
-	))
-	plate.visible = false
-	c.add_child(plate)
-
 	var name := UIKit.label(str(p["name"]), 9, UIKit.NAME, true, HORIZONTAL_ALIGNMENT_CENTER)
 	name.position = Vector2(4, 70)
 	name.size = Vector2(180, 17)
 	c.add_child(name)
+	var underline := ColorRect.new()
+	underline.position = Vector2(8, 89)
+	underline.size = Vector2(180, 1)
+	underline.color = UIKit.SAGE_HI
+	underline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	underline.visible = false
+	c.add_child(underline)
 
 	var star_type := str(p.get("star_type", "")).strip_edges()
 	if star_type == "" or star_type == "—":
@@ -198,7 +195,7 @@ func _make_card(p: Dictionary, idx: int) -> void:
 
 	var card := {
 		"id": str(p["id"]), "planet": p, "root": root, "panel": panel,
-		"title": name, "mark": mark, "plate": plate, "holder": holder,
+		"title": name, "mark": mark, "underline": underline, "holder": holder,
 		"tw": null, "accent": GameState.biome_color(str(p["biome"])),
 		"selected": false,
 	}
@@ -222,7 +219,8 @@ func _hover(root: Control, panel: PanelContainer, on: bool) -> void:
 	var holder: Control = card["holder"]
 	_tween_scale(holder, 1.055 if on else 1.0, 0.18)
 	if selected:
-		# Selected cards keep the cream nameplate; hover brightens the edge.
+		# Selected cards keep their name in cream; only the edge and underline
+		# carry the mark, so the planet name never sits on a light plate.
 		panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 			Color(0, 0, 0, 0), UIKit.SAGE_HI if on else UIKit.NAME, 0, 2
 		))
@@ -314,13 +312,13 @@ func _select(id: String, play_sound: bool = true) -> void:
 		var panel: PanelContainer = c["panel"]
 		var title: Label = c["title"]
 		var mark: Label = c["mark"]
-		var plate: Panel = c["plate"]
-		plate.visible = on
+		var underline: ColorRect = c["underline"]
+		underline.visible = on
 		if on:
 			panel.add_theme_stylebox_override("panel", UIKit.style_panel(
 				Color(0, 0, 0, 0), UIKit.NAME, 0, 2
 			))
-			title.add_theme_color_override("font_color", UIKit.ON_LIGHT)
+			title.add_theme_color_override("font_color", UIKit.NAME)
 			mark.text = "●  TARGET MARKED"
 			mark.add_theme_color_override("font_color", UIKit.SAGE_HI)
 			selected_planet = c["planet"]

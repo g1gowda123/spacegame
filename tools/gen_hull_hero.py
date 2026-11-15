@@ -89,9 +89,17 @@ def finish(img: Image.Image, ship: Image.Image) -> Image.Image:
     base_mean = base.reshape(-1, 3).mean(axis=0)
     m = a[..., 3] > 0
     hero_mean = a[m][:, :3].mean(axis=0) if m.any() else base_mean
-    shift = base_mean - hero_mean
-    a[m, :3] = np.clip(a[m, :3] + shift * 0.55, 0, 255)
-    out = Image.fromarray(a.astype(np.uint8), "RGBA")
+    # detail transfer: keep the crisp 2x original as the colour base and add
+    # only the high-frequency band from the img2img pass, so flat hulls do not
+    # pick up the render's mottling.
+    small = ship.resize((380, 140), Image.Resampling.NEAREST)
+    base = np.asarray(small).astype(np.float32)
+    smooth = np.asarray(Image.fromarray(a[..., :3].astype(np.uint8)).filter(
+        ImageFilter.GaussianBlur(2.2))).astype(np.float32)
+    high = a[..., :3] - smooth
+    base[..., :3] = np.clip(base[..., :3] + high * 0.85, 0, 255)
+    base[..., 3] = a[..., 3]
+    out = Image.fromarray(base.astype(np.uint8), "RGBA")
     q = out.convert("RGB").quantize(colors=14, method=Image.MEDIANCUT).convert("RGB")
     q = q.filter(ImageFilter.UnsharpMask(radius=1, percent=130, threshold=2))
     q = ImageEnhance.Sharpness(q).enhance(1.5)
