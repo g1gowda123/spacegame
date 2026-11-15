@@ -268,7 +268,7 @@ func _refresh_shop() -> void:
 		return
 	for child in shop_root.get_children():
 		child.queue_free()
-	owned_label.text = "%d INSTALLED" % GameState.owned.size()
+	owned_label.text = "%d/%d SLOTS" % [GameState.owned.size(), GameState.REFIT_SLOTS]
 	funds_label.text = "FUNDS $%dM" % int(GameState.run.get("budget", 0))
 	if GameState.shop_offers.is_empty():
 		var empty := UIKit.label("STORE EMPTY  ·  FLY THE NEXT SECTOR", 8, UIKit.DIM, true,
@@ -284,7 +284,8 @@ func _refresh_shop() -> void:
 
 func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	var cost := float(up["cost"])
-	var afford := float(GameState.run.get("budget", 0)) >= cost
+	var afford := float(GameState.run.get("budget", 0)) >= cost \
+		and GameState.owned.size() < GameState.REFIT_SLOTS
 	var card := Control.new()
 	card.position = Vector2(0, y)
 	card.size = Vector2(284, 64)
@@ -406,7 +407,9 @@ func _on_buy(idx: int) -> void:
 	var up: Dictionary = GameState.shop_offers[idx]
 	if GameState.buy_offer(idx):
 		var info := GameState.consume_last_upgrade()
-		var delta := str(info.get("text", ""))
+		var delta := str(info.get("preview", ""))
+		if delta.is_empty():
+			delta = str(info.get("text", ""))
 		var line := "INSTALLED  %s" % str(up["name"])
 		if not delta.is_empty():
 			line += "  ·  " + delta
@@ -419,7 +422,10 @@ func _on_buy(idx: int) -> void:
 			ship_diagram.flash_build()
 		_show_upgrade_pop(delta)
 	else:
-		_show_toast("INSUFFICIENT GRANTS", UIKit.RED)
+		if GameState.owned.size() >= GameState.REFIT_SLOTS:
+			_show_toast("REFIT BAY FULL  ·  SELL A PART FIRST", UIKit.RED)
+		else:
+			_show_toast("INSUFFICIENT GRANTS", UIKit.RED)
 
 
 func _show_upgrade_pop(text: String) -> void:
@@ -498,7 +504,8 @@ func _build_footer() -> void:
 	c.add_child(next_btn)
 
 	toast = UIKit.mono("", 8, UIKit.GREEN, HORIZONTAL_ALIGNMENT_CENTER)
-	toast.position = Vector2(326, 282)
+	toast.position = Vector2(326, 284)
+	toast.z_index = 50
 	toast.size = Vector2(304, 12)
 	toast.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	toast.add_theme_constant_override("outline_size", 3)

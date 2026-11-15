@@ -8,6 +8,7 @@ const START_BUDGET := 500.0
 const START_APPROVAL := 62
 const SECTORS_PER_RUN := 3
 const OBJECTIVE_NODES := 4
+const REFIT_SLOTS := 8
 
 const HULLS := [
 	{
@@ -1554,6 +1555,9 @@ func make_shop() -> void:
 func buy_offer(index: int) -> bool:
 	if index < 0 or index >= shop_offers.size():
 		return false
+	if owned.size() >= REFIT_SLOTS:
+		sfx("alarm")
+		return false
 	var up: Dictionary = shop_offers[index]
 	var cost := float(up["cost"])
 	if float(run["budget"]) < cost:
@@ -1569,6 +1573,7 @@ func buy_offer(index: int) -> bool:
 	last_upgrade = {
 		"id": str(up["id"]), "name": str(up["name"]),
 		"deltas": deltas, "text": " · ".join(deltas),
+		"preview": _upgrade_preview(before, after),
 	}
 	shop_offers.remove_at(index)
 	sfx("confirm")
@@ -1605,6 +1610,26 @@ func consume_last_upgrade() -> Dictionary:
 	var u := last_upgrade
 	last_upgrade = {}
 	return u
+
+
+func _upgrade_preview(before: Dictionary, after: Dictionary) -> String:
+	var parts: Array[String] = []
+	var pairs := [
+		["move_range", "RANGE"], ["dv", "ΔV"], ["integrity", "HULL"],
+		["thermal_res", "HEAT RES"], ["data_cap", "DATA"],
+		["comms_bonus", "COMMS"],
+	]
+	for p in pairs:
+		var key := str(p[0])
+		var was := int(before.get(key, 0))
+		var now := int(after.get(key, 0))
+		if was != now:
+			parts.append("%s %d→%d" % [str(p[1]), was, now])
+	if parts.is_empty():
+		return ""
+	if parts.size() > 2:
+		parts = parts.slice(0, 2)
+	return " · ".join(parts)
 
 
 func _upgrade_deltas(before: Dictionary, after: Dictionary, up: Dictionary) -> Array:
