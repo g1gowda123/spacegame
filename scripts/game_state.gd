@@ -277,62 +277,62 @@ const UPGRADES := [
 # style "pick one of three" progression beat.
 const BUFFS := [
 	{
-		"id": "reactor", "name": "REACTOR OVERDRIVE", "rarity": "rare", "weight": 2,
+		"id": "reactor", "name": "FISSION LATCH", "rarity": "rare", "weight": 2,
 		"icon": "reactor", "power_regen": 1,
 		"desc": "Reactor output +1 power every turn.",
 	},
 	{
-		"id": "harden", "name": "HARDENED BUS", "rarity": "common", "weight": 3,
+		"id": "harden", "name": "BORON WEAVE", "rarity": "common", "weight": 3,
 		"icon": "harden", "integrity": 2,
 		"desc": "+2 maximum hull integrity.",
 	},
 	{
-		"id": "aerogel", "name": "AEROGEL SKIN", "rarity": "common", "weight": 3,
+		"id": "aerogel", "name": "SILICA AEROGEL", "rarity": "common", "weight": 3,
 		"icon": "aerogel", "thermal_res": 3,
 		"desc": "Heat gain -3 on every move.",
 	},
 	{
-		"id": "sling", "name": "GRAVITY SLING", "rarity": "rare", "weight": 2,
+		"id": "sling", "name": "GRAVITY ASSIST", "rarity": "rare", "weight": 2,
 		"icon": "sling", "dv": 4,
 		"desc": "+4 delta-v at the start of every sector.",
 	},
 	{
-		"id": "deepnet", "name": "DEEP-SPACE NET", "rarity": "rare", "weight": 2,
+		"id": "deepnet", "name": "DEEP SPACE NET", "rarity": "rare", "weight": 2,
 		"icon": "deepnet", "comms_bonus": 8,
 		"desc": "Comms loss -8% on every downlink.",
 	},
 	{
-		"id": "science", "name": "TARGETED SCIENCE", "rarity": "rare", "weight": 2,
+		"id": "science", "name": "TARGETED SPECTROSCOPY", "rarity": "rare", "weight": 2,
 		"icon": "science", "science": 0.12,
 		"desc": "+12% science from every delivered node.",
 	},
 	{
-		"id": "favor", "name": "AGENCY FAVOR", "rarity": "common", "weight": 3,
+		"id": "favor", "name": "SENATE ANNEX", "rarity": "common", "weight": 3,
 		"icon": "favor", "grant": 0.15,
 		"desc": "+15% grant from every sector.",
 	},
 	{
-		"id": "ranger", "name": "RANGER PACK", "rarity": "rare", "weight": 2,
+		"id": "ranger", "name": "TRAVERSE PACK", "rarity": "rare", "weight": 2,
 		"icon": "ranger", "move_range": 1,
 		"desc": "+1 tile movement range.",
 	},
 	{
-		"id": "shield", "name": "REDUNDANT SYSTEMS", "rarity": "epic", "weight": 1,
+		"id": "shield", "name": "FAULT-TOLERANT BUS", "rarity": "epic", "weight": 1,
 		"icon": "shield", "shield_cost": 0,
 		"desc": "Hazard shielding costs 0 power.",
 	},
 	{
-		"id": "cache", "name": "DATA CACHE", "rarity": "common", "weight": 3,
+		"id": "cache", "name": "ORBITAL CACHE", "rarity": "common", "weight": 3,
 		"icon": "cache", "start_data": 1,
 		"desc": "Start every sector with +1 data.",
 	},
 	{
-		"id": "legacy", "name": "MISSION LEGACY", "rarity": "epic", "weight": 1,
+		"id": "legacy", "name": "PROGRAM HERITAGE", "rarity": "epic", "weight": 1,
 		"icon": "legacy", "score": 300,
 		"desc": "+300 points in the final report.",
 	},
 	{
-		"id": "repair", "name": "EMERGENCY REPAIR", "rarity": "common", "weight": 3,
+		"id": "repair", "name": "SELF-HEALING SEALANT", "rarity": "common", "weight": 3,
 		"icon": "repair", "sector_integrity": 1,
 		"desc": "+1 hull integrity at every sector start.",
 	},

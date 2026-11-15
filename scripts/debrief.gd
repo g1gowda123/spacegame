@@ -47,11 +47,27 @@ func _ready() -> void:
 			break
 		if str(raw).begins_with("--buy="):
 			call_deferred("_dev_buy", int(str(raw).substr(6)))
+		if str(raw).begins_with("--buy-id="):
+			call_deferred("_dev_buy_id", str(raw).substr(9))
 	if "--sell" in cli:
 		call_deferred("_open_sell_panel")
 	if "--sell-first" in cli:
 		call_deferred("_dev_sell_first")
 
+
+
+func _dev_buy_id(id: String) -> void:
+	for i in range(GameState.shop_offers.size()):
+		if str(GameState.shop_offers[i].get("id", "")) == id:
+			_dev_buy(i)
+			return
+	for up in GameState.UPGRADES:
+		if str(up.get("id", "")) == id:
+			GameState.shop_offers = [up]
+			_refresh_shop()
+			_dev_buy(0)
+			return
+	print("DEVBUYID missing ", id)
 
 
 func _dev_sell_first() -> void:
