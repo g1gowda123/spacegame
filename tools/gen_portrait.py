@@ -61,7 +61,7 @@ def text2img(prompt: str, seed: int) -> dict:
     wf["2"]["inputs"]["text"] = prompt
     wf["3"]["inputs"]["text"] = NEG
     wf["5"]["inputs"]["seed"] = seed
-    wf["8"]["inputs"]["seed"] = seed
+    wf["7"]["inputs"]["seed"] = seed
     return wf
 
 
@@ -74,7 +74,7 @@ def img2img(image_name: str, prompt: str, seed: int, denoise: float) -> dict:
     wf["5"]["inputs"]["latent_image"] = ["4b", 0]
     wf["5"]["inputs"]["denoise"] = denoise
     wf["5"]["inputs"]["seed"] = seed
-    wf["8"]["inputs"]["seed"] = seed
+    wf["7"]["inputs"]["seed"] = seed
     return wf
 
 
@@ -115,11 +115,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="")
     ap.add_argument("--denoise", type=float, default=0.30)
+    ap.add_argument("--no-hires", action="store_true", help="single pass, no 1.35x detail pass")
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     RAW.mkdir(parents=True, exist_ok=True)
     anchor = RAW / "portrait_anchor.png"
     ids = [m for m in MOODS if not args.only or m in args.only.split(",")]
+    if args.no_hires:
+        globals()["NO_HIRES"] = True
     for mood in ids:
         prompt = f"{BUST}, {MOODS[mood]}"
         if mood == "neutral":
