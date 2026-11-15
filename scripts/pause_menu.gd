@@ -30,6 +30,9 @@ func _build() -> void:
 	_root.add_child(shade)
 
 	var p := UIKit.sheet(_root, 184, 68, 272, 224)
+	p.add_theme_stylebox_override("panel", UIKit.style_panel(
+		UIKit.HULL_HI, UIKit.SAGE, 0, 1
+	))
 	_panel = p
 	var c := Control.new()
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -45,7 +48,7 @@ func _build() -> void:
 	title.size = Vector2(240, 22)
 	c.add_child(title)
 	var rule := ColorRect.new()
-	rule.color = UIKit.STEEL
+	rule.color = UIKit.SAGE_DARK
 	rule.position = Vector2(16, 52)
 	rule.size = Vector2(240, 1)
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -54,7 +57,7 @@ func _build() -> void:
 	var sector := 1
 	if not GameState.run.is_empty():
 		sector = int(GameState.run.get("sector", 1))
-	var status := UIKit.mono("SECTOR %d  ·  RUN IN PROGRESS" % sector, 7, UIKit.INK_SOFT)
+	var status := UIKit.mono("SECTOR %d  ·  RUN IN PROGRESS" % sector, 7, UIKit.MUTED)
 	status.position = Vector2(16, 62)
 	status.size = Vector2(240, 12)
 	c.add_child(status)
