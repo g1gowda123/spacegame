@@ -484,31 +484,43 @@ func _build_arsenal_rows(panel: Control) -> void:
 	var old := panel.get_node_or_null("Rows")
 	if old != null:
 		old.queue_free()
-	var rows := Control.new()
-	rows.name = "Rows"
-	rows.position = Vector2(12, 46)
-	rows.size = Vector2(564, 174)
-	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(rows)
+	var tree := Control.new()
+	tree.name = "Rows"
+	tree.position = Vector2(12, 44)
+	tree.size = Vector2(564, 170)
+	tree.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(tree)
 
 	var systems := [
 		"PROPULSION", "POWER", "THERMAL", "STRUCTURE",
 		"COMMS", "SCIENCE", "SUPPORT",
 	]
-	var row_h := 24.0
-	for si in range(systems.size()):
-		var system := str(systems[si])
+	var centers: Array[float] = [42.0, 122.0, 202.0, 282.0, 362.0, 442.0, 522.0]
+	var root := Vector2(282.0, 24.0)
+	# Root bus: one hull silhouette feeding all seven systems.
+	_tree_icon(tree, "res://assets/sprites/ships/pathfinder_2x.png",
+		Vector2(252.0, 2.0), Vector2(60.0, 22.0), UIKit.STEEL, false, false,
+		"LANDER BUS", "The common spacecraft bus. Every system branch grows from here.")
+	var root_label := UIKit.mono("LANDER BUS", 5, UIKit.MUTED_C,
+		HORIZONTAL_ALIGNMENT_CENTER)
+	root_label.position = Vector2(222.0, 24.0)
+	root_label.size = Vector2(120.0, 8.0)
+	tree.add_child(root_label)
+
+	for i in range(systems.size()):
+		var system := str(systems[i])
+		var sx: float = centers[i]
 		var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
-		var y := float(si) * row_h
-		var row := Control.new()
-		row.position = Vector2(0, y)
-		row.size = Vector2(564, row_h - 1.0)
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rows.add_child(row)
-		var label := UIKit.mono(system, 6, sys_color)
-		label.position = Vector2(0, 7)
-		label.size = Vector2(88, 11)
-		row.add_child(label)
+		_tree_line(tree, root, Vector2(sx, 32.0), Color(
+			UIKit.STEEL.r, UIKit.STEEL.g, UIKit.STEEL.b, 0.42))
+		_tree_icon(tree, "res://assets/sprites/modules/branches/%s_A.png" % system,
+			Vector2(sx - 15.0, 32.0), Vector2(30.0, 30.0), sys_color, false, false,
+			system, "Two paths: A and B. Buy across either branch; tier 2 needs its tier 1.")
+		var sys_label := UIKit.mono(system, 5, sys_color,
+			HORIZONTAL_ALIGNMENT_CENTER)
+		sys_label.position = Vector2(sx - 40.0, 63.0)
+		sys_label.size = Vector2(80.0, 8.0)
+		tree.add_child(sys_label)
 
 		var a: Array = []
 		var b: Array = []
@@ -523,62 +535,76 @@ func _build_arsenal_rows(panel: Control) -> void:
 			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
 		b.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
 			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
-		_tree_node(row, a, 92.0, sys_color)
-		_tree_node(row, b, 308.0, sys_color)
-		var line_a := ColorRect.new()
-		line_a.color = Color(sys_color.r, sys_color.g, sys_color.b, 0.55)
-		line_a.position = Vector2(196, 11)
-		line_a.size = Vector2(8, 1)
-		row.add_child(line_a)
-		var line_b := ColorRect.new()
-		line_b.color = Color(sys_color.r, sys_color.g, sys_color.b, 0.55)
-		line_b.position = Vector2(412, 11)
-		line_b.size = Vector2(8, 1)
-		row.add_child(line_b)
-		var gap := ColorRect.new()
-		gap.color = Color(0.33, 0.39, 0.46, 0.18)
-		gap.position = Vector2(0, row_h - 1.0)
-		gap.size = Vector2(564, 1)
-		row.add_child(gap)
+		_tree_lane(tree, a, sx - 16.0, sys_color)
+		_tree_lane(tree, b, sx + 16.0, sys_color)
 
 
-func _tree_node(row: Control, parts: Array, x: float, sys_color: Color) -> void:
+func _tree_lane(tree: Control, parts: Array, cx: float, sys_color: Color) -> void:
 	for i in range(parts.size()):
 		var up: Dictionary = parts[i]
 		var id := str(up.get("id", ""))
+		var path := str(up.get("path", "A"))
+		var tier := int(up.get("tier", 1))
 		var installed := id in GameState.owned
 		var req := str(up.get("requires", ""))
 		var locked := req != "" and not (req in GameState.owned)
-		var path := str(up.get("path", "A"))
-		var tier := int(up.get("tier", 1))
-		var card := Panel.new()
-		card.position = Vector2(x + float(i) * 108.0, 2)
-		card.size = Vector2(104, 19)
-		card.mouse_filter = Control.MOUSE_FILTER_STOP
-		var fill := UIKit.NIGHT_2
-		var border := sys_color
-		if installed:
-			fill = Color(0.04, 0.14, 0.11, 0.98)
-			border = UIKit.GREEN
-		elif locked:
-			fill = Color(0.03, 0.04, 0.05, 0.88)
-			border = Color(sys_color.r, sys_color.g, sys_color.b, 0.28)
-		card.add_theme_stylebox_override("panel", UIKit.style_panel(fill, border, 0, 1))
-		row.add_child(card)
-		var name := str(up.get("name", id))
-		var text := "%s%d  %s" % [path, tier, name]
-		var label := UIKit.mono(text, 7, UIKit.CREAM if installed else UIKit.MUTED_C)
-		label.position = Vector2(4, 3)
-		label.size = Vector2(96, 13)
-		label.clip_text = true
-		card.add_child(label)
-		UIKit.hover_info(card, name, "%s\n\n%s\nCOST $%dM%s" % [
-			str(up.get("plain", up.get("desc", ""))),
-			"TIER 2 LOCKED · BUY TIER 1 FIRST" if locked else
-				("INSTALLED" if installed else "AVAILABLE IN REFIT"),
-			int(up.get("cost", 0.0)),
-			("\nREQUIRES " + str(up.get("requires", ""))) if req != "" else "",
-		], border)
+		var y := 76.0 if tier == 1 else 116.0
+		_tree_line(tree, Vector2(cx, 32.0 if tier == 1 else 106.0),
+			Vector2(cx, y), Color(sys_color.r, sys_color.g, sys_color.b, 0.50))
+		_tree_icon(tree, "res://assets/sprites/modules/%s.png" % id,
+			Vector2(cx - 15.0, y), Vector2(30.0, 30.0), sys_color,
+			installed, locked, str(up.get("name", id)),
+			"%s\n\n%s\nCOST $%dM%s" % [
+				str(up.get("plain", up.get("desc", ""))),
+				"TIER 2 LOCKED · BUY TIER 1 FIRST" if locked else
+					("INSTALLED" if installed else "AVAILABLE IN REFIT"),
+				int(up.get("cost", 0.0)),
+				("\nREQUIRES " + req) if req != "" else "",
+			])
+		var short := str(up.get("name", id)).split(" ")[0]
+		var label := UIKit.mono("%s%d %s" % [path, tier, short], 5,
+			UIKit.CREAM if installed else UIKit.MUTED_C,
+			HORIZONTAL_ALIGNMENT_CENTER)
+		label.position = Vector2(cx - 24.0, y + 31.0)
+		label.size = Vector2(48.0, 8.0)
+		tree.add_child(label)
+
+
+func _tree_icon(parent: Control, path: String, pos: Vector2, size: Vector2,
+		border: Color, installed: bool, locked: bool, title: String,
+		body: String) -> void:
+	var card := Panel.new()
+	card.position = pos
+	card.size = size
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bg := UIKit.PAPER if not locked else Color(0.10, 0.11, 0.12, 0.94)
+	var line := UIKit.GREEN if installed else border
+	if locked:
+		line = Color(border.r, border.g, border.b, 0.32)
+	card.add_theme_stylebox_override("panel", UIKit.style_panel(bg, line, 0, 1))
+	parent.add_child(card)
+	if ResourceLoader.exists(path):
+		var icon := TextureRect.new()
+		icon.texture = load(path) as Texture2D
+		icon.position = Vector2(2, 2)
+		icon.size = size - Vector2(4, 4)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.modulate = Color(1, 1, 1, 0.38 if locked else 1.0)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(icon)
+	UIKit.hover_info(card, title, body, line)
+
+
+func _tree_line(parent: Control, a: Vector2, b: Vector2, color: Color) -> void:
+	var line := Line2D.new()
+	line.points = PackedVector2Array([a, b])
+	line.width = 1.0
+	line.default_color = color
+	line.antialiased = true
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(line)
 
 
 func _rebuild_arsenal() -> void:
