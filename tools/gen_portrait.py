@@ -52,8 +52,14 @@ MOODS = {
 }
 
 
+NO_HIRES = False
+
+
 def graph() -> dict:
-    return json.loads(WF.read_text())
+    wf = json.loads(WF.read_text())
+    if NO_HIRES:
+        wf["8"]["inputs"]["images"] = ["12", 0]
+    return wf
 
 
 def text2img(prompt: str, seed: int) -> dict:

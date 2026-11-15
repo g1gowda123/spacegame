@@ -20,6 +20,9 @@ var _bg_on := true
 var _dim := 0.35
 var _bg_rect: ColorRect
 var _shade: ColorRect
+var _motion := false
+var _spin_speed := 0.0
+var _spin := 0.0
 
 
 func _ready() -> void:
@@ -93,6 +96,11 @@ func configure(opts: Dictionary) -> void:
 	if opts.has("planet_asset"):
 		_planet_asset = str(opts["planet_asset"])
 		_load_planet(_planet_asset)
+	if opts.has("motion"):
+		_motion = bool(opts["motion"])
+		set_process(_motion)
+	if opts.has("spin_speed"):
+		_spin_speed = float(opts["spin_speed"])
 	if opts.has("dim"):
 		_dim = clampf(float(opts["dim"]), 0.0, 1.0)
 		if _shade != null:
@@ -151,11 +159,21 @@ func _layout() -> void:
 	# texture box a little extra room so the disc is never clipped.
 	var rect_d := d * 1.10
 	planet_rect.size = Vector2(rect_d, rect_d)
+	planet_rect.pivot_offset = planet_rect.size * 0.5
 	planet_rect.position = Vector2(
 		vp.x * _planet_center.x - rect_d * 0.5,
 		vp.y * _planet_center.y - rect_d * 0.5
 	)
 	planet_rect.visible = _planet_on
+
+
+func _process(delta: float) -> void:
+	if not _motion or planet_rect == null:
+		return
+	_spin += delta * _spin_speed
+	planet_rect.rotation = _spin
+	if _planet_mat != null:
+		_planet_mat.set_shader_parameter("spin", _spin)
 
 
 static func planet_path(name: String) -> String:
