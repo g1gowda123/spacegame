@@ -22,14 +22,15 @@ There is no install step: the build is a static WebGL 2 export, and it runs in a
 - **Legible to a non-specialist in under a minute.** Static WebGL 2 build, no install, no account; 1–4 players on one keyboard; every abstraction is printed next to the measurement it comes from so the science can be audited in-game.
 - **Runs on the judged artifact and on the repo.** The release ships the exact build, the 23.5 s demo and the 7-slide deck; `godot --path .` runs the same game from source.
 
-<img src="screenshots/latest_sector.png" width="920" alt="A survey sector: the lander, cliff ridges, data beacons and the telegraph for an incoming dust storm">
-
-*Mission 2 of 3 on **Kepler-62 e**. The lander is on the board, cliff ridges block line of travel, cyan beacons are the data exits, and the red-checked footprint is a hazard that arms next turn.*
+| | |
+|:--:|:--:|
+| <img src="screenshots/loop/loop_title.png" width="440" alt="Mission terminal title screen"> | <img src="screenshots/loop/loop_draft.png" width="440" alt="Draft three real exoplanets"> |
+| **Mission terminal** — one agency, three missions, one grade | **Draft a real planet** — three archive targets, threat-tagged |
 
 | | |
 |:--:|:--:|
-| <img src="screenshots/loop/loop_draft.png" width="440" alt="Draft three real exoplanets"> | <img src="screenshots/loop/loop_report.png" width="440" alt="Final agency report with grade and sector ledger"> |
-| **Draft a real planet** — three archive targets, threat-tagged | **File the campaign record** — graded on science, efficiency, approval |
+| <img src="screenshots/loop/loop_sector.png" width="440" alt="Survey sector with hazard telegraph"> | <img src="screenshots/loop/loop_report.png" width="440" alt="Final agency report with grade and sector ledger"> |
+| **Fly the surface** — telegraphed hazards, data beacons, Δv budget | **File the record** — graded on science, efficiency, approval |
 
 ---
 
