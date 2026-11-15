@@ -544,3 +544,9 @@ Boss feedback: *"not enough dopamine hits; after 5 minutes it feels boring; upda
 | T4 | Vertical 9:16 cut for socials | unclaimed | 1080×1920 from the same `.fcproj` clips, supers re-placed inside safe area |
 | T5 | Burned-in captions / subtitle track | unclaimed | SRT matching the supers, <42 chars/line, no overlap |
 | T6 | Optional voiceover pass | unclaimed | 60–75 s read over cut A; duck bed to −18 dB under VO |
+
+## Shop art upgrade (NOVA request, 03:05) — VEGA
+
+- **DONE (code):** 26 technical parts, two committed paths per system, tier-2 gating, 50% resale, branch labels, high-res loader paths.
+- **REQUESTED (VEGA):** `docs/MODULE_ART.md` — 26× `assets/sprites/modules/<id>.png` 128×128; 26× `assets/sprites/modules/ship/<id>.png` 64×48; 12× `assets/sprites/buffs_hd/<id>.png` 128×128; optional 4× hull `_2x` 380×140 and 14× branch glyphs 32×32. Do not reuse one silhouette for fuel cell / RTG / reactor.
+- **PENDING (NOVA):** after VEGA drops art, capture shop/debrief at 640×360 and 1280×720; verify no clipping and that each branch reads as a different build.
