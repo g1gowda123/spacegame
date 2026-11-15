@@ -219,9 +219,9 @@ still so the UI reads as a document.
   banding, drifting horizontally; compressed at the limb by the disc mask.
 - `turn_amount`: rotates the surface **sampling** around Y and reprojects
   (`n2 = rotateY(n)`), so baked markings slide across the disc while the
-  terminator and sphere normal stay fixed. Oscillates ±0.18 rad instead of
+  terminator and sphere normal stay fixed. Oscillates ±0.24 rad instead of
   wrapping, because the source PNG only has the near hemisphere.
-- `SpaceBackdrop` sway: ±0.02 rad over a 74 s period, pivot at the disc centre.
+- `SpaceBackdrop` sway: ±0.026 rad over a 74 s period, pivot at the disc centre.
 - Enable only from `title.gd`:
   `configure({"planet_clouds": 1.0, "planet_turn": 1.0, "planet_sway": 1.0})`.
   Defaults are 0, so split-screen/draft/debrief portraits are unaffected.
