@@ -480,7 +480,7 @@ func _build_footer() -> void:
 	c.add_child(next_btn)
 
 	toast = UIKit.mono("", 8, UIKit.GREEN, HORIZONTAL_ALIGNMENT_CENTER)
-	toast.position = Vector2(326, 294)
+	toast.position = Vector2(326, 282)
 	toast.size = Vector2(304, 12)
 	toast.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	toast.add_theme_constant_override("outline_size", 3)
