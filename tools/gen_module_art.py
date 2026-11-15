@@ -81,47 +81,44 @@ def gen(prompt, out, seed):
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def key(img, tol=72):
-    """Key the sheet and clean the silhouette.
+def key(img, tol=0):
+    """Remove the sheet, whichever colour SDXL actually put behind the part.
 
-    Corner median gives the sheet colour, but a plain distance mask eats pale
-    hardware and leaves pinholes where specular highlights match the sheet, so
-    the background is taken as the border-connected region only and any enclosed
-    hole is filled back in. Without the fill, a 128 px part ends up with missing
-    corners and see-through patches.
+    Two modes, chosen from the border ring: a magenta sheet is matched by hue
+    (red and blue well above green), anything else by distance to the border
+    median. Either way only the sheet region connected to the border is dropped
+    and the interior is hole-filled, so pale panels are not keyed away and
+    specular pinholes are not punched through the part.
     """
     a = np.asarray(img.convert("RGB")).astype(np.float32)
-    pad = 14
-    c = np.concatenate([a[:pad, :pad].reshape(-1, 3), a[:pad, -pad:].reshape(-1, 3),
-                        a[-pad:, :pad].reshape(-1, 3), a[-pad:, -pad:].reshape(-1, 3)])
-    bg = np.median(c, axis=0)
-    near = np.linalg.norm(a - bg, axis=2) < tol
-    lab, n = ndimage.label(near)
+    pad = 12
+    ring = np.concatenate([a[:pad, :pad].reshape(-1, 3), a[:pad, -pad:].reshape(-1, 3),
+                           a[-pad:, :pad].reshape(-1, 3), a[-pad:, -pad:].reshape(-1, 3)])
+    bg = np.median(ring, axis=0)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    magenta_sheet = (bg[0] > 90) and (bg[2] > 90) and (bg[1] < 0.74 * min(bg[0], bg[2]))
+    if magenta_sheet:
+        sheetish = (r > 70) & (b > 70) & (g < 0.74 * np.minimum(r, b))
+    else:
+        sheetish = np.linalg.norm(a - bg, axis=2) < 34
+    lab, n = ndimage.label(sheetish)
     if n:
         border_ids = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
         bgmask = np.isin(lab, border_ids[border_ids > 0])
     else:
-        bgmask = near
+        bgmask = sheetish
     fg = ndimage.binary_fill_holes(~bgmask)
     fg = ndimage.binary_opening(fg, iterations=1)
     lab2, n2 = ndimage.label(fg)
     if n2 > 1:
         sizes = ndimage.sum(fg, lab2, range(1, n2 + 1))
-        biggest = int(np.argmax(sizes)) + 1
-        # keep satellites only if they are real attached detail, not specks
-        keep = np.isin(lab2, [i + 1 for i, s in enumerate(sizes) if s > 0.06 * sizes.max()])
-        if keep.sum() < 0.3 * fg.sum():
-            keep = lab2 == biggest
-        fg = keep
+        fg = np.isin(lab2, [i + 1 for i, sz in enumerate(sizes) if sz > 0.10 * sizes.max()])
     al = np.where(fg, 255, 0).astype(np.uint8)
     rgb = a.copy()
-    # despill: magenta bleeds inward from the sheet along every rim
-    edge = fg & ~ndimage.binary_erosion(fg, iterations=4)
-    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    mag = edge & (r > b + 14) & (r > g + 22)
-    rgb[mag, 0] = np.clip(rgb[mag, 0] * 0.86, 0, 255)
-    rgb[mag, 1] = np.minimum(255, rgb[mag, 1] * 1.22 + 16)
-    rgb[mag, 2] = np.minimum(255, rgb[mag, 2] * 1.16 + 12)
+    rim = fg & ~ndimage.binary_erosion(fg, iterations=3)
+    spill = rim & (r > g + 10) & (b > g + 4)
+    rgb[spill, 0] = 0.5 * rgb[spill, 0] + 0.5 * rgb[spill, 1]
+    rgb[spill, 2] = 0.5 * rgb[spill, 2] + 0.5 * rgb[spill, 1]
     return Image.fromarray(np.dstack([rgb, al]).astype(np.uint8), "RGBA")
 
 
