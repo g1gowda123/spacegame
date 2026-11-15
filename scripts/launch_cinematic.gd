@@ -78,6 +78,7 @@ var _shake_amount: float = 0.0
 var _is_subsequent: bool = false
 var _reduced_fx: bool = false
 var _no_fairing: bool = false
+var _vector_fairing: bool = false
 var _skipping: bool = false
 var _transitioned: bool = false
 
@@ -134,6 +135,8 @@ func _parse_arguments() -> void:
 			call_deferred("_skip_launch")
 		elif arg == "--no-fairing":
 			_no_fairing = true
+		elif arg == "--vector-fairing":
+			_vector_fairing = true
 
 
 func _load_mission_data() -> void:
@@ -453,10 +456,7 @@ func _build_rocket_assembly() -> void:
 			spr.scale = Vector2(sc, sc)
 			spr.position = Vector2(float(pair[2]), -98.0)
 			host.add_child(spr)
-	elif _no_fairing:
-		_fairing_left.visible = false
-		_fairing_right.visible = false
-	else:
+	elif _vector_fairing:
 		var pl := Polygon2D.new()
 		pl.color = Color(0.90, 0.92, 0.96)
 		pl.polygon = PackedVector2Array([
@@ -469,6 +469,11 @@ func _build_rocket_assembly() -> void:
 			Vector2(0, -98), Vector2(14, -72), Vector2(14, -30), Vector2(0, -30)
 		])
 		_fairing_right.add_child(pr)
+	if _no_fairing or (not ResourceLoader.exists(fairing_left_art) and not _vector_fairing):
+		# No fairing art yet: show VEGA's hull sprite rather than a flat white
+		# polygon. `--vector-fairing` restores the old shroud for comparison.
+		_fairing_left.visible = false
+		_fairing_right.visible = false
 
 	# Transonic Condensation Shock Collar (Max-Q cone)
 	_shock_cone = Polygon2D.new()
