@@ -245,15 +245,6 @@ func _daily_note() -> String:
 
 
 func _title_mark() -> void:
-	var ring := RingMark.new()
-	ring.position = Vector2(349, 40)
-	ring.size = Vector2(144, 144)
-	ring.pivot_offset = Vector2(72, 72)
-	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(ring)
-	var tw := create_tween().set_loops()
-	tw.tween_property(ring, "rotation", TAU, 300.0).from(0.0)
-
 	_centred(UIKit.label("ORBIT", 30, UIKit.NAME, true), "ORBIT", 30, 421, 78, true)
 	_centred(UIKit.label("&", 14, UIKit.ORANGE, false), "&", 14, 421, 106, false)
 	_centred(UIKit.label("OUTPLAY", 22, UIKit.NAME, true), "OUTPLAY", 22, 421, 122, true)
