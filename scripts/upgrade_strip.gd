@@ -487,7 +487,7 @@ func _build_arsenal_rows(panel: Control) -> void:
 	var tree := Control.new()
 	tree.name = "Rows"
 	tree.position = Vector2(12, 48)
-	tree.size = Vector2(608, 302)
+	tree.size = Vector2(608, 300)
 	tree.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(tree)
 
@@ -495,48 +495,46 @@ func _build_arsenal_rows(panel: Control) -> void:
 		"PROPULSION", "POWER", "THERMAL", "STRUCTURE",
 		"COMMS", "SCIENCE", "SUPPORT",
 	]
-	var row_h := 43.0
 	for si in range(systems.size()):
 		var system := str(systems[si])
-		var y := float(si) * row_h
-		var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
-		var label := UIKit.mono(system, 6, sys_color)
-		label.position = Vector2(0, y + 16)
-		label.size = Vector2(80, 10)
-		tree.add_child(label)
-
-		var a: Array = []
-		var b: Array = []
-		for up in GameState.UPGRADES:
-			if str(up.get("branch", "")) != system:
-				continue
-			if str(up.get("path", "A")) == "B":
-				b.append(up)
-			else:
-				a.append(up)
-		a.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
-			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
-		b.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
-			return int(x.get("tier", 1)) < int(z.get("tier", 1)))
-
-		# System root: branch glyph, then A and B lanes to the right.
-		_tree_icon(tree, "res://assets/sprites/modules/branches/%s_A.png" % system.to_lower(),
-			Vector2(84, y + 4), Vector2(28, 28), sys_color, false, false,
-			system, "Two paths: A and B. Tier 2 needs its own tier 1.")
-		_tree_line(tree, Vector2(84, y + 18), Vector2(116, y + 18),
-			Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
-		_tree_line(tree, Vector2(84, y + 18), Vector2(310, y + 18),
-			Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
-		_tree_lane_row(tree, a, 116.0, y, sys_color, "A")
-		_tree_lane_row(tree, b, 310.0, y, sys_color, "B")
-		var gap := ColorRect.new()
-		gap.color = Color(0.33, 0.39, 0.46, 0.16)
-		gap.position = Vector2(0, y + row_h - 1.0)
-		gap.size = Vector2(592, 1)
-		tree.add_child(gap)
+		var col := si % 3
+		var row := si / 3
+		_tree_block(tree, system, float(col) * 204.0, float(row) * 98.0)
 
 
-func _tree_lane_row(tree: Control, parts: Array, x: float, y: float,
+func _tree_block(tree: Control, system: String, bx: float, by: float) -> void:
+	var sys_color := Color(str(GameState.SYSTEM_COLOR.get(system, "#e8dfc8")))
+	var title := UIKit.mono(system, 6, sys_color)
+	title.position = Vector2(bx, by)
+	title.size = Vector2(110.0, 10.0)
+	tree.add_child(title)
+	_tree_icon(tree, "res://assets/sprites/modules/branches/%s_A.png" % system.to_lower(),
+		Vector2(bx, by + 18.0), Vector2(22.0, 22.0), sys_color, false, false,
+		system, "Two paths: A and B. Tier 2 needs its own tier 1.")
+	var a: Array = []
+	var b: Array = []
+	for up in GameState.UPGRADES:
+		if str(up.get("branch", "")) != system:
+			continue
+		if str(up.get("path", "A")) == "B":
+			b.append(up)
+		else:
+			a.append(up)
+	a.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
+		return int(x.get("tier", 1)) < int(z.get("tier", 1)))
+	b.sort_custom(func(x: Dictionary, z: Dictionary) -> bool:
+		return int(x.get("tier", 1)) < int(z.get("tier", 1)))
+	# Shared system bus splits into a left (A) and right (B) lane.
+	var bus_y := by + 29.0
+	_tree_line(tree, Vector2(bx + 22.0, bus_y), Vector2(bx + 50.0, bus_y),
+		Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
+	_tree_line(tree, Vector2(bx + 22.0, bus_y), Vector2(bx + 140.0, bus_y),
+		Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
+	_tree_block_lane(tree, a, bx + 50.0, by + 20.0, sys_color, "A")
+	_tree_block_lane(tree, b, bx + 140.0, by + 20.0, sys_color, "B")
+
+
+func _tree_block_lane(tree: Control, parts: Array, x: float, y: float,
 		sys_color: Color, path: String) -> void:
 	for i in range(parts.size()):
 		var up: Dictionary = parts[i]
@@ -545,13 +543,12 @@ func _tree_lane_row(tree: Control, parts: Array, x: float, y: float,
 		var installed := id in GameState.owned
 		var req := str(up.get("requires", ""))
 		var locked := req != "" and not (req in GameState.owned)
-		var nx := x + float(i) * 84.0
+		var ny := y + float(i) * 34.0
 		if i > 0:
-			_tree_line(tree, Vector2(nx - 84.0 + 28.0, y + 18),
-				Vector2(nx, y + 18),
+			_tree_line(tree, Vector2(x + 11.0, ny - 12.0), Vector2(x + 11.0, ny),
 				Color(sys_color.r, sys_color.g, sys_color.b, 0.55))
 		_tree_icon(tree, "res://assets/sprites/modules/%s.png" % id,
-			Vector2(nx, y + 4), Vector2(28, 28), sys_color, installed, locked,
+			Vector2(x, ny), Vector2(22.0, 22.0), sys_color, installed, locked,
 			str(up.get("name", id)),
 			"%s\n\n%s\nCOST $%dM%s" % [
 				str(up.get("plain", up.get("desc", ""))),
@@ -563,8 +560,8 @@ func _tree_lane_row(tree: Control, parts: Array, x: float, y: float,
 		var short := str(up.get("name", id)).split(" ")[0]
 		var tag := UIKit.mono("%s%d %s" % [path, tier, short], 6,
 			UIKit.CREAM if installed else UIKit.MUTED_C)
-		tag.position = Vector2(nx - 16.0, y + 34.0)
-		tag.size = Vector2(64.0, 9.0)
+		tag.position = Vector2(x - 6.0, ny + 24.0)
+		tag.size = Vector2(56.0, 9.0)
 		tree.add_child(tag)
 
 
