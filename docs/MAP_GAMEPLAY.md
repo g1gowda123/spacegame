@@ -158,3 +158,9 @@ This is a **stat ramp plus one discrete rule** at sector 3, matching how the
 reference games keep escalation legible. Player power still comes from
 refits/buffs; the curve asks the build to keep up rather than invalidating it.
 HUD shows `THREAT 1.2x` / `1.7x` in the bottom route line.
+
+## Route tempo (2026-11-15)
+
+- Starting sols: **30** on the shakedown sector, **24** on normal sectors (+4 from the old 26/20).
+- Each sector also places **3 optional data caches** at roughly 6/9/12 tiles. A cache is `+1 DATA` and refunds `+1 SOL`; it is never part of the quota.
+- This makes the map a route choice: quota nodes are the shortest finish, caches are the longer line that buys back mission time.
