@@ -37,12 +37,12 @@ def ellipse(d, box, fill):
 
 def body(d):
     # shoulders
-    d.polygon([(16, 240), (30, 206), (58, 194), (102, 194), (130, 206), (144, 240)], fill=NAVY)
+    d.polygon([(12, 240), (26, 198), (56, 186), (104, 186), (134, 198), (148, 240)], fill=NAVY)
     # shirt collar
-    d.polygon([(70, 194), (80, 214), (90, 194), (84, 190), (76, 190)], fill=CREAM)
+    d.polygon([(70, 186), (80, 206), (90, 186), (84, 182), (76, 182)], fill=CREAM)
     # collar wings
-    d.polygon([(56, 194), (72, 196), (72, 216), (58, 212)], fill=NAVY_HI)
-    d.polygon([(104, 194), (88, 196), (88, 216), (102, 212)], fill=NAVY_HI)
+    d.polygon([(54, 186), (72, 188), (72, 210), (56, 204)], fill=NAVY_HI)
+    d.polygon([(106, 186), (88, 188), (88, 210), (104, 204)], fill=NAVY_HI)
     # rank stripe + badge
     d.line([(36, 232), (52, 214)], fill=ORANGE, width=2)
     d.rectangle([58, 214, 68, 222], fill=ORANGE)
@@ -54,15 +54,16 @@ def head(d):
     # hair mass behind the face
     d.ellipse([38, 44, 122, 152], fill=HAIR)
     # neck
-    d.rectangle([68, 140, 92, 196], fill=SKIN_SH)
-    d.rectangle([70, 140, 90, 190], fill=SKIN)
+    d.rectangle([73, 136, 87, 192], fill=SKIN_SH)
+    d.rectangle([75, 136, 85, 188], fill=SKIN)
+    d.line([70, 140, 90, 140], fill=SKIN_DEEP)          # jaw shadow
     # face
-    d.ellipse([46, 58, 114, 150], fill=SKIN)
+    d.ellipse([48, 58, 112, 148], fill=SKIN)
     # jaw taper
-    d.polygon([(52, 128), (108, 128), (96, 150), (64, 150)], fill=SKIN)
-    # left-side shading (light from upper right)
-    d.pieslice([46, 58, 114, 150], 120, 240, fill=SKIN_SH)
-    d.ellipse([48, 60, 112, 148], fill=SKIN)
+    d.polygon([(54, 126), (106, 126), (94, 148), (66, 148)], fill=SKIN)
+    # left-side shading: a soft crescent on the far cheek only
+    d.arc([46, 58, 114, 150], 100, 250, fill=SKIN_SH, width=4)
+    d.arc([47, 59, 113, 149], 120, 240, fill=SKIN_DEEP, width=1)
     # ears
     ellipse(d, [42, 96, 52, 116], SKIN_SH)
     ellipse(d, [108, 96, 118, 116], SKIN)
@@ -77,7 +78,7 @@ def head(d):
 def face(d, expr):
     """expr: neutral | smile | stern"""
     eye_y = 100
-    for cx in (66, 94):
+    for cx in (68, 92):
         d.rectangle([cx - 6, eye_y - 3, cx + 6, eye_y + 3], fill=WHITE)
         d.ellipse([cx - 4, eye_y - 4, cx + 4, eye_y + 4], fill=(56, 74, 92))
         d.ellipse([cx - 2, eye_y - 2, cx + 2, eye_y + 2], fill=INK)
@@ -87,14 +88,14 @@ def face(d, expr):
             d.line([cx - 7, eye_y - 6, cx + 5, eye_y - 3], fill=INK)     # lowering lid
     # brows
     if expr == "stern":
-        d.line([(58, 88), (72, 92)], fill=INK, width=2)
-        d.line([(102, 88), (88, 92)], fill=INK, width=2)
+        d.line([(60, 90), (75, 95)], fill=INK, width=2)
+        d.line([(100, 90), (85, 95)], fill=INK, width=2)
     elif expr == "smile":
-        d.line([(58, 90), (72, 87)], fill=INK, width=2)
-        d.line([(102, 90), (88, 87)], fill=INK, width=2)
+        d.line([(60, 93), (75, 89)], fill=INK, width=2)
+        d.line([(100, 93), (85, 89)], fill=INK, width=2)
     else:
-        d.line([(58, 89), (72, 88)], fill=INK, width=2)
-        d.line([(102, 89), (88, 88)], fill=INK, width=2)
+        d.line([(60, 92), (75, 90)], fill=INK, width=2)
+        d.line([(100, 92), (85, 90)], fill=INK, width=2)
     # nose
     d.line([(80, 104), (80, 118)], fill=SKIN_SH)
     d.point((79, 118), fill=SKIN_DEEP)
@@ -103,11 +104,11 @@ def face(d, expr):
     # mouth
     my = 132
     if expr == "smile":
-        d.line([(72, my), (88, my)], fill=LIP_DARK)
-        d.line([(70, my - 1), (72, my)], fill=LIP_DARK)
-        d.line([(88, my), (90, my - 1)], fill=LIP_DARK)
-        d.line([(74, my + 2), (86, my + 2)], fill=WHITE)
-        d.line([(74, my + 3), (86, my + 3)], fill=LIP)
+        d.line([(70, my + 1), (90, my + 1)], fill=LIP_DARK)
+        d.line([(68, my), (70, my + 1)], fill=LIP_DARK)
+        d.line([(90, my + 1), (92, my)], fill=LIP_DARK)
+        d.line([(73, my + 3), (87, my + 3)], fill=WHITE)
+        d.line([(73, my + 4), (87, my + 4)], fill=LIP)
     elif expr == "stern":
         d.line([(72, my + 1), (88, my + 1)], fill=LIP_DARK)
         d.line([(70, my + 2), (72, my + 1)], fill=LIP_DARK)
@@ -123,7 +124,7 @@ def face(d, expr):
 
 
 def headset(d):
-    d.arc([34, 46, 126, 132], 190, 350, fill=INK, width=5)
+    d.arc([34, 44, 126, 130], 186, 354, fill=INK, width=5)
     d.arc([36, 48, 124, 130], 190, 350, fill=(52, 60, 72), width=2)
     # ear cup on the viewer-left side
     d.rounded_rectangle([26, 88, 46, 124], radius=6, fill=(40, 46, 58), outline=INK)

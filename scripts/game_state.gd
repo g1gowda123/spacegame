@@ -338,6 +338,16 @@ const BUFFS := [
 	},
 ]
 
+const BRANCH_ROLE := {
+	"PROPULSION": {"A": "BURN", "B": "CRUISE"},
+	"POWER": {"A": "FISSION", "B": "CELL"},
+	"THERMAL": {"A": "LOOP", "B": "CRYO"},
+	"STRUCTURE": {"A": "WHIPPLE", "B": "COMPOSITE"},
+	"COMMS": {"A": "DSN", "B": "RECORDER"},
+	"SCIENCE": {"A": "LAB", "B": "SENSOR"},
+	"SUPPORT": {"A": "CONTRACT", "B": "FIELD"},
+}
+
 const BUFF_MILESTONES := [1, 2]
 
 const BIOME_INFO := {

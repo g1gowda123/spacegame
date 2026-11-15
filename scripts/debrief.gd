@@ -303,9 +303,12 @@ func _offer_card(up: Dictionary, idx: int, y: float) -> Control:
 	card.add_child(kind)
 	kind.position = Vector2(186, 8)
 	kind.size = Vector2(74, 11)
-	var branch := UIKit.mono("%s %s%d" % [
-		str(up.get("branch", "SUPPORT")), str(up.get("path", "A")),
-		int(up.get("tier", 1))
+	var sys := str(up.get("branch", "SUPPORT"))
+	var path := str(up.get("path", "A"))
+	var role: String = str(GameState.BRANCH_ROLE.get(sys, {}).get(path, ""))
+	var branch := UIKit.mono("%s %s%d%s" % [
+		sys, path, int(up.get("tier", 1)),
+		(" · " + role) if role != "" else ""
 	], 6, UIKit.INK_SOFT)
 	branch.position = Vector2(58, 20)
 	branch.size = Vector2(126, 9)
