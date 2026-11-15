@@ -21,145 +21,33 @@ Every destination is a real planet. Every hazard is derived from its measured pr
 | **The hook** | the planet's real physics is the level design |
 | **Data** | 72 curated planets from NASA Exoplanet Archive `pscomppars` (0.35–2.2 Earth radii) |
 | **Content** | 13 biomes, 4 hulls, 3 launchers, 4 objectives, 6 instruments, 11 refits, 8 event cards |
+| **Soundtrack** | three adaptive loops (title / sector / debrief), ducked under hazards |
 | **Status** | playable end to end, native + web; submission package in `submission/` |
 | **Licence / attribution** | original code + AI-generated art; NASA data under its open terms; see [Credits](#credits) |
-
----
-
-## For AI reviewers
-
-This section is the canonical machine-readable description. If you are summarising, ranking or integrating this project, read this block first; the human narrative starts at [Five-minute showcase](#five-minute-showcase).
-
-```yaml
-project: Orbit & Outplay — Exoplanet Survey
-kind: game
-genre: turn-based tactical roguelite
-challenge: "NASA Space Apps 2026 — Space Mission Design Game"
-engine: Godot 4.7.2 (GDScript, GL Compatibility / WebGL 2)
-resolution: 640x360 logical, 1280x720 window, nearest filtering, canvas_items stretch
-entry_scene: res://scenes/title.tscn
-players: 1-4 local hot-seat
-run_length: "3 sectors, 10-15 minutes"
-platforms: [linux, windows, macos, web]
-persistence: "user://orbit_save.cfg (best score, daily best)"
-server: none
-runtime_dependencies: none (static export)
-data_source: "NASA Exoplanet Archive — Planetary Systems Composite Parameters (pscomppars)"
-planets: 72
-data_files: [data/pscomppars_raw.csv, data/exoplanets.json]
-data_builder: tools/build_exoplanets.py
-tests: [headless smoke, flowtest, reachability audit, water probe, browser loop]
-```
-
-### Architecture (how the program is put together)
-
-**One source of truth.** `scripts/game_state.gd` (autoload `GameState`) owns the run: `run`, `draft`, `current_sector`, `owned`, `shop_offers`, and the rules/economy/scoring functions. Every screen reads it, mutates it through methods, and redraws on the `changed` signal. There is no database and no network.
-
-**Scene flow.**
-
-```text
-title → briefing (first run only) → crew → design → draft → [launch] → sector
-      → debrief → buff → draft … (×3) → report
-```
-
-**Autoloads** (`project.godot`): `GameState` (state + rules), `CrewDirector` (1–4 players, difficulty, daily seed, share codes), `SceneFX` (transitions), `MusicDirector` (adaptive bed), `PostFX` (full-frame grade), `DevRouter` (CLI deep links), `CaptureProbe` (screenshots), `DemoDirector` / `TrailerDirector` (deterministic capture), `MCPRuntimeProbe` (editor tooling).
-
-**Rendering.** All terrain is generated and drawn by `scripts/map_generator.gd` (4,416 lines): 16×16-cell chunks, per-biome archetypes, 64 px palette-locked tiles, 98 transition pairs, structures, fog of war, minimap. `scripts/sector.gd` (2,858 lines) owns the turn loop, pathfinding preview, hazards, HUD and VFX hooks. Shaders live in `shaders/`.
-
-**Scale.** ~20,400 lines of GDScript across 40+ scripts; the five largest are `map_generator.gd` (4,416), `sector.gd` (2,858), `game_state.gd` (1,874), `launch_cinematic.gd` (1,279), `draft.gd` (843).
-
-### Data model
-
-`data/exoplanets.json` is a two-key object: `meta` (source, URL, retrieval date, count, field list) and `planets` (72 entries). Each planet carries the **raw archive measurements** plus a derived `game` block, so every abstraction is auditable:
-
-| Group | Fields |
-|---|---|
-| Identity | `id`, `name`, `star`, `star_type`, `discovered`, `method` |
-| Orbit | `period_days`, `semi_major_au`, `eccentricity`, `distance_ly`, `insolation_earth` |
-| Planet | `radius_earth`, `mass_earth`, `mass_est`, `eq_temp_k`, `gravity_g`, `escape_kms`, `biome` |
-| Star | `star_temp_k`, `star_radius_sun`, `star_mass_sun`, `star_age_gyr`, `star_metallicity`, `system_planets` |
-| Derived (`game`) | `heat`, `radiation`, `quakes`, `comms_loss`, `science`, `delta_v`, `sols` |
-
-`mass_est: true` marks a mass derived from the Chen & Kipping (2017) mass–radius relation instead of a measured value. The formula table is in [Where the science comes from](#where-the-science-comes-from); the builder is deterministic, so the dataset can be regenerated and diffed.
-
-### Determinism and reproducibility
-
-- A campaign is defined by a seed; the **campaign code** (`OO-…`) reproduces the same planets and the same loadout.
-- Terrain seed = `hash(planet.id) % 90000 + 1000 + sector × 7919` (`sector.gd::_configure_map`), so a given planet and sector always draw the same world.
-- Daily runs use a date-derived seed; every player gets the same three planets that day.
-- `tools/audit_reach.gd`, `audit_density.gd`, `audit_islands.gd` and `water_probe.gd` are headless audits; `tools/browser_loop.mjs` drives the web build and fails unless it reaches the report.
-
-### Commands
-
-```bash
-godot --path .                                  # run the newest code
-godot --headless --path . --quit-after 8        # parse/runtime smoke test
-godot --headless --path . -- --screen=flowtest  # simulate a full campaign
-godot --path . -- --screen=sector --capture     # deep link + screenshot
-godot --headless --path . --script tools/audit_reach.gd
-python3 tools/build_exoplanets.py               # rebuild the dataset
-bash tools/release.sh                           # export + package + smoke + sha256
-cd build/web && python3 -m http.server 8060     # serve the web build
-```
-
-### Invariants (do not break)
-
-1. **640×360 logical viewport**, `stretch/aspect = keep`, nearest filtering — the pixel-art look is the product.
-2. **No server, no account, no runtime dependency**; the web build is a static threadless export.
-3. **Every derived number must trace to an archive field and a documented formula**; never invent a measurement.
-4. **Every hazard is telegraphed one turn before it resolves**; a loss must be explainable.
-5. **Palette-locked art** per biome (`tools/palettes.json`); tiles 64×64, structures 128/192.
-6. **Determinism**: same seed → same map, same draft, same code round-trip.
-
-### Where to change what
-
-| If you need to change… | Look at |
-|---|---|
-| mission rules, economy, scoring, state | `scripts/game_state.gd` |
-| one screen's layout/copy | `scenes/<name>.tscn` + `scripts/<name>.gd` |
-| terrain, biomes, structures, fog | `scripts/map_generator.gd` |
-| turn loop, path preview, hazards, HUD | `scripts/sector.gd` |
-| ship silhouette and live refit layer | `scripts/ship_build.gd`, `scripts/ship_diagram.gd` |
-| NASA dataset or derived values | `tools/build_exoplanets.py`, `data/exoplanets.json` |
-| art generation pipeline | `tools/gen_asset.py`, `tools/pixelize.py`, `docs/ART_PIPELINE.md` |
-| export, packaging, release checks | `tools/release.sh`, `tools/browser_loop.mjs` |
-| internal state, owners, next steps | `docs/STATUS.md`, `docs/TASKS.md`, `docs/WORKLOG.md` |
-
-### Known limitations (stated, not hidden)
-
-- Orbit is a **profile** (altitude, period, eclipse, passes/day), not a propagated trajectory; transfer time is a labelled c-fraction abstraction.
-- Scores are local (best + daily). There is no online leaderboard.
-- The map is procedural pixel art; at 2× some per-cell composition artifacts remain.
-- The soundtrack is adaptive but small (three cues); sound design is intentionally minimal.
-
-### Glossary
-
-`PSCompPars` — NASA Exoplanet Archive Planetary Systems Composite Parameters table · `CML` — Concept Maturity Level 1–4 · `ConOps` — concept of operations · `Δv` — delta-v, the fuel budget per move · `SOL` — one mission sol (turn) · `EXTRACT` — bank data and end the sector · `HOLD` — vent heat and recharge · `RELAY` — second sector type: plant three beacons instead of collecting nodes.
 
 ---
 
 ## Contents
 
 1. [At a glance](#at-a-glance)
-2. [For AI reviewers](#for-ai-reviewers)
-3. [Five-minute showcase](#five-minute-showcase)
-4. [What it looks like](#what-it-looks-like)
-5. [What you actually do](#what-you-actually-do)
-6. [A run, step by step](#a-run-step-by-step)
-7. [Mission design](#mission-design)
-8. [Surface operations](#surface-operations)
-9. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
-10. [Debrief and refit](#debrief-and-refit)
-11. [Scoring](#scoring)
-12. [Where the science comes from](#where-the-science-comes-from)
-13. [Controls](#controls)
-14. [Running the project](#running-the-project)
-15. [How the code is organised](#how-the-code-is-organised)
-16. [The surface generator](#the-surface-generator)
-17. [Art pipeline](#art-pipeline)
-18. [Working with agents](#working-with-agents)
-19. [Repository layout](#repository-layout)
-20. [Credits](#credits)
+2. [Five-minute showcase](#five-minute-showcase)
+3. [What it looks like](#what-it-looks-like)
+4. [What you actually do](#what-you-actually-do)
+5. [A run, step by step](#a-run-step-by-step)
+6. [Mission design](#mission-design)
+7. [Surface operations](#surface-operations)
+8. [Crew, difficulty and daily runs](#crew-difficulty-and-daily-runs)
+9. [Debrief and refit](#debrief-and-refit)
+10. [Scoring](#scoring)
+11. [Where the science comes from](#where-the-science-comes-from)
+12. [Controls](#controls)
+13. [Running the project](#running-the-project)
+14. [How it is built](#how-it-is-built)
+15. [The surface generator](#the-surface-generator)
+16. [Art pipeline](#art-pipeline)
+17. [Repository layout](#repository-layout)
+18. [Licence](#licence)
+19. [Credits](#credits)
 
 ---
 
@@ -276,21 +164,9 @@ The 2026 rubric: **Impact, Creativity, Validity, Relevance, Presentation**.
 - **"Is the science real?"** Every target is a `pscomppars` row. Derived numbers use documented formulas, and the game prints the abstraction next to the measurement.
 - **"Is the trajectory real?"** No. Orbit is a profile (altitude, period, eclipse, passes/day) and transfer time is a labelled c-fraction abstraction. The screen says so.
 - **"Leaderboard?"** Local best and daily best only. No server, no account — deliberate, so it runs anywhere.
-- **"Did AI make it?"** Yes, and it is disclosed: art generated by the user in ComfyUI, code written by agents under human review.
+- **"Did AI make it?"** Yes, and it is disclosed: art generated by the user in ComfyUI, code written with AI assistance and reviewed by the team.
 - **"What is missing?"** A soundtrack; the new UI kit is only partly integrated; some terrain still reads tiled at 2×. Each has an owner and a plan.
 - **"What next?"** Classroom mode with printable design worksheets, a codex linking every number to its archive row, and networked co-op.
-| Who | Job | Right now |
-|---|---|---|
-| **ATLAS** | engine and map | make terrain read as land, wire new rocks, fix the volcano corners |
-| **VEGA** | art | hero rocks, planets, UI skin, ship art |
-| **NOVA** | game design | fog-of-war survey loop, crew/difficulty tuning, rubric fit |
-| **b** | terrain algorithms | coastlines, water bodies, reachability audits |
-| **VFX agent** | animation and shaders | animated hazards, lighting grade, effect library |
-| **c / d** | build and QA | one-command export, browser test loop |
-| **e** | data and words | NASA numbers, README, deck, project page |
-| **f** | feel | sound effects, HUD polish, overlay readability |
-| **ECHO** | music | soundtrack spec, loop tools, 3-loop bed + MusicDirector landed in tree |
-
 ### The gameplay loop, as a flowchart
 
 ```mermaid
@@ -349,68 +225,6 @@ Captured from the current build (survey fog switched off here so the whole board
 - **New console HUD**: one top telemetry strip and a physical-looking move / `HOLD` / `EXTRACT` cluster.
 - **Lighting grade**: per-biome exposure, hue-only tint and a soft rolloff, so volcanic and sulfur worlds stop clipping while temperate stays readable.
 - **Reachable cells** are outlined as one shape, not a grid of boxes.
-### Done vs. in flight
-
-| Workstream | State | Where it lives |
-|---|---|---|
-| Run loop, economy, scoring, report | **Done** | `scripts/game_state.gd`, `scenes/` |
-| Exoplanet data + derived hazards | **Done** | `data/exoplanets.json`, `tools/build_exoplanets.py` |
-| Crew, difficulty tiers, daily seed, share codes | **Done** | `scripts/crew_director.gd` |
-| Mission Architecture Review + briefing | **Done** | `scenes/briefing.tscn`, `docs/BRIEFING.md` |
-| 13-biome terrain, transitions, structures | **Done** | `scripts/map_generator.gd`, `assets/tilesets/` |
-| Animated hazards + effect library | **In tree, not packaged** | `shaders/hazard_field.gdshader`, `scripts/vfx.gd`, `docs/VFX.md` |
-| Fog of war + signal-tier nodes | **Prototype, default on** | `docs/MAP_GAMEPLAY.md` (M1/M4), `--no-fog` |
-| W6 hero/support outcrops | **Art landed, wiring in progress** | `assets/tilesets/outcrops/` |
-| UI identity pass (folders/cards/stamps) | **Kit delivered, integration open** | `docs/UI_REDESIGN.md`, `assets/ui/skin/` |
-| Music bed (3 reactive loops) | **Shipped in the tree — 2 measured defects** | `assets/music/` (84 BPM, 24 bars, 788 KiB); `sector` peaks −0.6 dBTP and the cues are 1.16 dB apart — numbers in `docs/AUDIO.md` §5.1 |
-
-### What needs to happen next
-
-**Short version:** package the newest build (includes music bed, fog, VFX), then make the map and the menus look finished. Everything below is that list with names and proof attached.
-
-**P0 — before the next review (this pass closes the demo):**
-
-1. **Re-export and re-QA the web build.** One `tools/release.sh` run, then the browser loop title → report with zero console errors. Without this the music/fog/VFX work is invisible in the ZIP.
-2. **Music bed defects.** Landed in tree (3 loops @ 84 BPM, 788 KiB, wired via `MusicDirector`); fix the 2 measured defects noted in `docs/AUDIO.md` §5.1 (`sector` peak at −0.60 dBTP vs −1.5 ceiling, 1.16 dB LUFS spread).
-3. **Volcano silhouette.** Each 4×4 volcano still occupies a narrow tower inside its ash square, so the corners read empty. That is an art-shape rework, not a wiring bug.
-
-**P1 — the visible quality gap:**
-
-4. **UI identity integration (U2–U4).** The 9-slice folder/card/stamp kit exists; it needs `UIKit` helpers and screen passes. This is the direct answer to "looks too generic".
-5. **W2 macro composition.** The remaining reason the board still reads tiled: terrain is composed per cell. A generator-level change in `docs/MAP_OVERHAUL.md`; biggest single visual win left.
-6. **Survey choice + terrain cost (M2/M3).** Turns the board from a walk into a plan: sample vs. deep scan, rock costs 2, water/lava blocks.
-
-**P2 — polish, after the above:**
-
-7. Scene transitions and HUD gauge animation (V6), volcanic heat haze (V7).
-8. Return-weight rule (M6), structure-scale acceptance review, extra outcrop silhouettes.
-9. Readme/deck refresh once the packaged build matches the tree (`e` lane).
-
-### Three-minute demo
-
-```bash
-godot --path /home/g1/godot/nasa          # newest code, native
-# or the packaged build:
-tools/play_web.sh                          # http://127.0.0.1:8061/index.html
-```
-
-1. **0:00** Title — starfield, daily line, best score. `Begin Mission`.
-2. **0:30** Mission design — swap a hull, show the six telemetry bars repricing live and the launch lock when the loadout is illegal.
-3. **1:00** Draft — read the measured values off a card (`Teq`, gravity, distance) and the derived hazard bars; take the harsh world on purpose.
-4. **1:30** Sector — hover a route to show the preview (Δv, heat, nodes, hazard crossing), commit, watch the telegraph resolve, collect a node, `HOLD` to vent, then `EXTRACT`.
-5. **2:30** Debrief — buy one refit module, show approval and grant; report screen shows grade, breakdown, and the campaign story.
-
-### Known gaps to say out loud
-
-- The packaged build is one pass behind the tree (fog, VFX, outcrops). Re-export first, then demo.
-- There is no soundtrack yet; SFX only. That is the largest remaining feel gap, and the plan is written.
-- The map still has per-cell composition artifacts at 2×. W2 is the fix and it is scheduled, not hand-waved.
-- VFX/UI work is additive polish; the playable loop, data pipeline and scoring are done and verified.
-- **AI/SI disclosure:** the Space Apps project page asks how Super Intelligence was used. Our answer is simple and already in [Credits](#credits) — all art was generated by the user in ComfyUI, and the code was written by agents under human review. Keep that field filled in; it is required, not optional.
-- **Scope honesty:** scores are local only (best score + daily best). There is no online leaderboard, no account, and no server — that is a deliberate choice for a static, classroom-friendly build.
-
----
-
 ## What it looks like
 
 **In one sentence:** you design a spacecraft under a fixed budget, draft one of three real exoplanets, then keep it alive long enough to bring the data home.
@@ -803,13 +617,13 @@ The export is purely static, so it also runs on GitHub Pages, itch.io, or any pl
 
 ---
 
-## How the code is organised
+## How it is built
 
 `GameState` is the single source of truth. Every scene reads it, mutates it through methods, and redraws when its `changed` signal fires.
 
 | Path | Responsibility |
 |---|---|
-| `scenes/title.tscn`, `scripts/title.gd` | Title, how-to-play overlay, best score |
+| `scenes/title.tscn`, `scripts/title.gd` | Mission terminal, how-to-play overlay, best score |
 | `scenes/briefing.tscn`, `scripts/briefing.gd` | First-run agency induction and callsign |
 | `scenes/crew.tscn`, `scripts/crew.gd` | Mission Control: 1–4 players, roles, difficulty, campaign code |
 | `scenes/design.tscn`, `scripts/design.gd` | Hull, launch vehicle, orbit, objective, instruments, live telemetry |
@@ -829,9 +643,85 @@ The export is purely static, so it also runs on GitHub Pages, itch.io, or any pl
 | `scripts/post_fx.gd`, `scripts/scene_fx.gd` | Full-frame grade and scene transitions |
 | `shaders/` | Backdrop, map, hazard-field and post-processing shaders |
 
-Autoloads (`project.godot`): `GameState` (rules/state), `CrewDirector` (players/difficulty/codes), `SceneFX` (transitions), `MusicDirector` (music bed), `PostFX` (grade), `DevRouter` (CLI deep links), `CaptureProbe` (screenshots), `DemoDirector` / `TrailerDirector` (deterministic capture), `MCPRuntimeProbe` (editor tooling).
+**Scene flow.**
+
+```text
+title → briefing (first run only) → crew → design → draft → [launch] → sector
+      → debrief → buff → draft … (×3) → report
+```
+
+**Autoloads** (`project.godot`): `GameState` (rules/state), `CrewDirector` (players/difficulty/codes), `SceneFX` (transitions), `MusicDirector` (music bed), `PostFX` (grade), `DevRouter` (CLI deep links), `CaptureProbe` (screenshots), `DemoDirector` / `TrailerDirector` (deterministic capture), `MCPRuntimeProbe` (editor tooling).
 
 **State flow.** `new_run()` seeds a campaign and rolls the first draft. Design selections mutate `run`; `ship()` folds hull, vehicle, orbit, objective, instruments, and owned modules into a single derived stats dictionary. `begin_sector()` converts a planet into sector constraints. `finish_sector()` settles data delivery, science, grants, and approval. `calculate_score()` walks the history at the end.
+
+**Rendering and scale.** All terrain is generated and drawn by `scripts/map_generator.gd` (4,416 lines): 16×16-cell chunks, per-biome archetypes, 64 px palette-locked tiles, 98 transition pairs, structures, fog of war, minimap. `scripts/sector.gd` (2,858 lines) owns the turn loop, pathfinding preview, hazards, HUD and VFX hooks. The project is ~20,400 lines of GDScript across 40+ scripts; the five largest are `map_generator.gd` (4,416), `sector.gd` (2,858), `game_state.gd` (1,874), `launch_cinematic.gd` (1,279), `draft.gd` (843).
+
+### Data model
+
+`data/exoplanets.json` is a two-key object: `meta` (source, URL, retrieval date, count, field list) and `planets` (72 entries). Each planet carries the **raw archive measurements** plus a derived `game` block, so every abstraction is auditable:
+
+| Group | Fields |
+|---|---|
+| Identity | `id`, `name`, `star`, `star_type`, `discovered`, `method` |
+| Orbit | `period_days`, `semi_major_au`, `eccentricity`, `distance_ly`, `insolation_earth` |
+| Planet | `radius_earth`, `mass_earth`, `mass_est`, `eq_temp_k`, `gravity_g`, `escape_kms`, `biome` |
+| Star | `star_temp_k`, `star_radius_sun`, `star_mass_sun`, `star_age_gyr`, `star_metallicity`, `system_planets` |
+| Derived (`game`) | `heat`, `radiation`, `quakes`, `comms_loss`, `science`, `delta_v`, `sols` |
+
+`mass_est: true` marks a mass derived from the Chen & Kipping (2017) mass–radius relation instead of a measured value. The formula table is in [Where the science comes from](#where-the-science-comes-from); the builder is deterministic, so the dataset can be regenerated and diffed.
+
+### Determinism
+
+- A campaign is defined by a seed; the **campaign code** (`OO-…`) reproduces the same planets and the same loadout.
+- Terrain seed = `hash(planet.id) % 90000 + 1000 + sector × 7919` (`sector.gd::_configure_map`), so a given planet and sector always draw the same world.
+- Daily runs use a date-derived seed; every player gets the same three planets that day.
+- `tools/audit_reach.gd`, `audit_density.gd`, `audit_islands.gd` and `water_probe.gd` are headless audits; `tools/browser_loop.mjs` drives the web build and fails unless it reaches the report.
+
+### Commands
+
+```bash
+godot --path .                                  # run the newest code
+godot --headless --path . --quit-after 8        # parse/runtime smoke test
+godot --headless --path . -- --screen=flowtest  # simulate a full campaign
+godot --path . -- --screen=sector --capture     # deep link + screenshot
+godot --headless --path . --script tools/audit_reach.gd
+python3 tools/build_exoplanets.py               # rebuild the dataset
+bash tools/release.sh                           # export + package + smoke + sha256
+cd build/web && python3 -m http.server 8060     # serve the web build
+```
+
+### Invariants
+
+1. **640×360 logical viewport**, `stretch/aspect = keep`, nearest filtering — the pixel-art look is the product.
+2. **No server, no account, no runtime dependency**; the web build is a static threadless export.
+3. **Every derived number must trace to an archive field and a documented formula**; never invent a measurement.
+4. **Every hazard is telegraphed one turn before it resolves**; a loss must be explainable.
+5. **Palette-locked art** per biome (`tools/palettes.json`); tiles 64×64, structures 128/192.
+6. **Determinism**: same seed → same map, same draft, same code round-trip.
+
+### Where to change what
+
+| If you need to change… | Look at |
+|---|---|
+| mission rules, economy, scoring, state | `scripts/game_state.gd` |
+| one screen's layout/copy | `scenes/<name>.tscn` + `scripts/<name>.gd` |
+| terrain, biomes, structures, fog | `scripts/map_generator.gd` |
+| turn loop, path preview, hazards, HUD | `scripts/sector.gd` |
+| ship silhouette and live refit layer | `scripts/ship_build.gd`, `scripts/ship_diagram.gd` |
+| NASA dataset or derived values | `tools/build_exoplanets.py`, `data/exoplanets.json` |
+| art generation pipeline | `tools/gen_asset.py`, `tools/pixelize.py`, `docs/ART_PIPELINE.md` |
+| export, packaging, release checks | `tools/release.sh`, `tools/browser_loop.mjs` |
+
+### Known limitations
+
+- Orbit is a **profile** (altitude, period, eclipse, passes/day), not a propagated trajectory; transfer time is a labelled c-fraction abstraction.
+- Scores are local (best + daily). There is no online leaderboard.
+- The map is procedural pixel art; at 2× some per-cell composition artifacts remain.
+- The soundtrack is adaptive but small (three cues); sound design is intentionally minimal.
+
+### Glossary
+
+`PSCompPars` — NASA Exoplanet Archive Planetary Systems Composite Parameters table · `CML` — Concept Maturity Level 1–4 · `ConOps` — concept of operations · `Δv` — delta-v, the fuel budget per move · `SOL` — one mission sol (turn) · `EXTRACT` — bank data and end the sector · `HOLD` — vent heat and recharge · `RELAY` — second sector type: plant three beacons instead of collecting nodes.
 
 Nothing is persisted except the local best score (`user://orbit_save.cfg`). Runs are short by design.
 
@@ -864,28 +754,6 @@ Scripts and palettes live in `tools/`. The pipeline is documented in `assets/til
 
 ---
 
-## Working with agents
-
-This project was built with a small team of LLM agents sharing one working tree, coordinated through files instead of chat:
-
-| File | Purpose |
-|---|---|
-| `AGENTS.md` | Read order, file ownership, hard constraints, useful commands |
-| `docs/WORKLOG.md` | Append-only log: what changed, what was tried, what failed |
-| `docs/TASKS.md` | Task board with owners, status, and open art requests |
-| `docs/ART_PIPELINE.md` | Tile generation rules, palette locking, seam healing |
-| `docs/MAP_GENERATOR.md` | Generator architecture, controls, CLI flags |
-| `docs/EVENTS.md` | Shipped event pool, onboarding copy, copy/code mismatch list |
-| `docs/PROJECT_PAGE.md` | Submission project-page copy |
-| `docs/DECK_NOTES.md` | 7-slide submission deck speaker notes |
-| `docs/STATUS.md` | Internal build state, owners, ranked next steps, known gaps (not for judges) |
-
-The parts that made it work: a single append-only work log, a task board agents claim from before starting a multi-file change, and hard constraints written down (engine version, viewport size, palette rules) so a fresh agent can be dropped in without re-deriving the project.
-
-**Attribution:** every image was generated by the **user** in ComfyUI (SDXL Base 1.0 + Pixel Art XL) on the local machine — prompts, seeds, and accept/reject decisions are theirs. The agents wrote the generation and pixelisation scripts, integrated the outputs into the game, and wrote the code.
-
----
-
 ## Repository layout
 
 ```
@@ -913,16 +781,24 @@ The parts that made it work: a single append-only work log, a task board agents 
 ├── demo/                  # 30 s video + 7-slide deck
 ├── submission/            # packaged web ZIP + project-page copy
 ├── build/web/             # local export output (not committed)
-├── AGENTS.md              # Working agreement for agents
+├── LICENSE                # MIT (code, data, docs)
 └── tools/                 # dataset builder, art pipeline, audits, release
 ```
 
 ---
 
+## Licence
+
+- **Game code, data files and documentation:** MIT — see [`LICENSE`](LICENSE).
+- **Art:** original, generated for this project with ComfyUI and procedural tools. No NASA imagery is used.
+- **Fonts:** Silkscreen and IBM Plex Mono, SIL Open Font License; licence texts in `assets/ui/OFL-*.txt`.
+- **NASA data:** from the NASA Exoplanet Archive, used under its open terms; attribution in [Credits](#credits).
+- **Engine:** Godot 4.7.2, MIT.
+
 ## Credits
 
-- **Game code and original art:** built for the NASA Space Apps Challenge 2026, *Space Mission Design Game*.
-- **Image generation:** all diffusion art was run by the user in ComfyUI (SDXL Base 1.0 + Pixel Art XL). Prompts, seeds and selection are the user's; the agents wrote the pipeline scripts and integrated the results.
+- **Game code and original art:** built for the NASA Space Apps Challenge 2026, *Space Mission Design Game*. Code and art were produced by the team with AI assistance; all outputs were reviewed and integrated by hand.
+- **Image generation:** all diffusion art was run by the user in ComfyUI (SDXL Base 1.0 + Pixel Art XL). Prompts, seeds and selection are the user's; the pipeline scripts are in `tools/`.
 - **Data:** NASA Exoplanet Archive, *Planetary Systems Composite Parameters* (Caltech, under contract with NASA). Public domain / NASA open data.
 - **Mass–radius relation:** Chen & Kipping (2017), *Probabilistic Forecasting of the Masses and Radii of Other Worlds*.
 - **Fonts:** Silkscreen and IBM Plex Mono, both under the SIL Open Font License. Licence files are in `assets/ui/`.
