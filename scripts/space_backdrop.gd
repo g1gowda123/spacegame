@@ -197,7 +197,6 @@ func _layout() -> void:
 		if star_rect.texture != null:
 			plate = Vector2(star_rect.texture.get_width(), star_rect.texture.get_height())
 		_star_mat.set_shader_parameter("resolution", plate)
-		print("STARPLATE ", plate, " vp ", vp)
 	if _shade != null:
 		_shade.position = Vector2.ZERO
 		_shade.size = vp
