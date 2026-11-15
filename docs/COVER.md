@@ -73,3 +73,18 @@ muddy, noise, oversaturated, cropped subject, duplicate lander, busy composition
   covers.
 - [ ] Final files are checked at 630×500 and 315×250; title remains legible,
   bottom data strip not clipped, AI disclosure visible.
+
+## 2026-11-15 — second cover: terraced plateau (variant F)
+
+The first cover (astronaut on the basalt ridge, variant E) read as a painterly
+scene rather than the game. The reference the boss supplied is an isometric
+terraced world — orange stone shelves with dark vertical walls, teal water, one
+cyan anomaly — so the cover now shows the map the game actually plays.
+
+- Prompt: `variant f` in `tools/gen_cover.py` (stepped alien plateaus, terracotta
+  slabs with near-black cliff walls, teal channels, glowing survey orb, lander on
+  the highest shelf, huge pale ringed planet, calm dark sky in the top third).
+- Raw: `assets/raw/cover_hires_00004_.png` (seed 8802, `--hires`).
+- Composite: `python tools/compose_cover.py assets/raw/cover_hires_00004_.png
+  --out screenshots/cover_630x500.png --thumb screenshots/cover_315x250.png`
+- Copies refreshed in `submission/`.
