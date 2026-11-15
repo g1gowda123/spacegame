@@ -64,6 +64,8 @@ var _status_items: Array[Dictionary] = []
 var _mission_plaque: PanelContainer
 var _head_panel: PanelContainer
 var _skip_button: Button
+var _sector_packed: PackedScene
+var _sector_load_started := false
 
 # --- Audio Players ---
 var _audio_beep: AudioStreamPlayer
@@ -110,6 +112,17 @@ var _booster_dropped: bool = false
 var _booster_offset_y: float = 0.0
 
 
+func _start_sector_preload() -> void:
+	## Warm the sector while the launch plays. The transition then swaps to a
+	## ready PackedScene instead of loading terrain after the fade.
+	if _sector_load_started:
+		return
+	_sector_load_started = true
+	if not ResourceLoader.exists("res://scenes/sector.tscn"):
+		return
+	ResourceLoader.load_threaded_request("res://scenes/sector.tscn", "PackedScene")
+
+
 func _ready() -> void:
 	_rng.seed = 0x5EED
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -124,7 +137,8 @@ func _ready() -> void:
 	if _is_subsequent:
 		_start_subsequent_sequence()
 	else:
-		_start_launch_sequence()
+		_start_sector_preload()
+	_start_launch_sequence()
 
 
 func _parse_arguments() -> void:
@@ -1245,6 +1259,17 @@ func _skip_launch() -> void:
 	_complete_and_transition()
 
 
+func _finish_to_sector() -> void:
+	if _sector_packed == null and _sector_load_started:
+		var status := ResourceLoader.load_threaded_get_status("res://scenes/sector.tscn")
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			_sector_packed = ResourceLoader.load_threaded_get("res://scenes/sector.tscn") as PackedScene
+	if _sector_packed != null:
+		get_tree().change_scene_to_packed(_sector_packed)
+	else:
+		get_tree().change_scene_to_file("res://scenes/sector.tscn")
+
+
 func _complete_and_transition() -> void:
 	if _transitioned:
 		return
@@ -1271,9 +1296,9 @@ func _complete_and_transition() -> void:
 		tw.tween_callback(func():
 			if is_inside_tree() and get_tree() != null:
 				print("LAUNCH SEQUENCE COMPLETE -> ENTERING SECTOR: ", _planet_name)
-				get_tree().change_scene_to_file("res://scenes/sector.tscn")
+				_finish_to_sector()
 		)
 	else:
 		if is_inside_tree() and get_tree() != null:
 			print("LAUNCH SEQUENCE COMPLETE -> ENTERING SECTOR: ", _planet_name)
-			get_tree().change_scene_to_file("res://scenes/sector.tscn")
+			_finish_to_sector()
