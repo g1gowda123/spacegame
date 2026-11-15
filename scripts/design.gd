@@ -151,8 +151,8 @@ func _build_center() -> void:
 	UIKit.hairline(v, 0, 0, 188, UIKit.LINE)
 
 	diagram = ShipDiagram.new()
-	diagram.custom_minimum_size = Vector2(190, 60)
-	diagram.size = Vector2(190, 60)
+	diagram.custom_minimum_size = Vector2(190, 70)
+	diagram.size = Vector2(190, 70)
 	v.add_child(diagram)
 
 	build_label = UIKit.mono("", 7, UIKit.DIM)

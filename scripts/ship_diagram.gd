@@ -120,14 +120,15 @@ func _process(delta: float) -> void:
 
 
 func _load_texture() -> void:
-	# `hero/` is the clean authored 2x pass. The older `<hull>_2x.png` sheets
-	# carry a baked blueprint grid (visible as scanlines over the hull), so they
-	# are only a fallback for hulls the hero pass has not covered yet.
+	# The 1x sheet is the native pixel-art size for this 190x70 slot: at the
+	# 640x360 base viewport it draws 1:1 and at 1920 it scales by an exact 3x,
+	# so no row is dropped. `_2x` sheets carry a baked blueprint grid and must
+	# never be the default; `hero/` is the clean 2x pass for fallback only.
 	var path := SHIP_DIR + "hero/" + hull_id + ".png"
 	if not ResourceLoader.exists(path):
-		path = SHIP_DIR + hull_id + "_2x.png"
-	if not ResourceLoader.exists(path):
 		path = SHIP_DIR + hull_id + ".png"
+	if not ResourceLoader.exists(path):
+		path = SHIP_DIR + hull_id + "_2x.png"
 	if not ResourceLoader.exists(path):
 		path = SHIP_DIR + "pathfinder.png"
 	if ResourceLoader.exists(path):
