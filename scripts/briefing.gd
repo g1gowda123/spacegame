@@ -6,7 +6,7 @@ extends Control
 const BEATS := [
 	{
 		"card": "INDUCTION", "expr": "smile",
-		"text": "Chief. Good - you're early. I'm Dr. Imani Vale, the director's executive secretary. I keep the launch windows, the budget, and the director's calendar. The board just signed your appointment, and the press office is already asking for a quote.",
+		"text": "Chief. Good - you're early. I'm Ms. Manjula Jain, the director's executive secretary. I keep the launch windows, the budget, and the director's calendar. The board just signed your appointment, and the press office is already asking for a quote.",
 	},
 	{
 		"card": "THE AGENCY", "expr": "stern",
@@ -136,7 +136,7 @@ func _build() -> void:
 	portrait_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(portrait_card)
 
-	var card_code := UIKit.label("PERSONNEL FILE // VALE", 5, INK_SOFT, true)
+	var card_code := UIKit.label("PERSONNEL FILE // JAIN", 5, INK_SOFT, true)
 	card_code.position = Vector2(8, 238)
 	card_code.size = Vector2(154, 9)
 	card_code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -159,7 +159,7 @@ func _build() -> void:
 	portrait.modulate = Color(1.06, 1.04, 1.0)
 	add_child(portrait)
 
-	var id_name := UIKit.label("DR. IMANI VALE", 6, INK, true)
+	var id_name := UIKit.label("MS. MANJULA JAIN", 6, INK, true)
 	id_name.position = Vector2(12, 180)
 	id_name.size = Vector2(146, 9)
 	id_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -171,7 +171,7 @@ func _build() -> void:
 	id_role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(id_role)
 
-	var id_clear := UIKit.label("CLEARANCE  A-2  ·  MISSION CONTROL", 4, INK_SOFT, true)
+	var id_clear := UIKit.label("CLEARANCE  A-2", 4, INK_SOFT, true)
 	id_clear.position = Vector2(12, 202)
 	id_clear.size = Vector2(146, 8)
 	id_clear.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -218,7 +218,7 @@ func _build() -> void:
 	barcode.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dialogue.add_child(barcode)
 
-	nameplate = UIKit.label("DR. IMANI VALE  //  EXECUTIVE SECRETARY", 7, SIGNAL, true)
+	nameplate = UIKit.label("MS. MANJULA JAIN  //  EXECUTIVE SECRETARY", 7, SIGNAL, true)
 	nameplate.position = Vector2(12, 8)
 	nameplate.size = Vector2(330, 14)
 	dialogue.add_child(nameplate)
