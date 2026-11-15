@@ -357,12 +357,15 @@ static func attach_hover_pop(
 		ctrl.z_index = 2
 		if ctrl.size.x > 0 and ctrl.size.y > 0:
 			ctrl.pivot_offset = ctrl.size * 0.5
-		var old: Tween = ctrl.get_meta("pop_tw", null)
+		# get_meta(name, null) errors on a missing key in Godot 4 (the default is
+		# treated as "no default"), so every read is guarded — this used to spam
+		# "does not have any 'meta' values" on the first hover of every control.
+		var old: Tween = ctrl.get_meta("pop_tw") if ctrl.has_meta("pop_tw") else null
 		if old != null and old.is_valid():
 			old.kill()
 		if not ctrl.has_meta("base_y") or ctrl.scale == Vector2.ONE:
 			ctrl.set_meta("base_y", ctrl.position.y)
-		var base_y: float = float(ctrl.get_meta("base_y"))
+		var base_y: float = float(ctrl.get_meta("base_y")) if ctrl.has_meta("base_y") else ctrl.position.y
 		var tw: Tween = ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(ctrl, "scale", Vector2(scale_mult, scale_mult), 0.14)
 		if ctrl.get_parent() != null and ctrl.get_parent() is not Container:
@@ -371,10 +374,13 @@ static func attach_hover_pop(
 	)
 	ctrl.mouse_exited.connect(func():
 		ctrl.z_index = 0
-		var old: Tween = ctrl.get_meta("pop_tw", null)
+		# get_meta(name, null) errors on a missing key in Godot 4 (the default is
+		# treated as "no default"), so every read is guarded — this used to spam
+		# "does not have any 'meta' values" on the first hover of every control.
+		var old: Tween = ctrl.get_meta("pop_tw") if ctrl.has_meta("pop_tw") else null
 		if old != null and old.is_valid():
 			old.kill()
-		var base_y: float = float(ctrl.get_meta("base_y", ctrl.position.y))
+		var base_y: float = float(ctrl.get_meta("base_y")) if ctrl.has_meta("base_y") else ctrl.position.y
 		var tw: Tween = ctrl.create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(ctrl, "scale", Vector2.ONE, 0.14)
 		if ctrl.get_parent() != null and ctrl.get_parent() is not Container:
