@@ -34,7 +34,7 @@ SUBJECT = (
 )
 STYLE = (
     "chunky flat-shaded shapes, thick dark outline, limited desaturated palette, teal and orange "
-    "accents, retro science fiction pixel art, flat solid dark navy background, centered, no text"
+    "accents, retro science fiction illustration, flat solid dark navy background, centered, no text"
 )
 NEG = (
     "blurry, photo, photorealistic, 3d render, smooth gradients, anti-aliasing, text, watermark, "
@@ -79,6 +79,38 @@ def pixelate(img: Image.Image) -> Image.Image:
     return img.convert("RGB")
 
 
+def cutout(img: Image.Image) -> Image.Image:
+    """Fight the flat backdrop: flood-fill the border-connected background to alpha
+    and give the silhouette a 1 px ink contour, like every other sprite."""
+    from PIL import ImageDraw
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    marker = (255, 0, 255)
+    corners = [rgb.getpixel((2, 2)), rgb.getpixel((w - 3, 2)), rgb.getpixel((2, h - 3)),
+               rgb.getpixel((w - 3, h - 3)), rgb.getpixel((w // 2, 2))]
+    px = rgb.load()
+    for x in range(w):
+        for y in (0, h - 1):
+            if min(max(abs(c - m) for c, m in zip(px[x, y], bg)) for bg in corners) < 26:
+                ImageDraw.floodfill(rgb, (x, y), marker, thresh=22)
+    for y in range(h):
+        for x in (0, w - 1):
+            if min(max(abs(c - m) for c, m in zip(px[x, y], bg)) for bg in corners) < 26:
+                ImageDraw.floodfill(rgb, (x, y), marker, thresh=22)
+    a = np.asarray(rgb)
+    mask = ~np.all(a == np.array(marker), axis=2)
+    out = Image.fromarray(a).convert("RGBA")
+    out.putalpha(Image.fromarray((mask * 255).astype(np.uint8)))
+    # 1 px ink contour on the inside edge
+    edge = mask & ~np.pad(mask, 1, constant_values=True)[1:-1, 1:-1]
+    edge = mask & ~(
+        np.roll(mask, 1, 0) & np.roll(mask, -1, 0) & np.roll(mask, 1, 1) & np.roll(mask, -1, 1)
+    )
+    arr = np.asarray(out).copy()
+    arr[edge] = [18, 22, 30, 255]
+    return Image.fromarray(arr)
+
+
 def sample_palette(img: Image.Image, n: int = PALETTE_SIZE) -> list:
     q = img.quantize(n, method=Image.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
     return [c for _, c in q.getcolors()]
@@ -118,7 +150,7 @@ def main() -> None:
             colors = sample_palette(img)
             palette_file.write_text(json.dumps(colors))
             save_palette(colors)
-        img = lock(img, colors)
+        img = cutout(lock(img, colors))
         img.save(OUT / f"director_{mood}.png")
         if mood == "neutral":
             img.resize((64, 64), Image.Resampling.NEAREST).save(OUT / "director_icon.png")

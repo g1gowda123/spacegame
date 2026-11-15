@@ -925,7 +925,7 @@ func _build_view() -> void:
 	space_rect.texture = load("res://assets/backgrounds/space.png") as Texture2D
 	space_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	space_rect.stretch_mode = TextureRect.STRETCH_SCALE
-	space_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	space_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	space_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	space_rect.size = get_viewport_rect().size
 	space_rect.modulate = Color(1, 1, 1, 0.78)

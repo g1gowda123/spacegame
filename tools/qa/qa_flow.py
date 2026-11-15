@@ -71,7 +71,9 @@ async def run(pw, width, height, tag, outdir):
     await page.keyboard.press("Escape")     # skip the briefing
     await asyncio.sleep(2.5)
     await shot("02_title")
-    await tap(page, *scale(BTN_BEGIN, width, height))
+    # Enter starts the mission from the terminal title (the button moved when
+    # the title was rebuilt, so keyboard driving is the stable path).
+    await page.keyboard.press("Enter")
     await asyncio.sleep(4)
     await shot("03_design")
     await tap(page, *scale(BTN_CONFIRM_DESIGN, width, height))
@@ -80,10 +82,10 @@ async def run(pw, width, height, tag, outdir):
     await page.keyboard.press("Enter")      # open the architecture review
     await asyncio.sleep(3.5)
     await shot("05_review")
-    await tap(page, *scale(BTN_COMMIT, width, height))
+    await page.keyboard.press("Enter")      # review owns the keyboard: Enter commits
     await asyncio.sleep(3)
     await shot("06_launch")
-    await tap(page, *scale(BTN_SKIP_LAUNCH, width, height))
+    await page.keyboard.press("Escape")     # launch: ESC skips
     await asyncio.sleep(4)
     await shot("07_sector")
     for key in ["ArrowRight", "ArrowRight"]:

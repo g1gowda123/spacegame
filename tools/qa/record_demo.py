@@ -85,7 +85,7 @@ async def main():
             await page.keyboard.press("Escape")
             await asyncio.sleep(2.5)
             await mark("03_title")
-            await tap(page, *BTN_BEGIN)
+            await page.keyboard.press("Enter")   # title -> design
             await asyncio.sleep(5.0)
             await mark("04_design")
             await tap(page, *BTN_CONFIRM_DESIGN)
@@ -94,11 +94,11 @@ async def main():
             await page.keyboard.press("Enter")
             await asyncio.sleep(4.5)
             await mark("06_review")
-            await tap(page, *BTN_COMMIT)
+            await page.keyboard.press("Enter")   # review: Enter commits
             await asyncio.sleep(2.6)
             await mark("06b_launch")
             await asyncio.sleep(1.2)
-            await tap(page, *BTN_SKIP_LAUNCH)
+            await page.keyboard.press("Escape")  # launch: ESC skips
             await asyncio.sleep(4.0)
             await mark("07_sector")
             for i, key in enumerate(["ArrowRight", "ArrowRight", "Enter", "ArrowDown", "Enter", "ArrowRight", "Enter"]):
